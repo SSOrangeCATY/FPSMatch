@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapTeams {
     protected final ServerLevel level;
-    private BlockPos defaultSpawnPoints;
+    private final BlockPos defaultSpawnPoints;
     private final Map<String, List<BlockPos>> spawnPoints = new HashMap<>();
     private final Map<String, PlayerTeam> teams = new HashMap<>();
     private final Map<UUID, PlayerTeam> playerTeams = new HashMap<>();
@@ -42,16 +42,20 @@ public class MapTeams {
         return check.get();
     }
 
+    public List<BlockPos> getSpawnPointsByTeam(String team){
+        return this.spawnPoints.getOrDefault(team,List.of(defaultSpawnPoints));
+    }
+
     public void setTeamsSpawnPoints(){
         if(!checkSpawnPoints()) return;
-        Map<String, List<BlockPos>> spawner = new HashMap<>(this.spawnPoints);
         Random random = new Random();
         this.playerTeams.forEach(((uuid, playerTeam) -> {
+            List<BlockPos> spawner = this.getSpawnPointsByTeam(playerTeam.getName());
             Player player = this.level.getPlayerByUUID(uuid);
             if (player != null){
-                int rIndex = random.nextInt(0,spawner.get(playerTeam.getName()).size());
-                BlockPos spawnPoint = spawner.get(playerTeam.getName()).get(rIndex);
-                spawner.get(playerTeam.getName()).remove(rIndex);
+                int rIndex = random.nextInt(0,spawner.size());
+                BlockPos spawnPoint = spawner.get(rIndex);
+                spawner.remove(rIndex);
                 ((ServerPlayer) player).setRespawnPosition(Level.OVERWORLD,spawnPoint,0f,false,false);
             };
         }));
@@ -61,13 +65,13 @@ public class MapTeams {
         this.spawnPoints.get(teamName).add(spawn);
     }
 
-    public List<BlockPos> getSpawnPointsByTeam(PlayerTeam team){
-        return this.spawnPoints.getOrDefault(team.getName(),List.of(defaultSpawnPoints));
-    }
-
     public void resetSpawnPoints(String teamName){
         this.spawnPoints.remove(teamName);
     }
+    public void resetAllSpawnPoints(){
+        this.spawnPoints.clear();
+    }
+
 
     public List<String> renameTeams(int teamNum){
         //TODO rename Teams
@@ -90,6 +94,12 @@ public class MapTeams {
     public void delTeam(PlayerTeam team){
         this.teams.remove(team.getName());
         this.level.getScoreboard().removePlayerTeam(team);
+        this.spawnPoints.remove(team.getName());
+        this.playerTeams.forEach(((uuid, playerTeam) -> {
+            if(playerTeam.getName().equals(team.getName())){
+                this.playerTeams.remove(uuid);
+            }
+        }));
     }
 
     public void joinTeam(String teamName, Player player) {

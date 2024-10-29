@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public abstract class BaseMap<T extends BaseGame> {
+public abstract class BaseMap {
     private final ServerLevel serverLevel;
     private final BlockPos spawnPoint;
     private final Round round;
