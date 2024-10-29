@@ -18,13 +18,11 @@ public abstract class BaseMap {
     private final SpawnPointData spawnPoint;
     private final Round round;
     private final MapTeams mapTeams;
-    private final List<UUID> joinedPlayers = new ArrayList<>();
-    private final ResourceKey<Level> levelResourceKey = Level.OVERWORLD;
 
-    public BaseMap(ServerLevel serverLevel, int teamNum, SpawnPointData spawnPoint) {
+    public BaseMap(ServerLevel serverLevel, List<String> teams, SpawnPointData spawnPoint) {
         this.serverLevel = serverLevel;
         this.spawnPoint = spawnPoint;
-        this.mapTeams = new MapTeams(serverLevel,teamNum,spawnPoint);
+        this.mapTeams = new MapTeams(serverLevel,teams,spawnPoint);
         this.round = new Round(false,-1) {
             @Override
             public boolean shouldEndCurrentRound() {
@@ -68,23 +66,31 @@ public abstract class BaseMap {
         }
     }
 
+    public boolean checkGameHasPlayer(Player player){
+        return this.mapTeams.getJoinedPlayers().contains(player.getUUID());
+    }
+
     public abstract void victory();
 
     public abstract boolean victoryGoal();
 
-    public void playerJoin(ServerPlayer player){
-        this.joinedPlayers.add(player.getUUID());
-    };
-
-    public void playerLeave(ServerPlayer player){
-        this.joinedPlayers.remove(player.getUUID());
-    };
-
-    public boolean checkGameHasPlayer(ServerPlayer player){
-        return this.joinedPlayers.contains(player.getUUID());
-    }
-
     public abstract void initializeMap();
 
     public abstract void cleanupMap();
+
+    public MapTeams getMapTeams() {
+        return mapTeams;
+    }
+
+    public Round getRound() {
+        return round;
+    }
+
+    public ServerLevel getServerLevel() {
+        return serverLevel;
+    }
+
+    public SpawnPointData getSpawnPoint() {
+        return spawnPoint;
+    }
 }
