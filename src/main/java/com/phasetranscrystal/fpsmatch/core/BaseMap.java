@@ -1,17 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public abstract class BaseMap {
     private final ServerLevel serverLevel;
