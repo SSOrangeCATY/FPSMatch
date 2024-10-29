@@ -6,9 +6,9 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 
-public class SpawnPointPacket {
+public class SpawnPointData {
     ResourceKey<Level> dimension;BlockPos position; float angle; boolean forced; boolean sendMessage;
-    public SpawnPointPacket(ResourceKey<Level> pDimension, @Nullable BlockPos pPosition, float pAngle, boolean pForced, boolean pSendMessage){
+    public SpawnPointData(ResourceKey<Level> pDimension, @Nullable BlockPos pPosition, float pAngle, boolean pForced, boolean pSendMessage){
         this.dimension = pDimension;
         this.position = pPosition;
         this.angle = pAngle;

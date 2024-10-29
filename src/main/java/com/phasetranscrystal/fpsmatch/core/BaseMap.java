@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -14,13 +15,13 @@ import java.util.UUID;
 
 public abstract class BaseMap {
     private final ServerLevel serverLevel;
-    private final BlockPos spawnPoint;
+    private final SpawnPointData spawnPoint;
     private final Round round;
     private final MapTeams mapTeams;
     private final List<UUID> joinedPlayers = new ArrayList<>();
     private final ResourceKey<Level> levelResourceKey = Level.OVERWORLD;
 
-    public BaseMap(ServerLevel serverLevel, int teamNum, BlockPos spawnPoint) {
+    public BaseMap(ServerLevel serverLevel, int teamNum, SpawnPointData spawnPoint) {
         this.serverLevel = serverLevel;
         this.spawnPoint = spawnPoint;
         this.mapTeams = new MapTeams(serverLevel,teamNum,spawnPoint);
@@ -42,7 +43,7 @@ public abstract class BaseMap {
         };
     }
 
-    public BaseMap(ServerLevel serverLevel, MapTeams teams, Round round, BlockPos spawnPoint) {
+    public BaseMap(ServerLevel serverLevel, MapTeams teams, Round round, SpawnPointData spawnPoint) {
         this.serverLevel = serverLevel;
         this.mapTeams = teams;
         this.round = round;

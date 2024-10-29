@@ -1,13 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core;
 
-import net.minecraft.client.player.LocalPlayer;
+import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.scores.PlayerTeam;
 
 import java.util.*;
@@ -15,12 +14,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapTeams {
     protected final ServerLevel level;
-    private final BlockPos defaultSpawnPoints;
-    private final Map<String, List<BlockPos>> spawnPoints = new HashMap<>();
+    private final SpawnPointData defaultSpawnPoints;
+    private final Map<String, List<SpawnPointData>> spawnPoints = new HashMap<>();
     private final Map<String, PlayerTeam> teams = new HashMap<>();
     private final Map<UUID, PlayerTeam> playerTeams = new HashMap<>();
 
-    public MapTeams(ServerLevel level,int teamNum,BlockPos defaultSpawnPoints){
+    public MapTeams(ServerLevel level,int teamNum,SpawnPointData defaultSpawnPoints){
         this.level = level;
         this.defaultSpawnPoints = defaultSpawnPoints;
         this.teamInit(teamNum);
@@ -30,7 +29,7 @@ public class MapTeams {
         AtomicBoolean check = new AtomicBoolean(true);
         this.teams.values().forEach((t)->{
             if(check.get()){
-                List<BlockPos> spawnPoints = this.spawnPoints.getOrDefault(t.getName(),null);
+                List<SpawnPointData> spawnPoints = this.spawnPoints.getOrDefault(t.getName(),null);
                 int p = t.getPlayers().size();
                 if(spawnPoints == null) {
                     check.set(false);
@@ -42,7 +41,7 @@ public class MapTeams {
         return check.get();
     }
 
-    public List<BlockPos> getSpawnPointsByTeam(String team){
+    public List<SpawnPointData> getSpawnPointsByTeam(String team){
         return this.spawnPoints.getOrDefault(team,List.of(defaultSpawnPoints));
     }
 
@@ -50,18 +49,18 @@ public class MapTeams {
         if(!checkSpawnPoints()) return;
         Random random = new Random();
         this.playerTeams.forEach(((uuid, playerTeam) -> {
-            List<BlockPos> spawner = this.getSpawnPointsByTeam(playerTeam.getName());
+            List<SpawnPointData> spawner = this.getSpawnPointsByTeam(playerTeam.getName());
             Player player = this.level.getPlayerByUUID(uuid);
             if (player != null){
                 int rIndex = random.nextInt(0,spawner.size());
-                BlockPos spawnPoint = spawner.get(rIndex);
+                SpawnPointData data = spawner.get(rIndex);
                 spawner.remove(rIndex);
-                ((ServerPlayer) player).setRespawnPosition(Level.OVERWORLD,spawnPoint,0f,false,false);
+                ((ServerPlayer) player).setRespawnPosition(data.getDimension(),data.getPosition(),data.getAngle(),data.isForced(),data.isSendMessage());
             };
         }));
     }
 
-    public void defineSpawnPoint(String teamName,BlockPos spawn){
+    public void defineSpawnPoint(String teamName,SpawnPointData spawn){
         this.spawnPoints.get(teamName).add(spawn);
     }
 
