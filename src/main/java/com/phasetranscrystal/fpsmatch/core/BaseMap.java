@@ -1,8 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,13 +14,16 @@ import java.util.UUID;
 
 public abstract class BaseMap<T extends BaseGame> {
     private final ServerLevel serverLevel;
+    private final BlockPos spawnPoint;
     private final Round round;
     private final MapTeams mapTeams;
     private final List<UUID> joinedPlayers = new ArrayList<>();
+    private final ResourceKey<Level> levelResourceKey = Level.OVERWORLD;
 
-    public BaseMap(ServerLevel serverLevel, int teamNum) {
+    public BaseMap(ServerLevel serverLevel, int teamNum, BlockPos spawnPoint) {
         this.serverLevel = serverLevel;
-        this.mapTeams = new MapTeams(serverLevel,teamNum);
+        this.spawnPoint = spawnPoint;
+        this.mapTeams = new MapTeams(serverLevel,teamNum,spawnPoint);
         this.round = new Round(false,-1) {
             @Override
             public boolean shouldEndCurrentRound() {
@@ -35,10 +42,11 @@ public abstract class BaseMap<T extends BaseGame> {
         };
     }
 
-    public BaseMap(ServerLevel serverLevel, MapTeams teams, Round round) {
+    public BaseMap(ServerLevel serverLevel, MapTeams teams, Round round, BlockPos spawnPoint) {
         this.serverLevel = serverLevel;
         this.mapTeams = teams;
         this.round = round;
+        this.spawnPoint = spawnPoint;
     }
 
     public final void mapTick(){
