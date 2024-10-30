@@ -2,19 +2,29 @@ package com.phasetranscrystal.fpsmatch.cs;
 
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.commands.ClearInventoryCommands;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.BiomeManager;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GameMap extends BaseMap {
+    public static final int WINNER_ROUND = 13;
     private int waittingTime = 20;
     private  int roundTimeLimit = 115; // 回合时间限制，单位为秒
     private int currentRoundTime = 0; // 当前回合已过时间
     private boolean isPause = false;
     private boolean isWaiting = false;
+    private final Map<String,Integer> teamScores = new HashMap<>();
 
     public GameMap(ServerLevel serverLevel, List<String> teams, SpawnPointData spawnPoint) {
         super(serverLevel, teams, spawnPoint);
@@ -71,9 +81,8 @@ public class GameMap extends BaseMap {
     }
 
     private void startNewRound() {
-        // 开始新的回合
         currentRoundTime = 0;
-        this.getMapTeams().setTeamsSpawnPoints();
+        this.isWaiting = true;
         // 可以在这里添加更多的逻辑，比如重置得分板、装备武器等
     }
 
@@ -106,6 +115,28 @@ public class GameMap extends BaseMap {
     @Override
     public void cleanupMap() {
         // 清理地图，重置重生点，清除武器等
+        this.getMapTeams().setTeamsSpawnPoints();
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(player != null){
+                float angle = player.getRespawnAngle();
+                ResourceKey<Level> dimension = player.getRespawnDimension();
+                ServerLevel serverLevel = this.getServerLevel().getServer().getLevel(dimension);
+                BlockPos pos =  player.getRespawnPosition();
+                player.heal(player.getMaxHealth());
+                if (serverLevel != null && pos != null) {
+                    player.teleportTo(serverLevel, pos.getX(), pos.getY(), pos.getZ(), angle, 0F);
+                }
+                this.clearPlayerInventory(player);
+            }
+        }));
+
+    }
+
+    public void clearPlayerInventory(ServerPlayer player){
+        player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
+        player.containerMenu.broadcastChanges();
+        player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
     private String getWinningTeamName() {

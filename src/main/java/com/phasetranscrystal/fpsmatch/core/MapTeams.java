@@ -2,18 +2,22 @@ package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MapTeams {
     protected final ServerLevel level;
@@ -24,6 +28,8 @@ public class MapTeams {
     private final Map<UUID, PlayerTeam> playerTeams = new HashMap<>();
     private final Map<String, Integer> teamPlayerLimits = new HashMap<>();
     private final Map<String,List<UUID>> teamsLiving = new HashMap<>();
+    private final Map<UUID, TabData> playerStats = new HashMap<>();
+    private final Map<UUID, Map<UUID,Float>> livingHurtData = new HashMap<>();
 
     public MapTeams(ServerLevel level,List<String> teamsName ,SpawnPointData defaultSpawnPoints){
         this.level = level;
@@ -110,6 +116,7 @@ public class MapTeams {
         this.joinedPlayers.add(player.getUUID());
     }
     public void playerLeave(Player player){
+        this.leaveTeam(player);
         this.joinedPlayers.remove(player.getUUID());
     };
 
@@ -147,6 +154,11 @@ public class MapTeams {
 
     public void leaveTeam(Player player){
         this.playerTeams.remove(player.getUUID());
+        this.teamsLiving.forEach(((s, uuids) -> {
+            if(uuids.contains(player.getUUID())){
+                this.teamsLiving.get(s).remove(player.getUUID());
+            }
+        }));
         PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
         if (currentTeam != null)  player.getScoreboard().removePlayerFromTeam(player.getScoreboardName(), currentTeam);
     }
@@ -155,15 +167,86 @@ public class MapTeams {
         return teamsLiving;
     }
 
+    public TabData getTabData(Player player) {
+        return playerStats.getOrDefault(player.getUUID(), new TabData());
+    }
+
+    public void updateTabData(Player player, TabData tabData) {
+        playerStats.put(player.getUUID(), tabData);
+    }
+
+    public void addHurtData(UUID attackerId, UUID targetId, float damage) {
+        Map<UUID, Float> hurtDataMap = livingHurtData.getOrDefault(attackerId, new HashMap<>());
+        hurtDataMap.merge(targetId, damage, Float::sum);
+        livingHurtData.put(attackerId, hurtDataMap);
+    }
+
+    public float getTotalHurtData(UUID attackerId) {
+        Map<UUID, Float> hurtDataMap = livingHurtData.getOrDefault(attackerId, new HashMap<>());
+        return (float) hurtDataMap.values().stream().mapToDouble(Float::valueOf).sum();
+    }
+
+    public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
+        return livingHurtData;
+    }
+
+    public void resetAllHurtData() {
+        livingHurtData.clear();
+    }
+
+    public float getHurtData(UUID attackerId, UUID targetId) {
+        Map<UUID, Float> hurtDataMap = livingHurtData.getOrDefault(attackerId, new HashMap<>());
+        return hurtDataMap.getOrDefault(targetId, 0.0f);
+    }
+
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event){
         if(event.getEntity() instanceof Player player){
             BaseMap map = FPSMCore.getMapByPlayer(player);
             if(map != null){
-                map.getMapTeams().getTeamsLiving().get(map.getMapTeams().getTeamByPlayer(player)).remove(player.getUUID());
+                MapTeams teams = map.getMapTeams();
+                String playerTeam = teams.getTeamByPlayer(player);
+                if(playerTeam != null){
+                    teams.getTeamsLiving().get(playerTeam).remove(player.getUUID());
+                    teams.updateTabData(player, teams.getTabData(player).addDeaths());
+                }
+
+                if(event.getSource().getEntity() instanceof Player killer){
+                    if(teams.getTeamByPlayer(killer) != null){ // && !teams.getTeamByPlayer(killer).equals(playerTeam)
+                        teams.updateTabData(killer, teams.getTabData(killer).addKills());
+                        Map<UUID, Float> hurtDataMap = teams.getLivingHurtData().get(player.getUUID());
+                        if(hurtDataMap != null && !hurtDataMap.isEmpty()){
+
+                            List<Map.Entry<UUID, Float>> sortedDamageEntries = hurtDataMap.entrySet().stream()
+                                    .filter(entry -> !entry.getKey().equals(killer.getUUID()) && entry.getValue() > 4)
+                                    .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                                    .limit(2)
+                                    .toList();
+
+                            for (Map.Entry<UUID, Float> sortedDamageEntry : sortedDamageEntries) {
+                                UUID assistId = sortedDamageEntry.getKey();
+                                Player assist = map.getServerLevel().getPlayerByUUID(assistId);
+                                if (assist != null) {
+                                    teams.updateTabData(assist, teams.getTabData(assist).addAssist());
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-
-
+    @SubscribeEvent
+    public void onLivingHurtEvent(LivingHurtEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            DamageSource damageSource = event.getSource();
+            if(damageSource.getEntity() instanceof Player from){
+                BaseMap map = FPSMCore.getMapByPlayer(player);
+                if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
+                    float damage = event.getAmount();
+                    map.getMapTeams().addHurtData(player.getUUID(),from.getUUID(),damage);
+                }
+            }
+        }
+    }
 }
