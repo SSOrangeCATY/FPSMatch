@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.cs;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,8 +23,11 @@ public class CSGameMap extends BaseMap {
     public static final int WARM_UP_TIME = 1200;
     private int waittingTime = 20;
     private int currentPauseTime = 0;
-    private  int roundTimeLimit = 115; // 回合时间限制，单位为秒
+    private int roundTimeLimit = 115; // 回合时间限制，单位为秒
     private int currentRoundTime = 0; // 当前回合已过时间
+    private boolean isDebug = true;
+    private boolean isStart = false;
+    private boolean isError = false;
     private boolean isPause = false;
     private boolean isWaiting = false;
     private boolean isWarmTime = false;
@@ -47,8 +51,8 @@ public class CSGameMap extends BaseMap {
 
     @Override
     public void tick() {
-        if (!checkPauseTime() && !checkWarmUpTime() && !checkWaitingTime() && !checkWinnerTime()) {
-            if(!isRoundTimeEnd()){
+        if (!checkPauseTime() && !checkWarmUpTime() && !checkWaitingTime() && !checkWinnerTime() && isStart) {
+            if(!isRoundTimeEnd() && !this.isDebug){
                 currentRoundTime++;
                 Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
                 for (String teamName : teamsLiving.keySet()){
@@ -66,6 +70,26 @@ public class CSGameMap extends BaseMap {
                 this.roundVictory("ct");
             }
         }
+    }
+
+    public void startGame(){
+        AtomicBoolean checkFlag = new AtomicBoolean(true);
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            Player player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if (player != null){
+                String team = this.getMapTeams().getTeamByPlayer(player);
+                if(team == null) checkFlag.set(false);
+            }else{
+                this.getMapTeams().playerLeave(uuid);
+                checkFlag.set(false);
+            }
+        }));
+
+        if (!checkFlag.get() && !this.isError) return;
+
+        this.getMapTeams().setTeamsSpawnPoints();
+        this.cleanupMap();
+        this.isWaiting = true;
     }
 
     public boolean checkPauseTime(){
@@ -90,12 +114,15 @@ public class CSGameMap extends BaseMap {
     }
 
     public boolean checkWinnerTime(){
-        if(this.isWaitingWinner && currentRoundTime < WINNER_WAITING_TIME){
-            this.currentRoundTime++;
-        }else{
-            isWaitingWinner = false;
-            this.startNewRound();
+        if(!this.victoryGoal()){
+            if(this.isWaitingWinner && currentRoundTime < WINNER_WAITING_TIME){
+                this.currentRoundTime++;
+            }else{
+                isWaitingWinner = false;
+                this.startNewRound();
+            }
         }
+
         return this.isWaitingWinner;
     }
 
@@ -132,13 +159,15 @@ public class CSGameMap extends BaseMap {
         teamScores.values().forEach((integer -> {
             isVictory.set(integer >= WINNER_ROUND);
         }));
-        return isVictory.get();
+        return isVictory.get() && !this.isDebug;
     }
 
     @Override
     public void initializeMap() {
-        // 初始化地图，设置重生点，准备武器等
-
+       if(!this.getMapTeams().checkSpawnPoints()) {
+           this.getServerLevel().getServer().sendSystemMessage(Component.literal("队伍出生点与队伍人数上限不一致"));
+           this.isError = true;
+       }
     }
 
     @Override
@@ -168,6 +197,8 @@ public class CSGameMap extends BaseMap {
     }
 
     private void resetGame() {
+        this.isError = false;
+        this.isStart = false;
         this.currentRoundTime = 0;
     }
 

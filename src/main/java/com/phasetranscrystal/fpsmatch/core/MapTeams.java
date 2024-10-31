@@ -60,24 +60,26 @@ public class MapTeams {
     }
 
     public void setTeamsSpawnPoints(){
-        if(!checkSpawnPoints()) return;
-        Random random = new Random();
-        this.playerTeams.forEach(((uuid, playerTeam) -> {
-            List<SpawnPointData> spawner = this.getSpawnPointsByTeam(playerTeam);
-            Player player = this.level.getPlayerByUUID(uuid);
-            if (player != null){
-                int rIndex = random.nextInt(0,spawner.size());
-                SpawnPointData data = spawner.get(rIndex);
-                spawner.remove(rIndex);
-                ((ServerPlayer) player).setRespawnPosition(data.getDimension(),data.getPosition(),data.getAngle(),data.isForced(),data.isSendMessage());
-            };
-        }));
+        if(checkSpawnPoints()) {
+            Random random = new Random();
+            this.playerTeams.forEach(((uuid, playerTeam) -> {
+                List<SpawnPointData> spawner = this.getSpawnPointsByTeam(playerTeam);
+                Player player = this.level.getPlayerByUUID(uuid);
+                if (player != null){
+                    int rIndex = random.nextInt(0,spawner.size());
+                    SpawnPointData data = spawner.get(rIndex);
+                    spawner.remove(rIndex);
+                    ((ServerPlayer) player).setRespawnPosition(data.getDimension(),data.getPosition(),data.getAngle(),data.isForced(),data.isSendMessage());
+                };
+            }));
+        }
     }
 
-    public void defineSpawnPoint(String teamName,SpawnPointData spawn){
-        this.spawnPoints.get(teamName).add(spawn);
+    public void defineSpawnPoint(String teamName, SpawnPointData spawn){
+        List<SpawnPointData> data = this.spawnPoints.getOrDefault(teamName,new ArrayList<>());
+        data.add(spawn);
+        this.spawnPoints.put(teamName,data);
     }
-
     public void resetSpawnPoints(String teamName){
         this.spawnPoints.remove(teamName);
     }
@@ -122,6 +124,17 @@ public class MapTeams {
         this.joinedPlayers.remove(player.getUUID());
     }
 
+    public void playerLeave(UUID player){
+        this.playerTeams.remove(player);
+        this.teamsLiving.forEach(((s, uuids) -> {
+            if(uuids.contains(player)){
+                this.teamsLiving.get(s).remove(player);
+            }
+        }));
+        this.joinedPlayers.remove(player);
+    }
+
+
     public void joinTeam(String teamName, Player player) {
         leaveTeam(player);
         if (checkTeam(teamName) && this.testTeamIsFull(teamName)) {
@@ -152,6 +165,10 @@ public class MapTeams {
 
     public List<PlayerTeam> getTeams(){
         return (List<PlayerTeam>) teams.values();
+    }
+
+    public List<String> getTeamsName(){
+        return teams.keySet().stream().toList();
     }
 
     @Nullable public PlayerTeam getTeamByName(String teamName){
