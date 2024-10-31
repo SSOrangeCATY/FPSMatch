@@ -1,0 +1,12 @@
+{
+  "commands.fpsm.create.success": "Map '%1$s' created successfully.",
+  "commands.fpsm.team.join.success": "%1$s joined team %2$s.",
+  "commands.fpsm.team.leave.success": "%1$s left the team.",
+  "commands.fpsm.team.invalidAction": "Invalid team action specified.",
+  "commands.fpsm.team.notFound": "Team not found.",
+  "commands.fpsm.map.notFound": "Map not found.",
+  "commands.fpsm.modify.spawn.add.success": "Spawn point for team %1$s added.",
+  "commands.fpsm.modify.spawn.clear.success": "Spawn points for team %1$s cleared.",
+  "commands.fpsm.modify.spawn.clearall.success": "All spawn points cleared.",
+  "commands.fpsm.modify.spawn.invalidAction": "Invalid spawn action specified."
+}

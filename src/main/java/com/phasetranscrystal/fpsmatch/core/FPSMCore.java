@@ -1,7 +1,11 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import net.minecraft.server.commands.TellRawCommand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -9,6 +13,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     public static final Map<String,BaseMap> games = new HashMap<>();
     @Nullable public static BaseMap getMapByPlayer(Player player){
@@ -32,4 +38,12 @@ public class FPSMCore {
     public static Set<String> getMapNames(){
         return games.keySet();
     }
+
+    @SubscribeEvent
+    public static void tick(TickEvent.ServerTickEvent event){
+        if(event.phase == TickEvent.Phase.END){
+            games.values().forEach((BaseMap::mapTick));
+        }
+    }
+
 }

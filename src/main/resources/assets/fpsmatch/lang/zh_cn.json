@@ -1,0 +1,12 @@
+{
+  "commands.fpsm.create.success": "地图 '%1$s' 创建成功。",
+  "commands.fpsm.team.join.success": "%1$s 加入了团队 %2$s。",
+  "commands.fpsm.team.leave.success": "%1$s 离开了团队。",
+  "commands.fpsm.team.invalidAction": "指定了无效的团队操作。",
+  "commands.fpsm.team.notFound": "未找到团队。",
+  "commands.fpsm.map.notFound": "未找到地图。",
+  "commands.fpsm.modify.spawn.add.success": "为团队 %1$s 添加了出生点。",
+  "commands.fpsm.modify.spawn.clear.success": "清除了团队 %1$s 的出生点。",
+  "commands.fpsm.modify.spawn.clearall.success": "清除了所有出生点。",
+  "commands.fpsm.modify.spawn.invalidAction": "指定了无效的出生点操作。"
+}

@@ -38,7 +38,7 @@ public abstract class BaseMap {
     }
 
     public boolean checkGameHasPlayer(Player player){
-        return this.mapTeams.getJoinedPlayers().contains(player.getUUID());
+        return this.mapTeams.getJoinedPlayers().contains(player.getUUID()) || getMapTeams().getTeamByPlayer(player) != null;
     }
 
     public abstract void victory();

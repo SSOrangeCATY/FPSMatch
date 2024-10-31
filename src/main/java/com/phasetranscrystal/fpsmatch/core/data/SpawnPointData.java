@@ -7,13 +7,12 @@ import net.minecraft.world.level.Level;
 import javax.annotation.Nullable;
 
 public class SpawnPointData {
-    ResourceKey<Level> dimension;BlockPos position; float angle; boolean forced; boolean sendMessage;
-    public SpawnPointData(ResourceKey<Level> pDimension, @Nullable BlockPos pPosition, float pAngle, boolean pForced, boolean pSendMessage){
+    ResourceKey<Level> dimension;BlockPos position; float pYaw; float pPitch;
+    public SpawnPointData(ResourceKey<Level> pDimension, @Nullable BlockPos pPosition, float pYaw, float pPitch){
         this.dimension = pDimension;
         this.position = pPosition;
-        this.angle = pAngle;
-        this.forced = pForced;
-        this.sendMessage = pSendMessage;
+        this.pYaw = pYaw;
+        this.pPitch = pPitch;
     }
 
     public ResourceKey<Level> getDimension() {
@@ -24,15 +23,11 @@ public class SpawnPointData {
         return position;
     }
 
-    public boolean isForced() {
-        return forced;
+    public float getPitch() {
+        return pPitch;
     }
 
-    public boolean isSendMessage() {
-        return sendMessage;
-    }
-
-    public float getAngle() {
-        return angle;
+    public float getYaw() {
+        return pYaw;
     }
 }
