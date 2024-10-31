@@ -60,7 +60,7 @@ public class MapTeams {
     }
 
     public List<SpawnPointData> getSpawnPointsByTeam(String team){
-        return this.spawnPoints.getOrDefault(team, new ArrayList<>(List.of(defaultSpawnPoints)));
+        return this.spawnPoints.get(team);
     }
 
     public void setTeamsSpawnPoints(){
@@ -69,10 +69,14 @@ public class MapTeams {
             this.playerTeams.forEach(((uuid, playerTeam) -> {
                 List<SpawnPointData> spawner = this.getSpawnPointsByTeam(playerTeam);
                 Player player = this.level.getPlayerByUUID(uuid);
-                if (player != null){
+                if (player != null && spawner.size() > 1){
                     int rIndex = random.nextInt(0,spawner.size());
                     SpawnPointData data = spawner.get(rIndex);
                     spawner.remove(rIndex);
+                    this.playersSpawnData.put(player.getUUID(),data);
+                }else if(player != null){
+                    SpawnPointData data = spawner.get(0);
+                    spawner.remove(0);
                     this.playersSpawnData.put(player.getUUID(),data);
                 };
             }));
@@ -337,7 +341,7 @@ public class MapTeams {
                     teams.updateTabData(player, teams.getTabData(player).addDeaths());
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.SPECTATOR);
-                    player.respawn();
+                    player.setRespawnPosition(player.level().dimension(),player.getOnPos(),0f,true,false);
                     event.setCanceled(true);
                 }
 

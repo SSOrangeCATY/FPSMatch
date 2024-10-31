@@ -47,7 +47,7 @@ public class CSGameMap extends BaseMap {
 
     @Override
     public void tick() {
-        if (!checkPauseTime() && !checkWarmUpTime() && !checkWaitingTime() && !checkWinnerTime() && isStart) {
+        if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime() & !checkWinnerTime() & isStart) {
             if(!isRoundTimeEnd() && !this.isDebug){
                 currentRoundTime++;
                 Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
@@ -89,21 +89,30 @@ public class CSGameMap extends BaseMap {
     public boolean checkPauseTime(){
         if(this.isPause && currentPauseTime < PAUSE_TIME){
             this.currentPauseTime++;
-        }else isPause = false;
+        }else {
+            currentPauseTime = 0;
+            isPause = false;
+        }
         return this.isPause;
     }
 
     public boolean checkWarmUpTime(){
         if(this.isWarmTime && currentPauseTime < WARM_UP_TIME){
             this.currentPauseTime++;
-        }else isWarmTime = false;
+        }else {
+            currentPauseTime = 0;
+            isWarmTime = false;
+        }
         return this.isWarmTime;
     }
 
     public boolean checkWaitingTime(){
         if(this.isWaiting && currentPauseTime < waittingTime){
             this.currentPauseTime++;
-        }else isWaiting = false;
+        }else {
+            currentPauseTime = 0;
+            isWaiting = false;
+        }
         return this.isWaiting;
     }
 
@@ -111,6 +120,7 @@ public class CSGameMap extends BaseMap {
         if(this.isWaitingWinner && currentRoundTime < WINNER_WAITING_TIME){
             this.currentRoundTime++;
         }else{
+            currentRoundTime = 0;
             isWaitingWinner = false;
         }
         return this.isWaitingWinner;
@@ -118,13 +128,6 @@ public class CSGameMap extends BaseMap {
 
     public boolean isRoundTimeEnd(){
         return this.currentRoundTime >= this.roundTimeLimit;
-    }
-
-    public boolean isStart(){
-        return isStart;
-    }
-    private void endCurrentRound() {
-        currentRoundTime = 0;
     }
 
     private void roundVictory(String teamName) {
@@ -196,7 +199,11 @@ public class CSGameMap extends BaseMap {
         this.teamScores.clear();
         this.isError = false;
         this.isStart = false;
+        this.isWaiting = false;
+        this.isWaitingWinner = false;
+        this.isWarmTime = false;
         this.currentRoundTime = 0;
+        this.currentPauseTime = 0;
         this.getMapTeams().reset();
     }
     public void syncToClient() {
