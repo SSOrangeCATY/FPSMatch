@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.network.PacketDistributor;
@@ -179,6 +181,7 @@ public class CSGameMap extends BaseMap {
             if(player != null){
                 player.heal(player.getMaxHealth());
                 player.setGameMode(GameType.ADVENTURE);
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 400, 255, false, false));
                 this.clearPlayerInventory(player);
                 this.teleportPlayerToReSpawnPoint(player);
             }
@@ -208,6 +211,7 @@ public class CSGameMap extends BaseMap {
         this.isWarmTime = false;
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
+        this.syncToClient();
         this.getMapTeams().reset();
     }
 

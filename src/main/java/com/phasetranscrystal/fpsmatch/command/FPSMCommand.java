@@ -63,11 +63,10 @@ public class FPSMCommand {
     private SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context){
         SpawnPointData data;
         Entity entity = context.getSource().getEntity();
+        BlockPos pos = BlockPos.containing(context.getSource().getPosition()).above();
         if(entity!=null){
-            data = new SpawnPointData(context.getSource().getLevel().dimension(), entity.getOnPos().above(1),entity.getXRot(),entity.getYRot());
+            data = new SpawnPointData(context.getSource().getLevel().dimension(),pos,entity.getXRot(),entity.getYRot());
         }else{
-            Vec3 vec3 = context.getSource().getPosition();
-            BlockPos pos = new BlockPos((int) vec3.x, (int) vec3.y + 1, (int) vec3.z);
             data = new SpawnPointData(context.getSource().getLevel().dimension(),pos,0f,0f);
         }
         return data;

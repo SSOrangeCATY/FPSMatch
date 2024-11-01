@@ -3,7 +3,9 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.client.renderer.EffectInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.commands.EffectCommands;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -361,7 +363,6 @@ public class MapTeams {
                     player.setRespawnPosition(player.level().dimension(),player.getOnPos().above(),0f,true,false);
                     event.setCanceled(true);
                 }
-
                 if(event.getSource().getEntity() instanceof ServerPlayer killer){
                     if(teams.getTeamByPlayer(killer) != null){
                         teams.updateTabData(killer, teams.getTabData(killer).addKills());
