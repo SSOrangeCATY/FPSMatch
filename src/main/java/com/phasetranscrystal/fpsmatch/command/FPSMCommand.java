@@ -4,7 +4,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -14,11 +13,8 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.commands.GiveCommand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -29,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 public class FPSMCommand {
     public void onRegisterCommands(RegisterCommandsEvent event) {
@@ -69,10 +64,10 @@ public class FPSMCommand {
         SpawnPointData data;
         Entity entity = context.getSource().getEntity();
         if(entity!=null){
-            data = new SpawnPointData(context.getSource().getLevel().dimension(), entity.getOnPos(),entity.getXRot(),entity.getYRot());
+            data = new SpawnPointData(context.getSource().getLevel().dimension(), entity.getOnPos().above(1),entity.getXRot(),entity.getYRot());
         }else{
             Vec3 vec3 = context.getSource().getPosition();
-            BlockPos pos = new BlockPos((int) vec3.x, (int) vec3.y, (int) vec3.z);
+            BlockPos pos = new BlockPos((int) vec3.x, (int) vec3.y + 1, (int) vec3.z);
             data = new SpawnPointData(context.getSource().getLevel().dimension(),pos,0f,0f);
         }
         return data;
@@ -87,20 +82,25 @@ public class FPSMCommand {
             switch (action) {
                 case "start":
                     map.startGame();
+                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.start.success", mapName), true);
                     break;
                 case "reset":
                     map.resetGame();
+                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.reset.success", mapName), true);
                     break;
                 case "newround":
                     map.startNewRound();
+                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.newround.success", mapName), true);
                     break;
                 case "cleanup":
                     map.cleanupMap();
+                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.cleanup.success", mapName), true);
                     break;
                 default:
                     return 0;
             }
-        }else{
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound", mapName));
             return 0;
         }
         return 1;
@@ -130,9 +130,6 @@ public class FPSMCommand {
                         } else {
                             context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", team));
                         }
-                        break;
-                    case "start":
-                        map.startGame();
                         break;
                     default:
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.invalidAction"));

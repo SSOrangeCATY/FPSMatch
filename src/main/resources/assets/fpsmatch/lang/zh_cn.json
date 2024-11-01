@@ -1,4 +1,8 @@
 {
+  "commands.fpsm.debug.start.success": "地图 '%1$s' 的游戏已启动。",
+  "commands.fpsm.debug.reset.success": "地图 '%1$s' 的游戏已重置。",
+  "commands.fpsm.debug.newround.success": "地图 '%1$s' 的新回合已开始。",
+  "commands.fpsm.debug.cleanup.success": "地图 '%1$s' 已清理。",
   "commands.fpsm.create.success": "地图 '%1$s' 创建成功。",
   "commands.fpsm.team.join.success": "%1$s 加入了团队 %2$s。",
   "commands.fpsm.team.leave.success": "%1$s 离开了团队。",

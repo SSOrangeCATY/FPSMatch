@@ -4,18 +4,12 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
@@ -30,7 +24,7 @@ public class CSGameMap extends BaseMap {
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
-    private final boolean isDebug = false;
+    private final boolean isDebug = true;
     private boolean isStart = false;
     private boolean isError = false;
     private boolean isPause = false;
@@ -47,26 +41,20 @@ public class CSGameMap extends BaseMap {
 
     @Override
     public void tick() {
-        if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime() & !checkWinnerTime() & isStart) {
-            if(!isRoundTimeEnd() && !this.isDebug){
-                currentRoundTime++;
-                Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
-                for (String teamName : teamsLiving.keySet()){
-                    if(teamsLiving.get(teamName).isEmpty()){
-                        teamsLiving.remove(teamName);
+        if(isStart){
+            if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
+                if(!isRoundTimeEnd()){
+                    if(!this.isDebug) this.checkRoundVictory();
+                }else{
+                    if(!checkWinnerTime()){
+                        this.roundVictory("ct");
+                    }else{
+                        this.startNewRound();
                     }
                 }
-
-                if(teamsLiving.keySet().size() == 1) {
-                    String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-                    this.roundVictory(winnerTeam);
-                }
-
-            }else if(!this.isDebug){
-                this.roundVictory("ct");
             }
+            this.syncToClient();
         }
-        this.syncToClient();
     }
 
     public void startGame(){
@@ -86,11 +74,14 @@ public class CSGameMap extends BaseMap {
         startNewRound();
     }
 
+    public boolean canRestTime(){
+        return !this.isPause && !this.isWarmTime && !this.isWaiting && !this.isWaitingWinner;
+    }
     public boolean checkPauseTime(){
         if(this.isPause && currentPauseTime < PAUSE_TIME){
             this.currentPauseTime++;
-        }else {
-            currentPauseTime = 0;
+        }else{
+            if(this.canRestTime()) currentPauseTime = 0;
             isPause = false;
         }
         return this.isPause;
@@ -100,7 +91,7 @@ public class CSGameMap extends BaseMap {
         if(this.isWarmTime && currentPauseTime < WARM_UP_TIME){
             this.currentPauseTime++;
         }else {
-            currentPauseTime = 0;
+            if(this.canRestTime()) currentPauseTime = 0;
             isWarmTime = false;
         }
         return this.isWarmTime;
@@ -110,36 +101,55 @@ public class CSGameMap extends BaseMap {
         if(this.isWaiting && currentPauseTime < waittingTime){
             this.currentPauseTime++;
         }else {
-            currentPauseTime = 0;
+            if(this.canRestTime()) currentPauseTime = 0;
             isWaiting = false;
         }
         return this.isWaiting;
     }
 
     public boolean checkWinnerTime(){
-        if(this.isWaitingWinner && currentRoundTime < WINNER_WAITING_TIME){
-            this.currentRoundTime++;
+        if(this.isWaitingWinner && currentPauseTime < WINNER_WAITING_TIME){
+            this.currentPauseTime++;
         }else{
-            currentRoundTime = 0;
-            isWaitingWinner = false;
+            if(this.canRestTime()) currentPauseTime = 0;
+            // 在StartNewRound方法中更改
         }
         return this.isWaitingWinner;
     }
 
+
+    public void checkRoundVictory(){
+        Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+        for (String teamName : teamsLiving.keySet()){
+            if(teamsLiving.get(teamName).isEmpty()){
+                teamsLiving.remove(teamName);
+            }
+        }
+
+        if(teamsLiving.keySet().size() == 1) {
+            String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
+            this.roundVictory(winnerTeam);
+        }
+    }
     public boolean isRoundTimeEnd(){
+        if(this.currentRoundTime < this.roundTimeLimit){
+            this.currentRoundTime++;
+        }
         return this.currentRoundTime >= this.roundTimeLimit;
     }
 
     private void roundVictory(String teamName) {
+        this.isWaitingWinner = true;
         this.teamScores.put(teamName,this.teamScores.getOrDefault(teamName,0) + 1);
     }
 
     public void startNewRound() {
+        this.isStart = true;
+        this.isWaiting = true;
+        this.isWaitingWinner = false;
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().setTeamsSpawnPoints();
         this.cleanupMap();
-        this.isStart = true;
-        this.isWaiting = true;
         // 可以在这里添加更多的逻辑，比如重置得分板、装备武器等
     }
 
@@ -178,7 +188,9 @@ public class CSGameMap extends BaseMap {
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
         SpawnPointData data = this.getMapTeams().getPlayersSpawnData().get(player.getUUID());
         BlockPos pos = data.getPosition();
-        player.teleportTo(Objects.requireNonNullElse(this.getServerLevel().getServer().getLevel(data.getDimension()),this.getServerLevel()),pos.getX(),pos.getY(),pos.getZ(),data.getYaw(),data.getPitch());
+        float f = Mth.wrapDegrees(data.getYaw());
+        float f1 = Mth.wrapDegrees(data.getPitch());
+        player.teleportTo(Objects.requireNonNullElse(this.getServerLevel().getServer().getLevel(data.getDimension()),this.getServerLevel()),pos.getX(),pos.getY(),pos.getZ(),f, f1);
     }
 
     public void clearPlayerInventory(ServerPlayer player){
@@ -198,8 +210,9 @@ public class CSGameMap extends BaseMap {
         this.currentPauseTime = 0;
         this.getMapTeams().reset();
     }
+
     public void syncToClient() {
-        CSGameSettingsPacket packet = new CSGameSettingsPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0),this.currentPauseTime,this.currentRoundTime,this.isDebug,this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
+        CSGameSettingsPacket packet = new CSGameSettingsPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0), this.currentPauseTime /20,this.currentRoundTime /20,this.isDebug,this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
         FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), packet);
     }
 }

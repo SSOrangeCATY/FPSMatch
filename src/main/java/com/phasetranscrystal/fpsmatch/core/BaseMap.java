@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+
 import java.util.List;
 
 public abstract class BaseMap {

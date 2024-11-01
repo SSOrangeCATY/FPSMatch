@@ -1,12 +1,16 @@
 {
+  "commands.fpsm.debug.start.success": "The game on map '%1$s' has started.",
+  "commands.fpsm.debug.reset.success": "The game on map '%1$s' has been reset.",
+  "commands.fpsm.debug.newround.success": "A new round has started on map '%1$s'.",
+  "commands.fpsm.debug.cleanup.success": "Map '%1$s' has been cleaned up.",
   "commands.fpsm.create.success": "Map '%1$s' created successfully.",
-  "commands.fpsm.team.join.success": "%1$s joined team %2$s.",
+  "commands.fpsm.team.join.success": "%1$s joined the team %2$s.",
   "commands.fpsm.team.leave.success": "%1$s left the team.",
-  "commands.fpsm.team.invalidAction": "Invalid team action specified.",
+  "commands.fpsm.team.invalidAction": "Specified an invalid team action.",
   "commands.fpsm.team.notFound": "Team not found.",
   "commands.fpsm.map.notFound": "Map not found.",
-  "commands.fpsm.modify.spawn.add.success": "Spawn point for team %1$s added.",
-  "commands.fpsm.modify.spawn.clear.success": "Spawn points for team %1$s cleared.",
+  "commands.fpsm.modify.spawn.add.success": "Spawn point added for team %1$s.",
+  "commands.fpsm.modify.spawn.clear.success": "Spawn points cleared for team %1$s.",
   "commands.fpsm.modify.spawn.clearall.success": "All spawn points cleared.",
-  "commands.fpsm.modify.spawn.invalidAction": "Invalid spawn action specified."
+  "commands.fpsm.modify.spawn.invalidAction": "Specified an invalid spawn point action."
 }
