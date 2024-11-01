@@ -7,11 +7,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
@@ -219,11 +221,19 @@ public class MapTeams {
         return playerStats.getOrDefault(player.getUUID(), new TabData());
     }
 
+    public List<UUID> getSameTeamPlayerUUIDs(Player player){
+        List<UUID> uuids = new ArrayList<>();
+        this.playerTeams.forEach(((uuid, s) -> {
+            if(!uuid.equals(player.getUUID()) && this.playerTeams.get(uuid).equals(s)){
+                uuids.add(uuid);
+            }
+        }));
+        return uuids;
+    }
+
     public void updateTabData(Player player, TabData tabData) {
         playerStats.put(player.getUUID(), tabData);
     }
-
-
 
     public void addHurtData(UUID targetId, UUID attackerId, float damage) {
         Map<UUID, Float> hurtDataMap = livingHurtData.getOrDefault(attackerId, new HashMap<>());
@@ -339,7 +349,16 @@ public class MapTeams {
                     teams.updateTabData(player, teams.getTabData(player).addDeaths());
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.SPECTATOR);
-                    player.setRespawnPosition(player.level().dimension(),player.getOnPos(),0f,true,false);
+                    List<UUID> uuids = teams.getSameTeamPlayerUUIDs(player);
+                    Entity entity = null;
+                    if(uuids.size() > 1){
+                        Random random = new Random();
+                        entity = map.getServerLevel().getEntity(uuids.get(random.nextInt(0,uuids.size())));
+                    }else if(!uuids.isEmpty()){
+                         entity = map.getServerLevel().getEntity(uuids.get(0));
+                    }
+                    if(entity != null) player.setCamera(entity);
+                    player.setRespawnPosition(player.level().dimension(),player.getOnPos().above(),0f,true,false);
                     event.setCanceled(true);
                 }
 
@@ -368,6 +387,24 @@ public class MapTeams {
             }
         }
     }
+
+    @SubscribeEvent
+    public static void onPlayerOffline(PlayerEvent.PlayerLoggedOutEvent event){
+        if(event.getEntity() instanceof ServerPlayer player){
+            BaseMap map = FPSMCore.getMapByPlayer(player);
+            if(map != null){
+                MapTeams teams = map.getMapTeams();
+                String playerTeam = teams.getTeamByPlayer(player);
+                if(playerTeam != null) {
+                    teams.getTeamsLiving().get(playerTeam).remove(player.getUUID());
+                    teams.updateTabData(player, teams.getTabData(player).addDeaths());
+                    player.heal(player.getMaxHealth());
+                    player.setGameMode(GameType.SPECTATOR);
+                }
+            }
+        }
+    }
+
     @SubscribeEvent
     public void onLivingHurtEvent(LivingHurtEvent event) {
         if (event.getEntity() instanceof Player player) {

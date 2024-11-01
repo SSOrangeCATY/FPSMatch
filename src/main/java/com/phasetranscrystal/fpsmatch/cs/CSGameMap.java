@@ -24,7 +24,7 @@ public class CSGameMap extends BaseMap {
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
-    private final boolean isDebug = true;
+    private boolean isDebug = false;
     private boolean isStart = false;
     private boolean isError = false;
     private boolean isPause = false;
@@ -48,7 +48,7 @@ public class CSGameMap extends BaseMap {
                 }else{
                     if(!checkWinnerTime()){
                         this.roundVictory("ct");
-                    }else{
+                    }else if(this.currentPauseTime >= WINNER_WAITING_TIME){
                         this.startNewRound();
                     }
                 }
