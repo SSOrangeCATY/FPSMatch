@@ -37,17 +37,23 @@ public abstract class BaseMap {
         }
     }
 
+    public abstract void startGame();
+
     public boolean checkGameHasPlayer(Player player){
-        return this.mapTeams.getJoinedPlayers().contains(player.getUUID()) || getMapTeams().getTeamByPlayer(player) != null;
+        boolean flag = false;
+        if(!this.getMapTeams().getJoinedPlayers().contains(player.getUUID()) && getMapTeams().getTeamByPlayer(player) != null){
+            flag = true;
+            this.getMapTeams().playerJoin(player);
+        }else if(this.getMapTeams().getJoinedPlayers().contains(player.getUUID())){
+            flag = true;
+        }
+        return flag;
     }
-
+    public  void startNewRound(){}
     public abstract void victory();
-
     public abstract boolean victoryGoal();
-
-    public abstract void initializeMap();
-
     public abstract void cleanupMap();
+    public abstract void resetGame();
 
     public MapTeams getMapTeams() {
         return mapTeams;

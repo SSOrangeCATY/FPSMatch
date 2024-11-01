@@ -53,7 +53,7 @@ public class MapTeams {
                     check.set(false);
                 }else{
                     check.set(spawnPoints.size() >= p);
-                };
+                }
             }
         });
         return check.get();
@@ -78,7 +78,7 @@ public class MapTeams {
                     SpawnPointData data = spawner.get(0);
                     spawner.remove(0);
                     this.playersSpawnData.put(player.getUUID(),data);
-                };
+                }
             }));
         }
     }

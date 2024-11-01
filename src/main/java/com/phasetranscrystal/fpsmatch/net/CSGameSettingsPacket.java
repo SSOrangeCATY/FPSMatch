@@ -7,17 +7,17 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class CSGameSettingsPacket {
-    private int cTWinnerRounds;
-    private int tWinnerRounds;
-    private int pauseTime;
-    private int roundTime;
-    private boolean isDebug;
-    private boolean isStart;
-    private boolean isError;
-    private boolean isPause;
-    private boolean isWaiting;
+    private final int cTWinnerRounds;
+    private final int tWinnerRounds;
+    private final int pauseTime;
+    private final int roundTime;
+    private final boolean isDebug;
+    private final boolean isStart;
+    private final boolean isError;
+    private final boolean isPause;
+    private final boolean isWaiting;
     private boolean isWarmTime;
-    private boolean isWaitingWinner;
+    private final boolean isWaitingWinner;
 
     public CSGameSettingsPacket(int cTWinnerRounds,
                                 int tWinnerRounds,

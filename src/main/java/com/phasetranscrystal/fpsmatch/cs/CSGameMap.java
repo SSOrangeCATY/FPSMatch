@@ -26,11 +26,11 @@ public class CSGameMap extends BaseMap {
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
-    private int waittingTime = 400;
+    private final int waittingTime = 400;
     private int currentPauseTime = 0;
-    private int roundTimeLimit = 115 * 20;
+    private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
-    private boolean isDebug = false;
+    private final boolean isDebug = false;
     private boolean isStart = false;
     private boolean isError = false;
     private boolean isPause = false;
@@ -134,7 +134,7 @@ public class CSGameMap extends BaseMap {
         this.teamScores.put(teamName,this.teamScores.getOrDefault(teamName,0) + 1);
     }
 
-    private void startNewRound() {
+    public void startNewRound() {
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().setTeamsSpawnPoints();
         this.cleanupMap();
@@ -156,14 +156,6 @@ public class CSGameMap extends BaseMap {
             isVictory.set(integer >= WINNER_ROUND);
         }));
         return isVictory.get() && !this.isDebug;
-    }
-
-    @Override
-    public void initializeMap() {
-       if(!this.getMapTeams().checkSpawnPoints()) {
-           this.getServerLevel().getServer().sendSystemMessage(Component.literal("队伍出生点与队伍人数上限不一致"));
-           this.isError = true;
-       }
     }
 
     @Override
@@ -195,7 +187,7 @@ public class CSGameMap extends BaseMap {
         player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
-    private void resetGame() {
+    public void resetGame() {
         this.teamScores.clear();
         this.isError = false;
         this.isStart = false;

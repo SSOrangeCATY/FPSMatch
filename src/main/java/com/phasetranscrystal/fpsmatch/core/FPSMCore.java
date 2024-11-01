@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,8 +23,8 @@ public class FPSMCore {
          games.values().forEach((baseMap -> {
             if(baseMap.checkGameHasPlayer(player)){
                 map.set(baseMap);
-            };
-        }));
+            }
+         }));
          return map.get();
     }
 
@@ -35,8 +36,8 @@ public class FPSMCore {
        return games.getOrDefault(name,null);
     }
 
-    public static Set<String> getMapNames(){
-        return games.keySet();
+    public static List<String> getMapNames(){
+        return games.keySet().stream().toList();
     }
 
     @SubscribeEvent
