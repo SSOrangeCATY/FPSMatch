@@ -1,6 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -15,10 +18,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
-    public static final Map<String,BaseMap> games = new HashMap<>();
+    private static final Map<String,BaseMap> GAMES = new HashMap<>();
+    private static final Map<String, Function3<ServerLevel,List<String>,SpawnPointData,BaseMap>> REGISTRY = new HashMap<>();
+
     @Nullable public static BaseMap getMapByPlayer(Player player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
-         games.values().forEach((baseMap -> {
+        GAMES.values().forEach((baseMap -> {
             if(baseMap.checkGameHasPlayer(player)){
                 map.set(baseMap);
             }
@@ -27,22 +32,42 @@ public class FPSMCore {
     }
 
     public static void registerMap(String mapName ,BaseMap map){
-        games.put(mapName,map);
+        if(REGISTRY.containsKey(map.getType())) {
+            GAMES.put(mapName,map);
+        }else{
+            FPSMatch.LOGGER.error("error : unregister game type " + map.getType());
+        }
     }
 
     @Nullable public static BaseMap getMapByName(String name){
-       return games.getOrDefault(name,null);
+       return GAMES.getOrDefault(name,null);
     }
 
     public static List<String> getMapNames(){
-        return games.keySet().stream().toList();
+        return GAMES.keySet().stream().toList();
+    }
+
+    public static boolean checkGameType(String mapType){
+       return REGISTRY.containsKey(mapType);
+    }
+
+    @Nullable public static Function3<ServerLevel, List<String>, SpawnPointData, BaseMap> getPreBuildGame(String mapType){
+         if(checkGameType(mapType)) return REGISTRY.get(mapType);
+         return null;
+    }
+
+    public static void registerGameType(String typeName, Function3<ServerLevel,List<String>,SpawnPointData,BaseMap> map){
+        REGISTRY.put(typeName,map);
+    }
+
+    public static List<String> getGameTypes(){
+        return REGISTRY.keySet().stream().toList();
     }
 
     @SubscribeEvent
     public static void tick(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
-            games.values().forEach((BaseMap::mapTick));
+            GAMES.values().forEach((BaseMap::mapTick));
         }
     }
-
 }

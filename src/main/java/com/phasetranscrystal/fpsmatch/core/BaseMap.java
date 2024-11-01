@@ -17,12 +17,6 @@ public abstract class BaseMap {
         this.mapTeams = new MapTeams(serverLevel,teams,spawnPoint);
     }
 
-    public BaseMap(ServerLevel serverLevel, MapTeams teams, SpawnPointData spawnPoint) {
-        this.serverLevel = serverLevel;
-        this.mapTeams = teams;
-        this.spawnPoint = spawnPoint;
-    }
-
     public final void mapTick(){
         checkForVictory();
         tick();
@@ -67,4 +61,6 @@ public abstract class BaseMap {
     public SpawnPointData getSpawnPoint() {
         return spawnPoint;
     }
+
+    public abstract String getType();
 }

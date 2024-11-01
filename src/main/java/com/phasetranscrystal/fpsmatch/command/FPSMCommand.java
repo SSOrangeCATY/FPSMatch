@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
@@ -15,11 +16,12 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +34,10 @@ public class FPSMCommand {
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm")
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
-                                .then(Commands.argument("mapName", StringArgumentType.string())
-                                        .executes(this::handleCreateMapWithoutSpawnPoint)))
+                                .then(Commands.argument("gameType", StringArgumentType.string())
+                                        .suggests(new GameTypesSuggestionProvider())
+                                        .then(Commands.argument("mapName", StringArgumentType.string())
+                                                .executes(this::handleCreateMapWithoutSpawnPoint))))
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                 .suggests(new MapNameSuggestionProvider())
@@ -55,9 +59,15 @@ public class FPSMCommand {
     }
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
-        FPSMCore.registerMap(mapName, new CSGameMap(context.getSource().getLevel(), getSpawnPointData(context)));
-        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
-        return 1;
+        String type = StringArgumentType.getString(context, "gameType");
+        Function3<ServerLevel, List<String>, SpawnPointData, BaseMap> game = FPSMCore.getPreBuildGame(type);
+        if(game != null){
+            FPSMCore.registerMap(mapName, game.apply(context.getSource().getLevel(),new ArrayList<>(), getSpawnPointData(context)));
+            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
+            return 1;
+        }else{
+            return 0;
+        }
     }
 
     private SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context){
@@ -184,6 +194,13 @@ public class FPSMCommand {
         return 1;
     }
 
+
+    private static class GameTypesSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
+        @Override
+        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, FPSMCore.getGameTypes()));
+        }
+    }
 
     private static class TeamsSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
         @Override

@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
@@ -40,7 +41,7 @@ import org.slf4j.Logger;
 @Mod(FPSMatch.MODID)
 public class FPSMatch {
     public static final String MODID = "fpsmatch";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
     private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation("fpsmatch", "main"),
@@ -54,6 +55,7 @@ public class FPSMatch {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
+        MapRegister.register();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

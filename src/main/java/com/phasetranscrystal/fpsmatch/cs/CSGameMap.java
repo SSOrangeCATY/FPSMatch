@@ -215,6 +215,11 @@ public class CSGameMap extends BaseMap {
         this.getMapTeams().reset();
     }
 
+    @Override
+    public String getType() {
+        return "cs";
+    }
+
     public void syncToClient() {
         CSGameSettingsPacket packet = new CSGameSettingsPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0), this.currentPauseTime /20,this.currentRoundTime /20,this.isDebug,this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
         FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), packet);
