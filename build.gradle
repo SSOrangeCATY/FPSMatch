@@ -152,20 +152,27 @@ repositories {
     }
 }
 
-configurations {
-    library
-    implementation.extendsFrom library
-}
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"// Modern UI core framework
-    implementation "curse.maven:modern-ui-${modernui_path}"
-    library "icyllis.modernui:ModernUI-Core:${modernui_version}"
-    library "icyllis.modernui:ModernUI-Markdown:${modernui_version}"
-//    implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}.+")
-
-    // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}")
-    // compileOnly fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}")
-    // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}")
+    minecraftLibrary("icyllis.modernui:ModernUI-Core:${modernui_core_version}") {
+        exclude group: "org.apache.logging.log4j", module: "log4j-core"
+        exclude group: "org.apache.logging.log4j", module: "log4j-api"
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
+        exclude group: "com.google.code.findbugs", module: "jsr305"
+        exclude group: "org.jetbrains", module: "annotations"
+        exclude group: "com.ibm.icu", module: "icu4j"
+        exclude group: "it.unimi.dsi", module: "fastutil"
+    }
+    minecraftLibrary("icyllis.modernui:ModernUI-Markdown:${modernui_core_version}") {
+        exclude group: "org.apache.logging.log4j", module: "log4j-core"
+        exclude group: "org.apache.logging.log4j", module: "log4j-api"
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
+        exclude group: "com.google.code.findbugs", module: "jsr305"
+        exclude group: "org.jetbrains", module: "annotations"
+        exclude group: "com.ibm.icu", module: "icu4j"
+        exclude group: "it.unimi.dsi", module: "fastutil"
+    }
+    implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
