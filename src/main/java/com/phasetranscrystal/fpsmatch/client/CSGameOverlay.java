@@ -1,16 +1,16 @@
 package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.joml.Quaternionf;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public  class CSGameOverlay implements IGuiOverlay {
     public static final int PAUSE_TIME = 120;
@@ -18,8 +18,6 @@ public  class CSGameOverlay implements IGuiOverlay {
     public static final int WARM_UP_TIME = 60;
     public static final int WAITING_TIME = 20;
     public static final int ROUND_TIME_LIMIT = 115;
-
-    public static Map<UUID, TabData> tabStats = new HashMap<>();
     public static int cTWinnerRounds;
     public static int tWinnerRounds;
     public static int pauseTime;
@@ -44,20 +42,10 @@ public  class CSGameOverlay implements IGuiOverlay {
         guiGraphics.fillGradient((screenWidth / 2) - 16, 2, (screenWidth / 2) + 16, 15, -1072689136, -804253680);
         guiGraphics.fillGradient(((screenWidth / 2) - 16), 16, (screenWidth / 2) - 1, 35, -1072689136, noColor);
         guiGraphics.fillGradient((screenWidth / 2) + 1, 16, ((screenWidth / 2) + 16), 35, -1072689136, noColor);
-        guiGraphics.drawString(font, String.valueOf(cTWinnerRounds), (screenWidth / 2) - 8 - (font.width(String.valueOf(cTWinnerRounds)) / 2), 20, textCTWinnerRoundsColor,false);
-        guiGraphics.drawString(font,String.valueOf(tWinnerRounds), (screenWidth / 2) + 9 - (font.width(String.valueOf(tWinnerRounds)) / 2), 20, textTWinnerRoundsColor,false);
+        guiGraphics.drawString(font, String.valueOf(cTWinnerRounds), (screenWidth / 2) - 9 - (font.width(String.valueOf(cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
+        guiGraphics.drawString(font,String.valueOf(tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
         String roundTime = getCSGameTime();
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
-
-       /* guiGraphics.drawString(font,"Pause Time: " + pauseTime, 10, 40, 0xFFFFFF);
-        guiGraphics.drawString(font,"Round Time: " + roundTime, 10, 55, 0xFFFFFF);
-        guiGraphics.drawString(font,"Debug: " + isDebug, 10, 70, 0xFFFFFF);
-        guiGraphics.drawString(font,"Start: " + isStart, 10, 85, 0xFFFFFF);
-        guiGraphics.drawString(font,"Error: " + isError, 10, 100, 0xFFFFFF);
-        guiGraphics.drawString(font,"Pause: " + isPause, 10, 115, 0xFFFFFF);
-        guiGraphics.drawString(font,"Waiting: " + isWaiting, 10, 130, 0xFFFFFF);
-        guiGraphics.drawString(font,"Warm Time: " + isWarmTime, 10, 145, 0xFFFFFF);
-        guiGraphics.drawString(font,"Waiting Winner: " + isWaitingWinner, 10, 160, 0xFFFFFF);*/
     }
 
 
