@@ -11,7 +11,6 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -21,7 +20,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,6 +102,10 @@ public class FPSMCommand {
                 case "cleanup":
                     map.cleanupMap();
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.cleanup.success", mapName), true);
+                    break;
+                case "switch":
+                    boolean debug = map.switchDebugMode();
+                    context.getSource().sendSuccess(() -> Component.literal("Debug Mode : "+ debug), true);
                     break;
                 default:
                     return 0;
@@ -227,7 +229,7 @@ public class FPSMCommand {
     private static class ActionDebugSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
         @Override
         public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, List.of("start","reset","newround","cleanup")));
+            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, List.of("start","reset","newround","cleanup","switch")));
         }
     }
     private static class ActionTeamSuggestionProvider implements SuggestionProvider<CommandSourceStack> {

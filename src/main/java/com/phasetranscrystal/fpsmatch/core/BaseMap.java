@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.List;
 
 public abstract class BaseMap {
+    private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private final SpawnPointData spawnPoint;
     private final MapTeams mapTeams;
@@ -20,7 +21,10 @@ public abstract class BaseMap {
     public final void mapTick(){
         checkForVictory();
         tick();
+        syncToClient();
     }
+
+   public abstract void syncToClient();
 
     public void tick(){
     }
@@ -63,4 +67,13 @@ public abstract class BaseMap {
     }
 
     public abstract String getType();
+
+    public boolean isDebug() {
+        return isDebug;
+    }
+
+    public boolean switchDebugMode(){
+        this.isDebug = !this.isDebug;
+        return this.isDebug;
+    }
 }

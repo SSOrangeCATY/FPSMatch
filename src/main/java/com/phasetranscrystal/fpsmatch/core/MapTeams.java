@@ -397,7 +397,7 @@ public class MapTeams {
                 MapTeams teams = map.getMapTeams();
                 String playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {
-                    teams.getTeamsLiving().get(playerTeam).remove(player.getUUID());
+                    teams.getTeamsLiving().getOrDefault(playerTeam,new ArrayList<>()).remove(player.getUUID());
                     teams.updateTabData(player, teams.getTabData(player).addDeaths());
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.SPECTATOR);
