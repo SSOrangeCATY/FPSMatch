@@ -7,6 +7,6 @@ public class MapRegister {
         FPSMCore.registerGameType("cs",(serverLevel, stringList) -> new CSGameMap(serverLevel,"cs"),true);
         FPSMCore.registerGameType("apex",(serverLevel, stringList) -> new CSGameMap(serverLevel,"apex"),false);
         FPSMCore.registerGameType("valorant",(serverLevel, stringList) -> new CSGameMap(serverLevel,"valorant"),true);
-        FPSMCore.registerGameType("hunt:showdown",(serverLevel, stringList) -> new CSGameMap(serverLevel,"hunt:showdown"),true);
+        FPSMCore.registerGameType("hunt:showdown",(serverLevel, stringList) -> new CSGameMap(serverLevel,"hunt_showdown"),true);
     }
 }
