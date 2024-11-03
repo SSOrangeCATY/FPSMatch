@@ -1,9 +1,17 @@
 package com.phasetranscrystal.fpsmatch.client;
 
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.client.resource.index.ClientGunIndex;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
@@ -36,6 +44,8 @@ public  class CSGameOverlay implements IGuiOverlay {
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
         guiGraphics.pose().pushPose();
         guiGraphics.fillGradient((screenWidth / 2) - 16, 2, (screenWidth / 2) + 16, 15, -1072689136, -804253680);
         guiGraphics.fillGradient(((screenWidth / 2) - 16), 16, (screenWidth / 2) - 1, 35, -1072689136, noColor);

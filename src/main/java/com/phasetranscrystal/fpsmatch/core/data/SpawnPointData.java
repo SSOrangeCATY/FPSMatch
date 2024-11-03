@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
+import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -14,7 +15,6 @@ public class SpawnPointData {
         this.pYaw = pYaw;
         this.pPitch = pPitch;
     }
-
     public ResourceKey<Level> getDimension() {
         return dimension;
     }

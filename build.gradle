@@ -98,11 +98,15 @@ minecraft {
         }
 
         client {
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
         }
 
         server {
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             property 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'
         }
@@ -150,6 +154,7 @@ repositories {
         name 'IzzelAliz Maven'
         url 'https://maven.izzel.io/releases/'
     }
+
 }
 
 dependencies {
@@ -173,6 +178,8 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
+
+    implementation fg.deobf('curse.maven:timeless-and-classics-zero-1028108:5529117-sources-5529578')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
