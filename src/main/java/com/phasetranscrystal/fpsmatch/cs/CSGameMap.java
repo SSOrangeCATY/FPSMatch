@@ -34,8 +34,8 @@ public class CSGameMap extends BaseMap {
     private boolean isWaitingWinner = false;
     private final Map<String,Integer> teamScores = new HashMap<>();
 
-    public CSGameMap(ServerLevel serverLevel, SpawnPointData spawnPoint) {
-        super(serverLevel, List.of("ct","t"), spawnPoint);
+    public CSGameMap(ServerLevel serverLevel, String gameType) {
+        super(serverLevel, List.of("ct","t"), gameType);
         this.getMapTeams().setTeamPlayerLimit("ct",10);
         this.getMapTeams().setTeamPlayerLimit("t",10);
     }

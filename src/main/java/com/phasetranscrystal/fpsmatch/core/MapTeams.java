@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class MapTeams {
     protected final ServerLevel level;
-    private final SpawnPointData defaultSpawnPoints;
     private final Map<String, List<SpawnPointData>> spawnPoints = new HashMap<>();
     private final Map<UUID, SpawnPointData> playersSpawnData = new HashMap<>();
     private final Map<String, PlayerTeam> teams = new HashMap<>();
@@ -39,9 +38,8 @@ public class MapTeams {
     private final Map<UUID, Map<UUID,Float>> livingHurtData = new HashMap<>();
     private final Map<UUID, Integer> mvpData = new HashMap<>();
 
-    public MapTeams(ServerLevel level,List<String> teamsName ,SpawnPointData defaultSpawnPoints){
+    public MapTeams(ServerLevel level,List<String> teamsName){
         this.level = level;
-        this.defaultSpawnPoints = defaultSpawnPoints;
         teamsName.forEach(this::addTeam);
     }
 
@@ -62,7 +60,7 @@ public class MapTeams {
     }
 
     public List<SpawnPointData> getSpawnPointsByTeam(String team){
-        return this.spawnPoints.getOrDefault(team,new ArrayList<>(List.of(this.defaultSpawnPoints)));
+        return this.spawnPoints.getOrDefault(team,new ArrayList<>());
     }
 
     public void setTeamsSpawnPoints(){
@@ -70,6 +68,7 @@ public class MapTeams {
             Random random = new Random();
             this.playerTeams.forEach(((uuid, playerTeam) -> {
                 List<SpawnPointData> spawner = this.getSpawnPointsByTeam(playerTeam);
+                if (spawner.isEmpty()) throw new RuntimeException("Error : SpawnPoint is Empty");
                 Player player = this.level.getPlayerByUUID(uuid);
                 if (player != null && spawner.size() > 1){
                     int rIndex = random.nextInt(0,spawner.size());

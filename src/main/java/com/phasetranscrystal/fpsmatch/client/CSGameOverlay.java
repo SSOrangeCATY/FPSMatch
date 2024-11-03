@@ -1,16 +1,13 @@
 package com.phasetranscrystal.fpsmatch.client;
 
-import com.phasetranscrystal.fpsmatch.core.data.TabData;
-import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import org.joml.Quaternionf;
 
-import java.util.*;
+import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public  class CSGameOverlay implements IGuiOverlay {
     public static final int PAUSE_TIME = 120;
@@ -39,6 +36,7 @@ public  class CSGameOverlay implements IGuiOverlay {
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
+        guiGraphics.pose().pushPose();
         guiGraphics.fillGradient((screenWidth / 2) - 16, 2, (screenWidth / 2) + 16, 15, -1072689136, -804253680);
         guiGraphics.fillGradient(((screenWidth / 2) - 16), 16, (screenWidth / 2) - 1, 35, -1072689136, noColor);
         guiGraphics.fillGradient((screenWidth / 2) + 1, 16, ((screenWidth / 2) + 16), 35, -1072689136, noColor);
@@ -46,16 +44,9 @@ public  class CSGameOverlay implements IGuiOverlay {
         guiGraphics.drawString(font,String.valueOf(tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
         String roundTime = getCSGameTime();
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
+        guiGraphics.pose().popPose();
     }
 
-
-    public static int color(int r,int g,int b){
-       return (((0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF)));
-    }
-
-    public static int color(int r,int g,int b,int a){
-        return (((a) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF)));
-    }
 
 
     public static String getCSGameTime(){

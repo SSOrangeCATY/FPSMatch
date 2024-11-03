@@ -9,13 +9,13 @@ import java.util.List;
 public abstract class BaseMap {
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
-    private final SpawnPointData spawnPoint;
+    private final String gameType;
     private final MapTeams mapTeams;
 
-    public BaseMap(ServerLevel serverLevel, List<String> teams, SpawnPointData spawnPoint) {
+    public BaseMap(ServerLevel serverLevel, List<String> teams, String gameType) {
         this.serverLevel = serverLevel;
-        this.spawnPoint = spawnPoint;
-        this.mapTeams = new MapTeams(serverLevel,teams,spawnPoint);
+        this.gameType = gameType;
+        this.mapTeams = new MapTeams(serverLevel,teams);
     }
 
     public final void mapTick(){
@@ -62,11 +62,9 @@ public abstract class BaseMap {
         return serverLevel;
     }
 
-    public SpawnPointData getSpawnPoint() {
-        return spawnPoint;
-    }
-
-    public abstract String getType();
+    public String getType(){
+        return this.gameType;
+    };
 
     public boolean isDebug() {
         return isDebug;

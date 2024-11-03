@@ -25,11 +25,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 public class FPSMCommand {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm")
+                .then(Commands.literal("shop")
+                        .then(Commands.argument("gameType", StringArgumentType.string())
+                                .suggests(new GameTypesEnableShopSuggestionProvider())
+                                .then(Commands.argument("mapName", StringArgumentType.string())
+                                        .suggests(new FPSMSuggestionProvider((c,b)-> FPSMCommand.getSuggestions(b, FPSMCore.getMapNames())))
+                                        .then(Commands.literal("modify")
+                                                .then(Commands.argument("action",StringArgumentType.string()))
+                                                .executes(this::handleModifyShop)))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
                                 .then(Commands.argument("gameType", StringArgumentType.string())
@@ -38,10 +47,10 @@ public class FPSMCommand {
                                                 .executes(this::handleCreateMapWithoutSpawnPoint))))
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
-                                .suggests(new MapNameSuggestionProvider())
+                                .suggests(CommandSuggests.MAP_NAMES_SUGGESTION_PROVIDER)
                                         .then(Commands.literal("debug")
                                                 .then(Commands.argument("action", StringArgumentType.string())
-                                                        .suggests(new ActionDebugSuggestionProvider())
+                                                        .suggests(CommandSuggests.MAP_DEBUG_SUGGESTION)
                                                         .executes(this::handleDebugAction)))
                                         .then(Commands.literal("team")
                                                 .then(Commands.argument("teamName", StringArgumentType.string())
@@ -58,9 +67,9 @@ public class FPSMCommand {
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String type = StringArgumentType.getString(context, "gameType");
-        Function3<ServerLevel, List<String>, SpawnPointData, BaseMap> game = FPSMCore.getPreBuildGame(type);
+        BiFunction<ServerLevel, List<String>, BaseMap> game = FPSMCore.getPreBuildGame(type);
         if(game != null){
-            FPSMCore.registerMap(mapName, game.apply(context.getSource().getLevel(),new ArrayList<>(), getSpawnPointData(context)));
+            FPSMCore.registerMap(mapName, game.apply(context.getSource().getLevel(),new ArrayList<>()));
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
             return 1;
         }else{
@@ -80,6 +89,13 @@ public class FPSMCommand {
         return data;
     }
 
+    private int handleModifyShop(CommandContext<CommandSourceStack> context) {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String action = StringArgumentType.getString(context, "action");
+        BaseMap map = FPSMCore.getMapByName(mapName);
+        if (map != null) {}
+        return 1;
+    }
 
     private int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
@@ -196,6 +212,12 @@ public class FPSMCommand {
         return 1;
     }
 
+    private static class GameTypesEnableShopSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
+        @Override
+        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, FPSMCore.getEnableShopGames()));
+        }
+    }
 
     private static class GameTypesSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
         @Override
@@ -219,29 +241,14 @@ public class FPSMCommand {
     }
 
 
-    private static class MapNameSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
-        @Override
-        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, FPSMCore.getMapNames()));
+    private static class FPSMSuggestionProvider implements SuggestionProvider<CommandSourceStack>{
+        private final BiFunction<CommandContext<CommandSourceStack>,SuggestionsBuilder,Suggestions> suggestions;
+        public FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>,SuggestionsBuilder,Suggestions> suggestions){
+            this.suggestions = suggestions;
         }
-    }
-
-    private static class ActionDebugSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
         @Override
         public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, List.of("start","reset","newround","cleanup","switch")));
-        }
-    }
-    private static class ActionTeamSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
-        @Override
-        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, List.of("join","leave")));
-        }
-    }
-    private static class ActionSpawnSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
-        @Override
-        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-            return CompletableFuture.supplyAsync(() -> FPSMCommand.getSuggestions(builder, List.of("add","clear","clearall")));
+            return CompletableFuture.supplyAsync(() -> this.suggestions.apply(context,builder));
         }
     }
 

@@ -10,16 +10,19 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     private static final Map<String,BaseMap> GAMES = new HashMap<>();
-    private static final Map<String, Function3<ServerLevel,List<String>,SpawnPointData,BaseMap>> REGISTRY = new HashMap<>();
+    private static final Map<String, BiFunction<ServerLevel,List<String>,BaseMap>> REGISTRY = new HashMap<>();
+    private static final Map<String, Boolean> GAME_TYPES_SHOP_ENABLE = new HashMap<>();
 
     @Nullable public static BaseMap getMapByPlayer(Player player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
@@ -43,21 +46,41 @@ public class FPSMCore {
        return GAMES.getOrDefault(name,null);
     }
 
+
     public static List<String> getMapNames(){
         return GAMES.keySet().stream().toList();
+    }
+
+    public static List<String> getMapNames(String gameType){
+        List<String> names = new ArrayList<>();
+        GAMES.forEach((n,m)->{
+            if(m.getType().equals(gameType)){
+                names.add(n);
+            }
+        });
+        return names;
     }
 
     public static boolean checkGameType(String mapType){
        return REGISTRY.containsKey(mapType);
     }
 
-    @Nullable public static Function3<ServerLevel, List<String>, SpawnPointData, BaseMap> getPreBuildGame(String mapType){
+    @Nullable public static BiFunction<ServerLevel, List<String>, BaseMap> getPreBuildGame(String mapType){
          if(checkGameType(mapType)) return REGISTRY.get(mapType);
          return null;
     }
 
-    public static void registerGameType(String typeName, Function3<ServerLevel,List<String>,SpawnPointData,BaseMap> map){
+    public static void registerGameType(String typeName, BiFunction<ServerLevel,List<String>,BaseMap> map,boolean enableShop){
         REGISTRY.put(typeName,map);
+        GAME_TYPES_SHOP_ENABLE.put(typeName,enableShop);
+    }
+
+    public static boolean checkGameIsEnableShop(String gameType){
+        return GAME_TYPES_SHOP_ENABLE.getOrDefault(gameType,false);
+    }
+
+    public static List<String> getEnableShopGames(){
+        return GAME_TYPES_SHOP_ENABLE.keySet().stream().filter(GAME_TYPES_SHOP_ENABLE::get).toList();
     }
 
     public static List<String> getGameTypes(){
