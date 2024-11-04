@@ -34,12 +34,11 @@ public class CommandSuggests {
     public static final FPSMSuggestionProvider SPAWNPOINTS_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("add","clear","clearall")));
 
 
-    public record FPSMSuggestionProvider(
-            BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
+    public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
         @Override
-            public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
                 return CompletableFuture.supplyAsync(() -> this.suggestions.apply(context, builder));
-            }
+        }
     }
     @NotNull
     public static Suggestions getSuggestions(SuggestionsBuilder builder, List<String> suggests) {

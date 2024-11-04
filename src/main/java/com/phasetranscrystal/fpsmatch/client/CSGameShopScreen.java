@@ -6,6 +6,8 @@ import com.phasetranscrystal.fpsmatch.core.data.ShopItemData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.fragment.Fragment;
@@ -13,26 +15,25 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.graphics.text.FontFamily;
+import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.LayoutInflater;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class CSGameShopScreen extends Fragment {
@@ -40,7 +41,11 @@ public class CSGameShopScreen extends Fragment {
     private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static final String TACZ_MODID = "tacz";
     public static final String TACZ_AWP_ICON = "gun/hud/ai_awp.png";
-    public static final Map<ShopItemData.ItemType, List<GunButtonLinearLayout>> shopButtons = new HashMap<>();
+    public static final Map<ShopItemData.ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
+    public static final int CT_COLOR = RenderUtil.color(150,200,250);
+    public static final int T_COLOR = RenderUtil.color(234, 192, 85);
+    public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
+    public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         Configurator.setRootLevel(Level.DEBUG);
@@ -86,7 +91,7 @@ public class CSGameShopScreen extends Fragment {
             titleBar.addView(numTab,new LinearLayout.LayoutParams(25, -1));
             titleBar.addView(title,new LinearLayout.LayoutParams(gunButtonWeight - 25, -1));
             typeBar.addView(titleBar,new LinearLayout.LayoutParams(-1, 44));
-            List<GunButtonLinearLayout> buttons = new ArrayList<>();
+            List<GunButtonLayout> buttons = new ArrayList<>();
             for(int j = 0; j<5; j++){
                 var shopHolderBackground = new ShapeDrawable();
                 shopHolderBackground.setShape(ShapeDrawable.RECTANGLE);
@@ -95,7 +100,7 @@ public class CSGameShopScreen extends Fragment {
 
                 var shop = new LinearLayout(getContext());
                 var gun = new LinearLayout(getContext());
-                buttons.add( new GunButtonLinearLayout(getContext(), ShopItemData.ItemType.values()[i],j));
+                buttons.add( new GunButtonLayout(getContext(), ShopItemData.ItemType.values()[i],j));
                 gun.addView(buttons.get(j),new LinearLayout.LayoutParams(-1,-1));
                 shop.setGravity(Gravity.CENTER);
                 shop.addView(gun,new LinearLayout.LayoutParams(gunButtonWeight,90));
@@ -112,59 +117,202 @@ public class CSGameShopScreen extends Fragment {
 
 
 
-    public static class GunButtonLinearLayout extends LinearLayout {
+    public static class GunButtonLayout extends RelativeLayout {
+        public static final ColorStateList TINT_LIST = new ColorStateList(
+                new int[][]{
+                        new int[]{-R.attr.state_enabled},
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED)},
+                new int[]{
+                        DISABLE_TEXTURE_COLOR,
+                        T_COLOR
+                });
         public final ShopItemData.ItemType type;
         public final int index;
         public final ImageView imageView;
-        public final ShapeDrawable buttonBackground;
+        public final ShapeDrawable backgroud;
+        public final RelativeLayout returnGoodsLayout;
+        public final ValueAnimator backgroundAnimeFadeIn;
+        public final ValueAnimator backgroundAnimeFadeOut;
 
-        public GunButtonLinearLayout(Context context, ShopItemData.ItemType type, int index) {
+        public final TextView numText;
+        public final TextView itemNameText;
+        public final TextView costText;
+
+        public final TextView returnGoodsText;
+
+        public GunButtonLayout(Context context, ShopItemData.ItemType type, int index) {
             super(context);
             this.type = type;
             this.index = index;
-            setOrientation(VERTICAL);
+
             setGravity(Gravity.CENTER);
-            setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
-            this.buttonBackground = new ShapeDrawable();
-            buttonBackground.setShape(ShapeDrawable.RECTANGLE);
-            buttonBackground.setColor(RenderUtil.color(42, 42, 42));
-            buttonBackground.setCornerRadius(3);
-            setBackground(buttonBackground);
+            setLayoutParams(new LayoutParams(-1, -1));
+
+            this.backgroud = new ShapeDrawable();
+            backgroud.setShape(ShapeDrawable.RECTANGLE);
+            backgroud.setColor(RenderUtil.color(42, 42, 42));
+            backgroud.setCornerRadius(3);
+            setBackground(backgroud);
+
             imageView = new ImageView(context);
             ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, TACZ_AWP_ICON));
-            imageView.setLayoutParams(new LinearLayout.LayoutParams(39, 13));
+            var imageParam = new RelativeLayout.LayoutParams(39, 13);
+            imageParam.addRule(RelativeLayout.CENTER_IN_PARENT);
+            imageView.setLayoutParams(imageParam);
             imageView.setScaleX(3);
             imageView.setScaleY(3);
             imageView.setImageDrawable(imageDrawable);
-            ColorStateList tintList = new ColorStateList(
-                    new int[][] {
-                            new int[]{-R.attr.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED)},
-                    new int[] {
-                            RenderUtil.color(65,65,65),
-                            RenderUtil.color(234,192,85)
-                    });
-            imageView.setImageTintList(tintList);
+            imageView.setImageTintList(TINT_LIST);
             addView(imageView);
-            setOnClickListener((v) -> {
-                boolean actionFlag = FPSMShop.getInstance().getButtonsData().get(this.type).get(this.index);
-                boolean flag;
-                if(actionFlag){
-                    flag = FPSMShop.getInstance().handleShopButton(this.type,this.index);
-                    if(flag) buttonBackground.setStroke(1,RenderUtil.color(255,255,255));
-                }else{
-                    flag = FPSMShop.getInstance().handleReturnButton(this.type,this.index);
+
+            numText = new TextView(getContext());
+            numText.setTextSize(13);
+            numText.setText(String.valueOf(this.index + 1));
+            RelativeLayout.LayoutParams numParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            numParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            numParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            numParams.setMargins(5,2,0,0);
+            numText.setLayoutParams(numParams);
+
+            itemNameText = new TextView(getContext());
+            itemNameText.setTextSize(13);
+            itemNameText.setText("AWP");
+            RelativeLayout.LayoutParams itemNameParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            itemNameParams.setMargins(0,2,5,0);
+            itemNameText.setLayoutParams(itemNameParams);
+
+            returnGoodsText = new TextView(getContext());
+            returnGoodsText.setTextSize(15);
+            returnGoodsText.setText("↩");
+            RelativeLayout.LayoutParams returnGoodsParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            returnGoodsParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            returnGoodsParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            returnGoodsParams.setMargins(5,12,0,0);
+            returnGoodsText.setLayoutParams(returnGoodsParams);
+            returnGoodsLayout = new RelativeLayout(getContext()){
+                @Override
+                public void setEnabled(boolean enabled) {
+                    returnGoodsText.setAlpha(enabled ? 255:0);
+                    super.setEnabled(enabled);
                 }
-                this.setEnabled(flag);
+            };
+            returnGoodsLayout.addView(returnGoodsText);
+            returnGoodsLayout.setOnClickListener((l)->{
+                FPSMShop.getInstance().handleReturnButton(this.type,this.index);
+                if(! FPSMShop.getInstance().getSlotData(this.type,this.index).canReturn()){
+                    backgroud.setStroke(0,RenderUtil.color(255,255,255));
+                    returnGoodsLayout.setEnabled(false);
+                }
+            });
+
+            returnGoodsLayout.setEnabled(false);
+            addView(returnGoodsLayout);
+
+            costText = new TextView(getContext());
+            costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, this.index).cost());
+            costText.setTextSize(12);
+            RelativeLayout.LayoutParams costParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            costParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            costParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            costParams.setMargins(0,0,5,5);
+            costText.setLayoutParams(costParams);
+
+            addView(numText);
+            addView(itemNameText);
+            addView(costText);
+
+            backgroundAnimeFadeIn = ValueAnimator.ofInt(42, 72);
+            backgroundAnimeFadeIn.setDuration(200);
+            backgroundAnimeFadeIn.setInterpolator(TimeInterpolator.SINE);
+            backgroundAnimeFadeIn.addUpdateListener(animation -> {
+                int color = (int) animation.getAnimatedValue();
+                this.backgroud.setColor(RenderUtil.color(color,color,color));
+            });
+
+            backgroundAnimeFadeOut = ValueAnimator.ofInt(72, 42);
+            backgroundAnimeFadeOut.setDuration(200);
+            backgroundAnimeFadeOut.setInterpolator(TimeInterpolator.SINE);
+            backgroundAnimeFadeOut.addUpdateListener(animation -> {
+                int color = (int) animation.getAnimatedValue();
+                this.backgroud.setColor(RenderUtil.color(color,color,color));
+            });
+
+            setOnClickListener((v) -> {
+                boolean actionFlag = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
+                if(actionFlag){
+                    FPSMShop.getInstance().handleShopButton(this.type,this.index);
+                    returnGoodsLayout.setEnabled(true);
+                    CSGameShopScreen.shopButtons.get(this.type);
+                        if(this.type == ShopItemData.ItemType.RIFLE || this.type == ShopItemData.ItemType.MID_RANK){
+                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.RIFLE).forEach((bt)->{
+                                if(bt.type != this.type){
+                                    bt.disableStroke();
+                                }else{
+                                    if(bt.index != this.index){
+                                        bt.disableStroke();
+                                    }
+                                }
+                            });
+                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.MID_RANK).forEach((bt)->{
+                                if(bt.type != this.type){
+                                    bt.disableStroke();
+                                }else{
+                                    if(bt.index != this.index){
+                                        bt.disableStroke();
+                                    }
+                                }
+                            });
+                        }else if(this.type == ShopItemData.ItemType.PISTOL){
+                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.PISTOL).forEach((bt)->{
+                                if(bt.type != this.type){
+                                    bt.disableStroke();
+                                }else{
+                                    if(bt.index != this.index){
+                                        bt.disableStroke();
+                                    }
+                                }
+                            });
+                        }
+                    backgroud.setStroke(1,RenderUtil.color(255,255,255));
+                }
             });
         }
-        public void updateButtonState() {
-           boolean enable = FPSMShop.getInstance().getButtonsData().get(this.type).get(this.index);
-           this.setEnabled(enable);
+
+        public void disableStroke(){
+            backgroud.setStroke(0,RenderUtil.color(255,255,255));
         }
-        @Override
-        public void setEnabled(boolean enabled) {
-            imageView.setEnabled(enabled);
+
+        public void updateButtonState() {
+           boolean enable = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
+           if(this.type == ShopItemData.ItemType.THROWABLE && FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4) enable = false;
+           imageView.setEnabled(enable);
+
+            if(!this.isHovered()) {
+                backgroundAnimeFadeIn.start();
+            }else{
+                backgroundAnimeFadeOut.start();
+            }
+
+            if(enable){
+                numText.setTextColor(CSGameShopScreen.T_COLOR);
+                itemNameText.setTextColor(CSGameShopScreen.T_COLOR);
+                costText.setTextColor(CSGameShopScreen.T_COLOR);
+            }else{
+                numText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
+                itemNameText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
+                costText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
+            }
+
         }
         @Override
         public void draw(Canvas canvas) {

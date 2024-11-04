@@ -1,12 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ShopItemData {
     private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
@@ -68,20 +68,36 @@ public class ShopItemData {
         return false;
     }
 
-
     public static Map<ItemType, List<ShopSlot>> getDefaultShopItemData(boolean debug){
         ItemStack itemStack = debug ? null : ItemStack.EMPTY;
         Map<ItemType, List<ShopSlot>> data = new HashMap<>();
         for(ItemType c : ItemType.values()) {
             List<ShopSlot> shopSlots = new ArrayList<>();
             for (int i = 0;i <= 4 ; i++){
-                ShopSlot shopSlot = new ShopSlot(i,c,itemStack,200);
+                ShopSlot shopSlot = new ShopSlot(i,c,itemStack,4750);
                 shopSlots.add(shopSlot);
             }
             data.put(c,shopSlots);
         }
         return data;
     }
+
+    public int getSlotListBoughtCount(List<ShopSlot> slotList){
+        AtomicInteger totalBought = new AtomicInteger(0);
+        slotList.forEach((shopSlot -> {
+            totalBought.addAndGet(shopSlot.boughtCount());
+        }));
+        return totalBought.get();
+    }
+
+    public int getThrowableTypeBoughtCount(){
+        AtomicInteger totalBought = new AtomicInteger(0);
+        data.get(ItemType.THROWABLE).forEach((shopSlot -> {
+            totalBought.addAndGet(shopSlot.boughtCount());
+        }));
+        return totalBought.get();
+    }
+
     public static class ShopSlot{
         private final int index;
         private final ItemType type;
@@ -108,8 +124,12 @@ public class ShopItemData {
             return type;
         }
         public ItemStack itemStack(){
+            if(itemStack == null){
+                return null;
+            }
             return itemStack.copy();
         }
+
         public int index(){
             return index;
         }
@@ -136,6 +156,20 @@ public class ShopItemData {
 
         public void setEnable(boolean enable) {
             this.enable = enable;
+        }
+        public void bought(boolean enable) {
+            this.boughtCount++;
+            this.canReturn = true;
+            this.enable = enable;
+        }
+        public void bought() {
+            this.boughtCount++;
+            this.canReturn = true;
+            this.enable = false;
+        }
+        public void returnGoods() {
+            this.boughtCount--;
+            this.canReturn = boughtCount >= 1;
         }
     }
 
