@@ -1,15 +1,15 @@
 package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopItemData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import icyllis.arc3d.core.RawPtr;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.graphics.ColorFilter;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -24,9 +24,15 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.world.item.ItemStack;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class CSGameShopScreen extends Fragment {
@@ -34,12 +40,12 @@ public class CSGameShopScreen extends Fragment {
     private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static final String TACZ_MODID = "tacz";
     public static final String TACZ_AWP_ICON = "gun/hud/ai_awp.png";
-    private final ShopItemData data = new ShopItemData();
+    public static final Map<ShopItemData.ItemType, List<GunButtonLinearLayout>> shopButtons = new HashMap<>();
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         Configurator.setRootLevel(Level.DEBUG);
         try (ModernUI app = new ModernUI()) {
-            app.run(new CSGameShopScreen()); // 在这里传入您的 Fragment 实例
+            app.run(new CSGameShopScreen());
         }
         AudioManager.getInstance().close();
         System.gc();
@@ -48,7 +54,6 @@ public class CSGameShopScreen extends Fragment {
         var content = new LinearLayout(getContext());
         content.setOrientation(LinearLayout.HORIZONTAL);
         var background = new ImageDrawable(Image.create(FPSMatch.MODID,"ui/cs/background.png"));
-        var gunImage = new ImageDrawable(Image.create(FPSMatch.MODID,TACZ_AWP_ICON));
         var shopWindow = new LinearLayout(this.getContext());
         for(int i = 0; i<5; i++){
             var shopTitleBackground = new ShapeDrawable();
@@ -81,7 +86,7 @@ public class CSGameShopScreen extends Fragment {
             titleBar.addView(numTab,new LinearLayout.LayoutParams(25, -1));
             titleBar.addView(title,new LinearLayout.LayoutParams(gunButtonWeight - 25, -1));
             typeBar.addView(titleBar,new LinearLayout.LayoutParams(-1, 44));
-
+            List<GunButtonLinearLayout> buttons = new ArrayList<>();
             for(int j = 0; j<5; j++){
                 var shopHolderBackground = new ShapeDrawable();
                 shopHolderBackground.setShape(ShapeDrawable.RECTANGLE);
@@ -90,12 +95,13 @@ public class CSGameShopScreen extends Fragment {
 
                 var shop = new LinearLayout(getContext());
                 var gun = new LinearLayout(getContext());
-                var gunButton = new GunButtonLinearLayout(getContext(),this.data.getSlotData(ShopItemData.ItemType.values()[i],j));
-                gun.addView(gunButton,new LinearLayout.LayoutParams(-1,-1));
+                buttons.add( new GunButtonLinearLayout(getContext(), ShopItemData.ItemType.values()[i],j));
+                gun.addView(buttons.get(j),new LinearLayout.LayoutParams(-1,-1));
                 shop.setGravity(Gravity.CENTER);
                 shop.addView(gun,new LinearLayout.LayoutParams(gunButtonWeight,90));
                 typeBar.addView(shop,new LinearLayout.LayoutParams(-1,98));
             }
+            shopButtons.put(ShopItemData.ItemType.values()[i],buttons);
             shopWindow.addView(typeBar,new LinearLayout.LayoutParams(gunButtonWeight + 30,-1));
         }
         background.setAlpha(100);
@@ -107,29 +113,29 @@ public class CSGameShopScreen extends Fragment {
 
 
     public static class GunButtonLinearLayout extends LinearLayout {
-        public final ShopItemData.ShopSlot shopSlot;
-        public boolean isBuy = false;
-        public int[] buttonCanBuy = new int[]{ 1 };
-        public int[] buttonCantBuy = new int[]{ 0 };
+        public final ShopItemData.ItemType type;
+        public final int index;
+        public final ImageView imageView;
+        public final ShapeDrawable buttonBackground;
 
-        public GunButtonLinearLayout(Context context, ShopItemData.ShopSlot shopSlot) {
+        public GunButtonLinearLayout(Context context, ShopItemData.ItemType type, int index) {
             super(context);
-            this.shopSlot = shopSlot;
-
+            this.type = type;
+            this.index = index;
             setOrientation(VERTICAL);
             setGravity(Gravity.CENTER);
             setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
-            ShapeDrawable buttonBackground = new ShapeDrawable();
+            this.buttonBackground = new ShapeDrawable();
             buttonBackground.setShape(ShapeDrawable.RECTANGLE);
             buttonBackground.setColor(RenderUtil.color(42, 42, 42));
             buttonBackground.setCornerRadius(3);
             setBackground(buttonBackground);
-            ImageView gunImageView = new ImageView(context);
+            imageView = new ImageView(context);
             ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, TACZ_AWP_ICON));
-            gunImageView.setLayoutParams(new LinearLayout.LayoutParams(39, 13));
-            gunImageView.setScaleX(3);
-            gunImageView.setScaleY(3);
-            gunImageView.setImageDrawable(imageDrawable);
+            imageView.setLayoutParams(new LinearLayout.LayoutParams(39, 13));
+            imageView.setScaleX(3);
+            imageView.setScaleY(3);
+            imageView.setImageDrawable(imageDrawable);
             ColorStateList tintList = new ColorStateList(
                     new int[][] {
                             new int[]{-R.attr.state_enabled},
@@ -138,25 +144,32 @@ public class CSGameShopScreen extends Fragment {
                             RenderUtil.color(65,65,65),
                             RenderUtil.color(234,192,85)
                     });
-
-            gunImageView.setImageTintList(tintList);
-            addView(gunImageView);
-
+            imageView.setImageTintList(tintList);
+            addView(imageView);
             setOnClickListener((v) -> {
-                if (!isBuy) {
-                    isBuy = true;
-                    ItemStack itemStack = shopSlot.item().itemStack();
-                    buttonBackground.setStroke(1,RenderUtil.color(255,255,255));
-                    System.out.println("bought : " + (itemStack == null ? "debugItem" : itemStack.getDisplayName().getString()) + " cost->" + shopSlot.item().cost());
-                    gunImageView.setEnabled(false);
-                } else {
-                    isBuy = false;
-                    ItemStack itemStack = shopSlot.item().itemStack();
-                    gunImageView.setEnabled(true);
-                    buttonBackground.setStroke(0,RenderUtil.color(255,255,255));
-                    System.out.println("return goods : " + (itemStack == null ? "debugItem" : itemStack.getDisplayName().getString()) + " return cost->" + shopSlot.item().cost());
+                boolean actionFlag = FPSMShop.getInstance().getButtonsData().get(this.type).get(this.index);
+                boolean flag;
+                if(actionFlag){
+                    flag = FPSMShop.getInstance().handleShopButton(this.type,this.index);
+                    if(flag) buttonBackground.setStroke(1,RenderUtil.color(255,255,255));
+                }else{
+                    flag = FPSMShop.getInstance().handleReturnButton(this.type,this.index);
                 }
+                this.setEnabled(flag);
             });
+        }
+        public void updateButtonState() {
+           boolean enable = FPSMShop.getInstance().getButtonsData().get(this.type).get(this.index);
+           this.setEnabled(enable);
+        }
+        @Override
+        public void setEnabled(boolean enabled) {
+            imageView.setEnabled(enabled);
+        }
+        @Override
+        public void draw(Canvas canvas) {
+            super.draw(canvas);
+            updateButtonState();
         }
     }
 

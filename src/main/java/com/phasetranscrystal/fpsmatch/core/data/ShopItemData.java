@@ -75,33 +75,69 @@ public class ShopItemData {
         for(ItemType c : ItemType.values()) {
             List<ShopSlot> shopSlots = new ArrayList<>();
             for (int i = 0;i <= 4 ; i++){
-                ShopSlot shopSlot = new ShopSlot(c,i,new ShopItemHolder(itemStack,200));
+                ShopSlot shopSlot = new ShopSlot(i,c,itemStack,200);
                 shopSlots.add(shopSlot);
             }
             data.put(c,shopSlots);
         }
         return data;
     }
+    public static class ShopSlot{
+        private final int index;
+        private final ItemType type;
+        private final ItemStack itemStack;
+        private final int cost;
+        private int boughtCount = 0;
+        private boolean enable = true;
+        private boolean canReturn = false;
 
-    public record ShopItemHolder(ItemStack itemStack, int cost) {
-        @Override
-        public ItemStack itemStack() {
-            if (itemStack == null) return null;
+        public ShopSlot(int index,ItemType type, ItemStack itemStack, int cost) {
+            this.type = type;
+            if (index < 0 || index > 4) {
+                throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
+            }
+            this.index = index;
+            this.itemStack = itemStack;
+            this.cost = cost;
+        }
 
+        public int cost(){
+            return cost;
+        }
+        public ItemType type(){
+            return type;
+        }
+        public ItemStack itemStack(){
             return itemStack.copy();
-            }
+        }
+        public int index(){
+            return index;
         }
 
-    public record ShopSlot(ItemType type, int index, ShopItemHolder item) {
-            public ShopSlot(ItemType type, int index, ShopItemHolder item) {
-                this.type = type;
-                if (index < 0 || index > 4) {
-                    throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
-                }
-                this.index = index;
-                this.item = item;
-            }
+        public boolean enable(){
+            return enable;
         }
+
+        public int boughtCount(){
+            return boughtCount;
+        }
+
+        public boolean canReturn(){
+            return canReturn;
+        }
+
+        public void setBoughtCount(int boughtCount) {
+            this.boughtCount = boughtCount;
+        }
+
+        public void setCanReturn(boolean canReturn) {
+            this.canReturn = canReturn;
+        }
+
+        public void setEnable(boolean enable) {
+            this.enable = enable;
+        }
+    }
 
     public  enum ItemType{
         EQUIPMENT(0),PISTOL(1),MID_RANK(2),RIFLE(3),THROWABLE(4);

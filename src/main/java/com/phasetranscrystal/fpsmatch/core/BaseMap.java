@@ -40,7 +40,7 @@ public abstract class BaseMap {
 
     public boolean checkGameHasPlayer(Player player){
         boolean flag = false;
-        if(!this.getMapTeams().getJoinedPlayers().contains(player.getUUID()) && getMapTeams().getTeamByPlayer(player) != null){
+        if(!this.getMapTeams().getJoinedPlayers().contains(player.getUUID()) || getMapTeams().getTeamByPlayer(player) != null){
             flag = true;
             this.getMapTeams().playerJoin(player);
         }else if(this.getMapTeams().getJoinedPlayers().contains(player.getUUID())){
