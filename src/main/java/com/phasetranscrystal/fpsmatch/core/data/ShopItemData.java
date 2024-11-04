@@ -70,11 +70,19 @@ public class ShopItemData {
 
     public static Map<ItemType, List<ShopSlot>> getDefaultShopItemData(boolean debug){
         ItemStack itemStack = debug ? null : ItemStack.EMPTY;
+        int[][] d = new int[][]{
+                {650,1000,200,200,200},
+                {200,700,600,500,300},
+                {1500,1050,1700,2350,1050},
+                {1800,2700,3000,1700,4750},
+                {200,300,300,400,50}
+        };
+
         Map<ItemType, List<ShopSlot>> data = new HashMap<>();
         for(ItemType c : ItemType.values()) {
             List<ShopSlot> shopSlots = new ArrayList<>();
             for (int i = 0;i <= 4 ; i++){
-                ShopSlot shopSlot = new ShopSlot(i,c,itemStack,4750);
+                ShopSlot shopSlot = new ShopSlot(i,c,itemStack,d[c.typeIndex][i]);
                 shopSlots.add(shopSlot);
             }
             data.put(c,shopSlots);
@@ -102,7 +110,8 @@ public class ShopItemData {
         private final int index;
         private final ItemType type;
         private final ItemStack itemStack;
-        private final int cost;
+        private final int defaultCost;
+        private int cost;
         private int boughtCount = 0;
         private boolean enable = true;
         private boolean canReturn = false;
@@ -114,6 +123,7 @@ public class ShopItemData {
             }
             this.index = index;
             this.itemStack = itemStack;
+            this.defaultCost = cost;
             this.cost = cost;
         }
 
@@ -143,7 +153,12 @@ public class ShopItemData {
         }
 
         public boolean canReturn(){
-            return canReturn;
+            return canReturn || boughtCount > 0;
+        }
+
+        public int setDefaultCost(){
+            this.cost = defaultCost;
+            return this.cost;
         }
 
         public void setBoughtCount(int boughtCount) {
@@ -157,6 +172,11 @@ public class ShopItemData {
         public void setEnable(boolean enable) {
             this.enable = enable;
         }
+
+        public void setCost(int cost) {
+            this.cost = cost;
+        }
+
         public void bought(boolean enable) {
             this.boughtCount++;
             this.canReturn = true;
@@ -170,6 +190,16 @@ public class ShopItemData {
         public void returnGoods() {
             this.boughtCount--;
             this.canReturn = boughtCount >= 1;
+            this.enable = true;
+        }
+
+        @Override
+        public boolean equals(Object anObject) {
+            if(anObject instanceof ShopSlot other){
+                return other.index == this.index && other.type == this.type;
+            }else{
+                return false;
+            }
         }
     }
 
@@ -180,5 +210,6 @@ public class ShopItemData {
         ItemType(int typeIndex) {
             this.typeIndex = typeIndex;
         }
+
     }
 }

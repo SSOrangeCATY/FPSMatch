@@ -34,13 +34,15 @@ public class FPSMShop {
         if (!currentSlot.enable()) {
             return;
         }
+
         if (money < cost) {
             return;
         }
         money -= cost;
         getCostOrBuy(type, index, true);
         ShopItemData.ShopSlot shopSlot = shopSlotList.get(index);
-        System.out.println("bought : " + (shopSlot.itemStack() == null ? "debugItem" : shopSlot.itemStack().getDisplayName().getString()) + " cost->" + shopSlot.cost());
+        System.out.println("bought : " + (shopSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : shopSlot.itemStack().getDisplayName().getString()) + " cost->" + shopSlot.cost());
+        System.out.println(this.money +"<-"+ cost);
     }
 
     private int getCostOrBuy(ShopItemData.ItemType type, int index, boolean bought) {
@@ -53,8 +55,9 @@ public class FPSMShop {
     }
 
     public void handleReturnButton(ShopItemData.ItemType type, int index) {
-        List<ShopItemData.ShopSlot> data = this.shopItemData.getShopSlotsByType(type);
-        if (!data.get(index).canReturn() && data.get(index).boughtCount() != 0) {
+        List<ShopItemData.ShopSlot> shopSlotList = this.shopItemData.getShopSlotsByType(type);
+        ShopItemData.ShopSlot currentSlot = shopSlotList.get(index);
+        if (!currentSlot.canReturn()) {
             return; // 商品未购买
         }
         money += returnTheGun(type, index);
@@ -63,23 +66,16 @@ public class FPSMShop {
     private int buyEquipment(ShopItemData.ItemType type, int index,boolean bought) {
         List<ShopItemData.ShopSlot> data = this.shopItemData.getShopSlotsByType(type);
         ShopItemData.ShopSlot currentSlot = data.get(index);
-        int cost = currentSlot.cost();
-        if(index == 1){
-            boolean flag = data.get(0).boughtCount() > 0;
-            if(bought) {
-                currentSlot.bought();
+        AtomicInteger cost = new AtomicInteger(currentSlot.cost());
+        data.forEach((shopSlot -> {
+            if(index == 0){
+                if (!shopSlot.canReturn() && shopSlot.index() == 1){
+                    shopSlot.setCost(350);
+                }
             }
-            if (flag){
-                return cost - data.get(0).cost();
-            }else{
-                return cost + data.get(0).cost();
-            }
-        }else{
-            if(bought) {
-                currentSlot.bought();
-            }
-            return cost;
-        }
+        }));
+        if(bought) currentSlot.bought();
+        return cost.get();
     }
 
     private int buyPistol(ShopItemData.ItemType type,int index,boolean bought) {
@@ -90,10 +86,9 @@ public class FPSMShop {
         data.forEach((shopSlot -> {
             if(shopSlot.index() != index && shopSlot.boughtCount() > 0){
                 if(bought) {
-                    //shopSlot.returnGoods();
-                   // shopSlot.setEnable(false); // aaaaaaaaaaaaaaaaaaaaaa
+                    shopSlot.returnGoods();
                 };
-                //if(shopSlot.canReturn()) cost.addAndGet(-shopSlot.cost());
+                cost.addAndGet(-shopSlot.cost());
             }
         }));
         if(bought) currentSlot.bought();
@@ -103,28 +98,46 @@ public class FPSMShop {
     private int buyGuns(ShopItemData.ItemType type,int index,boolean bought) {
         List<ShopItemData.ShopSlot> shopMidRankSlotList = shopItemData.getShopSlotsByType(ShopItemData.ItemType.MID_RANK);
         List<ShopItemData.ShopSlot> shopRifleSlotList = shopItemData.getShopSlotsByType(ShopItemData.ItemType.RIFLE);
-        ShopItemData.ShopSlot currentSlot = shopMidRankSlotList.get(index);
+        ShopItemData.ShopSlot currentSlot = shopItemData.getShopSlotsByType(type).get(index);
         AtomicInteger cost = new AtomicInteger(currentSlot.cost());
-        shopMidRankSlotList.forEach((shopSlot -> {
-            if(shopSlot.canReturn()){
-                if(shopSlot.index() != index || shopSlot.type() != type){
+        if(type == ShopItemData.ItemType.MID_RANK){
+            shopMidRankSlotList.forEach((shopSlot -> {
+                if(shopSlot.boughtCount() > 0 && shopSlot.index() != index){
                     if(bought) {
-                        // shopSlot.returnGoods();
+                        shopSlot.returnGoods();
                     }
-                   // cost.addAndGet(-returnTheGun(ShopItemData.ItemType.MID_RANK,shopSlot.index()));
+                    cost.addAndGet(-returnTheGun(ShopItemData.ItemType.MID_RANK,shopSlot.index()));
                 }
-            }
-        }));
-        shopRifleSlotList.forEach((shopSlot -> {
-            if(shopSlot.canReturn()){
-                if(shopSlot.index() != index || shopSlot.type() != type){
+            }));
+
+            shopRifleSlotList.forEach((shopSlot -> {
+                if(shopSlot.boughtCount() > 0){
                     if(bought) {
-                       // shopSlot.returnGoods();
+                        shopSlot.returnGoods();
                     }
-                    // cost.addAndGet(-returnTheGun(ShopItemData.ItemType.RIFLE,shopSlot.index()));
+                    cost.addAndGet(-returnTheGun(ShopItemData.ItemType.RIFLE,shopSlot.index()));
                 }
-            }
-        }));
+            }));
+        }else{
+            shopRifleSlotList.forEach((shopSlot -> {
+                if(shopSlot.boughtCount() > 0 && shopSlot.index() != index){
+                    if(bought) {
+                        shopSlot.returnGoods();
+                    }
+                    cost.addAndGet(-returnTheGun(ShopItemData.ItemType.RIFLE,shopSlot.index()));
+                }
+            }));
+
+            shopMidRankSlotList.forEach((shopSlot -> {
+                if(shopSlot.boughtCount() > 0){
+                    if(bought) {
+                        shopSlot.returnGoods();
+                    }
+                    cost.addAndGet(-returnTheGun(ShopItemData.ItemType.MID_RANK,shopSlot.index()));
+                }
+            }));
+        }
+
         if(bought) currentSlot.bought();
         return cost.get();
     }
@@ -134,40 +147,16 @@ public class FPSMShop {
         ShopItemData.ShopSlot currentSlot = shopThrowableSlotList.get(index);
         int cost = currentSlot.cost();
         int totalBought = shopItemData.getSlotListBoughtCount(shopThrowableSlotList);
-
-        if (totalBought > 4) {
-            shopThrowableSlotList.forEach((shopSlot -> {
-                if(shopSlot.boughtCount() == 0){
-                    shopSlot.setEnable(false);
-                }
-
-                if(index == 0 && currentSlot.boughtCount() ==1){
-                    shopSlot.setEnable(false);
-                }
-            }));
-            return 0;
-        };
         boolean canBuyTwo = index == 0;
-        if(bought){
+        if(totalBought + 1 <= 4 && bought){
             if(canBuyTwo){
-                if(currentSlot.boughtCount() < 2 && shopItemData.getSlotListBoughtCount(shopThrowableSlotList) < 4){
-                    currentSlot.bought(true);
-                }else{
+                if(currentSlot.boughtCount() == 1){
                     currentSlot.bought();
+                }else{
+                    currentSlot.bought(true);
                 }
             }else{
                 currentSlot.bought();
-            }
-            if(shopItemData.getSlotListBoughtCount(shopThrowableSlotList) >= 4){
-                shopThrowableSlotList.forEach((shopSlot -> {
-                    if(shopSlot.boughtCount() == 0){
-                        shopSlot.setEnable(false);
-                    }
-
-                    if(index == 0 && currentSlot.boughtCount() ==1){
-                        shopSlot.setEnable(false);
-                    }
-                }));
             }
         }
         return cost;
@@ -177,13 +166,25 @@ public class FPSMShop {
         ShopItemData.ShopSlot currentSlot = slotList.get(index);
         int cost = 0;
         if(currentSlot.canReturn()){
+            if(type == ShopItemData.ItemType.EQUIPMENT && index == 0){
+                slotList.get(1).setCost(1000);
+            }
+
             currentSlot.returnGoods();
             cost = currentSlot.cost();
-            System.out.println("return goods : " + (currentSlot.itemStack() == null ? "debugItem" : currentSlot.itemStack().getDisplayName().getString()) + " return cost->" + currentSlot.cost());
+            System.out.println("return goods : " + (currentSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : currentSlot.itemStack().getDisplayName().getString()) + " return cost->" + currentSlot.cost());
         }
         return cost;
     }
 
+    public void forceBuyItem(ShopItemData.ItemType type,int index){
+        List<ShopItemData.ShopSlot> shopSlotList = shopItemData.getShopSlotsByType(type);
+        if (index < 0 || index >= shopSlotList.size()) {
+            return;
+        }
+        ShopItemData.ShopSlot currentSlot = shopSlotList.get(index);
+        currentSlot.bought();
+    }
     public ShopItemData getShopItemData() {
         return shopItemData;
     }

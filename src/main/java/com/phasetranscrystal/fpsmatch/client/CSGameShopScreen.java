@@ -15,8 +15,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.graphics.text.FontFamily;
-import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
@@ -29,7 +27,6 @@ import net.minecraft.client.resources.language.I18n;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -207,9 +204,16 @@ public class CSGameShopScreen extends Fragment {
             returnGoodsLayout.addView(returnGoodsText);
             returnGoodsLayout.setOnClickListener((l)->{
                 FPSMShop.getInstance().handleReturnButton(this.type,this.index);
-                if(! FPSMShop.getInstance().getSlotData(this.type,this.index).canReturn()){
+                if(!FPSMShop.getInstance().getSlotData(this.type,this.index).canReturn()){
                     backgroud.setStroke(0,RenderUtil.color(255,255,255));
                     returnGoodsLayout.setEnabled(false);
+
+                    if(this.type == ShopItemData.ItemType.EQUIPMENT){
+                        if(this.index == 0){
+                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
+                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).invalidate();
+                        }
+                    }
                 }
             });
 
@@ -248,8 +252,9 @@ public class CSGameShopScreen extends Fragment {
             });
 
             setOnClickListener((v) -> {
-                boolean actionFlag = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
-                if(actionFlag){
+                ShopItemData.ShopSlot currentSlot = FPSMShop.getInstance().getShopItemData().getSlotData(this.type,this.index);
+                boolean actionFlag = FPSMShop.getInstance().getMoney() >= currentSlot.cost();
+                if(checkSlots(actionFlag)){
                     FPSMShop.getInstance().handleShopButton(this.type,this.index);
                     returnGoodsLayout.setEnabled(true);
                     CSGameShopScreen.shopButtons.get(this.type);
@@ -282,6 +287,16 @@ public class CSGameShopScreen extends Fragment {
                                     }
                                 }
                             });
+                        }else if(this.type == ShopItemData.ItemType.THROWABLE){
+                            if(FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4){
+                                CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.THROWABLE).forEach((bt)->{
+                                    bt.setElementsColor(false);
+                                });
+                            }
+
+                            if(this.index == 0 && currentSlot.boughtCount() >= 2){
+                                setElementsColor(false);
+                            }
                         }
                     backgroud.setStroke(1,RenderUtil.color(255,255,255));
                 }
@@ -290,19 +305,11 @@ public class CSGameShopScreen extends Fragment {
 
         public void disableStroke(){
             backgroud.setStroke(0,RenderUtil.color(255,255,255));
+            this.returnGoodsLayout.setEnabled(false);
         }
 
-        public void updateButtonState() {
-           boolean enable = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
-           if(this.type == ShopItemData.ItemType.THROWABLE && FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4) enable = false;
-           imageView.setEnabled(enable);
-
-            if(!this.isHovered()) {
-                backgroundAnimeFadeIn.start();
-            }else{
-                backgroundAnimeFadeOut.start();
-            }
-
+        public void setElementsColor(boolean enable){
+            imageView.setEnabled(enable);
             if(enable){
                 numText.setTextColor(CSGameShopScreen.T_COLOR);
                 itemNameText.setTextColor(CSGameShopScreen.T_COLOR);
@@ -312,6 +319,40 @@ public class CSGameShopScreen extends Fragment {
                 itemNameText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
                 costText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
             }
+        }
+
+        public boolean checkSlots(boolean enable){
+            if (!enable) return false;
+            if(this.type == ShopItemData.ItemType.THROWABLE){
+                if (FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4){
+                    return false;
+                }
+                if(this.index == 0){
+                    return FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).boughtCount() < 2;
+                };
+            }
+
+            if(this.type == ShopItemData.ItemType.EQUIPMENT){
+                if(this.index == 0){
+                    if(FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn()){
+                        CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
+                        CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).invalidate();
+                        return false;
+                    }
+                }
+            }
+            return !FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn();
+        }
+
+        public void updateButtonState() {
+           boolean enable = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
+           setElementsColor(checkSlots(enable));
+
+           if(!this.isHovered()) {
+               backgroundAnimeFadeIn.start();
+           }else{
+               backgroundAnimeFadeOut.start();
+           }
 
         }
         @Override
