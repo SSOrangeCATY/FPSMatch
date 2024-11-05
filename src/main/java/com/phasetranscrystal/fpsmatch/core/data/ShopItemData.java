@@ -1,16 +1,17 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ShopItemData {
     private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
+    private final Map<UUID,Integer> otherMoney = new HashMap<>();
+    private int nextRoundMinMoney = 1000;
     public ShopItemData(){
         checkData(defaultData);
         data.putAll(defaultData);
@@ -21,7 +22,23 @@ public class ShopItemData {
         this.data.putAll(data);
     }
 
-    public ShopSlot getSlotData(ItemType type,int index) {
+    private void setOtherMoney(Map<UUID,Integer> otherMoney){
+        this.otherMoney.clear();
+        this.otherMoney.putAll(otherMoney);
+    }
+
+    public Map<UUID,Integer> getOtherMoney(){
+        return otherMoney;
+    }
+    public int getNextRoundMinMoney() {
+        return nextRoundMinMoney;
+    }
+
+    public void setNextRoundMinMoney(int money){
+        this.nextRoundMinMoney = money;
+    }
+
+    public ShopSlot getSlotData(ItemType type, int index) {
         return data.get(type).get(index);
     }
 
@@ -107,6 +124,7 @@ public class ShopItemData {
     }
 
     public static class ShopSlot{
+        private ResourceLocation texture = new ResourceLocation(FPSMatch.MODID,"gun/hud/ai_awp");
         private final int index;
         private final ItemType type;
         private final ItemStack itemStack;
@@ -127,6 +145,18 @@ public class ShopItemData {
             this.cost = cost;
         }
 
+
+        public ShopSlot(int index,ItemType type, ItemStack itemStack, int cost,ResourceLocation texture) {
+            this.type = type;
+            if (index < 0 || index > 4) {
+                throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
+            }
+            this.index = index;
+            this.itemStack = itemStack;
+            this.defaultCost = cost;
+            this.cost = cost;
+            this.texture = texture;
+        }
         public int cost(){
             return cost;
         }
@@ -138,6 +168,14 @@ public class ShopItemData {
                 return null;
             }
             return itemStack.copy();
+        }
+
+        public ResourceLocation getTexture() {
+            return texture;
+        }
+
+        public void setTexture(ResourceLocation texture){
+            this.texture = texture;
         }
 
         public int index(){

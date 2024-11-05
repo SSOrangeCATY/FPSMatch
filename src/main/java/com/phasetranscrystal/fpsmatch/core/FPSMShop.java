@@ -24,6 +24,9 @@ public class FPSMShop {
         return shopItemData.getSlotData(type,index);
     }
 
+    public int getNextRoundMinMoney(){
+        return this.shopItemData.getNextRoundMinMoney();
+    }
     public void handleShopButton(ShopItemData.ItemType type, int index) {
         List<ShopItemData.ShopSlot> shopSlotList = shopItemData.getShopSlotsByType(type);
         if (index < 0 || index >= shopSlotList.size()) {
@@ -34,7 +37,6 @@ public class FPSMShop {
         if (!currentSlot.enable()) {
             return;
         }
-
         if (money < cost) {
             return;
         }
@@ -161,15 +163,17 @@ public class FPSMShop {
         }
         return cost;
     }
+
     private int returnTheGun(ShopItemData.ItemType type, int index){
         List<ShopItemData.ShopSlot> slotList = shopItemData.getShopSlotsByType(type);
         ShopItemData.ShopSlot currentSlot = slotList.get(index);
         int cost = 0;
         if(currentSlot.canReturn()){
             if(type == ShopItemData.ItemType.EQUIPMENT && index == 0){
-                slotList.get(1).setCost(1000);
+                if(!slotList.get(1).canReturn()){
+                    slotList.get(1).setCost(1000);
+                }
             }
-
             currentSlot.returnGoods();
             cost = currentSlot.cost();
             System.out.println("return goods : " + (currentSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : currentSlot.itemStack().getDisplayName().getString()) + " return cost->" + currentSlot.cost());

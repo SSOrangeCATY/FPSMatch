@@ -26,6 +26,7 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,23 +40,38 @@ public class CSGameShopScreen extends Fragment {
     public static final String TACZ_MODID = "tacz";
     public static final String TACZ_AWP_ICON = "gun/hud/ai_awp.png";
     public static final Map<ShopItemData.ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
+    public static final String BACKGROUND = "ui/cs/background.png";
     public static final int CT_COLOR = RenderUtil.color(150,200,250);
     public static final int T_COLOR = RenderUtil.color(234, 192, 85);
     public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
+    public static boolean debug;
+
+    public CSGameShopScreen(boolean debug){
+        CSGameShopScreen.debug = debug;
+    }
+
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         Configurator.setRootLevel(Level.DEBUG);
         try (ModernUI app = new ModernUI()) {
-            app.run(new CSGameShopScreen());
+            app.run(new CSGameShopScreen(true));
         }
         AudioManager.getInstance().close();
         System.gc();
     }
+
     public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
+        var window = new RelativeLayout(getContext());
         var content = new LinearLayout(getContext());
         content.setOrientation(LinearLayout.HORIZONTAL);
-        var background = new ImageDrawable(Image.create(FPSMatch.MODID,"ui/cs/background.png"));
+        ImageView background = new ImageView(getContext());
+        ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
+        imageDrawable.setAlpha(144);
+
+        background.setImageDrawable(imageDrawable);
+        background.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
         var shopWindow = new LinearLayout(this.getContext());
         for(int i = 0; i<5; i++){
             var shopTitleBackground = new ShapeDrawable();
@@ -106,12 +122,84 @@ public class CSGameShopScreen extends Fragment {
             shopButtons.put(ShopItemData.ItemType.values()[i],buttons);
             shopWindow.addView(typeBar,new LinearLayout.LayoutParams(gunButtonWeight + 30,-1));
         }
-        background.setAlpha(100);
-        shopWindow.setBackground(background);
         content.addView(shopWindow,new LinearLayout.LayoutParams(950,550));
-        return content;
+        RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT);
+        shopWindowParams.setMargins(240, 170+40,0,0);
+
+        RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
+                950,
+                550);
+        shopWindowBackGroundParams.setMargins(240,170 + 40 ,0,0);
+
+        RelativeLayout.LayoutParams titleBarParams =  new RelativeLayout.LayoutParams(950,38);
+        titleBarParams.setMargins(240,170,0,0);
+
+        window.addView(new HeadBarLayout(getContext()),titleBarParams);
+        window.addView(background, shopWindowBackGroundParams);
+        window.addView(content,shopWindowParams);
+        return window;
     }
 
+    public static class HeadBarLayout extends RelativeLayout {
+        public final TextView moneyText;
+        public final TextView cooldownText;
+        public final TextView nextRoundMinMoneyText;
+        public HeadBarLayout(Context context) {
+            super(context);
+            ImageView background = new ImageView(getContext());
+            ImageDrawable imageDrawable =new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
+            imageDrawable.setAlpha(144);
+            background.setImageDrawable(imageDrawable);
+            background.setScaleType(ImageView.ScaleType.FIT_XY);
+            addView(background);
+            moneyText = new TextView(getContext());
+            RelativeLayout.LayoutParams moneyParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            moneyParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            moneyParams.setMargins(25,0,0,0);
+            moneyText.setLayoutParams(moneyParams);
+            moneyText.setTextColor(T_COLOR);
+            moneyText.setTextSize(18);
+
+            cooldownText = new TextView(getContext());
+            RelativeLayout.LayoutParams cooldownParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            cooldownParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            cooldownText.setText(I18n.get("fpsm.shop.title.cooldown",0));
+            cooldownText.setLayoutParams(cooldownParams);
+            cooldownText.setTextSize(18);
+
+
+            nextRoundMinMoneyText = new TextView(getContext());
+            RelativeLayout.LayoutParams minmoneyText = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
+            minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money",FPSMShop.getInstance().getNextRoundMinMoney()));
+            minmoneyText.setMargins(0,0,20,0);
+            nextRoundMinMoneyText.setLayoutParams(minmoneyText);
+            nextRoundMinMoneyText.setTextSize(15);
+            addView(moneyText);
+            addView(cooldownText);
+            addView(nextRoundMinMoneyText);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            super.draw(canvas);
+            updateText();
+        }
+
+        public void updateText(){
+            moneyText.setText("$"+FPSMShop.getInstance().getMoney());
+        }
+    }
 
 
     public static class GunButtonLayout extends RelativeLayout {
@@ -130,11 +218,9 @@ public class CSGameShopScreen extends Fragment {
         public final RelativeLayout returnGoodsLayout;
         public final ValueAnimator backgroundAnimeFadeIn;
         public final ValueAnimator backgroundAnimeFadeOut;
-
         public final TextView numText;
         public final TextView itemNameText;
         public final TextView costText;
-
         public final TextView returnGoodsText;
 
         public GunButtonLayout(Context context, ShopItemData.ItemType type, int index) {
@@ -170,7 +256,7 @@ public class CSGameShopScreen extends Fragment {
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             numParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             numParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            numParams.setMargins(5,2,0,0);
+            numParams.setMargins(5,5,0,0);
             numText.setLayoutParams(numParams);
 
             itemNameText = new TextView(getContext());
@@ -181,7 +267,7 @@ public class CSGameShopScreen extends Fragment {
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            itemNameParams.setMargins(0,2,5,0);
+            itemNameParams.setMargins(0,5,5,0);
             itemNameText.setLayoutParams(itemNameParams);
 
             returnGoodsText = new TextView(getContext());
@@ -207,7 +293,6 @@ public class CSGameShopScreen extends Fragment {
                 if(!FPSMShop.getInstance().getSlotData(this.type,this.index).canReturn()){
                     backgroud.setStroke(0,RenderUtil.color(255,255,255));
                     returnGoodsLayout.setEnabled(false);
-
                     if(this.type == ShopItemData.ItemType.EQUIPMENT){
                         if(this.index == 0){
                             CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
@@ -293,7 +378,6 @@ public class CSGameShopScreen extends Fragment {
                                     bt.setElementsColor(false);
                                 });
                             }
-
                             if(this.index == 0 && currentSlot.boughtCount() >= 2){
                                 setElementsColor(false);
                             }
@@ -331,12 +415,17 @@ public class CSGameShopScreen extends Fragment {
                     return FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).boughtCount() < 2;
                 };
             }
-
             if(this.type == ShopItemData.ItemType.EQUIPMENT){
                 if(this.index == 0){
                     if(FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn()){
                         CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
                         CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).invalidate();
+                        return false;
+                    }
+                }
+
+                if(this.index == 0){
+                    if(FPSMShop.getInstance().getShopItemData().getSlotData(this.type, 1).canReturn() && !FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn()){
                         return false;
                     }
                 }
@@ -347,7 +436,6 @@ public class CSGameShopScreen extends Fragment {
         public void updateButtonState() {
            boolean enable = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
            setElementsColor(checkSlots(enable));
-
            if(!this.isHovered()) {
                backgroundAnimeFadeIn.start();
            }else{

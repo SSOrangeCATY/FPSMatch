@@ -11,13 +11,16 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.tacz.guns.api.item.IGun;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -90,10 +93,12 @@ public class FPSMCommand {
     }
 
     private int handleModifyShop(CommandContext<CommandSourceStack> context) {
-        String mapName = StringArgumentType.getString(context, "mapName");
-        String action = StringArgumentType.getString(context, "action");
-        BaseMap map = FPSMCore.getMapByName(mapName);
-        if (map != null) {}
+        if (context.getSource().getEntity() instanceof Player player){
+            ItemStack itemStack = player.getMainHandItem();
+            if (itemStack.getItem() instanceof IGun iGun) {
+                ResourceLocation gunId = iGun.getGunId(itemStack);
+            }
+        }
         return 1;
     }
 

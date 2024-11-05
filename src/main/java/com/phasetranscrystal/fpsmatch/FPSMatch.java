@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
+import com.phasetranscrystal.fpsmatch.test.TestRegister;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -56,6 +57,7 @@ public class FPSMatch {
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
         MapRegister.register();
+        TestRegister.ITEMS.register(modEventBus);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
