@@ -2,16 +2,17 @@ package com.phasetranscrystal.fpsmatch.cs;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopDataSlotPacket;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -34,11 +35,44 @@ public class CSGameMap extends BaseMap {
     private boolean isWarmTime = false;
     private boolean isWaitingWinner = false;
     private final Map<String,Integer> teamScores = new HashMap<>();
+    private final ShopData defaultShopData;
 
     public CSGameMap(ServerLevel serverLevel, String gameType) {
         super(serverLevel, List.of("ct","t"), gameType);
         this.getMapTeams().setTeamPlayerLimit("ct",10);
         this.getMapTeams().setTeamPlayerLimit("t",10);
+        this.defaultShopData = this.buildShopData();
+    }
+
+    public ShopData buildShopData(){
+        ItemStack itemStack = new ItemStack(Items.APPLE);
+        int[][] d = new int[][]{
+                {650,1000,200,200,200},
+                {200,700,600,500,300},
+                {1500,1050,1700,2350,1050},
+                {1800,2700,3000,1700,4750},
+                {200,300,300,400,50}
+        };
+
+        Map<ShopData.ItemType, List<ShopData.ShopSlot>> data = new HashMap<>();
+        for(ShopData.ItemType c : ShopData.ItemType.values()) {
+            List<ShopData.ShopSlot> shopSlots = new ArrayList<>();
+            for (int i = 0;i <= 4 ; i++){
+                ShopData.ShopSlot shopSlot = new ShopData.ShopSlot(i,c,itemStack,d[c.typeIndex][i]);
+                shopSlots.add(shopSlot);
+            }
+            data.put(c,shopSlots);
+        }
+        return new ShopData(data);
+    }
+
+    public void syncShopDataToClient(ServerPlayer player){
+        for (ShopData.ItemType type : ShopData.ItemType.values()){
+            List<ShopData.ShopSlot> slots = this.defaultShopData.getShopSlotsByType(type);
+            slots.forEach((shopSlot -> {
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopDataSlotPacket(shopSlot));
+            }));
+        }
     }
 
     @Override

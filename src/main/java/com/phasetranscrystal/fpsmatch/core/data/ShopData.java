@@ -1,35 +1,28 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ShopItemData {
+public class ShopData {
     private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
-    private final Map<UUID,Integer> otherMoney = new HashMap<>();
     private int nextRoundMinMoney = 1000;
-    public ShopItemData(){
+    public ShopData(){
         checkData(defaultData);
         data.putAll(defaultData);
     }
 
-    public ShopItemData(Map<ItemType, List<ShopSlot>> data){
+    public ShopData(Map<ItemType, List<ShopSlot>> data){
         checkData(data);
         this.data.putAll(data);
     }
 
-    private void setOtherMoney(Map<UUID,Integer> otherMoney){
-        this.otherMoney.clear();
-        this.otherMoney.putAll(otherMoney);
-    }
-
-    public Map<UUID,Integer> getOtherMoney(){
-        return otherMoney;
-    }
     public int getNextRoundMinMoney() {
         return nextRoundMinMoney;
     }
@@ -67,7 +60,7 @@ public class ShopItemData {
         data.computeIfAbsent(shopSlot.type, k -> {
             data.get(k).remove(shopSlot.index);
             return data.get(k);
-        }).add(shopSlot);
+        }).add(shopSlot.index,shopSlot);
     }
 
     // 获取特定ItemType的所有ShopSlot
@@ -125,20 +118,22 @@ public class ShopItemData {
 
     public static class ShopSlot{
         private ResourceLocation texture = new ResourceLocation(FPSMatch.MODID,"gun/hud/ai_awp");
+        private String itemName;
         private final int index;
         private final ItemType type;
-        private final ItemStack itemStack;
+        @Nullable private ItemStack itemStack;
         private final int defaultCost;
         private int cost;
         private int boughtCount = 0;
         private boolean enable = true;
         private boolean canReturn = false;
 
-        public ShopSlot(int index,ItemType type, ItemStack itemStack, int cost) {
+        public ShopSlot(int index, ItemType type, @NonNull ItemStack itemStack, int cost) {
             this.type = type;
             if (index < 0 || index > 4) {
                 throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
             }
+            this.itemName = itemStack.getDisplayName().getString();
             this.index = index;
             this.itemStack = itemStack;
             this.defaultCost = cost;
@@ -146,13 +141,13 @@ public class ShopItemData {
         }
 
 
-        public ShopSlot(int index,ItemType type, ItemStack itemStack, int cost,ResourceLocation texture) {
+        public ShopSlot(int index, ItemType type, String name, int cost, ResourceLocation texture) {
             this.type = type;
             if (index < 0 || index > 4) {
                 throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
             }
             this.index = index;
-            this.itemStack = itemStack;
+            this.itemName = name;
             this.defaultCost = cost;
             this.cost = cost;
             this.texture = texture;
@@ -180,6 +175,9 @@ public class ShopItemData {
 
         public int index(){
             return index;
+        }
+        public String name(){
+            return this.itemName;
         }
 
         public boolean enable(){

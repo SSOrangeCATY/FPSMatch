@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.data.ShopItemData;
+import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
@@ -26,7 +26,6 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,14 +38,13 @@ public class CSGameShopScreen extends Fragment {
     private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static final String TACZ_MODID = "tacz";
     public static final String TACZ_AWP_ICON = "gun/hud/ai_awp.png";
-    public static final Map<ShopItemData.ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
+    public static final Map<ShopData.ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
     public static final String BACKGROUND = "ui/cs/background.png";
     public static final int CT_COLOR = RenderUtil.color(150,200,250);
     public static final int T_COLOR = RenderUtil.color(234, 192, 85);
     public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
     public static boolean debug;
-
     public CSGameShopScreen(boolean debug){
         CSGameShopScreen.debug = debug;
     }
@@ -113,13 +111,13 @@ public class CSGameShopScreen extends Fragment {
 
                 var shop = new LinearLayout(getContext());
                 var gun = new LinearLayout(getContext());
-                buttons.add( new GunButtonLayout(getContext(), ShopItemData.ItemType.values()[i],j));
+                buttons.add( new GunButtonLayout(getContext(), ShopData.ItemType.values()[i],j));
                 gun.addView(buttons.get(j),new LinearLayout.LayoutParams(-1,-1));
                 shop.setGravity(Gravity.CENTER);
                 shop.addView(gun,new LinearLayout.LayoutParams(gunButtonWeight,90));
                 typeBar.addView(shop,new LinearLayout.LayoutParams(-1,98));
             }
-            shopButtons.put(ShopItemData.ItemType.values()[i],buttons);
+            shopButtons.put(ShopData.ItemType.values()[i],buttons);
             shopWindow.addView(typeBar,new LinearLayout.LayoutParams(gunButtonWeight + 30,-1));
         }
         content.addView(shopWindow,new LinearLayout.LayoutParams(950,550));
@@ -211,7 +209,7 @@ public class CSGameShopScreen extends Fragment {
                         DISABLE_TEXTURE_COLOR,
                         T_COLOR
                 });
-        public final ShopItemData.ItemType type;
+        public final ShopData.ItemType type;
         public final int index;
         public final ImageView imageView;
         public final ShapeDrawable backgroud;
@@ -223,7 +221,7 @@ public class CSGameShopScreen extends Fragment {
         public final TextView costText;
         public final TextView returnGoodsText;
 
-        public GunButtonLayout(Context context, ShopItemData.ItemType type, int index) {
+        public GunButtonLayout(Context context, ShopData.ItemType type, int index) {
             super(context);
             this.type = type;
             this.index = index;
@@ -293,10 +291,10 @@ public class CSGameShopScreen extends Fragment {
                 if(!FPSMShop.getInstance().getSlotData(this.type,this.index).canReturn()){
                     backgroud.setStroke(0,RenderUtil.color(255,255,255));
                     returnGoodsLayout.setEnabled(false);
-                    if(this.type == ShopItemData.ItemType.EQUIPMENT){
+                    if(this.type == ShopData.ItemType.EQUIPMENT){
                         if(this.index == 0){
-                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
-                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).invalidate();
+                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
+                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
                         }
                     }
                 }
@@ -337,14 +335,14 @@ public class CSGameShopScreen extends Fragment {
             });
 
             setOnClickListener((v) -> {
-                ShopItemData.ShopSlot currentSlot = FPSMShop.getInstance().getShopItemData().getSlotData(this.type,this.index);
+                ShopData.ShopSlot currentSlot = FPSMShop.getInstance().getShopItemData().getSlotData(this.type,this.index);
                 boolean actionFlag = FPSMShop.getInstance().getMoney() >= currentSlot.cost();
                 if(checkSlots(actionFlag)){
                     FPSMShop.getInstance().handleShopButton(this.type,this.index);
                     returnGoodsLayout.setEnabled(true);
                     CSGameShopScreen.shopButtons.get(this.type);
-                        if(this.type == ShopItemData.ItemType.RIFLE || this.type == ShopItemData.ItemType.MID_RANK){
-                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.RIFLE).forEach((bt)->{
+                        if(this.type == ShopData.ItemType.RIFLE || this.type == ShopData.ItemType.MID_RANK){
+                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.RIFLE).forEach((bt)->{
                                 if(bt.type != this.type){
                                     bt.disableStroke();
                                 }else{
@@ -353,7 +351,7 @@ public class CSGameShopScreen extends Fragment {
                                     }
                                 }
                             });
-                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.MID_RANK).forEach((bt)->{
+                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.MID_RANK).forEach((bt)->{
                                 if(bt.type != this.type){
                                     bt.disableStroke();
                                 }else{
@@ -362,8 +360,8 @@ public class CSGameShopScreen extends Fragment {
                                     }
                                 }
                             });
-                        }else if(this.type == ShopItemData.ItemType.PISTOL){
-                            CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.PISTOL).forEach((bt)->{
+                        }else if(this.type == ShopData.ItemType.PISTOL){
+                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.PISTOL).forEach((bt)->{
                                 if(bt.type != this.type){
                                     bt.disableStroke();
                                 }else{
@@ -372,9 +370,9 @@ public class CSGameShopScreen extends Fragment {
                                     }
                                 }
                             });
-                        }else if(this.type == ShopItemData.ItemType.THROWABLE){
+                        }else if(this.type == ShopData.ItemType.THROWABLE){
                             if(FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4){
-                                CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.THROWABLE).forEach((bt)->{
+                                CSGameShopScreen.shopButtons.get(ShopData.ItemType.THROWABLE).forEach((bt)->{
                                     bt.setElementsColor(false);
                                 });
                             }
@@ -407,7 +405,7 @@ public class CSGameShopScreen extends Fragment {
 
         public boolean checkSlots(boolean enable){
             if (!enable) return false;
-            if(this.type == ShopItemData.ItemType.THROWABLE){
+            if(this.type == ShopData.ItemType.THROWABLE){
                 if (FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4){
                     return false;
                 }
@@ -415,11 +413,11 @@ public class CSGameShopScreen extends Fragment {
                     return FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).boughtCount() < 2;
                 };
             }
-            if(this.type == ShopItemData.ItemType.EQUIPMENT){
+            if(this.type == ShopData.ItemType.EQUIPMENT){
                 if(this.index == 0){
                     if(FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn()){
-                        CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
-                        CSGameShopScreen.shopButtons.get(ShopItemData.ItemType.EQUIPMENT).get(1).invalidate();
+                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
+                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
                         return false;
                     }
                 }
