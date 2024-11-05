@@ -16,7 +16,7 @@ public class TestItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pUsedHand) {
         if(pLevel.isClientSide){
-            MuiForgeApi.openScreen(new CSGameShopScreen(false));
+            MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
         }
         return super.use(pLevel,pPlayer,pUsedHand);
     }

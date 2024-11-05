@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
@@ -73,5 +74,12 @@ public abstract class BaseMap {
     public boolean switchDebugMode(){
         this.isDebug = !this.isDebug;
         return this.isDebug;
+    }
+
+    public void setShopData(String mapName){
+    }
+
+    public static void syncShopDataToClient(String mapName, ServerPlayer player){
+        FPSMShop.getInstance().syncShopData(mapName,player);
     }
 }

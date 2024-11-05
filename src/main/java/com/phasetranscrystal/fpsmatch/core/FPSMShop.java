@@ -1,14 +1,22 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.net.ShopDataSlotPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.network.PacketDistributor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FPSMShop {
     private static FPSMShop INSTANCE;
     public int money = 10000;
     private final ShopData shopItemData = new ShopData();
+    private static final Map<String,ShopData> gamesShopData = new HashMap<>();
 
     public static FPSMShop getInstance(){
         if(INSTANCE == null){
@@ -19,6 +27,27 @@ public class FPSMShop {
 
     protected FPSMShop(){
     }
+
+    public static void putShopData(String map,ShopData shopData){
+        gamesShopData.put(map,shopData);
+    }
+
+    public static void putShopData(String map, ShopData.ShopSlot shopData){
+        if(gamesShopData.containsKey(map)){
+            gamesShopData.get(map).addShopSlot(shopData);
+        }
+    }
+
+    public static void syncShopData(String map, ServerPlayer player){
+        if(!gamesShopData.containsKey(map)) return;
+        for (ShopData.ItemType type : ShopData.ItemType.values()){
+            List<ShopData.ShopSlot> slots = gamesShopData.get(map).getShopSlotsByType(type);
+            slots.forEach((shopSlot -> {
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopDataSlotPacket(shopSlot));
+            }));
+        }
+    }
+
 
     public ShopData.ShopSlot getSlotData(ShopData.ItemType type, int index) {
         return shopItemData.getSlotData(type,index);

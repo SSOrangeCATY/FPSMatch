@@ -93,7 +93,6 @@ public  class CSGameOverlay implements IGuiOverlay {
             textRoundTimeColor = color(255,255,255);
         }
 
-        // 格式化输出
         String minutesPart = String.format("%02d", remainingMinutes);
         String secondsPart = String.format("%02d", remainingSecondsPart);
 

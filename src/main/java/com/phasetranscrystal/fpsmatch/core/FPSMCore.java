@@ -31,11 +31,13 @@ public class FPSMCore {
          return map.get();
     }
 
-    public static void registerMap(String mapName ,BaseMap map){
+    public static BaseMap registerMap(String mapName ,BaseMap map){
         if(REGISTRY.containsKey(map.getType())) {
             GAMES.put(mapName,map);
+            return map;
         }else{
             FPSMatch.LOGGER.error("error : unregister game type " + map.getType());
+            return null;
         }
     }
 

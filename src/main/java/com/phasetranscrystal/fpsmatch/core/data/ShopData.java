@@ -57,10 +57,8 @@ public class ShopData {
 
     // 添加一个ShopSlot到对应的ItemType列表中
     public void addShopSlot(ShopSlot shopSlot) {
-        data.computeIfAbsent(shopSlot.type, k -> {
-            data.get(k).remove(shopSlot.index);
-            return data.get(k);
-        }).add(shopSlot.index,shopSlot);
+        data.get(shopSlot.type).remove(shopSlot.index);
+        data.get(shopSlot.type).add(shopSlot.index,shopSlot);
     }
 
     // 获取特定ItemType的所有ShopSlot
@@ -118,22 +116,22 @@ public class ShopData {
 
     public static class ShopSlot{
         private ResourceLocation texture = new ResourceLocation(FPSMatch.MODID,"gun/hud/ai_awp");
-        private String itemName;
+        private final String itemName;
         private final int index;
         private final ItemType type;
-        @Nullable private ItemStack itemStack;
-        private final int defaultCost;
+        private ItemStack itemStack;
+        private int defaultCost;
         private int cost;
         private int boughtCount = 0;
         private boolean enable = true;
         private boolean canReturn = false;
 
-        public ShopSlot(int index, ItemType type, @NonNull ItemStack itemStack, int cost) {
+        public ShopSlot(int index, ItemType type,ItemStack itemStack, int cost) {
             this.type = type;
             if (index < 0 || index > 4) {
                 throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
             }
-            this.itemName = itemStack.getDisplayName().getString();
+            this.itemName = itemStack== null ? "DebugItem": itemStack.getDisplayName().getString();
             this.index = index;
             this.itemStack = itemStack;
             this.defaultCost = cost;
@@ -141,17 +139,6 @@ public class ShopData {
         }
 
 
-        public ShopSlot(int index, ItemType type, String name, int cost, ResourceLocation texture) {
-            this.type = type;
-            if (index < 0 || index > 4) {
-                throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
-            }
-            this.index = index;
-            this.itemName = name;
-            this.defaultCost = cost;
-            this.cost = cost;
-            this.texture = texture;
-        }
         public int cost(){
             return cost;
         }
@@ -195,6 +182,10 @@ public class ShopData {
         public int setDefaultCost(){
             this.cost = defaultCost;
             return this.cost;
+        }
+
+        public void setDefaultCost(int cost){
+            this.defaultCost = cost;
         }
 
         public void setBoughtCount(int boughtCount) {

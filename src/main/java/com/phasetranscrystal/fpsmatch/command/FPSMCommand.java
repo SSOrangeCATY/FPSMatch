@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -10,6 +11,8 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.commands.CommandSourceStack;
@@ -18,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -40,8 +44,14 @@ public class FPSMCommand {
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                         .suggests(CommandSuggests.MAP_NAMES_WITH_AME_TYPE_SUGGESTION)
                                         .then(Commands.literal("modify")
-                                                .then(Commands.argument("action",StringArgumentType.string()))
-                                                .executes(this::handleModifyShop)))))
+                                                .then(Commands.argument("action",StringArgumentType.string())
+                                                        .suggests(CommandSuggests.SHOP_ACTION_SUGGESTION)
+                                                        .then(Commands.argument("shopType",StringArgumentType.string())
+                                                                .suggests(CommandSuggests.SHOP_ITEM_TYPES_SUGGESTION)
+                                                                .then(Commands.argument("shopSlot", IntegerArgumentType.integer(1,5))
+                                                                        .suggests(CommandSuggests.SHOP_SET_SLOT_ACTION_SUGGESTION)
+                                                                        .then(Commands.argument("cost", IntegerArgumentType.integer(1))
+                                                                                .executes(this::handleModifyShop)))))))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
                                 .then(Commands.argument("gameType", StringArgumentType.string())
@@ -72,7 +82,10 @@ public class FPSMCommand {
         String type = StringArgumentType.getString(context, "gameType");
         BiFunction<ServerLevel, List<String>, BaseMap> game = FPSMCore.getPreBuildGame(type);
         if(game != null){
-            FPSMCore.registerMap(mapName, game.apply(context.getSource().getLevel(),new ArrayList<>()));
+            BaseMap map = FPSMCore.registerMap(mapName, game.apply(context.getSource().getLevel(),new ArrayList<>()));
+            if(map != null) {
+                map.setShopData(mapName);
+            }else return 0;
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
             return 1;
         }else{
@@ -93,10 +106,28 @@ public class FPSMCommand {
     }
 
     private int handleModifyShop(CommandContext<CommandSourceStack> context) {
-        if (context.getSource().getEntity() instanceof Player player){
-            ItemStack itemStack = player.getMainHandItem();
-            if (itemStack.getItem() instanceof IGun iGun) {
-                ResourceLocation gunId = iGun.getGunId(itemStack);
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String action = StringArgumentType.getString(context, "action");
+        String shopType = StringArgumentType.getString(context, "shopType");
+        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
+        int cost = IntegerArgumentType.getInteger(context,"cost");
+        BaseMap map = FPSMCore.getMapByName(mapName);
+
+        if (map != null) {
+            switch (action) {
+                case "set": {
+                    if (context.getSource().getEntity() instanceof Player player){
+                        ItemStack itemStack = player.getMainHandItem();
+                        FPSMShop.putShopData(mapName,new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)),itemStack,cost));
+                    }
+                }
+                case "reset" : {
+                }
+                case "sync" :{
+                    if (context.getSource().getEntity() instanceof ServerPlayer player) {
+                        FPSMShop.syncShopData(mapName, player);
+                    }
+                }
             }
         }
         return 1;

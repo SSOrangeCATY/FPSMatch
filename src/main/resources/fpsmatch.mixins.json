@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "FPSMatch.refmap.json",
   "mixins": [
+    "MixinFilePackTexture",
+    "MixinZipPackTexture"
   ],
   "client": [
   ],

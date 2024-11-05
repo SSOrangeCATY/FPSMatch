@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopDataSlotPacket;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
@@ -65,6 +66,12 @@ public class FPSMatch {
                 .encoder(CSGameSettingsPacket::encode)
                 .decoder(CSGameSettingsPacket::decode)
                 .consumerNetworkThread(CSGameSettingsPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(ShopDataSlotPacket.class, 1)
+                .encoder(ShopDataSlotPacket::encode)
+                .decoder(ShopDataSlotPacket::decode)
+                .consumerNetworkThread(ShopDataSlotPacket::handle)
                 .add();
     }
 

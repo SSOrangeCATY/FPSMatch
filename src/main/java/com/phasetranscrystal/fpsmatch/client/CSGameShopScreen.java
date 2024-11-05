@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import com.tacz.guns.GunMod;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
@@ -11,8 +12,10 @@ import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.ImageStore;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.util.ColorStateList;
@@ -23,14 +26,16 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
 
 
 public class CSGameShopScreen extends Fragment {
@@ -44,16 +49,26 @@ public class CSGameShopScreen extends Fragment {
     public static final int T_COLOR = RenderUtil.color(234, 192, 85);
     public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
+    public static boolean refreshFlag = false;
     public static boolean debug;
+    private static CSGameShopScreen INSTANCE;
+
     public CSGameShopScreen(boolean debug){
         CSGameShopScreen.debug = debug;
+    }
+
+    public static CSGameShopScreen getInstance(boolean debug) {
+        if(INSTANCE == null) {
+            INSTANCE = new CSGameShopScreen(debug);
+        }
+        return INSTANCE;
     }
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         Configurator.setRootLevel(Level.DEBUG);
         try (ModernUI app = new ModernUI()) {
-            app.run(new CSGameShopScreen(true));
+            app.run(getInstance(true));
         }
         AudioManager.getInstance().close();
         System.gc();
@@ -65,7 +80,7 @@ public class CSGameShopScreen extends Fragment {
         content.setOrientation(LinearLayout.HORIZONTAL);
         ImageView background = new ImageView(getContext());
         ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
-        imageDrawable.setAlpha(144);
+        imageDrawable.setAlpha(60);
 
         background.setImageDrawable(imageDrawable);
         background.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -129,7 +144,7 @@ public class CSGameShopScreen extends Fragment {
         RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
                 950,
                 550);
-        shopWindowBackGroundParams.setMargins(240,170 + 40 ,0,0);
+        shopWindowBackGroundParams.setMargins(240,170 + 38 ,0,0);
 
         RelativeLayout.LayoutParams titleBarParams =  new RelativeLayout.LayoutParams(950,38);
         titleBarParams.setMargins(240,170,0,0);
@@ -148,7 +163,7 @@ public class CSGameShopScreen extends Fragment {
             super(context);
             ImageView background = new ImageView(getContext());
             ImageDrawable imageDrawable =new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
-            imageDrawable.setAlpha(144);
+            imageDrawable.setAlpha(60);
             background.setImageDrawable(imageDrawable);
             background.setScaleType(ImageView.ScaleType.FIT_XY);
             addView(background);
@@ -220,6 +235,7 @@ public class CSGameShopScreen extends Fragment {
         public final TextView itemNameText;
         public final TextView costText;
         public final TextView returnGoodsText;
+        public Image icon = Image.create(FPSMatch.MODID,TACZ_AWP_ICON);
 
         public GunButtonLayout(Context context, ShopData.ItemType type, int index) {
             super(context);
@@ -233,10 +249,11 @@ public class CSGameShopScreen extends Fragment {
             backgroud.setShape(ShapeDrawable.RECTANGLE);
             backgroud.setColor(RenderUtil.color(42, 42, 42));
             backgroud.setCornerRadius(3);
+            backgroud.setAlpha(200);
             setBackground(backgroud);
 
             imageView = new ImageView(context);
-            ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, TACZ_AWP_ICON));
+            ImageDrawable imageDrawable = new ImageDrawable(this.icon);
             var imageParam = new RelativeLayout.LayoutParams(39, 13);
             imageParam.addRule(RelativeLayout.CENTER_IN_PARENT);
             imageView.setLayoutParams(imageParam);
@@ -442,9 +459,25 @@ public class CSGameShopScreen extends Fragment {
 
         }
         @Override
-        public void draw(Canvas canvas) {
+        public void draw(@NotNull Canvas canvas) {
             super.draw(canvas);
             updateButtonState();
+            if(refreshFlag){
+                ShopData.ShopSlot data = FPSMShop.getInstance().getShopItemData().getSlotData(this.type,this.index);
+                String fixedName = data.name().replace("[","").replace("]","");
+                this.itemNameText.setText(fixedName);
+                this.costText.setText(String.valueOf(data.cost()));
+                ResourceLocation texture = data.getTexture();
+                this.icon = RenderUtil.getGunTextureByRL(texture);
+                if (this.icon == null){
+                    this.icon = Image.create(texture.getNamespace(), texture.getPath()+".png");
+                }
+                this.imageView.setImageDrawable(new ImageDrawable(this.icon));
+                this.invalidate();
+                if(this.type == ShopData.ItemType.THROWABLE && this.index == 4){
+                    refreshFlag = false;
+                }
+            }
         }
     }
 
