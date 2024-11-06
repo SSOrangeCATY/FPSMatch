@@ -8,8 +8,7 @@ import java.util.*;
 public class ClientData {
     public static String currentMap = "error";
     public static final ShopData clientShopData = new ShopData(ShopData.getDefaultShopItemData(false));
-    public static int money = 0;
-
+    public static int money = 10000;
     public static final Map<UUID, TabData> tabData = new HashMap<>();
 
     public static ShopData.ShopSlot getSlotData(ShopData.ItemType type, int index) {
@@ -22,10 +21,6 @@ public class ClientData {
 
     public static int getMoney(){
         return money;
-    }
-
-    public static void buy(ShopData.ItemType type, int index){
-
     }
 
 }

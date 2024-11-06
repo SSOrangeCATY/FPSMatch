@@ -47,6 +47,7 @@ public class CSGameShopScreen extends Fragment {
     public static boolean refreshFlag = false;
     public static boolean debug;
     private static CSGameShopScreen INSTANCE;
+    private RelativeLayout window = null;
 
     public CSGameShopScreen(boolean debug){
         CSGameShopScreen.debug = debug;
@@ -70,83 +71,87 @@ public class CSGameShopScreen extends Fragment {
     }
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
-        var window = new RelativeLayout(getContext());
-        var content = new LinearLayout(getContext());
-        content.setOrientation(LinearLayout.HORIZONTAL);
-        ImageView background = new ImageView(getContext());
-        ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
-        imageDrawable.setAlpha(60);
+        if (window == null) {
+            window = new RelativeLayout(getContext());
+            var content = new LinearLayout(getContext());
+            content.setOrientation(LinearLayout.HORIZONTAL);
+            ImageView background = new ImageView(getContext());
+            ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
+            imageDrawable.setAlpha(60);
 
-        background.setImageDrawable(imageDrawable);
-        background.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            background.setImageDrawable(imageDrawable);
+            background.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
-        var shopWindow = new LinearLayout(this.getContext());
-        for(int i = 0; i<5; i++){
-            var shopTitleBackground = new ShapeDrawable();
-            shopTitleBackground.setShape(ShapeDrawable.RECTANGLE);
-            shopTitleBackground.setStroke(0,0xFFFF0000);
-            var typeBar = new LinearLayout(getContext());
-            typeBar.setOrientation(LinearLayout.VERTICAL);
+            var shopWindow = new LinearLayout(this.getContext());
+            for (int i = 0; i < 5; i++) {
+                var shopTitleBackground = new ShapeDrawable();
+                shopTitleBackground.setShape(ShapeDrawable.RECTANGLE);
+                shopTitleBackground.setStroke(0, 0xFFFF0000);
+                var typeBar = new LinearLayout(getContext());
+                typeBar.setOrientation(LinearLayout.VERTICAL);
 
-            var titleBar = new LinearLayout(getContext());
+                var titleBar = new LinearLayout(getContext());
 
-            int gunButtonWeight = switch (i) {
-                case 2 -> 180;
-                case 3 -> 200;
-                default -> 140;
-            };
-            int textColor = RenderUtil.color(203,203,203);
-            TextView numTab = new TextView(getContext());
-            numTab.setTextColor(textColor);
-            numTab.setText(String.valueOf(i + 1));
-            numTab.setTextSize(15);
-            numTab.setPadding(15,10,0,0);
-            numTab.setGravity(Gravity.LEFT);
+                int gunButtonWeight = switch (i) {
+                    case 2 -> 180;
+                    case 3 -> 200;
+                    default -> 140;
+                };
+                int textColor = RenderUtil.color(203, 203, 203);
+                TextView numTab = new TextView(getContext());
+                numTab.setTextColor(textColor);
+                numTab.setText(String.valueOf(i + 1));
+                numTab.setTextSize(15);
+                numTab.setPadding(15, 10, 0, 0);
+                numTab.setGravity(Gravity.LEFT);
 
-            TextView title = new TextView(getContext());
-            title.setTextColor(textColor);
-            title.setText(I18n.get(TOP_NAME_KEYS_TEST[i]));
-            title.setTextSize(21);
-            title.setGravity(Gravity.CENTER);
+                TextView title = new TextView(getContext());
+                title.setTextColor(textColor);
+                title.setText(I18n.get(TOP_NAME_KEYS_TEST[i]));
+                title.setTextSize(21);
+                title.setGravity(Gravity.CENTER);
 
-            titleBar.addView(numTab,new LinearLayout.LayoutParams(25, -1));
-            titleBar.addView(title,new LinearLayout.LayoutParams(gunButtonWeight - 25, -1));
-            typeBar.addView(titleBar,new LinearLayout.LayoutParams(-1, 44));
-            List<GunButtonLayout> buttons = new ArrayList<>();
-            for(int j = 0; j<5; j++){
-                var shopHolderBackground = new ShapeDrawable();
-                shopHolderBackground.setShape(ShapeDrawable.RECTANGLE);
-                shopHolderBackground.setCornerRadius(3);
-                shopHolderBackground.setColor(RenderUtil.color(42,42,42));
+                titleBar.addView(numTab, new LinearLayout.LayoutParams(25, -1));
+                titleBar.addView(title, new LinearLayout.LayoutParams(gunButtonWeight - 25, -1));
+                typeBar.addView(titleBar, new LinearLayout.LayoutParams(-1, 44));
+                List<GunButtonLayout> buttons = new ArrayList<>();
+                for (int j = 0; j < 5; j++) {
+                    var shopHolderBackground = new ShapeDrawable();
+                    shopHolderBackground.setShape(ShapeDrawable.RECTANGLE);
+                    shopHolderBackground.setCornerRadius(3);
+                    shopHolderBackground.setColor(RenderUtil.color(42, 42, 42));
 
-                var shop = new LinearLayout(getContext());
-                var gun = new LinearLayout(getContext());
-                buttons.add( new GunButtonLayout(getContext(), ShopData.ItemType.values()[i],j));
-                gun.addView(buttons.get(j),new LinearLayout.LayoutParams(-1,-1));
-                shop.setGravity(Gravity.CENTER);
-                shop.addView(gun,new LinearLayout.LayoutParams(gunButtonWeight,90));
-                typeBar.addView(shop,new LinearLayout.LayoutParams(-1,98));
+                    var shop = new LinearLayout(getContext());
+                    var gun = new LinearLayout(getContext());
+                    if (shopButtons.getOrDefault(ShopData.ItemType.values()[i], new ArrayList<>()).isEmpty()) {
+                        buttons.add(new GunButtonLayout(getContext(), ShopData.ItemType.values()[i], j));
+                    } else buttons.add(new GunButtonLayout(getContext(), ShopData.ItemType.values()[i], j));
+                    gun.addView(buttons.get(j), new LinearLayout.LayoutParams(-1, -1));
+                    shop.setGravity(Gravity.CENTER);
+                    shop.addView(gun, new LinearLayout.LayoutParams(gunButtonWeight, 90));
+                    typeBar.addView(shop, new LinearLayout.LayoutParams(-1, 98));
+                }
+                shopButtons.put(ShopData.ItemType.values()[i], buttons);
+                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(gunButtonWeight + 30, -1));
             }
-            shopButtons.put(ShopData.ItemType.values()[i],buttons);
-            shopWindow.addView(typeBar,new LinearLayout.LayoutParams(gunButtonWeight + 30,-1));
+            content.addView(shopWindow, new LinearLayout.LayoutParams(950, 550));
+            RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            shopWindowParams.setMargins(240, 170 + 40, 0, 0);
+
+            RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
+                    950,
+                    550);
+            shopWindowBackGroundParams.setMargins(240, 170 + 38, 0, 0);
+
+            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(950, 38);
+            titleBarParams.setMargins(240, 170, 0, 0);
+
+            window.addView(new HeadBarLayout(getContext()), titleBarParams);
+            window.addView(background, shopWindowBackGroundParams);
+            window.addView(content, shopWindowParams);
         }
-        content.addView(shopWindow,new LinearLayout.LayoutParams(950,550));
-        RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT);
-        shopWindowParams.setMargins(240, 170+40,0,0);
-
-        RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
-                950,
-                550);
-        shopWindowBackGroundParams.setMargins(240,170 + 38 ,0,0);
-
-        RelativeLayout.LayoutParams titleBarParams =  new RelativeLayout.LayoutParams(950,38);
-        titleBarParams.setMargins(240,170,0,0);
-
-        window.addView(new HeadBarLayout(getContext()),titleBarParams);
-        window.addView(background, shopWindowBackGroundParams);
-        window.addView(content,shopWindowParams);
         return window;
     }
 
@@ -248,6 +253,7 @@ public class CSGameShopScreen extends Fragment {
             setBackground(backgroud);
 
             imageView = new ImageView(context);
+            imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             ImageDrawable imageDrawable = new ImageDrawable(this.icon);
             var imageParam = new RelativeLayout.LayoutParams(39, 13);
             imageParam.addRule(RelativeLayout.CENTER_IN_PARENT);
@@ -256,6 +262,7 @@ public class CSGameShopScreen extends Fragment {
             imageView.setScaleY(3);
             imageView.setImageDrawable(imageDrawable);
             imageView.setImageTintList(TINT_LIST);
+            imageView.setForegroundGravity(Gravity.CENTER);
             addView(imageView);
 
             numText = new TextView(getContext());
@@ -342,7 +349,6 @@ public class CSGameShopScreen extends Fragment {
                 if(checkSlots(actionFlag)){
                     FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionPacketC2SPacket.ACTION_BUY));
                     returnGoodsLayout.setEnabled(true);
-                    CSGameShopScreen.shopButtons.get(this.type);
                         if(this.type == ShopData.ItemType.RIFLE || this.type == ShopData.ItemType.MID_RANK){
                             CSGameShopScreen.shopButtons.get(ShopData.ItemType.RIFLE).forEach((bt)->{
                                 if(bt.type != this.type){
@@ -470,6 +476,7 @@ public class CSGameShopScreen extends Fragment {
                     this.icon = Image.create(texture.getNamespace(), texture.getPath()+".png");
                 }
                 this.imageView.setImageDrawable(new ImageDrawable(this.icon));
+
                 this.invalidate();
                 if(this.type == ShopData.ItemType.THROWABLE && this.index == 4){
                     refreshFlag = false;

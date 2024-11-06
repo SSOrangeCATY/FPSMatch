@@ -35,7 +35,7 @@ public class FPSMCore {
          return map.get();
     }
 
-    public static BaseMap registerMap(String type,BaseMap map){
+    public static BaseMap registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
             if(getMapNames(type).contains(map.getMapName())){
                 FPSMatch.LOGGER.error("error : has same map name -> " + map.getMapName());
@@ -55,14 +55,22 @@ public class FPSMCore {
         AtomicReference<BaseMap> map = new AtomicReference<>();
         GAMES.forEach((type,mapList)->{
             mapList.forEach((baseMap)->{
-                if(baseMap.mapName.equals(name)) map.set(baseMap);
+                if(baseMap.getMapName().equals(name)) {
+                    map.set(baseMap);
+                }
             });
         });
        return map.get();
     }
 
     public static List<String> getMapNames(){
-        return GAMES.keySet().stream().toList();
+        List<String> names = new ArrayList<>();
+        GAMES.forEach((type,mapList)->{
+            mapList.forEach((map->{
+                names.add(map.getMapName());
+            }));
+        });
+        return names;
     }
 
     public static List<String> getMapNames(String type){

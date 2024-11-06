@@ -3,14 +3,12 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
+import net.minecraft.server.commands.GiveCommand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FPSMShop {
@@ -70,6 +68,7 @@ public class FPSMShop {
     public int getNextRoundMinMoney(UUID uuid){
         return this.getPlayerShopData(uuid).getNextRoundMinMoney();
     }
+
     public void handleShopButton(UUID uuid,ShopData.ItemType type, int index) {
         ShopData data = this.getPlayerShopData(uuid);
         List<ShopData.ShopSlot> shopSlotList = data.getShopSlotsByType(type);
@@ -86,6 +85,11 @@ public class FPSMShop {
         }
         data.takeMoney(cost);
         getCostOrBuy(uuid,type, index, true);
+        ServerPlayer player = Objects.requireNonNull(FPSMCore.getMapByName(name)).getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+        if (player != null) {
+            player.getInventory().add(currentSlot.itemStack());
+            syncShopData(name, player);
+        }
         ShopData.ShopSlot shopSlot = shopSlotList.get(index);
         System.out.println("bought : " + (shopSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : shopSlot.itemStack().getDisplayName().getString()) + " cost->" + shopSlot.cost());
         System.out.println(data.getMoney() +"<-"+ cost);
@@ -108,6 +112,11 @@ public class FPSMShop {
             return; // 商品未购买
         }
         data.addMoney(returnTheGun(uuid,type, index));
+        ServerPlayer player = Objects.requireNonNull(FPSMCore.getMapByName(name)).getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+        if (player != null) {
+            player.getInventory().removeItem(currentSlot.itemStack());
+            syncShopData(name, player);
+        }
     }
 
     private int buyEquipment(UUID uuid, ShopData.ItemType type, int index, boolean bought) {

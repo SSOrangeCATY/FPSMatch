@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.client;
 
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.tacz.guns.client.resource.texture.FilePackTexture;
 import com.tacz.guns.client.resource.texture.ZipPackTexture;
 import net.minecraft.resources.ResourceLocation;

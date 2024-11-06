@@ -42,7 +42,7 @@ public class FPSMCommand {
                         .then(Commands.argument("gameType", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION)
                                 .then(Commands.argument("mapName", StringArgumentType.string())
-                                        .suggests(CommandSuggests.MAP_NAMES_WITH_AME_TYPE_SUGGESTION)
+                                        .suggests(CommandSuggests.MAP_NAMES_WITH_GAME_TYPE_SUGGESTION)
                                         .then(Commands.literal("modify")
                                                 .then(Commands.argument("action",StringArgumentType.string())
                                                         .suggests(CommandSuggests.SHOP_ACTION_SUGGESTION)
@@ -174,7 +174,6 @@ public class FPSMCommand {
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
         BaseMap map = FPSMCore.getMapByName(mapName);
-
         if (context.getSource().getEntity() instanceof Player player) {
             if (map != null) {
                 switch (action) {

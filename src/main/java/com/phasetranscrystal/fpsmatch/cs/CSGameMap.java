@@ -24,7 +24,6 @@ public class CSGameMap extends BaseMap {
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
-
     private final int waittingTime = 400;
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
