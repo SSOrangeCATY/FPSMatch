@@ -3,8 +3,8 @@ package com.phasetranscrystal.fpsmatch.client;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.net.ShopActionPacketC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import com.tacz.guns.GunMod;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
@@ -12,10 +12,8 @@ import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.ImageStore;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.util.ColorStateList;
@@ -26,15 +24,12 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.*;
 
 
@@ -194,7 +189,7 @@ public class CSGameShopScreen extends Fragment {
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
             minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money",FPSMShop.getInstance().getNextRoundMinMoney()));
+            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money",ClientData.clientShopData.getNextRoundMinMoney()));
             minmoneyText.setMargins(0,0,20,0);
             nextRoundMinMoneyText.setLayoutParams(minmoneyText);
             nextRoundMinMoneyText.setTextSize(15);
@@ -210,7 +205,7 @@ public class CSGameShopScreen extends Fragment {
         }
 
         public void updateText(){
-            moneyText.setText("$"+FPSMShop.getInstance().getMoney());
+            moneyText.setText("$"+ClientData.getMoney());
         }
     }
 
@@ -304,24 +299,14 @@ public class CSGameShopScreen extends Fragment {
             };
             returnGoodsLayout.addView(returnGoodsText);
             returnGoodsLayout.setOnClickListener((l)->{
-                FPSMShop.getInstance().handleReturnButton(this.type,this.index);
-                if(!FPSMShop.getInstance().getSlotData(this.type,this.index).canReturn()){
-                    backgroud.setStroke(0,RenderUtil.color(255,255,255));
-                    returnGoodsLayout.setEnabled(false);
-                    if(this.type == ShopData.ItemType.EQUIPMENT){
-                        if(this.index == 0){
-                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
-                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
-                        }
-                    }
-                }
+                FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionPacketC2SPacket.ACTION_RETURN));
             });
 
             returnGoodsLayout.setEnabled(false);
             addView(returnGoodsLayout);
 
             costText = new TextView(getContext());
-            costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, this.index).cost());
+            costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, this.index).cost());
             costText.setTextSize(12);
             RelativeLayout.LayoutParams costParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -352,10 +337,10 @@ public class CSGameShopScreen extends Fragment {
             });
 
             setOnClickListener((v) -> {
-                ShopData.ShopSlot currentSlot = FPSMShop.getInstance().getShopItemData().getSlotData(this.type,this.index);
-                boolean actionFlag = FPSMShop.getInstance().getMoney() >= currentSlot.cost();
+                ShopData.ShopSlot currentSlot = ClientData.clientShopData.getSlotData(this.type,this.index);
+                boolean actionFlag = ClientData.getMoney() >= currentSlot.cost();
                 if(checkSlots(actionFlag)){
-                    FPSMShop.getInstance().handleShopButton(this.type,this.index);
+                    FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionPacketC2SPacket.ACTION_BUY));
                     returnGoodsLayout.setEnabled(true);
                     CSGameShopScreen.shopButtons.get(this.type);
                         if(this.type == ShopData.ItemType.RIFLE || this.type == ShopData.ItemType.MID_RANK){
@@ -388,7 +373,7 @@ public class CSGameShopScreen extends Fragment {
                                 }
                             });
                         }else if(this.type == ShopData.ItemType.THROWABLE){
-                            if(FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4){
+                            if(ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
                                 CSGameShopScreen.shopButtons.get(ShopData.ItemType.THROWABLE).forEach((bt)->{
                                     bt.setElementsColor(false);
                                 });
@@ -423,33 +408,45 @@ public class CSGameShopScreen extends Fragment {
         public boolean checkSlots(boolean enable){
             if (!enable) return false;
             if(this.type == ShopData.ItemType.THROWABLE){
-                if (FPSMShop.getInstance().getShopItemData().getThrowableTypeBoughtCount() >= 4){
+                if (ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
                     return false;
                 }
                 if(this.index == 0){
-                    return FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).boughtCount() < 2;
+                    return ClientData.clientShopData.getSlotData(this.type, this.index).boughtCount() < 2;
                 };
             }
             if(this.type == ShopData.ItemType.EQUIPMENT){
                 if(this.index == 0){
-                    if(FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn()){
-                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+FPSMShop.getInstance().getSlotData(this.type, 1).cost());
+                    if(ClientData.clientShopData.getSlotData(this.type, this.index).canReturn()){
+                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
                         CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
                         return false;
                     }
                 }
 
                 if(this.index == 0){
-                    if(FPSMShop.getInstance().getShopItemData().getSlotData(this.type, 1).canReturn() && !FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn()){
+                    if(ClientData.clientShopData.getSlotData(this.type, 1).canReturn() && !ClientData.clientShopData.getSlotData(this.type, this.index).canReturn()){
                         return false;
                     }
                 }
             }
-            return !FPSMShop.getInstance().getShopItemData().getSlotData(this.type, this.index).canReturn();
+
+            if(!ClientData.clientShopData.getSlotData(this.type,this.index).canReturn()){
+                backgroud.setStroke(0,RenderUtil.color(255,255,255));
+                returnGoodsLayout.setEnabled(false);
+                if(this.type == ShopData.ItemType.EQUIPMENT){
+                    if(this.index == 0){
+                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
+                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
+                    }
+                }
+            }
+
+            return !ClientData.clientShopData.getSlotData(this.type, this.index).canReturn();
         }
 
         public void updateButtonState() {
-           boolean enable = FPSMShop.getInstance().getMoney() >= FPSMShop.getInstance().getSlotData(this.type,this.index).cost();
+           boolean enable = ClientData.getMoney() >= ClientData.clientShopData.getSlotData(this.type,this.index).cost();
            setElementsColor(checkSlots(enable));
            if(!this.isHovered()) {
                backgroundAnimeFadeIn.start();
@@ -463,7 +460,7 @@ public class CSGameShopScreen extends Fragment {
             super.draw(canvas);
             updateButtonState();
             if(refreshFlag){
-                ShopData.ShopSlot data = FPSMShop.getInstance().getShopItemData().getSlotData(this.type,this.index);
+                ShopData.ShopSlot data = ClientData.clientShopData.getSlotData(this.type,this.index);
                 String fixedName = data.name().replace("[","").replace("]","");
                 this.itemNameText.setText(fixedName);
                 this.costText.setText(String.valueOf(data.cost()));

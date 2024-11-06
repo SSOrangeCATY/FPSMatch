@@ -6,7 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class CSGameSettingsPacket {
+public class CSGameSettingsS2CPacket {
     private final int cTWinnerRounds;
     private final int tWinnerRounds;
     private final int pauseTime;
@@ -19,16 +19,16 @@ public class CSGameSettingsPacket {
     private boolean isWarmTime;
     private final boolean isWaitingWinner;
 
-    public CSGameSettingsPacket(int cTWinnerRounds,
-                                int tWinnerRounds,
-                                int pauseTime,
-                                int roundTime,
-                                boolean isDebug,
-                                boolean isStart,
-                                boolean isError,
-                                boolean isPause,
-                                boolean isWaiting,
-                                boolean isWaitingWinner) {
+    public CSGameSettingsS2CPacket(int cTWinnerRounds,
+                                   int tWinnerRounds,
+                                   int pauseTime,
+                                   int roundTime,
+                                   boolean isDebug,
+                                   boolean isStart,
+                                   boolean isError,
+                                   boolean isPause,
+                                   boolean isWaiting,
+                                   boolean isWaitingWinner) {
         this.cTWinnerRounds = cTWinnerRounds;
         this.tWinnerRounds = tWinnerRounds;
         this.pauseTime = pauseTime;
@@ -41,7 +41,7 @@ public class CSGameSettingsPacket {
         this.isWaitingWinner = isWaitingWinner;
     }
 
-    public static void encode(CSGameSettingsPacket packet, FriendlyByteBuf buf) {
+    public static void encode(CSGameSettingsS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.cTWinnerRounds);
         buf.writeInt(packet.tWinnerRounds);
         buf.writeInt(packet.pauseTime);
@@ -54,8 +54,8 @@ public class CSGameSettingsPacket {
         buf.writeBoolean(packet.isWaitingWinner);
     }
 
-    public static CSGameSettingsPacket decode(FriendlyByteBuf buf) {
-        return new CSGameSettingsPacket(
+    public static CSGameSettingsS2CPacket decode(FriendlyByteBuf buf) {
+        return new CSGameSettingsS2CPacket(
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),

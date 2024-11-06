@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ClientTaczTextureData {
-    public static final Map<ShopData.ItemType, List<ShopData.ShopSlot>> ClientShopData = new HashMap<>();
     public static final Map<ResourceLocation, Path> textureFilePath = new HashMap<>();
     public static final Map<ResourceLocation, Path> textureZipPath = new HashMap<>();
     @Nullable
@@ -24,4 +23,5 @@ public class ClientTaczTextureData {
     public static Path getPathByGunTexture(ZipPackTexture texture){
         return textureZipPath.getOrDefault(texture.getRegisterId(),null);
     }
+
 }

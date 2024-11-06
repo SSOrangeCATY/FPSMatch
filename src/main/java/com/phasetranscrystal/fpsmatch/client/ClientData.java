@@ -1,11 +1,31 @@
 package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.data.TabData;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ClientData {
-    Map<String, ShopData> shopDataMap = new HashMap<>();
+    public static String currentMap = "error";
+    public static final ShopData clientShopData = new ShopData(ShopData.getDefaultShopItemData(false));
+    public static int money = 0;
+
+    public static final Map<UUID, TabData> tabData = new HashMap<>();
+
+    public static ShopData.ShopSlot getSlotData(ShopData.ItemType type, int index) {
+        return clientShopData.getSlotData(type,index);
+    }
+
+    public static void overWriteShopSlot(ShopData.ShopSlot slot){
+        clientShopData.addShopSlot(slot);
+    }
+
+    public static int getMoney(){
+        return money;
+    }
+
+    public static void buy(ShopData.ItemType type, int index){
+
+    }
 
 }

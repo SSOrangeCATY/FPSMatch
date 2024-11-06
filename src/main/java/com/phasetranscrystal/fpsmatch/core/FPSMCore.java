@@ -1,5 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import net.minecraft.server.level.ServerLevel;
@@ -16,46 +18,59 @@ import java.util.function.BiFunction;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
-    private static final Map<String,BaseMap> GAMES = new HashMap<>();
-    private static final Map<String, BiFunction<ServerLevel,List<String>,BaseMap>> REGISTRY = new HashMap<>();
+    private static final Map<String,List<BaseMap>> GAMES = new HashMap<>();
+    private static final Map<String, Function3<ServerLevel,List<String>,String,BaseMap>> REGISTRY = new HashMap<>();
     private static final Map<String, ShopData> GAMES_DEFAULT_SHOP_DATA = new HashMap<>();
     private static final Map<String, Map<UUID, ShopData>> GAMES_SHOP_DATA = new HashMap<>();
 
     @Nullable public static BaseMap getMapByPlayer(Player player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
-        GAMES.values().forEach((baseMap -> {
-            if(baseMap.checkGameHasPlayer(player)){
-                map.set(baseMap);
-            }
+        GAMES.values().forEach((baseMapList -> {
+            baseMapList.forEach((baseMap)->{
+                if(baseMap.checkGameHasPlayer(player)){
+                    map.set(baseMap);
+                }
+            });
          }));
          return map.get();
     }
 
-    public static BaseMap registerMap(String mapName ,BaseMap map){
-        if(REGISTRY.containsKey(map.getType())) {
-            GAMES.put(mapName,map);
+    public static BaseMap registerMap(String type,BaseMap map){
+        if(REGISTRY.containsKey(type)) {
+            if(getMapNames(type).contains(map.getMapName())){
+                FPSMatch.LOGGER.error("error : has same map name -> " + map.getMapName());
+                return null;
+            }
+            List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
+            maps.add(map);
+            GAMES.put(type,maps);
             return map;
         }else{
-            FPSMatch.LOGGER.error("error : unregister game type " + map.getType());
+            FPSMatch.LOGGER.error("error : unregister game type " + type);
             return null;
         }
     }
 
     @Nullable public static BaseMap getMapByName(String name){
-       return GAMES.getOrDefault(name,null);
+        AtomicReference<BaseMap> map = new AtomicReference<>();
+        GAMES.forEach((type,mapList)->{
+            mapList.forEach((baseMap)->{
+                if(baseMap.mapName.equals(name)) map.set(baseMap);
+            });
+        });
+       return map.get();
     }
 
     public static List<String> getMapNames(){
         return GAMES.keySet().stream().toList();
     }
 
-    public static List<String> getMapNames(String gameType){
+    public static List<String> getMapNames(String type){
         List<String> names = new ArrayList<>();
-        GAMES.forEach((n,m)->{
-            if(m.getType().equals(gameType)){
-                names.add(n);
-            }
-        });
+        List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
+        maps.forEach((map->{
+            names.add(map.getMapName());
+        }));
         return names;
     }
 
@@ -63,12 +78,12 @@ public class FPSMCore {
        return REGISTRY.containsKey(mapType);
     }
 
-    @Nullable public static BiFunction<ServerLevel, List<String>, BaseMap> getPreBuildGame(String mapType){
+    @Nullable public static Function3<ServerLevel,List<String>,String,BaseMap> getPreBuildGame(String mapType){
          if(checkGameType(mapType)) return REGISTRY.get(mapType);
          return null;
     }
 
-    public static void registerGameType(String typeName, BiFunction<ServerLevel,List<String>,BaseMap> map,boolean enableShop){
+    public static void registerGameType(String typeName, Function3<ServerLevel,List<String>,String,BaseMap> map, boolean enableShop){
         REGISTRY.put(typeName,map);
         if(enableShop) GAMES_DEFAULT_SHOP_DATA.put(typeName,new ShopData());
     }
@@ -102,7 +117,9 @@ public class FPSMCore {
     @SubscribeEvent
     public static void tick(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
-            GAMES.values().forEach((BaseMap::mapTick));
+            GAMES.forEach((type,mapList)->{
+                mapList.forEach(BaseMap::mapTick);
+            });
         }
     }
 }

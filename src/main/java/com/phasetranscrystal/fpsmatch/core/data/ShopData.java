@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ShopData {
     private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
+    public int money = 10000;
     private int nextRoundMinMoney = 1000;
     public ShopData(){
         checkData(defaultData);
@@ -85,7 +86,6 @@ public class ShopData {
                 {1800,2700,3000,1700,4750},
                 {200,300,300,400,50}
         };
-
         Map<ItemType, List<ShopSlot>> data = new HashMap<>();
         for(ItemType c : ItemType.values()) {
             List<ShopSlot> shopSlots = new ArrayList<>();
@@ -112,6 +112,24 @@ public class ShopData {
             totalBought.addAndGet(shopSlot.boughtCount());
         }));
         return totalBought.get();
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    public void setMoney(int money) {
+        this.money = Math.min(money, 16000);
+        if(this.money < 0) this.money = 0;
+    }
+
+    public void addMoney(int money){
+        this.money += money;
+        if(this.money > 16000) this.money = 16000;
+    }
+
+    public void takeMoney(int money){
+        this.money -= money;
     }
 
     public static class ShopSlot{
@@ -230,7 +248,7 @@ public class ShopData {
         }
     }
 
-    public  enum ItemType{
+    public enum ItemType{
         EQUIPMENT(0),PISTOL(1),MID_RANK(2),RIFLE(3),THROWABLE(4);
         public final int typeIndex;
 

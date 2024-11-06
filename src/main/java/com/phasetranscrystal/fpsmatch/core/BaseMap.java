@@ -8,15 +8,16 @@ import net.minecraft.world.entity.player.Player;
 import java.util.List;
 
 public abstract class BaseMap {
+    public final String mapName;
+    public String gameType = "error";
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
-    private final String gameType;
     private final MapTeams mapTeams;
 
-    public BaseMap(ServerLevel serverLevel, List<String> teams, String gameType) {
+    public BaseMap(ServerLevel serverLevel, List<String> teams,String mapName) {
         this.serverLevel = serverLevel;
-        this.gameType = gameType;
         this.mapTeams = new MapTeams(serverLevel,teams);
+        this.mapName = mapName;
     }
 
     public final void mapTick(){
@@ -63,10 +64,6 @@ public abstract class BaseMap {
         return serverLevel;
     }
 
-    public String getType(){
-        return this.gameType;
-    };
-
     public boolean isDebug() {
         return isDebug;
     }
@@ -76,10 +73,14 @@ public abstract class BaseMap {
         return this.isDebug;
     }
 
-    public void setShopData(String mapName){
+    public void setShopData(){
+    }
+
+    public String getMapName(){
+        return mapName;
     }
 
     public static void syncShopDataToClient(String mapName, ServerPlayer player){
-        FPSMShop.getInstance().syncShopData(mapName,player);
+        FPSMShop.syncShopData(mapName,player);
     }
 }

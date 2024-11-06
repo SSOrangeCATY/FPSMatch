@@ -4,39 +4,24 @@ import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
-import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopDataSlotPacket;
+import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopActionPacketC2SPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -62,16 +47,22 @@ public class FPSMatch {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        INSTANCE.messageBuilder(CSGameSettingsPacket.class, 0)
-                .encoder(CSGameSettingsPacket::encode)
-                .decoder(CSGameSettingsPacket::decode)
-                .consumerNetworkThread(CSGameSettingsPacket::handle)
+        INSTANCE.messageBuilder(CSGameSettingsS2CPacket.class, 0)
+                .encoder(CSGameSettingsS2CPacket::encode)
+                .decoder(CSGameSettingsS2CPacket::decode)
+                .consumerNetworkThread(CSGameSettingsS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopDataSlotPacket.class, 1)
-                .encoder(ShopDataSlotPacket::encode)
-                .decoder(ShopDataSlotPacket::decode)
-                .consumerNetworkThread(ShopDataSlotPacket::handle)
+        INSTANCE.messageBuilder(ShopDataSlotS2CPacket.class, 1)
+                .encoder(ShopDataSlotS2CPacket::encode)
+                .decoder(ShopDataSlotS2CPacket::decode)
+                .consumerNetworkThread(ShopDataSlotS2CPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(ShopActionPacketC2SPacket.class, 2)
+                .encoder(ShopActionPacketC2SPacket::encode)
+                .decoder(ShopActionPacketC2SPacket::decode)
+                .consumerNetworkThread(ShopActionPacketC2SPacket::handle)
                 .add();
     }
 

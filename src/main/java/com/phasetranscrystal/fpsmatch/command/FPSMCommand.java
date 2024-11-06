@@ -80,11 +80,11 @@ public class FPSMCommand {
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String type = StringArgumentType.getString(context, "gameType");
-        BiFunction<ServerLevel, List<String>, BaseMap> game = FPSMCore.getPreBuildGame(type);
+        Function3<ServerLevel,List<String>,String,BaseMap> game = FPSMCore.getPreBuildGame(type);
         if(game != null){
-            BaseMap map = FPSMCore.registerMap(mapName, game.apply(context.getSource().getLevel(),new ArrayList<>()));
+            BaseMap map = FPSMCore.registerMap(type, game.apply(context.getSource().getLevel(),new ArrayList<>(),mapName));
             if(map != null) {
-                map.setShopData(mapName);
+                map.setShopData();
             }else return 0;
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
             return 1;

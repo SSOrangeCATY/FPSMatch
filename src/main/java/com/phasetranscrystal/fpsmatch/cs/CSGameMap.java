@@ -5,10 +5,8 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.net.CSGameSettingsPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopDataSlotPacket;
+import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -26,6 +24,7 @@ public class CSGameMap extends BaseMap {
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
+
     private final int waittingTime = 400;
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
@@ -38,14 +37,14 @@ public class CSGameMap extends BaseMap {
     private boolean isWaitingWinner = false;
     private final Map<String,Integer> teamScores = new HashMap<>();
 
-    public CSGameMap(ServerLevel serverLevel, String gameType) {
-        super(serverLevel, List.of("ct","t"), gameType);
+    public CSGameMap(ServerLevel serverLevel,String mapName) {
+        super(serverLevel, List.of("ct","t"),mapName);
         this.getMapTeams().setTeamPlayerLimit("ct",10);
         this.getMapTeams().setTeamPlayerLimit("t",10);
     }
 
-    public void setShopData(String mapName){
-        FPSMShop.getInstance().putShopData(mapName, this.buildShopData());
+    public void setShopData(){
+        FPSMShop.putShopData(mapName, new FPSMShop(mapName,buildShopData()));
     }
 
     public ShopData buildShopData(){
@@ -238,13 +237,9 @@ public class CSGameMap extends BaseMap {
         this.getMapTeams().reset();
     }
 
-    @Override
-    public String getType() {
-        return "cs";
-    }
 
     public void syncToClient() {
-        CSGameSettingsPacket packet = new CSGameSettingsPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0), this.currentPauseTime,this.currentRoundTime,this.isDebug(),this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
+        CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0), this.currentPauseTime,this.currentRoundTime,this.isDebug(),this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if(player != null){

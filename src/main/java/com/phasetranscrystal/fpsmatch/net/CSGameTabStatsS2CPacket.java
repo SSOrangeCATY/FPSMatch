@@ -6,16 +6,16 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class CSGameTabStatsPacket {
+public class CSGameTabStatsS2CPacket {
     private final UUID uuid;
     private final TabData tabData;
 
-    public CSGameTabStatsPacket(UUID uuid, TabData tabData) {
+    public CSGameTabStatsS2CPacket(UUID uuid, TabData tabData) {
         this.uuid = uuid;
         this.tabData = tabData;
     }
 
-    public CSGameTabStatsPacket(FriendlyByteBuf buf) {
+    public CSGameTabStatsS2CPacket(FriendlyByteBuf buf) {
         this.uuid = buf.readUUID();
         this.tabData = new TabData();
         this.tabData.setKills(buf.readInt());
@@ -25,7 +25,7 @@ public class CSGameTabStatsPacket {
         this.tabData.setMoney(buf.readInt());
     }
 
-    public static void encode(CSGameTabStatsPacket packet, FriendlyByteBuf buf) {
+    public static void encode(CSGameTabStatsS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUUID(packet.uuid);
         buf.writeInt(packet.tabData.getKills());
         buf.writeInt(packet.tabData.getDeaths());
@@ -34,8 +34,8 @@ public class CSGameTabStatsPacket {
         buf.writeInt(packet.tabData.getMoney());
     }
 
-    public static CSGameTabStatsPacket decode(FriendlyByteBuf buf) {
-        return new CSGameTabStatsPacket(buf);
+    public static CSGameTabStatsS2CPacket decode(FriendlyByteBuf buf) {
+        return new CSGameTabStatsS2CPacket(buf);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
