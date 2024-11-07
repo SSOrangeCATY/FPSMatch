@@ -19,23 +19,20 @@ public class ShopDataSlotS2CPacket {
     public final String name;
     public final ItemStack itemStack;
     public final int cost;
-    public final int money;
-    public ShopDataSlotS2CPacket(ShopData.ItemType type, int index, String name, ItemStack itemStack, int cost,int money){
+    public ShopDataSlotS2CPacket(ShopData.ItemType type, int index, String name, ItemStack itemStack, int cost){
         this.type = type;
         this.index = index;
         this.name = name;
         this.itemStack =itemStack;
         this.cost = cost;
-        this.money = money;
     }
 
-    public ShopDataSlotS2CPacket(ShopData.ShopSlot shopSlot,String name,int money){
+    public ShopDataSlotS2CPacket(ShopData.ShopSlot shopSlot,String name){
         this.type = shopSlot.type();
         this.index = shopSlot.index();
         this.name = name;
         this.itemStack =shopSlot.itemStack();
         this.cost = shopSlot.cost();
-        this.money = money;
     }
 
     public static void encode(ShopDataSlotS2CPacket packet, FriendlyByteBuf buf) {
@@ -44,7 +41,6 @@ public class ShopDataSlotS2CPacket {
         buf.writeUtf(packet.name);
         buf.writeItemStack(packet.itemStack, false);
         buf.writeInt(packet.cost);
-        buf.writeInt(packet.money);
     }
 
     public static ShopDataSlotS2CPacket decode(FriendlyByteBuf buf) {
@@ -53,7 +49,6 @@ public class ShopDataSlotS2CPacket {
                 buf.readInt(),
                 buf.readUtf(),
                 buf.readItem(),
-                buf.readInt(),
                 buf.readInt()
         );
     }
@@ -61,21 +56,15 @@ public class ShopDataSlotS2CPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ClientData.currentMap = this.name;
-            ShopData.ShopSlot slot = new ShopData.ShopSlot(this.index,this.type,this.itemStack,this.cost);
+            ShopData.ShopSlot currentSlot = ClientData.clientShopData.getSlotData(this.type,this.index);
+            currentSlot.setItemStack(this.itemStack);
+            currentSlot.setCost(cost);
             if(this.itemStack.getItem() instanceof IGun iGun){
                 ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(iGun.getGunId(this.itemStack)).orElse(null);
                 if (gunIndex != null){
-                    slot.setTexture(gunIndex.getHUDTexture());
+                    currentSlot.setTexture(gunIndex.getHUDTexture());
                     CSGameShopScreen.refreshFlag = true;
                 }
-            }
-            ClientData.clientShopData.addShopSlot(slot);
-            ClientData.money = money;
-
-            if(slot.canReturn()){
-                CSGameShopScreen.shopButtons.get(type).get(index).handleBuyEvent();
-            }else{
-                CSGameShopScreen.shopButtons.get(type).get(index).handleReturnEvent();
             }
         });
         ctx.get().setPacketHandled(true);

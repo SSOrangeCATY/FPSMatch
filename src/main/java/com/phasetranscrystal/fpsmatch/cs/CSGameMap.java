@@ -28,7 +28,6 @@ public class CSGameMap extends BaseMap {
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
-    private boolean isStart = false;
     private boolean isError = false;
     private boolean isPause = false;
     private boolean isWaiting = false;

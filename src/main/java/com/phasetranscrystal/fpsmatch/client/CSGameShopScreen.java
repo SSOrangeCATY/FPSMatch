@@ -1,9 +1,8 @@
 package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
-import com.phasetranscrystal.fpsmatch.net.ShopActionPacketC2SPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
@@ -24,6 +23,7 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.Level;
@@ -306,7 +306,7 @@ public class CSGameShopScreen extends Fragment {
             };
             returnGoodsLayout.addView(returnGoodsText);
             returnGoodsLayout.setOnClickListener((l)->{
-                FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionPacketC2SPacket.ACTION_RETURN));
+                FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionC2SPacket.ACTION_RETURN));
             });
 
             returnGoodsLayout.setEnabled(false);
@@ -347,14 +347,14 @@ public class CSGameShopScreen extends Fragment {
                 ShopData.ShopSlot currentSlot = ClientData.clientShopData.getSlotData(this.type, this.index);
                 boolean actionFlag = ClientData.getMoney() >= currentSlot.cost();
                 if(checkSlots(actionFlag)) {
-                    FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap, this.type, this.index, ShopActionPacketC2SPacket.ACTION_BUY));
+                    FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopActionC2SPacket.ACTION_BUY));
                 }
             });
         }
 
-        public void disableStroke(){
-            backgroud.setStroke(0,RenderUtil.color(255,255,255));
-            this.returnGoodsLayout.setEnabled(false);
+        public void setStats(boolean enable){
+            backgroud.setStroke(enable ? 1:0,RenderUtil.color(255,255,255));
+            this.returnGoodsLayout.setEnabled(enable);
         }
 
         public void setElementsColor(boolean enable){
@@ -410,56 +410,6 @@ public class CSGameShopScreen extends Fragment {
             return !ClientData.clientShopData.getSlotData(this.type, this.index).canReturn();
         }
 
-        public void handleReturnEvent(){
-            this.setReturnLayerEnable(false);
-        }
-
-
-        public void handleBuyEvent(){
-            setReturnLayerEnable(true);
-            ShopData.ShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
-            if(this.type == ShopData.ItemType.RIFLE || this.type == ShopData.ItemType.MID_RANK){
-                CSGameShopScreen.shopButtons.get(ShopData.ItemType.RIFLE).forEach((bt)->{
-                    if(bt.type != this.type){
-                        bt.disableStroke();
-                    }else{
-                        if(bt.index != this.index){
-                            bt.disableStroke();
-                        }
-                    }
-                });
-                CSGameShopScreen.shopButtons.get(ShopData.ItemType.MID_RANK).forEach((bt)->{
-                    if(bt.type != this.type){
-                        bt.disableStroke();
-                    }else{
-                        if(bt.index != this.index){
-                            bt.disableStroke();
-                        }
-                    }
-                });
-            }else if(this.type == ShopData.ItemType.PISTOL){
-                CSGameShopScreen.shopButtons.get(ShopData.ItemType.PISTOL).forEach((bt)->{
-                    if(bt.type != this.type){
-                        bt.disableStroke();
-                    }else{
-                        if(bt.index != this.index){
-                            bt.disableStroke();
-                        }
-                    }
-                });
-            }else if(this.type == ShopData.ItemType.THROWABLE){
-                if(ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
-                    CSGameShopScreen.shopButtons.get(ShopData.ItemType.THROWABLE).forEach((bt)->{
-                        bt.setElementsColor(false);
-                    });
-                }
-                if(this.index == 0 && currentSlot.boughtCount() >= 2){
-                    setElementsColor(false);
-                }
-            }
-            backgroud.setStroke(1,RenderUtil.color(255,255,255));
-        }
-
         public void updateButtonState() {
            boolean enable = ClientData.getMoney() >= ClientData.clientShopData.getSlotData(this.type,this.index).cost();
            setElementsColor(checkSlots(enable));
@@ -468,17 +418,10 @@ public class CSGameShopScreen extends Fragment {
            }else{
                backgroundAnimeFadeOut.start();
            }
-        }
-        public void setReturnLayerEnable(boolean enable){
-            returnGoodsLayout.setEnabled(enable);
-        }
 
-        @Override
-        public void draw(@NotNull Canvas canvas) {
-            super.draw(canvas);
-            updateButtonState();
             if(refreshFlag){
                 ShopData.ShopSlot data = ClientData.clientShopData.getSlotData(this.type,this.index);
+                setStats(data.canReturn());
                 String fixedName = data.name().replace("[","").replace("]","");
                 this.itemNameText.setText(fixedName);
                 this.costText.setText("$"+ data.cost());
@@ -494,6 +437,12 @@ public class CSGameShopScreen extends Fragment {
                     refreshFlag = false;
                 }
             }
+        }
+
+        @Override
+        public void draw(@NotNull Canvas canvas) {
+            super.draw(canvas);
+            updateButtonState();
         }
     }
 

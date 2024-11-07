@@ -6,10 +6,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class BaseMap {
     public final String mapName;
     public String gameType = "error";
+    public boolean isStart = false;
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private final MapTeams mapTeams;
@@ -82,5 +84,13 @@ public abstract class BaseMap {
 
     public static void syncShopDataToClient(String mapName, ServerPlayer player){
         FPSMShop.syncShopData(mapName,player);
+    }
+
+    public void setGameType(String gameType) {
+        this.gameType = gameType;
+    }
+
+    public String getGameType() {
+        return gameType;
     }
 }

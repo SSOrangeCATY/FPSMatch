@@ -342,7 +342,7 @@ public class MapTeams {
     public static void onPlayerDeath(LivingDeathEvent event){
          if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getMapByPlayer(player);
-             if(map != null){
+             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
                 String playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null){

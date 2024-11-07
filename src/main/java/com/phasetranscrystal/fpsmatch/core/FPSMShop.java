@@ -2,9 +2,10 @@ package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
-import net.minecraft.server.commands.GiveCommand;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,9 +49,26 @@ public class FPSMShop {
         for (ShopData.ItemType type : ShopData.ItemType.values()) {
             List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
             slots.forEach((shopSlot -> {
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map, shopData.getMoney()));
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map));
             }));
         }
+    }
+
+    public static void syncShopData(String map, ServerPlayer player, ShopData.ShopSlot slot){
+        if(!gamesFPSMShop.containsKey(map)) return;
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(slot, map));
+    }
+
+    public static void syncShopAction(String map, ServerPlayer player, ShopData.ItemType type, int index, int action){
+        if(!gamesFPSMShop.containsKey(map)) return;
+        int money = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID()).getMoney();
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopActionS2CPacket(map,type,index,action,money));
+    }
+
+    public static void syncShopAction(String map, ServerPlayer player, ShopData.ShopSlot shopSlot, int action){
+        if(!gamesFPSMShop.containsKey(map)) return;
+        int money = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID()).getMoney();
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopActionS2CPacket(map,shopSlot,action,money));
     }
 
     public ShopData getPlayerShopData(UUID uuid){
@@ -70,58 +88,54 @@ public class FPSMShop {
         return this.getPlayerShopData(uuid).getNextRoundMinMoney();
     }
 
-    public void handleShopButton(UUID uuid,ShopData.ItemType type, int index) {
-        ShopData data = this.getPlayerShopData(uuid);
+    public void handleShopButton(ServerPlayer player, ShopData.ItemType type, int index) {
+        ShopData data = this.getPlayerShopData(player.getUUID());
         List<ShopData.ShopSlot> shopSlotList = data.getShopSlotsByType(type);
         if (index < 0 || index >= shopSlotList.size()) {
             return;
         }
         ShopData.ShopSlot currentSlot = shopSlotList.get(index);
-        int cost = getCostOrBuy(uuid,type, index, false);
+        int cost = getCostOrBuy(player,type, index, false);
         if (!currentSlot.enable()) {
             return;
         }
         if (data.getMoney() < cost) {
             return;
         }
+
         data.takeMoney(cost);
-        getCostOrBuy(uuid,type, index, true);
-        ServerPlayer player = Objects.requireNonNull(FPSMCore.getMapByName(name)).getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-        if (player != null) {
-            player.getInventory().add(currentSlot.itemStack());
-            syncShopData(name, player);
-        }
+        getCostOrBuy(player,type, index, true);
+        player.getInventory().add(currentSlot.itemStack());
+        syncShopData(name,player);
+        syncShopAction(name,player,currentSlot,1);
         ShopData.ShopSlot shopSlot = shopSlotList.get(index);
         System.out.println("bought : " + (shopSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : shopSlot.itemStack().getDisplayName().getString()) + " cost->" + shopSlot.cost());
         System.out.println(data.getMoney() +"<-"+ cost);
     }
 
-    private int getCostOrBuy(UUID uuid,ShopData.ItemType type, int index, boolean bought) {
+    private int getCostOrBuy(ServerPlayer player,ShopData.ItemType type, int index, boolean bought) {
         return switch (type) {
-            case EQUIPMENT -> buyEquipment(uuid,type,index, bought);
-            case PISTOL -> buyPistol(uuid,type,index, bought);
-            case MID_RANK, RIFLE -> buyGuns(uuid,type, index, bought);
-            case THROWABLE -> buyThrowable(uuid,type,index, bought);
+            case EQUIPMENT -> buyEquipment(player,type,index, bought);
+            case PISTOL -> buyPistol(player,type,index, bought);
+            case MID_RANK, RIFLE -> buyGuns(player,type, index, bought);
+            case THROWABLE -> buyThrowable(player,type,index, bought);
         };
     }
 
-    public void handleReturnButton(UUID uuid,ShopData.ItemType type, int index) {
-        ShopData data = this.getPlayerShopData(uuid);
+    public void handleReturnButton(ServerPlayer player,ShopData.ItemType type, int index) {
+        ShopData data = this.getPlayerShopData(player.getUUID());
         List<ShopData.ShopSlot> shopSlotList = data.getShopSlotsByType(type);
         ShopData.ShopSlot currentSlot = shopSlotList.get(index);
         if (!currentSlot.canReturn()) {
             return; // 商品未购买
         }
-        data.addMoney(returnTheGun(uuid,type, index));
-        ServerPlayer player = Objects.requireNonNull(FPSMCore.getMapByName(name)).getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-        if (player != null) {
-            player.getInventory().removeItem(currentSlot.itemStack());
-            syncShopData(name, player);
-        }
+        data.addMoney(returnTheGun(player,currentSlot));
+        syncShopData(name, player, currentSlot);
+        syncShopAction(name, player, currentSlot,0);
     }
 
-    private int buyEquipment(UUID uuid, ShopData.ItemType type, int index, boolean bought) {
-        ShopData data = this.getPlayerShopData(uuid);
+    private int buyEquipment(ServerPlayer serverPlayer, ShopData.ItemType type, int index, boolean bought) {
+        ShopData data = this.getPlayerShopData(serverPlayer.getUUID());
         List<ShopData.ShopSlot> slotData = data.getShopSlotsByType(type);
         ShopData.ShopSlot currentSlot = slotData.get(index);
         AtomicInteger cost = new AtomicInteger(currentSlot.cost());
@@ -136,16 +150,16 @@ public class FPSMShop {
         return cost.get();
     }
 
-    private int buyPistol(UUID uuid, ShopData.ItemType type, int index, boolean bought) {
-        ShopData data = this.getPlayerShopData(uuid);
+    private int buyPistol(ServerPlayer serverPlayer, ShopData.ItemType type, int index, boolean bought) {
+        ShopData data = this.getPlayerShopData(serverPlayer.getUUID());
         List<ShopData.ShopSlot> slotData = data.getShopSlotsByType(type);
         ShopData.ShopSlot currentSlot = slotData.get(index);
-
         AtomicInteger cost = new AtomicInteger(currentSlot.cost());
         slotData.forEach((shopSlot -> {
             if(shopSlot.index() != index && shopSlot.boughtCount() > 0){
                 if(bought) {
-                    shopSlot.returnGoods();
+                    returnTheGun(serverPlayer, shopSlot);
+                    syncShopAction(name,serverPlayer,shopSlot,0);
                 };
                 cost.addAndGet(-shopSlot.cost());
             }
@@ -154,8 +168,8 @@ public class FPSMShop {
         return cost.get();
     }
 
-    private int buyGuns(UUID uuid, ShopData.ItemType type, int index, boolean bought) {
-        ShopData data = this.getPlayerShopData(uuid);
+    private int buyGuns(ServerPlayer serverPlayer, ShopData.ItemType type, int index, boolean bought) {
+        ShopData data = this.getPlayerShopData(serverPlayer.getUUID());
         List<ShopData.ShopSlot> shopMidRankSlotList = data.getShopSlotsByType(ShopData.ItemType.MID_RANK);
         List<ShopData.ShopSlot> shopRifleSlotList = data.getShopSlotsByType(ShopData.ItemType.RIFLE);
         ShopData.ShopSlot currentSlot = data.getShopSlotsByType(type).get(index);
@@ -164,36 +178,40 @@ public class FPSMShop {
             shopMidRankSlotList.forEach((shopSlot -> {
                 if(shopSlot.boughtCount() > 0 && shopSlot.index() != index){
                     if(bought) {
-                        shopSlot.returnGoods();
+                        returnTheGun(serverPlayer,shopSlot);
+                        syncShopAction(name,serverPlayer,shopSlot,0);
                     }
-                    cost.addAndGet(-returnTheGun(uuid,ShopData.ItemType.MID_RANK,shopSlot.index()));
+                    cost.addAndGet(-shopSlot.cost());
                 }
             }));
 
             shopRifleSlotList.forEach((shopSlot -> {
                 if(shopSlot.boughtCount() > 0){
                     if(bought) {
-                        shopSlot.returnGoods();
+                        returnTheGun(serverPlayer,shopSlot);
+                        syncShopAction(name,serverPlayer,shopSlot,0);
                     }
-                    cost.addAndGet(-returnTheGun(uuid,ShopData.ItemType.RIFLE,shopSlot.index()));
+                    cost.addAndGet(-shopSlot.cost());
                 }
             }));
         }else{
             shopRifleSlotList.forEach((shopSlot -> {
                 if(shopSlot.boughtCount() > 0 && shopSlot.index() != index){
                     if(bought) {
-                        shopSlot.returnGoods();
+                        returnTheGun(serverPlayer,shopSlot);
+                        syncShopAction(name,serverPlayer,shopSlot,0);
                     }
-                    cost.addAndGet(-returnTheGun(uuid,ShopData.ItemType.RIFLE,shopSlot.index()));
+                    cost.addAndGet(-shopSlot.cost());
                 }
             }));
 
             shopMidRankSlotList.forEach((shopSlot -> {
                 if(shopSlot.boughtCount() > 0){
                     if(bought) {
-                        shopSlot.returnGoods();
+                        returnTheGun(serverPlayer,shopSlot);
+                        syncShopAction(name,serverPlayer,shopSlot,0);
                     }
-                    cost.addAndGet(-returnTheGun(uuid,ShopData.ItemType.MID_RANK,shopSlot.index()));
+                    cost.addAndGet(-shopSlot.cost());
                 }
             }));
         }
@@ -202,8 +220,8 @@ public class FPSMShop {
         return cost.get();
     }
 
-    private int buyThrowable(UUID uuid, ShopData.ItemType type, int index, boolean bought) {
-        ShopData data = this.getPlayerShopData(uuid);
+    private int buyThrowable(ServerPlayer serverPlayer, ShopData.ItemType type, int index, boolean bought) {
+        ShopData data = this.getPlayerShopData(serverPlayer.getUUID());
         List<ShopData.ShopSlot> shopThrowableSlotList = data.getShopSlotsByType(type);
         ShopData.ShopSlot currentSlot = shopThrowableSlotList.get(index);
         int cost = currentSlot.cost();
@@ -223,31 +241,30 @@ public class FPSMShop {
         return cost;
     }
 
-    private int returnTheGun(UUID uuid, ShopData.ItemType type, int index){
-        ShopData data = this.getPlayerShopData(uuid);
-        List<ShopData.ShopSlot> slotList = data.getShopSlotsByType(type);
-        ShopData.ShopSlot currentSlot = slotList.get(index);
-        int cost = 0;
+    private int returnTheGun(ServerPlayer serverPlayer, ShopData.ShopSlot shopSlot){
+        ShopData data = this.getPlayerShopData(serverPlayer.getUUID());
+        List<ShopData.ShopSlot> slotList = data.getShopSlotsByType(shopSlot.type());
+        ShopData.ShopSlot currentSlot = slotList.get(shopSlot.index());
         if(currentSlot.canReturn()){
-            if(type == ShopData.ItemType.EQUIPMENT && index == 0){
+            if(shopSlot.type() == ShopData.ItemType.EQUIPMENT && shopSlot.index() == 0){
                 if(!slotList.get(1).canReturn()){
                     slotList.get(1).setCost(1000);
                 }
             }
             currentSlot.returnGoods();
-            cost = currentSlot.cost();
+            int im = serverPlayer.getInventory().clearOrCountMatchingItems((i)-> i.getDisplayName().getString().equals(currentSlot.itemStack().getDisplayName().getString()), 1, serverPlayer.inventoryMenu.getCraftSlots());
             System.out.println("return goods : " + (currentSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : currentSlot.itemStack().getDisplayName().getString()) + " return cost->" + currentSlot.cost());
+            if (im == 0) return 0;
         }
-        return cost;
+        return currentSlot.cost();
     }
 
-    public void forceBuyItem(ShopData.ItemType type, int index){
-        List<ShopData.ShopSlot> shopSlotList = defaultShopData.getShopSlotsByType(type);
-        if (index < 0 || index >= shopSlotList.size()) {
-            return;
-        }
-        ShopData.ShopSlot currentSlot = shopSlotList.get(index);
-        currentSlot.bought();
+    public void resetSlot(ServerPlayer serverPlayer, ShopData.ItemType type, int index){
+        ShopData data = this.getPlayerShopData(serverPlayer.getUUID());
+        List<ShopData.ShopSlot> slotList = data.getShopSlotsByType(type);
+        ShopData.ShopSlot currentSlot = slotList.get(index);
+        while (currentSlot.canReturn()) currentSlot.returnGoods();
+        syncShopAction(name,serverPlayer,currentSlot,2);
     }
 
     public ShopData getDefaultShopData() {

@@ -85,6 +85,7 @@ public class FPSMCommand {
             BaseMap map = FPSMCore.registerMap(type, game.apply(context.getSource().getLevel(),new ArrayList<>(),mapName));
             if(map != null) {
                 map.setShopData();
+                map.setGameType(type);
             }else return 0;
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
             return 1;
@@ -117,7 +118,7 @@ public class FPSMCommand {
             switch (action) {
                 case "set": {
                     if (context.getSource().getEntity() instanceof Player player){
-                        ItemStack itemStack = player.getMainHandItem();
+                        ItemStack itemStack = player.getMainHandItem().copy();
                         FPSMShop.putShopData(mapName,new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)),itemStack,cost));
                         break;
                     }

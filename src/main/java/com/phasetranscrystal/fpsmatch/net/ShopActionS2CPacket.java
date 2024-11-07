@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.client.CSGameShopScreen;
 import com.phasetranscrystal.fpsmatch.client.ClientData;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
@@ -12,10 +13,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.UUID;
 import java.util.function.Supplier;
 
-public class ShopActionPacketC2SPacket {
+
+// 当发送这个包给客户端代表操作执行成功 客户端更新相应的反馈即可
+public class ShopActionS2CPacket {
     public static final int ACTION_RETURN = 0;
     public static final int ACTION_BUY = 1;
 
@@ -24,32 +26,37 @@ public class ShopActionPacketC2SPacket {
     public final ShopData.ItemType type;
     public final int index;
     public final int action;
+    public final int money;
 
-    public ShopActionPacketC2SPacket(String mapName, ShopData.ItemType type, int index, int action){
+    public ShopActionS2CPacket(String mapName, ShopData.ItemType type, int index, int action, int money){
         this.name = mapName;
         this.type = type;
         this.index = index;
         this.action = action;
+        this.money = money;
     }
 
-    public ShopActionPacketC2SPacket(String mapName, ShopData.ShopSlot shopSlot,int action){
+    public ShopActionS2CPacket(String mapName, ShopData.ShopSlot shopSlot, int action, int money){
         this.name = mapName;
         this.type = shopSlot.type();
         this.index = shopSlot.index();
         this.action = action;
+        this.money = money;
     }
 
-    public static void encode(ShopActionPacketC2SPacket packet, FriendlyByteBuf buf) {
+    public static void encode(ShopActionS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUtf(packet.name);
         buf.writeInt(packet.type.ordinal());
         buf.writeInt(packet.index);
         buf.writeInt(packet.action);
+        buf.writeInt(packet.money);
     }
 
-    public static ShopActionPacketC2SPacket decode(FriendlyByteBuf buf) {
-        return new ShopActionPacketC2SPacket(
+    public static ShopActionS2CPacket decode(FriendlyByteBuf buf) {
+        return new ShopActionS2CPacket(
                 buf.readUtf(),
                 ShopData.ItemType.values()[buf.readInt()],
+                buf.readInt(),
                 buf.readInt(),
                 buf.readInt()
         );
@@ -57,17 +64,24 @@ public class ShopActionPacketC2SPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            FPSMShop shop =  FPSMShop.getShopByMapName(this.name);
-            ServerPlayer serverPlayer = ctx.get().getSender();
-            if (shop == null || serverPlayer == null) return;
+            ClientData.currentMap = name;
+            ClientData.clientShopData.setMoney(money);
 
-            if (this.action == 0){
-                shop.handleReturnButton(serverPlayer.getUUID(), this.type, this.index);
+            if(action == ACTION_BUY) {
+                ClientData.clientShopData.getSlotData(type,index).bought();
             }
 
-            if(this.action == 1){
-                shop.handleShopButton(serverPlayer.getUUID(), this.type, this.index);
+            if(action == ACTION_RETURN){
+                ClientData.clientShopData.getSlotData(type,index).returnGoods();
             }
+
+            if(action == 2){
+                while (ClientData.clientShopData.getSlotData(type,index).canReturn()){
+                    ClientData.clientShopData.getSlotData(type,index).returnGoods();
+                }
+            }
+
+            CSGameShopScreen.refreshFlag = true;
         });
         ctx.get().setPacketHandled(true);
     }

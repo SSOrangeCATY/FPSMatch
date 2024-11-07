@@ -5,7 +5,8 @@ import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopActionPacketC2SPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
 import net.minecraft.resources.ResourceLocation;
@@ -59,10 +60,16 @@ public class FPSMatch {
                 .consumerNetworkThread(ShopDataSlotS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopActionPacketC2SPacket.class, 2)
-                .encoder(ShopActionPacketC2SPacket::encode)
-                .decoder(ShopActionPacketC2SPacket::decode)
-                .consumerNetworkThread(ShopActionPacketC2SPacket::handle)
+        INSTANCE.messageBuilder(ShopActionC2SPacket.class, 2)
+                .encoder(ShopActionC2SPacket::encode)
+                .decoder(ShopActionC2SPacket::decode)
+                .consumerNetworkThread(ShopActionC2SPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(ShopActionS2CPacket.class, 3)
+                .encoder(ShopActionS2CPacket::encode)
+                .decoder(ShopActionS2CPacket::decode)
+                .consumerNetworkThread(ShopActionS2CPacket::handle)
                 .add();
     }
 

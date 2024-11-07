@@ -3,12 +3,23 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.client.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
+import com.tacz.guns.client.event.ClientPreventGunClick;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -130,4 +141,50 @@ public class FPSMCore {
             });
         }
     }
+
+    @SubscribeEvent
+    public static void onPlayerDropItem(ItemTossEvent event){
+        if(event.getEntity().level().isClientSide) return;
+        BaseMap map = FPSMCore.getMapByPlayer(event.getPlayer());
+        if (map == null) return;
+        FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
+        if (shop == null) return;
+        ShopData.ShopSlot slot = shop.getPlayerShopData(event.getPlayer().getUUID()).checkItemStackIsInData(event.getEntity().getItem());
+        if(slot != null){
+            if (event.getEntity().getItem().getCount() > 1 && slot.canReturn()){
+                shop.resetSlot((ServerPlayer) event.getPlayer(),slot.type(),slot.index());
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,2,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
+            }else{
+                slot.returnGoods();
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,0,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
+            }
+        }
+    }
+
+
+    @SubscribeEvent
+    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
+        if(event.getEntity().level().isClientSide) return;
+        BaseMap map = FPSMCore.getMapByPlayer(event.getEntity());
+        if (map == null) return;
+        FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
+        if (shop == null) return;
+
+        // 根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
+        ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
+        if(slot != null){
+            if (event.getStack().getCount() > 1 && slot.type() == ShopData.ItemType.THROWABLE){
+                if(slot.boughtCount() < 2 && slot.index() == 0){
+                    slot.bought(slot.boughtCount() != 1);
+                }else{
+                    slot.bought();
+                }
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
+            }else{
+                slot.bought();
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
+            }
+        }
+    }
+
 }

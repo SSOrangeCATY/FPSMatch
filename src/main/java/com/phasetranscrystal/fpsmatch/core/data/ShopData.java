@@ -1,13 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ShopData {
     private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
@@ -54,6 +53,18 @@ public class ShopData {
                 }
             }
         }
+    }
+
+    public ShopSlot checkItemStackIsInData(ItemStack itemStack){
+        AtomicReference<ShopSlot> flag = new AtomicReference<>();
+        data.forEach(((itemType, shopSlots) -> {
+            shopSlots.forEach(shopSlot -> {
+                if(itemStack.getDisplayName().getString().equals(shopSlot.itemStack().getDisplayName().getString())){
+                    flag.set(shopSlot);
+                };
+            });
+        }));
+        return flag.get();
     }
 
     // 添加一个ShopSlot到对应的ItemType列表中
@@ -134,7 +145,7 @@ public class ShopData {
 
     public static class ShopSlot{
         private ResourceLocation texture = new ResourceLocation(FPSMatch.MODID,"gun/hud/ai_awp");
-        private final String itemName;
+        private String itemName;
         private final int index;
         private final ItemType type;
         private ItemStack itemStack;
@@ -149,7 +160,7 @@ public class ShopData {
             if (index < 0 || index > 4) {
                 throw new IllegalArgumentException("Index must be between 0 and 4 inclusive.");
             }
-            this.itemName = itemStack== null ? "DebugItem": itemStack.getDisplayName().getString();
+            this.itemName = itemStack == null ? "DebugItem": itemStack.getDisplayName().getString();
             this.index = index;
             this.itemStack = itemStack;
             this.defaultCost = cost;
@@ -202,6 +213,10 @@ public class ShopData {
             return this.cost;
         }
 
+        public void setItemStack(ItemStack itemStack) {
+            this.itemName = itemStack == null ? "DebugItem": itemStack.getDisplayName().getString();
+            this.itemStack = itemStack;
+        }
         public void setDefaultCost(int cost){
             this.defaultCost = cost;
         }
