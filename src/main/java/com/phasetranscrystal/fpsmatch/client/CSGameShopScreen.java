@@ -344,51 +344,10 @@ public class CSGameShopScreen extends Fragment {
             });
 
             setOnClickListener((v) -> {
-                ShopData.ShopSlot currentSlot = ClientData.clientShopData.getSlotData(this.type,this.index);
+                ShopData.ShopSlot currentSlot = ClientData.clientShopData.getSlotData(this.type, this.index);
                 boolean actionFlag = ClientData.getMoney() >= currentSlot.cost();
-                if(checkSlots(actionFlag)){
-                    FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionPacketC2SPacket.ACTION_BUY));
-                    returnGoodsLayout.setEnabled(true);
-                        if(this.type == ShopData.ItemType.RIFLE || this.type == ShopData.ItemType.MID_RANK){
-                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.RIFLE).forEach((bt)->{
-                                if(bt.type != this.type){
-                                    bt.disableStroke();
-                                }else{
-                                    if(bt.index != this.index){
-                                        bt.disableStroke();
-                                    }
-                                }
-                            });
-                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.MID_RANK).forEach((bt)->{
-                                if(bt.type != this.type){
-                                    bt.disableStroke();
-                                }else{
-                                    if(bt.index != this.index){
-                                        bt.disableStroke();
-                                    }
-                                }
-                            });
-                        }else if(this.type == ShopData.ItemType.PISTOL){
-                            CSGameShopScreen.shopButtons.get(ShopData.ItemType.PISTOL).forEach((bt)->{
-                                if(bt.type != this.type){
-                                    bt.disableStroke();
-                                }else{
-                                    if(bt.index != this.index){
-                                        bt.disableStroke();
-                                    }
-                                }
-                            });
-                        }else if(this.type == ShopData.ItemType.THROWABLE){
-                            if(ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
-                                CSGameShopScreen.shopButtons.get(ShopData.ItemType.THROWABLE).forEach((bt)->{
-                                    bt.setElementsColor(false);
-                                });
-                            }
-                            if(this.index == 0 && currentSlot.boughtCount() >= 2){
-                                setElementsColor(false);
-                            }
-                        }
-                    backgroud.setStroke(1,RenderUtil.color(255,255,255));
+                if(checkSlots(actionFlag)) {
+                    FPSMatch.INSTANCE.sendToServer(new ShopActionPacketC2SPacket(ClientData.currentMap, this.type, this.index, ShopActionPacketC2SPacket.ACTION_BUY));
                 }
             });
         }
@@ -451,6 +410,56 @@ public class CSGameShopScreen extends Fragment {
             return !ClientData.clientShopData.getSlotData(this.type, this.index).canReturn();
         }
 
+        public void handleReturnEvent(){
+            this.setReturnLayerEnable(false);
+        }
+
+
+        public void handleBuyEvent(){
+            setReturnLayerEnable(true);
+            ShopData.ShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
+            if(this.type == ShopData.ItemType.RIFLE || this.type == ShopData.ItemType.MID_RANK){
+                CSGameShopScreen.shopButtons.get(ShopData.ItemType.RIFLE).forEach((bt)->{
+                    if(bt.type != this.type){
+                        bt.disableStroke();
+                    }else{
+                        if(bt.index != this.index){
+                            bt.disableStroke();
+                        }
+                    }
+                });
+                CSGameShopScreen.shopButtons.get(ShopData.ItemType.MID_RANK).forEach((bt)->{
+                    if(bt.type != this.type){
+                        bt.disableStroke();
+                    }else{
+                        if(bt.index != this.index){
+                            bt.disableStroke();
+                        }
+                    }
+                });
+            }else if(this.type == ShopData.ItemType.PISTOL){
+                CSGameShopScreen.shopButtons.get(ShopData.ItemType.PISTOL).forEach((bt)->{
+                    if(bt.type != this.type){
+                        bt.disableStroke();
+                    }else{
+                        if(bt.index != this.index){
+                            bt.disableStroke();
+                        }
+                    }
+                });
+            }else if(this.type == ShopData.ItemType.THROWABLE){
+                if(ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
+                    CSGameShopScreen.shopButtons.get(ShopData.ItemType.THROWABLE).forEach((bt)->{
+                        bt.setElementsColor(false);
+                    });
+                }
+                if(this.index == 0 && currentSlot.boughtCount() >= 2){
+                    setElementsColor(false);
+                }
+            }
+            backgroud.setStroke(1,RenderUtil.color(255,255,255));
+        }
+
         public void updateButtonState() {
            boolean enable = ClientData.getMoney() >= ClientData.clientShopData.getSlotData(this.type,this.index).cost();
            setElementsColor(checkSlots(enable));
@@ -459,8 +468,11 @@ public class CSGameShopScreen extends Fragment {
            }else{
                backgroundAnimeFadeOut.start();
            }
-
         }
+        public void setReturnLayerEnable(boolean enable){
+            returnGoodsLayout.setEnabled(enable);
+        }
+
         @Override
         public void draw(@NotNull Canvas canvas) {
             super.draw(canvas);
@@ -469,7 +481,7 @@ public class CSGameShopScreen extends Fragment {
                 ShopData.ShopSlot data = ClientData.clientShopData.getSlotData(this.type,this.index);
                 String fixedName = data.name().replace("[","").replace("]","");
                 this.itemNameText.setText(fixedName);
-                this.costText.setText(String.valueOf(data.cost()));
+                this.costText.setText("$"+ data.cost());
                 ResourceLocation texture = data.getTexture();
                 this.icon = RenderUtil.getGunTextureByRL(texture);
                 if (this.icon == null){

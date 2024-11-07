@@ -44,10 +44,11 @@ public class FPSMShop {
 
     public static void syncShopData(String map, ServerPlayer player){
         if(!gamesFPSMShop.containsKey(map)) return;
-        for (ShopData.ItemType type : ShopData.ItemType.values()){
-            List<ShopData.ShopSlot> slots = gamesFPSMShop.get(map).getDefaultShopData().getShopSlotsByType(type);
+        ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID());
+        for (ShopData.ItemType type : ShopData.ItemType.values()) {
+            List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
             slots.forEach((shopSlot -> {
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopDataSlotS2CPacket(shopSlot,map));
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map, shopData.getMoney()));
             }));
         }
     }

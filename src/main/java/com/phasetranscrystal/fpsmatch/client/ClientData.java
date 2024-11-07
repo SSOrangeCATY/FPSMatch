@@ -6,7 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import java.util.*;
 
 public class ClientData {
-    public static String currentMap = "error";
+    public static String currentMap = "test";
     public static final ShopData clientShopData = new ShopData(ShopData.getDefaultShopItemData(false));
     public static int money = 10000;
     public static final Map<UUID, TabData> tabData = new HashMap<>();
