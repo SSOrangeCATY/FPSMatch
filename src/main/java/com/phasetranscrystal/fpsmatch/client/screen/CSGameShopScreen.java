@@ -16,6 +16,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.mc.ScreenCallback;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
@@ -34,7 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 
-public class CSGameShopScreen extends Fragment {
+public class CSGameShopScreen extends Fragment implements ScreenCallback{
     private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
     private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static final String TACZ_MODID = "tacz";
@@ -70,7 +71,6 @@ public class CSGameShopScreen extends Fragment {
         AudioManager.getInstance().close();
         System.gc();
     }
-
     public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
         if (window == null) {
             window = new RelativeLayout(getContext());
