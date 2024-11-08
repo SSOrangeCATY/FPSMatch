@@ -14,5 +14,12 @@
   "commands.fpsm.modify.spawn.clearall.success": "All spawn points cleared.",
   "commands.fpsm.modify.spawn.invalidAction": "Specified an invalid spawn point action.",
   "fpsm.shop.title.cooldown": "Remaining purchase time %1$s",
-  "fpsm.shop.title.min.money": "Minimum amount for next round %1$s"
+  "fpsm.shop.title.min.money": "Minimum amount for next round %1$s",
+  "key.fpsm.open.shop.desc": "Open shop",
+  "key.category.fpsm": "FPSMacth",
+  "key.fpsm.open.shop.failed.no_map": "Cannot open the store because you have not joined any maps",
+  "key.fpsm.open.shop.failed.game.not_started": "Cannot open the store because game not started",
+  "key.fpsm.open.shop.failed.purchase_time.expired": "Cannot open the store because purchase time expired",
+  "key.fpsm.open.shop.failed.left.purchase_area": "Cannot open the store because left purchase area",
+  "key.fpsm.open.shop.failed.game_type.no_shop": "Cannot open the store because joined game does not support store"
 }

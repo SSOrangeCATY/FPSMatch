@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch;
 
 import com.mojang.logging.LogUtils;
-import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
+import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;

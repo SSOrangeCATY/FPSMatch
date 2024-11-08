@@ -1,6 +1,7 @@
-package com.phasetranscrystal.fpsmatch.client;
+package com.phasetranscrystal.fpsmatch.client.screen;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
@@ -194,7 +195,7 @@ public class CSGameShopScreen extends Fragment {
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
             minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money",ClientData.clientShopData.getNextRoundMinMoney()));
+            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", ClientData.clientShopData.getNextRoundMinMoney()));
             minmoneyText.setMargins(0,0,20,0);
             nextRoundMinMoneyText.setLayoutParams(minmoneyText);
             nextRoundMinMoneyText.setTextSize(15);
@@ -445,5 +446,6 @@ public class CSGameShopScreen extends Fragment {
             updateButtonState();
         }
     }
+
 
 }

@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.net;
 
-import com.phasetranscrystal.fpsmatch.client.CSGameOverlay;
+import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -71,17 +71,17 @@ public class CSGameSettingsS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            CSGameOverlay.cTWinnerRounds = this.cTWinnerRounds;
-            CSGameOverlay.tWinnerRounds = this.tWinnerRounds;
-            CSGameOverlay.pauseTime = this.pauseTime;
-            CSGameOverlay.roundTime = this.roundTime;
-            CSGameOverlay.isDebug = this.isDebug;
-            CSGameOverlay.isStart = this.isStart;
-            CSGameOverlay.isError = this.isError;
-            CSGameOverlay.isPause = this.isPause;
-            CSGameOverlay.isWaiting = this.isWaiting;
-            CSGameOverlay.isWarmTime = this.isWarmTime;
-            CSGameOverlay.isWaitingWinner = this.isWaitingWinner;
+            ClientData.cTWinnerRounds = this.cTWinnerRounds;
+            ClientData.tWinnerRounds = this.tWinnerRounds;
+            ClientData.pauseTime = this.pauseTime;
+            ClientData.roundTime = this.roundTime;
+            ClientData.isDebug = this.isDebug;
+            ClientData.isStart = this.isStart;
+            ClientData.isError = this.isError;
+            ClientData.isPause = this.isPause;
+            ClientData.isWaiting = this.isWaiting;
+            ClientData.isWarmTime = this.isWarmTime;
+            ClientData.isWaitingWinner = this.isWaitingWinner;
         });
         ctx.get().setPacketHandled(true);
     }

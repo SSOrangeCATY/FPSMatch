@@ -1,9 +1,8 @@
 package com.phasetranscrystal.fpsmatch.net;
 
-import com.phasetranscrystal.fpsmatch.client.CSGameShopScreen;
-import com.phasetranscrystal.fpsmatch.client.ClientData;
+import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
+import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
-import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;

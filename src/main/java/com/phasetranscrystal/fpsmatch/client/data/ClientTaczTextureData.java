@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.client;
+package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.tacz.guns.client.resource.texture.FilePackTexture;
 import com.tacz.guns.client.resource.texture.ZipPackTexture;

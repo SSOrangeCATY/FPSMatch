@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.util;
 
-import com.phasetranscrystal.fpsmatch.client.ClientTaczTextureData;
+import com.phasetranscrystal.fpsmatch.client.data.ClientTaczTextureData;
 import com.tacz.guns.client.resource.texture.FilePackTexture;
 import com.tacz.guns.client.resource.texture.ZipPackTexture;
 import icyllis.modernui.graphics.BitmapFactory;

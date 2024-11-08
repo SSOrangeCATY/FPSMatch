@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.test;
 
-import com.phasetranscrystal.fpsmatch.client.CSGameShopScreen;
+import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
 import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
