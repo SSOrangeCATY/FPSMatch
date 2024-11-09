@@ -17,7 +17,7 @@ public class CSGameTabStatsS2CPacket {
 
     public CSGameTabStatsS2CPacket(FriendlyByteBuf buf) {
         this.uuid = buf.readUUID();
-        this.tabData = new TabData();
+        this.tabData = new TabData(uuid);
         this.tabData.setKills(buf.readInt());
         this.tabData.setDeaths(buf.readInt());
         this.tabData.setAssists(buf.readInt());

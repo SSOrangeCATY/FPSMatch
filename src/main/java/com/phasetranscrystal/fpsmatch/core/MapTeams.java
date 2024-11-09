@@ -40,9 +40,7 @@ public class MapTeams {
     }
 
     public void setTeamsSpawnPoints(){
-            this.teams.forEach(((s, t) -> {
-                t.randomSpawnPoints();
-            }));
+            this.teams.forEach(((s, t) -> t.randomSpawnPoints()));
     }
 
     public void defineSpawnPoint(String teamName, SpawnPointData data) {
@@ -58,9 +56,7 @@ public class MapTeams {
     }
 
     public void resetAllSpawnPoints(){
-        this.teams.forEach((s,t)->{
-            t.resetSpawnPointData();
-        });
+        this.teams.forEach((s,t)-> t.resetSpawnPointData());
     }
 
     public void addTeam(String teamName,int limit){
@@ -84,9 +80,7 @@ public class MapTeams {
 
     public List<UUID> getJoinedPlayers(){
         List<UUID> uuids = new ArrayList<>();
-        this.teams.values().forEach((t)->{
-            uuids.addAll(t.getPlayers());
-        });
+        this.teams.values().forEach((t)-> uuids.addAll(t.getPlayers()));
         return uuids;
     }
 
@@ -142,17 +136,14 @@ public class MapTeams {
     }
 
     public void leaveTeam(ServerPlayer player){
-        this.teams.values().forEach((t)->{
-            t.leave(player);
-        });
+        this.teams.values().forEach((t)-> t.leave(player));
     }
+
 
 
     public Map<String, List<UUID>> getTeamsLiving() {
         Map<String, List<UUID>> teamsLiving = new HashMap<>();
-        teams.forEach((s,t)->{
-            teamsLiving.put(s,t.getLivingPlayers());
-        });
+        teams.forEach((s,t)-> teamsLiving.put(s,t.getLivingPlayers()));
         return teamsLiving;
     }
 
@@ -204,12 +195,9 @@ public class MapTeams {
     @Nullable public UUID getDamageMvp() {
         Map<UUID, Float> damageMap = new HashMap<>();
 
-
-        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> {
-            attackerDamageMap.forEach((targetId, damage) -> {
-                damageMap.merge(attackerId, damage, Float::sum);
-            });
-        });
+        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> attackerDamageMap.forEach((targetId, damage) -> {
+            damageMap.merge(attackerId, damage, Float::sum);
+        }));
 
         UUID mvpId = null;
         float highestDamage = 0;
@@ -226,11 +214,7 @@ public class MapTeams {
 
     public Map<UUID,TabData> getAllTabData(){
         Map<UUID,TabData> data = new HashMap<>();
-        this.teams.forEach((s,t)->{
-            t.getPlayersTabData().forEach((tab)->{
-                data.put(tab.getOwner(),tab);
-            });
-        });
+        this.teams.forEach((s,t)-> t.getPlayersTabData().forEach((tab)-> data.put(tab.getOwner(),tab)));
         return data;
     }
 
@@ -263,9 +247,7 @@ public class MapTeams {
 
     public boolean isFirstRound(){
         AtomicInteger flag = new AtomicInteger();
-        teams.values().forEach((team)->{
-            flag.addAndGet(team.getScores());
-        });
+        teams.values().forEach((team)-> flag.addAndGet(team.getScores()));
         return flag.get() == 0;
     }
 
@@ -302,25 +284,19 @@ public class MapTeams {
     }
     public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
         Map<UUID,Map<UUID,Float>> hurtData = new HashMap<>();
-        teams.values().forEach((t)->{
-            t.getPlayersTabData().forEach((data)->{
-                hurtData.put(data.getOwner(),data.getDamageData());
-            });
-        });
+        teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)->{
+            hurtData.put(data.getOwner(),data.getDamageData());
+        }));
         return hurtData;
     }
 
     public void resetAllHurtData() {
-        this.teams.values().forEach((t)->{
-            t.getPlayersTabData().forEach(TabData::clearDamageData);
-        });
+        this.teams.values().forEach((t)-> t.getPlayersTabData().forEach(TabData::clearDamageData));
     }
 
     public void setDonePlayerStatsTemp(){
-        this.teams.values().forEach((t)->{
-            t.getPlayersTabData().forEach(tabData -> {
-            });
-        });
+        this.teams.values().forEach((t)-> t.getPlayersTabData().forEach(tabData -> {
+        }));
     }
 
 
@@ -370,7 +346,7 @@ public class MapTeams {
                             for (Map.Entry<UUID, Float> sortedDamageEntry : sortedDamageEntries) {
                                 UUID assistId = sortedDamageEntry.getKey();
                                 Player assist = map.getServerLevel().getPlayerByUUID(assistId);
-                                if (assist != null && teams.getJoinedPlayers().contains(assistId)) {;
+                                if (assist != null && teams.getJoinedPlayers().contains(assistId)) {
                                     BaseTeam assistPlayerTeam = teams.getTeamByPlayer(killer);
                                     if(assistPlayerTeam != null){
                                         PlayerData assistData = assistPlayerTeam.getPlayerData(assistId);
