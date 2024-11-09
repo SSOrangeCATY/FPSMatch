@@ -15,7 +15,7 @@
   "commands.fpsm.modify.spawn.invalidAction": "Specified an invalid spawn point action.",
   "fpsm.shop.title.cooldown": "Remaining purchase time %1$s",
   "fpsm.shop.title.min.money": "Minimum amount for next round %1$s",
-  "key.fpsm.open.shop.desc": "Open shop",
+  "key.fpsm.open.shop.desc": "Open gun shop",
   "key.category.fpsm": "FPSMacth",
   "key.fpsm.open.shop.failed.no_map": "Cannot open the store because you have not joined any maps",
   "key.fpsm.open.shop.failed.game.not_started": "Cannot open the store because game not started",

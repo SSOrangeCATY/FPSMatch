@@ -1,11 +1,10 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
-import net.minecraft.client.renderer.EffectInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.commands.EffectCommands;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -21,144 +20,90 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class MapTeams {
     protected final ServerLevel level;
-    private final Map<String, List<SpawnPointData>> spawnPoints = new HashMap<>();
-    private final Map<UUID, SpawnPointData> playersSpawnData = new HashMap<>();
-    private final Map<String, PlayerTeam> teams = new HashMap<>();
-    private final List<UUID> joinedPlayers = new ArrayList<>();
-    private final Map<UUID, String> playerTeams = new HashMap<>();
-    private final Map<String, Integer> teamPlayerLimits = new HashMap<>();
-    private final Map<String,List<UUID>> teamsLiving = new HashMap<>();
-    private final Map<UUID, TabData> playerStats = new HashMap<>();
-    private final Map<UUID, TabData> playerStatsTemp = new HashMap<>();
-    private final Map<UUID, Map<UUID,Float>> livingHurtData = new HashMap<>();
-    private final Map<UUID, Integer> mvpData = new HashMap<>();
-
-    public MapTeams(ServerLevel level,List<String> teamsName){
+    private final Map<String,BaseTeam> teams = new HashMap<>();
+    public MapTeams(ServerLevel level,Map<String,Integer> team){
         this.level = level;
-        teamsName.forEach(this::addTeam);
+        team.forEach(this::addTeam);
     }
 
-    public boolean checkSpawnPoints(){
-        AtomicBoolean check = new AtomicBoolean(true);
-        this.teams.values().forEach((t)->{
-            if(check.get()){
-                List<SpawnPointData> spawnPoints = this.spawnPoints.getOrDefault(t.getName(),null);
-                int p = t.getPlayers().size();
-                if(spawnPoints == null) {
-                    check.set(false);
-                }else{
-                    check.set(spawnPoints.size() >= p);
-                }
-            }
-        });
-        return check.get();
-    }
-
+    @Nullable
     public List<SpawnPointData> getSpawnPointsByTeam(String team){
-        return this.spawnPoints.getOrDefault(team,new ArrayList<>());
+        BaseTeam t = this.teams.getOrDefault(team,null);
+        if(t == null) return null;
+        return t.getSpawnPointsData();
     }
 
     public void setTeamsSpawnPoints(){
-        if(checkSpawnPoints()) {
-            Random random = new Random();
-            this.playerTeams.forEach(((uuid, playerTeam) -> {
-                List<SpawnPointData> spawner = this.getSpawnPointsByTeam(playerTeam);
-                if (spawner.isEmpty()) throw new RuntimeException("Error : SpawnPoint is Empty");
-                Player player = this.level.getPlayerByUUID(uuid);
-                if (player != null && spawner.size() > 1){
-                    int rIndex = random.nextInt(0,spawner.size());
-                    SpawnPointData data = spawner.get(rIndex);
-                    spawner.remove(rIndex);
-                    this.playersSpawnData.put(player.getUUID(),data);
-                }else if(player != null){
-                    SpawnPointData data = spawner.get(0);
-                    spawner.remove(0);
-                    this.playersSpawnData.put(player.getUUID(),data);
-                }
+            this.teams.forEach(((s, t) -> {
+                t.randomSpawnPoints();
             }));
-        }
     }
 
-    public void defineSpawnPoint(String teamName, SpawnPointData spawn){
-        List<SpawnPointData> data = this.spawnPoints.getOrDefault(teamName,new ArrayList<>());
-        data.add(spawn);
-        this.spawnPoints.put(teamName,data);
+    public void defineSpawnPoint(String teamName, SpawnPointData data) {
+        BaseTeam team = this.teams.getOrDefault(teamName, null);
+        if (team == null) return;
+        team.addSpawnPointData(data);
     }
+
     public void resetSpawnPoints(String teamName){
-        this.spawnPoints.remove(teamName);
-    }
-    public void resetAllSpawnPoints(){
-        this.spawnPoints.clear();
+        BaseTeam team = this.teams.getOrDefault(teamName, null);
+        if (team == null) return;
+        team.resetSpawnPointData();
     }
 
-    public void addTeam(String teamName){
-        PlayerTeam playerteam = this.level.getScoreboard().getPlayersTeam(teamName);
-        this.teams.put(teamName, Objects.requireNonNullElseGet(playerteam, () -> this.level.getScoreboard().addPlayerTeam(teamName)));
+    public void resetAllSpawnPoints(){
+        this.teams.forEach((s,t)->{
+            t.resetSpawnPointData();
+        });
+    }
+
+    public void addTeam(String teamName,int limit){
+        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(teamName), () -> this.level.getScoreboard().addPlayerTeam(teamName));
+        this.teams.put(teamName, new BaseTeam(teamName,limit,playerteam));
     }
 
     public void delTeam(PlayerTeam team){
         if(!checkTeam(team.getName())) return;
         this.teams.remove(team.getName());
         this.level.getScoreboard().removePlayerTeam(team);
-        this.spawnPoints.remove(team.getName());
-        this.playerTeams.forEach(((uuid, playerTeam) -> {
-            if(playerTeam.equals(team.getName())){
-                this.playerTeams.remove(uuid);
-            }
-        }));
     }
 
-    @Nullable public String getTeamByPlayer(Player player){
+    @Nullable public BaseTeam getTeamByPlayer(Player player){
         PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
         if(currentTeam != null && this.checkTeam(currentTeam.getName())){
-            return currentTeam.getName();
+            return this.teams.getOrDefault(currentTeam.getName(),null);
         }
         return null;
     }
 
     public List<UUID> getJoinedPlayers(){
-        return this.joinedPlayers;
+        List<UUID> uuids = new ArrayList<>();
+        this.teams.values().forEach((t)->{
+            uuids.addAll(t.getPlayers());
+        });
+        return uuids;
     }
 
     public void resetLivingPlayers(){
-        this.teamsLiving.clear();
-        this.playerTeams.forEach(((uuid, s) -> {
-            List<UUID> uuids = this.teamsLiving.getOrDefault(s,new ArrayList<>());
-            uuids.add(uuid);
-            this.teamsLiving.put(s,uuids);
-        }));
+        this.teams.values().forEach(BaseTeam::resetLiving);
     }
 
-    public void playerJoin(Player player){
-        this.joinedPlayers.add(player.getUUID());
-    }
-    public void playerLeave(Player player){
-        this.leaveTeam(player);
-        this.joinedPlayers.remove(player.getUUID());
+    public void playerJoin(ServerPlayer player,String teamName){
+        BaseTeam team = this.teams.getOrDefault(teamName,null);
+        if(team == null) return;
+        team.join(player);
     }
 
-    public void playerLeave(UUID player){
-        this.playerTeams.remove(player);
-        this.teamsLiving.forEach(((s, uuids) -> {
-            if(uuids.contains(player)){
-                this.teamsLiving.get(s).remove(player);
-            }
-        }));
-        this.joinedPlayers.remove(player);
-    }
-
-
-    public void joinTeam(String teamName, Player player) {
+    public void joinTeam(String teamName, ServerPlayer player) {
         leaveTeam(player);
         if (checkTeam(teamName) && this.testTeamIsFull(teamName)) {
-            if(!joinedPlayers.contains(player.getUUID())) this.playerJoin(player);
-            this.playerTeams.put(player.getUUID(), this.teams.get(teamName).getName());
-            player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), this.teams.get(teamName));
+            if(!this.getJoinedPlayers().contains(player.getUUID())) this.playerJoin(player,teamName);
         } else {
             player.sendSystemMessage(Component.literal("[FPSM] 队伍已满或未找到目标队伍，当前队伍已离队!"));
         }
@@ -173,79 +118,95 @@ public class MapTeams {
         }
     }
 
-    public void setTeamPlayerLimit(String teamName, int limit) {
-        if(checkTeam(teamName)) this.teamPlayerLimits.put(teamName, limit);
-    }
-
     public boolean testTeamIsFull(String teamName){
-        if(checkTeam(teamName)) return this.teamPlayerLimits.getOrDefault(teamName, 99) >= this.teams.get(teamName).getPlayers().size();
+
         return false;
     }
-    public List<PlayerTeam> getTeams(){
-        return (List<PlayerTeam>) teams.values();
+    public List<BaseTeam> getTeams(){
+        return (List<BaseTeam>) teams.values();
     }
 
     public List<String> getTeamsName(){
         return teams.keySet().stream().toList();
     }
 
-    @Nullable public PlayerTeam getTeamByName(String teamName){
+    @Nullable public BaseTeam getTeamByName(String teamName){
         if(checkTeam(teamName)) return this.teams.get(teamName);
         return null;
     }
 
     public void reset(){
-        this.joinedPlayers.clear();
-        this.playerTeams.clear();
-        this.playerStatsTemp.clear();
-        this.mvpData.clear();
-        this.livingHurtData.clear();
-        this.playersSpawnData.clear();
+        this.setDonePlayerStatsTemp();
+        this.resetAllHurtData();
+        this.resetLivingPlayers();
     }
 
-    public void leaveTeam(Player player){
-        this.playerTeams.remove(player.getUUID());
-        this.teamsLiving.forEach(((s, uuids) -> {
-            if(uuids.contains(player.getUUID())){
-                this.teamsLiving.get(s).remove(player.getUUID());
-            }
-        }));
-        PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
-        if (currentTeam != null)  player.getScoreboard().removePlayerFromTeam(player.getScoreboardName(), currentTeam);
+    public void leaveTeam(ServerPlayer player){
+        this.teams.values().forEach((t)->{
+            t.leave(player);
+        });
     }
+
 
     public Map<String, List<UUID>> getTeamsLiving() {
+        Map<String, List<UUID>> teamsLiving = new HashMap<>();
+        teams.forEach((s,t)->{
+            teamsLiving.put(s,t.getLivingPlayers());
+        });
         return teamsLiving;
     }
 
+    @Nullable
+    public TabData getTabData(UUID player) {
+        AtomicReference<TabData> data = new AtomicReference<>();
+        teams.values().forEach((team)->{
+            if (team.hasPlayer(player)){
+                data.set(team.getPlayerTabData(player));
+            }
+        });
+        return data.get();
+    }
+
+
+    @Nullable
     public TabData getTabData(Player player) {
-        return playerStats.getOrDefault(player.getUUID(), new TabData());
+        BaseTeam team = getTeamByPlayer(player);
+        if(team != null){
+            if (team.hasPlayer(player.getUUID())){
+                return team.getPlayerTabData(player.getUUID());
+            }
+        }
+        return null;
     }
 
     public List<UUID> getSameTeamPlayerUUIDs(Player player){
+        BaseTeam team = getTeamByPlayer(player);
         List<UUID> uuids = new ArrayList<>();
-        this.playerTeams.forEach(((uuid, s) -> {
-            if(!uuid.equals(player.getUUID()) && this.playerTeams.get(uuid).equals(s)){
-                uuids.add(uuid);
+        if(team != null){
+            if (team.hasPlayer(player.getUUID())){
+                uuids.addAll(team.getPlayers());
             }
-        }));
+        }
         return uuids;
     }
 
-    public void updateTabData(Player player, TabData tabData) {
-        playerStats.put(player.getUUID(), tabData);
-    }
 
-    public void addHurtData(UUID targetId, UUID attackerId, float damage) {
-        Map<UUID, Float> hurtDataMap = livingHurtData.getOrDefault(attackerId, new HashMap<>());
-        hurtDataMap.merge(attackerId, damage, Float::sum);
-        livingHurtData.put(targetId, hurtDataMap);
+    public void addHurtData(Player attackerId ,UUID targetId, float damage) {
+        BaseTeam team = getTeamByPlayer(attackerId);
+        if(team != null) {
+           TabData data = team.getPlayerTabData(attackerId.getUUID());
+            if (data != null) {
+                data.addDamageData(targetId,damage);
+            }
+        }
     }
 
     @Nullable public UUID getDamageMvp() {
         Map<UUID, Float> damageMap = new HashMap<>();
-        this.livingHurtData.forEach((targetId, attackerDamageMap) -> {
-            attackerDamageMap.forEach((attackerId, damage) -> {
+
+
+        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> {
+            attackerDamageMap.forEach((targetId, damage) -> {
                 damageMap.merge(attackerId, damage, Float::sum);
             });
         });
@@ -259,15 +220,25 @@ public class MapTeams {
                 highestDamage = entry.getValue();
             }
         }
-
         return mvpId;
+    }
+
+
+    public Map<UUID,TabData> getAllTabData(){
+        Map<UUID,TabData> data = new HashMap<>();
+        this.teams.forEach((s,t)->{
+            t.getPlayersTabData().forEach((tab)->{
+                data.put(tab.getOwner(),tab);
+            });
+        });
+        return data;
     }
 
     public UUID getGameMvp(){
         UUID mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
-        for (Map.Entry<UUID, TabData> entry : playerStats.entrySet()) {
+        for (Map.Entry<UUID, TabData> entry : this.getAllTabData().entrySet()) {
             TabData tabData = entry.getValue();
             int kills = tabData.getKills() * 2;
             int assists = tabData.getAssists();
@@ -290,53 +261,68 @@ public class MapTeams {
         this.setDonePlayerStatsTemp();
     }
 
-    public UUID getRoundMvpPlayer() {
+    public boolean isFirstRound(){
+        AtomicInteger flag = new AtomicInteger();
+        teams.values().forEach((team)->{
+            flag.addAndGet(team.getScores());
+        });
+        return flag.get() == 0;
+    }
+
+    public UUID getRoundMvpPlayer(String winnerTeam) {
         UUID mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
-        TabData Empty = new TabData();
+        BaseTeam team = teams.getOrDefault(winnerTeam,null);
+        if (team == null) return null;
 
-        if (playerStatsTemp.isEmpty()) {
+        if (isFirstRound()) {
             mvpId = this.getGameMvp();
         }else{
-            for (Map.Entry<UUID, TabData> entry : playerStats.entrySet()) {
-                TabData tabData = entry.getValue();
-                int kills = tabData.getKills() - playerStatsTemp.getOrDefault(entry.getKey(),Empty).getKills();
-                int assists = tabData.getAssists() - playerStatsTemp.getOrDefault(entry.getKey(),Empty).getAssists();
+            for (PlayerData data : team.getPlayersData()) {
+                int kills = data.getTabData().getKills() - data.getTabDataTemp().getKills();
+                int assists = data.getTabData().getAssists() - data.getTabDataTemp().getAssists();
                 int score = kills * 2 + assists;
-                if (entry.getKey().equals(damageMvpId)){
+                if (data.getOwner().equals(damageMvpId)){
                     score += 2;
                 }
 
                 if (mvpId == null || score > highestScore) {
-                    mvpId = entry.getKey();
+                    mvpId = data.getOwner();
                     highestScore = score;
                 }
             }
         }
 
         if(mvpId != null){
-            this.mvpData.put(mvpId,this.mvpData.getOrDefault(mvpId,0) + 1);
+            Objects.requireNonNull(team.getPlayerData(mvpId)).getTabData().addMvpCount(1);
         }
 
         return mvpId;
     }
     public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
-        return livingHurtData;
+        Map<UUID,Map<UUID,Float>> hurtData = new HashMap<>();
+        teams.values().forEach((t)->{
+            t.getPlayersTabData().forEach((data)->{
+                hurtData.put(data.getOwner(),data.getDamageData());
+            });
+        });
+        return hurtData;
     }
 
     public void resetAllHurtData() {
-        livingHurtData.clear();
+        this.teams.values().forEach((t)->{
+            t.getPlayersTabData().forEach(TabData::clearDamageData);
+        });
     }
 
     public void setDonePlayerStatsTemp(){
-        this.playerStatsTemp.clear();
-        this.playerStatsTemp.putAll(this.playerStats);
+        this.teams.values().forEach((t)->{
+            t.getPlayersTabData().forEach(tabData -> {
+            });
+        });
     }
 
-    public Map<UUID, SpawnPointData> getPlayersSpawnData() {
-        return playersSpawnData;
-    }
 
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event){
@@ -344,10 +330,12 @@ public class MapTeams {
             BaseMap map = FPSMCore.getMapByPlayer(player);
              if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
-                String playerTeam = teams.getTeamByPlayer(player);
-                if(playerTeam != null){
-                    teams.getTeamsLiving().get(playerTeam).remove(player.getUUID());
-                    teams.updateTabData(player, teams.getTabData(player).addDeaths());
+                BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
+                if(deadPlayerTeam != null){
+                    PlayerData data = deadPlayerTeam.getPlayerData(player.getUUID());
+                    if(data == null) return;
+                    data.getTabData().addDeaths();
+                    data.setLiving(false);
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.SPECTATOR);
                     List<UUID> uuids = teams.getSameTeamPlayerUUIDs(player);
@@ -362,9 +350,14 @@ public class MapTeams {
                     player.setRespawnPosition(player.level().dimension(),player.getOnPos().above(),0f,true,false);
                     event.setCanceled(true);
                 }
+
                 if(event.getSource().getEntity() instanceof ServerPlayer killer){
-                    if(teams.getTeamByPlayer(killer) != null){
-                        teams.updateTabData(killer, teams.getTabData(killer).addKills());
+                    BaseTeam killerPlayerTeam = teams.getTeamByPlayer(killer);
+                    if(killerPlayerTeam != null){
+                        PlayerData data = killerPlayerTeam.getPlayerData(player.getUUID());
+                        if(data == null) return;
+                        data.getTabData().addKills();
+
                         Map<UUID, Float> hurtDataMap = teams.getLivingHurtData().get(player.getUUID());
                         if(hurtDataMap != null && !hurtDataMap.isEmpty()){
 
@@ -377,8 +370,13 @@ public class MapTeams {
                             for (Map.Entry<UUID, Float> sortedDamageEntry : sortedDamageEntries) {
                                 UUID assistId = sortedDamageEntry.getKey();
                                 Player assist = map.getServerLevel().getPlayerByUUID(assistId);
-                                if (assist != null) {
-                                    teams.updateTabData(assist, teams.getTabData(assist).addAssist());
+                                if (assist != null && teams.getJoinedPlayers().contains(assistId)) {;
+                                    BaseTeam assistPlayerTeam = teams.getTeamByPlayer(killer);
+                                    if(assistPlayerTeam != null){
+                                        PlayerData assistData = assistPlayerTeam.getPlayerData(assistId);
+                                        if(assistData == null) return;
+                                        assistData.getTabData().addAssist();
+                                    }
                                 }
                             }
                         }
@@ -389,15 +387,34 @@ public class MapTeams {
     }
 
     @SubscribeEvent
+    public static void onPlayerOffline(PlayerEvent.PlayerLoggedInEvent event){
+        if(event.getEntity() instanceof ServerPlayer player){
+            BaseMap map = FPSMCore.getMapByPlayer(player);
+            if(map != null && map.isStart){
+                MapTeams teams = map.getMapTeams();
+                BaseTeam playerTeam = teams.getTeamByPlayer(player);
+                if(playerTeam != null) {
+                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
+                    if(data == null) return;
+                    data.setOffline(false);
+                    //TODO
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerOffline(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getMapByPlayer(player);
-            if(map != null){
+            if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
-                String playerTeam = teams.getTeamByPlayer(player);
+                BaseTeam playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {
-                    teams.getTeamsLiving().getOrDefault(playerTeam,new ArrayList<>()).remove(player.getUUID());
-                    teams.updateTabData(player, teams.getTabData(player).addDeaths());
+                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
+                    if(data == null) return;
+                    data.setOffline(true);
+                    data.getTabDataTemp().addDeaths();
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.SPECTATOR);
                 }
@@ -407,14 +424,13 @@ public class MapTeams {
 
     @SubscribeEvent
     public void onLivingHurtEvent(LivingHurtEvent event) {
-        if (event.getEntity() instanceof Player player) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             DamageSource damageSource = event.getSource();
-            if(damageSource.getEntity() instanceof Player from){
+            if(damageSource.getEntity() instanceof ServerPlayer from){
                 BaseMap map = FPSMCore.getMapByPlayer(player);
                 if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
                     float damage = event.getAmount();
-                    map.getMapTeams().updateTabData(from,map.getMapTeams().getTabData(from).addDamage(damage));
-                    map.getMapTeams().addHurtData(player.getUUID(),from.getUUID(),damage);
+                    map.getMapTeams().addHurtData(player,from.getUUID(),damage);
                 }
             }
         }

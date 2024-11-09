@@ -5,7 +5,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public abstract class BaseMap {
@@ -14,12 +16,23 @@ public abstract class BaseMap {
     public boolean isStart = false;
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
-    private final MapTeams mapTeams;
+    private MapTeams mapTeams;
 
-    public BaseMap(ServerLevel serverLevel, List<String> teams,String mapName) {
+    public BaseMap(ServerLevel serverLevel, String mapName) {
         this.serverLevel = serverLevel;
-        this.mapTeams = new MapTeams(serverLevel,teams);
         this.mapName = mapName;
+        this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams()));
+    }
+
+    public Map<String,Integer> getTeams(){
+        Map<String,Integer> teams = new HashMap<>();
+        teams.put("teamA",5);
+        teams.put("teamB",5);
+        return teams;
+    }
+
+    public final void setMapTeams(MapTeams teams){
+        this.mapTeams = teams;
     }
 
     public final void mapTick(){
@@ -42,11 +55,10 @@ public abstract class BaseMap {
 
     public abstract void startGame();
 
-    public boolean checkGameHasPlayer(Player player){
+    public boolean checkGameHasPlayer(ServerPlayer player){
         boolean flag = false;
         if(!this.getMapTeams().getJoinedPlayers().contains(player.getUUID()) || getMapTeams().getTeamByPlayer(player) != null){
             flag = true;
-            this.getMapTeams().playerJoin(player);
         }else if(this.getMapTeams().getJoinedPlayers().contains(player.getUUID())){
             flag = true;
         }

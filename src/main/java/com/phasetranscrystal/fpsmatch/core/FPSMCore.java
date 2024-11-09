@@ -26,7 +26,7 @@ public class FPSMCore {
     private static final Map<String, ShopData> GAMES_DEFAULT_SHOP_DATA = new HashMap<>();
     private static final Map<String, Map<UUID, ShopData>> GAMES_SHOP_DATA = new HashMap<>();
 
-    @Nullable public static BaseMap getMapByPlayer(Player player){
+    @Nullable public static BaseMap getMapByPlayer(ServerPlayer player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
         GAMES.values().forEach((baseMapList -> {
             baseMapList.forEach((baseMap)->{
@@ -137,7 +137,7 @@ public class FPSMCore {
     @SubscribeEvent
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getMapByPlayer(event.getPlayer());
+        BaseMap map = FPSMCore.getMapByPlayer((ServerPlayer) event.getPlayer());
         if (map == null) return;
         FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
         if (shop == null) return;
@@ -157,7 +157,7 @@ public class FPSMCore {
     @SubscribeEvent
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getMapByPlayer(event.getEntity());
+        BaseMap map = FPSMCore.getMapByPlayer((ServerPlayer) event.getEntity());
         if (map == null) return;
         FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
         if (shop == null) return;

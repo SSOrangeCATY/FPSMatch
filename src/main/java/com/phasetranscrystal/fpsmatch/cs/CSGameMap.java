@@ -2,7 +2,9 @@ package com.phasetranscrystal.fpsmatch.cs;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
@@ -35,10 +37,16 @@ public class CSGameMap extends BaseMap {
     private boolean isWaitingWinner = false;
     private final Map<String,Integer> teamScores = new HashMap<>();
 
+
     public CSGameMap(ServerLevel serverLevel,String mapName) {
-        super(serverLevel, List.of("ct","t"),mapName);
-        this.getMapTeams().setTeamPlayerLimit("ct",10);
-        this.getMapTeams().setTeamPlayerLimit("t",10);
+        super(serverLevel,mapName);
+    }
+
+    public Map<String,Integer> getTeams(){
+        Map<String,Integer> teams = new HashMap<>();
+        teams.put("ct",5);
+        teams.put("t",5);
+        return teams;
     }
 
     public void setShopData(){
@@ -86,12 +94,11 @@ public class CSGameMap extends BaseMap {
     public void startGame(){
         AtomicBoolean checkFlag = new AtomicBoolean(true);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            Player player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null){
-                String team = this.getMapTeams().getTeamByPlayer(player);
+                BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
                 if(team == null) checkFlag.set(false);
             }else{
-                this.getMapTeams().playerLeave(uuid);
                 checkFlag.set(false);
             }
         }));
@@ -210,7 +217,9 @@ public class CSGameMap extends BaseMap {
     }
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
-        SpawnPointData data = this.getMapTeams().getPlayersSpawnData().get(player.getUUID());
+        BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
+        if (team == null) return;
+        SpawnPointData data = Objects.requireNonNull(team.getPlayerData(player.getUUID())).getSpawnPointsData();
         BlockPos pos = data.getPosition();
         float f = Mth.wrapDegrees(data.getYaw());
         float f1 = Mth.wrapDegrees(data.getPitch());

@@ -30,4 +30,9 @@ public class SpawnPointData {
     public float getYaw() {
         return pYaw;
     }
+
+    @Override
+    public String toString() {
+        return dimension.location().getPath() +" "+ position.toString();
+    }
 }
