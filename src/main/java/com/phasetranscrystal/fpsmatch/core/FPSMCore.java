@@ -16,12 +16,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     private static final Map<String,List<BaseMap>> GAMES = new HashMap<>();
-    private static final Map<String, Function3<ServerLevel,List<String>,String,BaseMap>> REGISTRY = new HashMap<>();
+    private static final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
     private static final Map<String, ShopData> GAMES_DEFAULT_SHOP_DATA = new HashMap<>();
     private static final Map<String, Map<UUID, ShopData>> GAMES_SHOP_DATA = new HashMap<>();
 
@@ -80,12 +81,12 @@ public class FPSMCore {
        return REGISTRY.containsKey(mapType);
     }
 
-    @Nullable public static Function3<ServerLevel,List<String>,String,BaseMap> getPreBuildGame(String mapType){
+    @Nullable public static BiFunction<ServerLevel,String,BaseMap> getPreBuildGame(String mapType){
          if(checkGameType(mapType)) return REGISTRY.get(mapType);
          return null;
     }
 
-    public static void registerGameType(String typeName, Function3<ServerLevel,List<String>,String,BaseMap> map, boolean enableShop){
+    public static void registerGameType(String typeName, BiFunction<ServerLevel,String,BaseMap> map, boolean enableShop){
         REGISTRY.put(typeName,map);
         if(enableShop) GAMES_DEFAULT_SHOP_DATA.put(typeName,new ShopData());
     }

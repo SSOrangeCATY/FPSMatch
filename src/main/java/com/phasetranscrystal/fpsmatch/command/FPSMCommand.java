@@ -80,9 +80,9 @@ public class FPSMCommand {
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String type = StringArgumentType.getString(context, "gameType");
-        Function3<ServerLevel,List<String>,String,BaseMap> game = FPSMCore.getPreBuildGame(type);
+        BiFunction<ServerLevel,String,BaseMap> game = FPSMCore.getPreBuildGame(type);
         if(game != null){
-            BaseMap map = FPSMCore.registerMap(type, game.apply(context.getSource().getLevel(),new ArrayList<>(),mapName));
+            BaseMap map = FPSMCore.registerMap(type, game.apply(context.getSource().getLevel(),mapName));
             if(map != null) {
                 map.setShopData();
                 map.setGameType(type);
@@ -178,7 +178,7 @@ public class FPSMCommand {
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
         BaseMap map = FPSMCore.getMapByName(mapName);
-        if (context.getSource().getEntity() instanceof Player player) {
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
             if (map != null) {
                 switch (action) {
                     case "join":

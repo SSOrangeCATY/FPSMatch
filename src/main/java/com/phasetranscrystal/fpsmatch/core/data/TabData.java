@@ -1,7 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -76,23 +74,19 @@ public class TabData {
         return kills;
     }
 
-    public TabData addDeaths(){
+    public void addDeaths(){
         this.deaths += 1;
-        return this;
     }
 
-    public TabData addAssist(){
+    public void addAssist(){
         this.assists += 1;
-        return this;
     }
-    public TabData addKills(){
+    public void addKills(){
         this.kills += 1;
-        return this;
     }
 
-    public TabData addDamage(float damage){
+    public void addDamage(float damage){
         this.damage += damage;
-        return this;
     }
 
     public void setMoney(int money) {
