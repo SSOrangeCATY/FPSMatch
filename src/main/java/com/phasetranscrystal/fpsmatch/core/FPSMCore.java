@@ -6,7 +6,6 @@ import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -28,13 +27,11 @@ public class FPSMCore {
 
     @Nullable public static BaseMap getMapByPlayer(ServerPlayer player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
-        GAMES.values().forEach((baseMapList -> {
-            baseMapList.forEach((baseMap)->{
-                if(baseMap.checkGameHasPlayer(player)){
-                    map.set(baseMap);
-                }
-            });
-         }));
+        GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
+            if(baseMap.checkGameHasPlayer(player)){
+                map.set(baseMap);
+            }
+        })));
          return map.get();
     }
 
@@ -56,32 +53,26 @@ public class FPSMCore {
 
     @Nullable public static BaseMap getMapByName(String name){
         AtomicReference<BaseMap> map = new AtomicReference<>();
-        GAMES.forEach((type,mapList)->{
-            mapList.forEach((baseMap)->{
-                if(baseMap.getMapName().equals(name)) {
-                    map.set(baseMap);
-                }
-            });
-        });
+        GAMES.forEach((type,mapList)-> mapList.forEach((baseMap)->{
+            if(baseMap.getMapName().equals(name)) {
+                map.set(baseMap);
+            }
+        }));
        return map.get();
     }
 
     public static List<String> getMapNames(){
         List<String> names = new ArrayList<>();
-        GAMES.forEach((type,mapList)->{
-            mapList.forEach((map->{
-                names.add(map.getMapName());
-            }));
-        });
+        GAMES.forEach((type,mapList)-> mapList.forEach((map->{
+            names.add(map.getMapName());
+        })));
         return names;
     }
 
     public static List<String> getMapNames(String type){
         List<String> names = new ArrayList<>();
         List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
-        maps.forEach((map->{
-            names.add(map.getMapName());
-        }));
+        maps.forEach((map-> names.add(map.getMapName())));
         return names;
     }
 
@@ -128,9 +119,7 @@ public class FPSMCore {
     @SubscribeEvent
     public static void tick(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
-            GAMES.forEach((type,mapList)->{
-                mapList.forEach(BaseMap::mapTick);
-            });
+            GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
         }
     }
 
