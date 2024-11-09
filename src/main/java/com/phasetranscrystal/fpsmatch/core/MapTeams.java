@@ -113,9 +113,12 @@ public class MapTeams {
     }
 
     public boolean testTeamIsFull(String teamName){
-
-        return false;
+        BaseTeam team = teams.get(teamName);
+        if (team == null) return false;
+        return team.getPlayerLimit() < team.getPlayers().size();
     }
+
+
     public List<BaseTeam> getTeams(){
         return (List<BaseTeam>) teams.values();
     }
@@ -138,8 +141,6 @@ public class MapTeams {
     public void leaveTeam(ServerPlayer player){
         this.teams.values().forEach((t)-> t.leave(player));
     }
-
-
 
     public Map<String, List<UUID>> getTeamsLiving() {
         Map<String, List<UUID>> teamsLiving = new HashMap<>();
