@@ -152,7 +152,7 @@ public class FPSMCore {
         FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
         if (shop == null) return;
 
-        // 根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
+        // 如果不是Tacz的枪就是根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
         ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
         if(slot != null){
             if (event.getStack().getCount() > 1 && slot.type() == ShopData.ItemType.THROWABLE){

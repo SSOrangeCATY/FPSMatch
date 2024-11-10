@@ -1,13 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
-public class SpawnPointData {
+public class SpawnPointData extends SavedData {
     ResourceKey<Level> dimension;BlockPos position; float pYaw; float pPitch;
     public SpawnPointData(ResourceKey<Level> pDimension, @Nullable BlockPos pPosition, float pYaw, float pPitch){
         this.dimension = pDimension;
@@ -34,5 +36,19 @@ public class SpawnPointData {
     @Override
     public String toString() {
         return dimension.location().getPath() +" "+ position.toString();
+    }
+
+    @Override
+    public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
+        pCompoundTag.putString("Dimension", this.dimension.location().toString());
+
+        if (this.position != null) {
+            pCompoundTag.putLong("Position", this.position.asLong());
+        }
+
+        pCompoundTag.putFloat("Yaw", this.pYaw);
+        pCompoundTag.putFloat("Pitch", this.pPitch);
+
+        return pCompoundTag;
     }
 }

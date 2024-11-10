@@ -1,10 +1,14 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.saveddata.SavedData;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class TabData {
+public class TabData extends SavedData {
     private final UUID owner;
     private final Map<UUID,Float> damageData = new HashMap<>();
     private int kills;
@@ -143,5 +147,38 @@ public class TabData {
         this.setDeaths(this.deaths + data.deaths);
         this.setAssists(this.assists + data.assists);
         this.setDamage(this.damage + data.damage);
+    }
+
+    @Override
+    public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
+        // 保存主人的UUID
+        pCompoundTag.putUUID("Owner", this.owner);
+
+        // 保存kills, deaths, assists
+        pCompoundTag.putInt("Kills", this.kills);
+        pCompoundTag.putInt("Deaths", this.deaths);
+        pCompoundTag.putInt("Assists", this.assists);
+
+        // 保存总伤害
+        pCompoundTag.putFloat("Damage", this.damage);
+
+        // 保存金钱
+        pCompoundTag.putInt("Money", this.money);
+
+        // 保存MVP计数
+        pCompoundTag.putInt("MVPCount", this.mvpCount);
+
+        // 保存是否活着的状态
+        pCompoundTag.putBoolean("IsLiving", this.isLiving);
+
+        // 保存伤害数据
+        CompoundTag damageDataTag = new CompoundTag();
+        for (Map.Entry<UUID, Float> entry : this.damageData.entrySet()) {
+            damageDataTag.putUUID("UUID_" + entry.getKey().toString(), entry.getKey());
+            damageDataTag.putFloat("Damage", entry.getValue());
+        }
+        pCompoundTag.put("DamageData", damageDataTag);
+
+        return pCompoundTag;
     }
 }

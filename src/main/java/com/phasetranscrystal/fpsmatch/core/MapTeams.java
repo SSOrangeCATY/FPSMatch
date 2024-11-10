@@ -96,8 +96,8 @@ public class MapTeams {
 
     public void joinTeam(String teamName, ServerPlayer player) {
         leaveTeam(player);
-        if (checkTeam(teamName) && this.testTeamIsFull(teamName)) {
-            if(!this.getJoinedPlayers().contains(player.getUUID())) this.playerJoin(player,teamName);
+        if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
+            this.playerJoin(player,teamName);
         } else {
             player.sendSystemMessage(Component.literal("[FPSM] 队伍已满或未找到目标队伍，当前队伍已离队!"));
         }
