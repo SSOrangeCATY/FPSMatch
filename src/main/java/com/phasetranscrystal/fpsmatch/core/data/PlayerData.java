@@ -1,10 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -100,5 +97,39 @@ public class PlayerData extends SavedData {
         return pCompoundTag;
     }
 
+    public static PlayerData load(CompoundTag tag) {
+        UUID owner = tag.getUUID("Owner");
+        PlayerData playerData = new PlayerData(owner);
 
+        // 读取分数
+        playerData.scores = tag.getInt("Scores");
+
+        // 读取是否离线的状态
+        playerData.isOffline = tag.getBoolean("IsOffline");
+
+        // 读取TabData
+        if (tag.contains("TabData")) {
+            CompoundTag tabDataTag = tag.getCompound("TabData");
+            playerData.tabData.load(tabDataTag);
+        }
+
+        // 读取临时TabData
+        if (tag.contains("TabDataTemp")) {
+            CompoundTag tabDataTempTag = tag.getCompound("TabDataTemp");
+            playerData.tabDataTemp.load(tabDataTempTag);
+        }
+
+        // 读取SpawnPointData
+        if (tag.contains("SpawnPointsData")) {
+            CompoundTag spawnPointsDataTag = tag.getCompound("SpawnPointsData");
+            playerData.spawnPointsData = SpawnPointData.load(spawnPointsDataTag);
+        }
+
+        return playerData;
+    }
+
+    public static PlayerData getData(ServerLevel level) {
+        ServerLevel end = level.getServer().getLevel(Level.END);
+        return end.getDataStorage().get(PlayerData::load, "PlayerData");
+    }
 }
