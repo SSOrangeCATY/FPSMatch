@@ -310,17 +310,7 @@ public class MapTeams {
         for (Map.Entry<String, BaseTeam> entry : teams.entrySet()) {
             CompoundTag teamTag = new CompoundTag();
             teamTag.putString("TeamName", entry.getKey());
-            teamTag.putInt("PlayerLimit", entry.getValue().getPlayerLimit());
-
-            ListTag playersTag = new ListTag();
-            playersTag.add(StringTag.of(playerUUID.toString()));
-
-            teamTag.put("Players", playersTag);
-
-            // 保存队伍的其他数据，例如击杀数据等
-            CompoundTag teamDataTag = entry.getValue().save(new CompoundTag());
-            teamTag.put("TeamData", teamDataTag);
-
+            entry.getValue().save(teamTag);
             teamsTag.add(teamTag);
         }
 
