@@ -117,7 +117,6 @@ public class ShopData extends SavedData {
     public ShopSlot getSlotData(ItemType type, int index) {
         return data.get(type).get(index);
     }
-
     public static void checkData(Map<ItemType, List<ShopSlot>> data) {
         for (ItemType type : ItemType.values()) {
             List<ShopSlot> slots = data.getOrDefault(type, null);

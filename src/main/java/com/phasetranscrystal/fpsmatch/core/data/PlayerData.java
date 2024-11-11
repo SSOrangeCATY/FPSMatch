@@ -1,9 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -15,6 +18,29 @@ public class PlayerData extends SavedData {
     private final TabData tabDataTemp;
     private boolean isOffline = false;
     private SpawnPointData spawnPointsData;
+
+    public PlayerData(UUID owner,TabData data,TabData dataTemp) {
+        this.owner = owner;
+        this.tabData = data;
+        this.tabDataTemp = dataTemp;
+    }
+
+    public PlayerData(UUID owner,int scores,TabData data,TabData dataTemp,boolean isOffline) {
+        this.owner = owner;
+        this.scores = scores;
+        this.tabData = data;
+        this.tabDataTemp = dataTemp;
+        this.isOffline = isOffline;
+    }
+
+    public PlayerData(UUID owner,int scores,TabData data,TabData dataTemp,boolean isOffline,SpawnPointData spawnPointsData) {
+        this.owner = owner;
+        this.scores = scores;
+        this.tabData = data;
+        this.tabDataTemp = dataTemp;
+        this.isOffline = isOffline;
+        this.spawnPointsData = spawnPointsData;
+    }
 
     public PlayerData(UUID owner) {
         this.owner = owner;
@@ -67,69 +93,75 @@ public class PlayerData extends SavedData {
     }
 
     @Override
-    public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
+    public @NotNull CompoundTag save(@NotNull CompoundTag pCompoundTag) {
+        CompoundTag tag = new CompoundTag();
         // 保存主人的UUID
-        pCompoundTag.putUUID("Owner", this.owner);
+        tag.putUUID("Owner", this.owner);
 
         // 保存分数
-        pCompoundTag.putInt("Scores", this.scores);
+        tag.putInt("Scores", this.scores);
 
         // 保存是否离线的状态
-        pCompoundTag.putBoolean("IsOffline", this.isOffline);
+        tag.putBoolean("IsOffline", this.isOffline);
 
         // 保存TabData
         CompoundTag tabDataTag = new CompoundTag();
         this.tabData.save(tabDataTag);
-        pCompoundTag.put("TabData", tabDataTag);
+        tag.put("TabData", tabDataTag);
 
         // 保存临时TabData
         CompoundTag tabDataTempTag = new CompoundTag();
         this.tabDataTemp.save(tabDataTempTag);
-        pCompoundTag.put("TabDataTemp", tabDataTempTag);
+        tag.put("TabDataTemp", tabDataTempTag);
 
         // 保存SpawnPointData
         if (this.spawnPointsData != null) {
             CompoundTag spawnPointsDataTag = new CompoundTag();
             this.spawnPointsData.save(spawnPointsDataTag);
-            pCompoundTag.put("SpawnPointsData", spawnPointsDataTag);
+            tag.put("SpawnPointsData", spawnPointsDataTag);
         }
-
+        pCompoundTag.put(this.getOwner().toString(),tag);
         return pCompoundTag;
     }
 
-    public static PlayerData load(CompoundTag tag) {
-        UUID owner = tag.getUUID("Owner");
-        PlayerData playerData = new PlayerData(owner);
-
+    public PlayerData load(CompoundTag tag) {
         // 读取分数
-        playerData.scores = tag.getInt("Scores");
+        this.scores = tag.getInt("Scores");
 
         // 读取是否离线的状态
-        playerData.isOffline = tag.getBoolean("IsOffline");
+        this.isOffline = tag.getBoolean("IsOffline");
 
         // 读取TabData
         if (tag.contains("TabData")) {
             CompoundTag tabDataTag = tag.getCompound("TabData");
-            playerData.tabData.load(tabDataTag);
+            this.tabData.load(tabDataTag);
         }
 
         // 读取临时TabData
         if (tag.contains("TabDataTemp")) {
             CompoundTag tabDataTempTag = tag.getCompound("TabDataTemp");
-            playerData.tabDataTemp.load(tabDataTempTag);
+            this.tabDataTemp.load(tabDataTempTag);
         }
 
         // 读取SpawnPointData
         if (tag.contains("SpawnPointsData")) {
             CompoundTag spawnPointsDataTag = tag.getCompound("SpawnPointsData");
-            playerData.spawnPointsData = SpawnPointData.load(spawnPointsDataTag);
+            this.spawnPointsData = SpawnPointData.load(spawnPointsDataTag);
         }
 
-        return playerData;
+        return this;
     }
 
-    public static PlayerData getData(ServerLevel level) {
-        ServerLevel end = level.getServer().getLevel(Level.END);
-        return end.getDataStorage().get(PlayerData::load, "PlayerData");
+    public PlayerData create() {
+        return this;
+    }
+
+    public PlayerData getData(ServerPlayer player) {
+        ServerLevel level = player.serverLevel().getLevel();
+        return level.getDataStorage().get(this::load, "playerData_"+ player.getUUID());
+    }
+
+    public void syncFileData(DimensionDataStorage storage){
+        storage.computeIfAbsent(this::load,this::create,"playerData_"+ owner.toString());
     }
 }

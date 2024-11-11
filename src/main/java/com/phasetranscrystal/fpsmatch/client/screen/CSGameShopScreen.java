@@ -423,7 +423,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             if(refreshFlag){
                 ShopData.ShopSlot data = ClientData.clientShopData.getSlotData(this.type,this.index);
                 setStats(data.canReturn());
-                String fixedName = data.name().replace("[","").replace("]","");
+                String fixedName = data.name().replace("[","").replace("]","").replaceAll("§.", "");
                 this.itemNameText.setText(fixedName);
                 this.costText.setText("$"+ data.cost());
                 ResourceLocation texture = data.getTexture();

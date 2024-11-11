@@ -151,9 +151,6 @@ public class TabData extends SavedData {
 
     @Override
     public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
-        // 保存主人的UUID
-        pCompoundTag.putUUID("Owner", this.owner);
-
         // 保存kills, deaths, assists
         pCompoundTag.putInt("Kills", this.kills);
         pCompoundTag.putInt("Deaths", this.deaths);
@@ -170,51 +167,18 @@ public class TabData extends SavedData {
 
         // 保存是否活着的状态
         pCompoundTag.putBoolean("IsLiving", this.isLiving);
-/*
-        // 保存伤害数据
-        CompoundTag damageDataTag = new CompoundTag();
-        for (Map.Entry<UUID, Float> entry : this.damageData.entrySet()) {
-            damageDataTag.putUUID("UUID_" + entry.getKey().toString(), entry.getKey());
-            damageDataTag.putFloat("Damage_" + entry.getKey().toString(), entry.getValue());
-        }
-        pCompoundTag.put("DamageData", damageDataTag);*/
-
         return pCompoundTag;
     }
 
 
     public void load(CompoundTag pCompoundTag) {
-        // 读取kills, deaths, assists
         this.kills = pCompoundTag.getInt("Kills");
         this.deaths = pCompoundTag.getInt("Deaths");
         this.assists = pCompoundTag.getInt("Assists");
-
-        // 读取总伤害
         this.damage = pCompoundTag.getFloat("Damage");
-
-        // 读取金钱
         this.money = pCompoundTag.getInt("Money");
-
-        // 读取MVP计数
         this.mvpCount = pCompoundTag.getInt("MVPCount");
-
-        // 读取是否活着的状态
         this.isLiving = pCompoundTag.getBoolean("IsLiving");
-/*
-        // 读取伤害数据
-        CompoundTag damageDataTag = pCompoundTag.getCompound("DamageData");
-        // 由于我们在save方法中使用了UUID作为键，我们需要从键中提取UUID
-        for (String key : damageDataTag.getAllKeys()) {
-            if (key.startsWith("UUID_")) {
-                String uuidString = key.substring(5);
-                UUID uuid = UUID.fromString(uuidString);
-                String damageKey = "Damage_" + uuidString;
-                if (damageDataTag.contains(damageKey)) {
-                    float damage = damageDataTag.getFloat(damageKey);
-                    this.damageData.put(uuid, damage);
-                }
-            }
-        }*/
     }
 
 

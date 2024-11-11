@@ -3,14 +3,16 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.scores.PlayerTeam;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class BaseTeam {
+public class BaseTeam extends SavedData {
     private final String name;
     private final int playerLimit;
     private final PlayerTeam playerTeam;
@@ -170,4 +172,8 @@ public class BaseTeam {
         return name;
     }
 
+    @Override
+    public CompoundTag save(CompoundTag pCompoundTag) {
+        return null;
+    }
 }
