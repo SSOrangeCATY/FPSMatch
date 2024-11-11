@@ -1,10 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
 import org.jetbrains.annotations.NotNull;
@@ -12,34 +10,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class PlayerData extends SavedData {
-    private final UUID owner;
+    private UUID owner;
     private int scores = 0;
-    private final TabData tabData;
-    private final TabData tabDataTemp;
+    private TabData tabData;
+    private TabData tabDataTemp;
     private boolean isOffline = false;
     private SpawnPointData spawnPointsData;
 
-    public PlayerData(UUID owner,TabData data,TabData dataTemp) {
-        this.owner = owner;
-        this.tabData = data;
-        this.tabDataTemp = dataTemp;
-    }
-
-    public PlayerData(UUID owner,int scores,TabData data,TabData dataTemp,boolean isOffline) {
-        this.owner = owner;
-        this.scores = scores;
-        this.tabData = data;
-        this.tabDataTemp = dataTemp;
-        this.isOffline = isOffline;
-    }
-
-    public PlayerData(UUID owner,int scores,TabData data,TabData dataTemp,boolean isOffline,SpawnPointData spawnPointsData) {
-        this.owner = owner;
-        this.scores = scores;
-        this.tabData = data;
-        this.tabDataTemp = dataTemp;
-        this.isOffline = isOffline;
-        this.spawnPointsData = spawnPointsData;
+    public PlayerData() {
     }
 
     public PlayerData(UUID owner) {
@@ -93,8 +71,7 @@ public class PlayerData extends SavedData {
     }
 
     @Override
-    public @NotNull CompoundTag save(@NotNull CompoundTag pCompoundTag) {
-        CompoundTag tag = new CompoundTag();
+    public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         // 保存主人的UUID
         tag.putUUID("Owner", this.owner);
 
@@ -120,48 +97,52 @@ public class PlayerData extends SavedData {
             this.spawnPointsData.save(spawnPointsDataTag);
             tag.put("SpawnPointsData", spawnPointsDataTag);
         }
-        pCompoundTag.put(this.getOwner().toString(),tag);
-        return pCompoundTag;
+
+        return tag;
     }
 
-    public PlayerData load(CompoundTag tag) {
+    public static PlayerData load(CompoundTag tag) {
+        PlayerData data = PlayerData.create();
+        data.owner = tag.getUUID("Owner");
         // 读取分数
-        this.scores = tag.getInt("Scores");
+        data.scores = tag.getInt("Scores");
 
         // 读取是否离线的状态
-        this.isOffline = tag.getBoolean("IsOffline");
+        data.isOffline = tag.getBoolean("IsOffline");
 
         // 读取TabData
         if (tag.contains("TabData")) {
             CompoundTag tabDataTag = tag.getCompound("TabData");
-            this.tabData.load(tabDataTag);
+            data.tabData = new TabData(data.owner);
+            data.tabData.load(tabDataTag);
         }
 
         // 读取临时TabData
         if (tag.contains("TabDataTemp")) {
             CompoundTag tabDataTempTag = tag.getCompound("TabDataTemp");
-            this.tabDataTemp.load(tabDataTempTag);
+            data.tabDataTemp = new TabData(data.owner);
+            data.tabDataTemp.load(tabDataTempTag);
         }
 
         // 读取SpawnPointData
         if (tag.contains("SpawnPointsData")) {
             CompoundTag spawnPointsDataTag = tag.getCompound("SpawnPointsData");
-            this.spawnPointsData = SpawnPointData.load(spawnPointsDataTag);
+            data.spawnPointsData = SpawnPointData.load(spawnPointsDataTag);
         }
 
-        return this;
+        return data;
     }
 
-    public PlayerData create() {
-        return this;
+    public static PlayerData create() {
+        return new PlayerData();
     }
 
-    public PlayerData getData(ServerPlayer player) {
+    public static PlayerData getData(ServerPlayer player) {
         ServerLevel level = player.serverLevel().getLevel();
-        return level.getDataStorage().get(this::load, "playerData_"+ player.getUUID());
+        return level.getDataStorage().get(PlayerData::load, "playerData_"+ player.getUUID());
     }
 
     public void syncFileData(DimensionDataStorage storage){
-        storage.computeIfAbsent(this::load,this::create,"playerData_"+ owner.toString());
+        storage.computeIfAbsent(PlayerData::load,PlayerData::create,"playerData_"+ owner.toString());
     }
 }

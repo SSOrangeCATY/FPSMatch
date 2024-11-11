@@ -1,14 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.saveddata.SavedData;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class TabData extends SavedData {
+public class TabData {
     private final UUID owner;
     private final Map<UUID,Float> damageData = new HashMap<>();
     private int kills;
@@ -149,8 +147,7 @@ public class TabData extends SavedData {
         this.setDamage(this.damage + data.damage);
     }
 
-    @Override
-    public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
+    public void save(CompoundTag pCompoundTag) {
         // 保存kills, deaths, assists
         pCompoundTag.putInt("Kills", this.kills);
         pCompoundTag.putInt("Deaths", this.deaths);
@@ -167,7 +164,6 @@ public class TabData extends SavedData {
 
         // 保存是否活着的状态
         pCompoundTag.putBoolean("IsLiving", this.isLiving);
-        return pCompoundTag;
     }
 
 

@@ -10,8 +10,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -69,10 +72,11 @@ public class ShopData extends SavedData {
         return pCompoundTag;
     }
 
-    public void load(CompoundTag pCompoundTag) {
+    public static ShopData load(CompoundTag pCompoundTag) {
+        ShopData data = ShopData.create();
         // 首先，读取金钱和下一轮最小金钱
-        this.money = pCompoundTag.getInt("money");
-        this.nextRoundMinMoney = pCompoundTag.getInt("nextRoundMinMoney");
+        data.money = pCompoundTag.getInt("money");
+        data.nextRoundMinMoney = pCompoundTag.getInt("nextRoundMinMoney");
 
         // 读取商店槽位数据
         ListTag shopSlotsTag = pCompoundTag.getList("shopSlots", Tag.TAG_COMPOUND);
@@ -97,8 +101,25 @@ public class ShopData extends SavedData {
             }
 
             // 将重建的ShopSlot列表添加到data映射中
-            this.data.put(type, slots);
+            data.data.put(type, slots);
         }
+        return data;
+    }
+
+    public static ShopData create(){
+        return new ShopData();
+    }
+
+    public static ShopData getData(ServerPlayer player) {
+        ServerLevel level = player.serverLevel().getLevel();
+        return level.getDataStorage().get(ShopData::load, "shopData_"+ player.getUUID());
+    }
+
+    public static ShopData getData(ServerLevel level,String name) {
+        return level.getDataStorage().get(ShopData::load, "shopData_"+ name);
+    }
+    public void syncFileData(DimensionDataStorage storage, String fileName){
+        storage.computeIfAbsent(ShopData::load,ShopData::create,fileName);
     }
 
     public ShopData(Map<ItemType, List<ShopSlot>> data){

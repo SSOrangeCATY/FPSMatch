@@ -6,12 +6,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.saveddata.SavedData;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
-public class SpawnPointData extends SavedData {
+public class SpawnPointData {
     ResourceKey<Level> dimension;
     BlockPos position;
     float pYaw;
@@ -45,8 +43,7 @@ public class SpawnPointData extends SavedData {
         return dimension.location().getPath() + " " + position.toString();
     }
 
-    @Override
-    public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
+    public void save(CompoundTag pCompoundTag) {
         pCompoundTag.putString("Dimension", this.dimension.location().toString());
 
         if (this.position != null) {
@@ -55,8 +52,6 @@ public class SpawnPointData extends SavedData {
 
         pCompoundTag.putFloat("Yaw", this.pYaw);
         pCompoundTag.putFloat("Pitch", this.pPitch);
-
-        return pCompoundTag;
     }
 
     public static SpawnPointData load(CompoundTag tag) {
