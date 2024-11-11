@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -156,6 +158,15 @@ public class TabData {
         pCompoundTag.putInt("Money", this.money);
         pCompoundTag.putInt("MVPCount", this.mvpCount);
         pCompoundTag.putBoolean("IsLiving", this.isLiving);
+
+        ListTag damageDataList = new ListTag();
+        for (UUID uuid : damageData.keySet()){
+            CompoundTag damageDataNBT = new CompoundTag();
+            damageDataNBT.putUUID("UUID",uuid);
+            damageDataNBT.putFloat("Value",damageData.get(uuid));
+            damageDataList.add(damageDataNBT);
+        }
+        pCompoundTag.put("DamageData",damageDataList);
     }
 
     public static TabData load(CompoundTag pCompoundTag) {
@@ -167,6 +178,13 @@ public class TabData {
         data.money = pCompoundTag.getInt("Money");
         data.mvpCount = pCompoundTag.getInt("MVPCount");
         data.isLiving = pCompoundTag.getBoolean("IsLiving");
+        ListTag damageDataList = pCompoundTag.getList("DamageData", Tag.TAG_COMPOUND);
+        for (int i = 0; i < damageDataList.size(); i++) {
+            CompoundTag damageDataNBT = damageDataList.getCompound(i);
+            UUID uuid = damageDataNBT.getUUID("UUID");
+            float value = damageDataNBT.getFloat("Value");
+            data.damageData.put(uuid, value);
+        }
         return data;
     }
 
