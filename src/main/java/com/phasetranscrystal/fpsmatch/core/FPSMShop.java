@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
@@ -43,14 +44,37 @@ public class FPSMShop {
         }
     }
 
+    public static void syncShopData(String map){
+        if(!gamesFPSMShop.containsKey(map)) return;
+        BaseMap baseMap = FPSMCore.getMapByName(map);
+        if(baseMap != null && FPSMCore.checkGameIsEnableShop(baseMap.gameType)) {
+            List<UUID> players = baseMap.getMapTeams().getJoinedPlayers();
+            players.forEach((uuid)-> {
+                ServerPlayer player = baseMap.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                if (player != null) {
+                    ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(uuid);
+                    for (ShopData.ItemType type : ShopData.ItemType.values()) {
+                        List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
+                        slots.forEach((shopSlot -> {
+                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map));
+                        }));
+                    }
+                }
+            });
+        }
+    }
+
     public static void syncShopData(String map, ServerPlayer player){
         if(!gamesFPSMShop.containsKey(map)) return;
-        ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID());
-        for (ShopData.ItemType type : ShopData.ItemType.values()) {
-            List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
-            slots.forEach((shopSlot -> {
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map));
-            }));
+        BaseMap baseMap = FPSMCore.getMapByName(map);
+        if(baseMap != null && FPSMCore.checkGameIsEnableShop(baseMap.gameType)) {
+            ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID());
+            for (ShopData.ItemType type : ShopData.ItemType.values()) {
+                List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
+                slots.forEach((shopSlot -> {
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map));
+                }));
+            }
         }
     }
 

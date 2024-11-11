@@ -104,27 +104,20 @@ public class PlayerData extends SavedData {
     public static PlayerData load(CompoundTag tag) {
         PlayerData data = PlayerData.create();
         data.owner = tag.getUUID("Owner");
-        // 读取分数
         data.scores = tag.getInt("Scores");
 
-        // 读取是否离线的状态
         data.isOffline = tag.getBoolean("IsOffline");
 
-        // 读取TabData
         if (tag.contains("TabData")) {
             CompoundTag tabDataTag = tag.getCompound("TabData");
-            data.tabData = new TabData(data.owner);
-            data.tabData.load(tabDataTag);
+            data.tabData = TabData.load(tabDataTag);
         }
 
-        // 读取临时TabData
         if (tag.contains("TabDataTemp")) {
             CompoundTag tabDataTempTag = tag.getCompound("TabDataTemp");
-            data.tabDataTemp = new TabData(data.owner);
-            data.tabDataTemp.load(tabDataTempTag);
+            data.tabData = TabData.load(tabDataTempTag);
         }
 
-        // 读取SpawnPointData
         if (tag.contains("SpawnPointsData")) {
             CompoundTag spawnPointsDataTag = tag.getCompound("SpawnPointsData");
             data.spawnPointsData = SpawnPointData.load(spawnPointsDataTag);

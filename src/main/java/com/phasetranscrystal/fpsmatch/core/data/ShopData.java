@@ -33,39 +33,16 @@ public class ShopData extends SavedData {
 
     @Override
     public @NotNull CompoundTag save(@NotNull CompoundTag pCompoundTag) {
-        // 创建一个列表来存储所有的ShopSlot数据
         ListTag shopSlotsTag = new ListTag();
-
-        // 遍历所有的ItemType和对应的ShopSlot列表
         for (Map.Entry<ItemType, List<ShopSlot>> entry : data.entrySet()) {
             ItemType type = entry.getKey();
             List<ShopSlot> slots = entry.getValue();
-
-            // 为每个ItemType创建一个列表标签
             ListTag typeTag = new ListTag();
-
-            // 遍历每个ShopSlot并将其数据添加到列表标签中
             for (ShopSlot slot : slots) {
-                CompoundTag slotTag = new CompoundTag();
-                slotTag.putInt("index", slot.index());
-                slotTag.putString("itemName", slot.name());
-                slotTag.putInt("type", type.typeIndex);
-                slot.itemStack().save(slotTag);
-                slotTag.putInt("defaultCost", slot.defaultCost);
-                slotTag.putInt("cost", slot.cost());
-                slotTag.putInt("boughtCount", slot.boughtCount());
-                slotTag.putBoolean("enable", slot.enable());
-                slotTag.putBoolean("canReturn", slot.canReturn());
-
-                // 将ShopSlot的NBT标签添加到ItemType的列表标签中
-                typeTag.add(slotTag);
+                typeTag.add(slot.save(new CompoundTag()));
             }
-
-            // 将ItemType的列表标签添加到总的列表标签中
             shopSlotsTag.add(typeTag);
         }
-
-        // 将商店的金钱和下一轮最小金钱也保存起来
         pCompoundTag.putInt("money", this.money);
         pCompoundTag.putInt("nextRoundMinMoney", this.nextRoundMinMoney);
         pCompoundTag.put("shopSlots", shopSlotsTag);
@@ -74,11 +51,9 @@ public class ShopData extends SavedData {
 
     public static ShopData load(CompoundTag pCompoundTag) {
         ShopData data = ShopData.create();
-        // 首先，读取金钱和下一轮最小金钱
         data.money = pCompoundTag.getInt("money");
         data.nextRoundMinMoney = pCompoundTag.getInt("nextRoundMinMoney");
 
-        // 读取商店槽位数据
         ListTag shopSlotsTag = pCompoundTag.getList("shopSlots", Tag.TAG_COMPOUND);
         for (int i = 0; i < shopSlotsTag.size(); i++) {
             ListTag typeTag = shopSlotsTag.getList(i);
@@ -87,20 +62,10 @@ public class ShopData extends SavedData {
 
             for (int j = 0; j < typeTag.size(); j++) {
                 CompoundTag slotTag = typeTag.getCompound(j);
-                ShopSlot slot = new ShopSlot(
-                        slotTag.getInt("index"),
-                        type,
-                        ItemStack.of(slotTag),
-                        slotTag.getInt("defaultCost")
-                );
-                slot.setCost(slotTag.getInt("cost"));
-                slot.setBoughtCount(slotTag.getInt("boughtCount"));
-                slot.setEnable(slotTag.getBoolean("enable"));
-                slot.setCanReturn(slotTag.getBoolean("canReturn"));
+                ShopSlot slot = ShopSlot.load(slotTag);
                 slots.add(slot);
             }
 
-            // 将重建的ShopSlot列表添加到data映射中
             data.data.put(type, slots);
         }
         return data;
@@ -374,6 +339,43 @@ public class ShopData extends SavedData {
             }else{
                 return false;
             }
+        }
+
+
+        public CompoundTag save(CompoundTag compoundTag) {
+            compoundTag.putInt("Index", this.index);
+            compoundTag.putInt("DefaultCost", this.defaultCost);
+            compoundTag.putInt("Cost", this.cost);
+            compoundTag.putInt("BoughtCount", this.boughtCount);
+            compoundTag.putBoolean("Enable", this.enable);
+            compoundTag.putBoolean("CanReturn", this.canReturn);
+
+            if (this.itemStack != null) {
+                compoundTag.put("ItemStack", this.itemStack.save(new CompoundTag()));
+            }
+
+            compoundTag.putString("Type", this.type.toString());
+            compoundTag.putString("ItemName", this.itemName);
+            return compoundTag;
+        }
+
+        public static ShopSlot load(CompoundTag compoundTag) {
+            ShopSlot slot = new ShopSlot(compoundTag.getInt("Index"),
+                    ItemType.valueOf(compoundTag.getString("Type")),
+                    ItemStack.of(compoundTag.getCompound("ItemStack")),
+                    compoundTag.getInt("DefaultCost"));
+
+            slot.cost = compoundTag.getInt("Cost");
+            slot.boughtCount = compoundTag.getInt("BoughtCount");
+            slot.enable = compoundTag.getBoolean("Enable");
+            slot.canReturn = compoundTag.getBoolean("CanReturn");
+
+            if (compoundTag.contains("ItemStack", 10)) {
+                slot.itemStack = ItemStack.of(compoundTag.getCompound("ItemStack"));
+            }
+
+            slot.itemName = compoundTag.getString("ItemName");
+            return slot;
         }
     }
 

@@ -120,16 +120,11 @@ public class FPSMCommand {
                     if (context.getSource().getEntity() instanceof Player player){
                         ItemStack itemStack = player.getMainHandItem().copy();
                         FPSMShop.putShopData(mapName,new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)),itemStack,cost));
+                        FPSMShop.syncShopData(mapName);
                         break;
                     }
                 }
                 case "reset" : {
-                    break;
-                }
-                case "sync" :{
-                    for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
-                        FPSMShop.syncShopData(mapName, player);
-                    }
                     break;
                 }
             }

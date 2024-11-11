@@ -41,7 +41,7 @@ public class CommandSuggests {
         }
         return CommandSuggests.getSuggestions(b,typeNames);
     });
-    public static final FPSMSuggestionProvider SHOP_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("set","reset","sync")));
+    public static final FPSMSuggestionProvider SHOP_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("set","reset")));
     public static final FPSMSuggestionProvider SHOP_SET_SLOT_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("1","2","3","4","5")));
 
     public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
