@@ -148,6 +148,7 @@ public class TabData {
     }
 
     public void save(CompoundTag pCompoundTag) {
+        pCompoundTag.putUUID("Owner",this.owner);
         pCompoundTag.putInt("Kills", this.kills);
         pCompoundTag.putInt("Deaths", this.deaths);
         pCompoundTag.putInt("Assists", this.assists);
@@ -157,15 +158,16 @@ public class TabData {
         pCompoundTag.putBoolean("IsLiving", this.isLiving);
     }
 
-
-    public void load(CompoundTag pCompoundTag) {
-        this.kills = pCompoundTag.getInt("Kills");
-        this.deaths = pCompoundTag.getInt("Deaths");
-        this.assists = pCompoundTag.getInt("Assists");
-        this.damage = pCompoundTag.getFloat("Damage");
-        this.money = pCompoundTag.getInt("Money");
-        this.mvpCount = pCompoundTag.getInt("MVPCount");
-        this.isLiving = pCompoundTag.getBoolean("IsLiving");
+    public static TabData load(CompoundTag pCompoundTag) {
+        TabData data = new TabData(pCompoundTag.getUUID("Owner"));
+        data.kills = pCompoundTag.getInt("Kills");
+        data.deaths = pCompoundTag.getInt("Deaths");
+        data.assists = pCompoundTag.getInt("Assists");
+        data.damage = pCompoundTag.getFloat("Damage");
+        data.money = pCompoundTag.getInt("Money");
+        data.mvpCount = pCompoundTag.getInt("MVPCount");
+        data.isLiving = pCompoundTag.getBoolean("IsLiving");
+        return data;
     }
 
 

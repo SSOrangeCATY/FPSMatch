@@ -137,12 +137,4 @@ public class PlayerData extends SavedData {
         return new PlayerData();
     }
 
-    public static PlayerData getData(ServerPlayer player) {
-        ServerLevel level = player.serverLevel().getLevel();
-        return level.getDataStorage().get(PlayerData::load, "playerData_"+ player.getUUID());
-    }
-
-    public void syncFileData(DimensionDataStorage storage){
-        storage.computeIfAbsent(PlayerData::load,PlayerData::create,"playerData_"+ owner.toString());
-    }
 }
