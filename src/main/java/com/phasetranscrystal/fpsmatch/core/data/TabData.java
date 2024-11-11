@@ -148,21 +148,12 @@ public class TabData {
     }
 
     public void save(CompoundTag pCompoundTag) {
-        // 保存kills, deaths, assists
         pCompoundTag.putInt("Kills", this.kills);
         pCompoundTag.putInt("Deaths", this.deaths);
         pCompoundTag.putInt("Assists", this.assists);
-
-        // 保存总伤害
         pCompoundTag.putFloat("Damage", this.damage);
-
-        // 保存金钱
         pCompoundTag.putInt("Money", this.money);
-
-        // 保存MVP计数
         pCompoundTag.putInt("MVPCount", this.mvpCount);
-
-        // 保存是否活着的状态
         pCompoundTag.putBoolean("IsLiving", this.isLiving);
     }
 

@@ -1,16 +1,19 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.saveddata.SavedData;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class BaseMap {
+public abstract class BaseMap extends SavedData {
     public final String mapName;
     public String gameType = "error";
     public boolean isStart = false;
@@ -104,5 +107,25 @@ public abstract class BaseMap {
 
     public String getGameType() {
         return gameType;
+    }
+
+    @Override
+    public @NotNull CompoundTag save(CompoundTag compound) {
+        compound.putString("MapName", this.mapName);
+        compound.putString("GameType", this.gameType);
+        compound.putBoolean("IsStart", this.isStart);
+        compound.putBoolean("IsDebug", this.isDebug);
+
+        // 保存 mapTeams 数据
+        MapTeams mapTeams = this.getMapTeams();
+        if (mapTeams != null) {
+            CompoundTag teamsCompound = new CompoundTag();
+            // 假设 MapTeams 类有方法来获取其 CompoundTag 表示
+            CompoundTag mapTeamsTag = mapTeams.save(new CompoundTag());
+            teamsCompound.put("MapTeams", mapTeamsTag);
+            compound.put("MapTeams", teamsCompound);
+        }
+
+        return compound;
     }
 }

@@ -12,6 +12,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+import org.apache.commons.codec.binary.BaseNCodec;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -21,7 +22,7 @@ import java.util.function.BiFunction;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
-    private static final Map<String,List<BaseMap>> GAMES = new HashMap<>();
+    private static final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private static final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
     private static final Map<String, ShopData> GAMES_DEFAULT_SHOP_DATA = new HashMap<>();
     private static final Map<String, Map<UUID, ShopData>> GAMES_SHOP_DATA = new HashMap<>();
@@ -117,55 +118,15 @@ public class FPSMCore {
         return REGISTRY.keySet().stream().toList();
     }
 
+
+    public static Map<String, List<BaseMap>> getAllMaps(){
+        return GAMES;
+    }
+
     @SubscribeEvent
     public static void tick(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
-            GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerDropItem(ItemTossEvent event){
-        if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getMapByPlayer((ServerPlayer) event.getPlayer());
-        if (map == null) return;
-        FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
-        if (shop == null) return;
-        ShopData.ShopSlot slot = shop.getPlayerShopData(event.getPlayer().getUUID()).checkItemStackIsInData(event.getEntity().getItem());
-        if(slot != null){
-            if (event.getEntity().getItem().getCount() > 1 && slot.canReturn()){
-                shop.resetSlot((ServerPlayer) event.getPlayer(),slot.type(),slot.index());
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,2,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
-            }else{
-                slot.returnGoods();
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,0,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
-            }
-        }
-    }
-
-
-    @SubscribeEvent
-    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
-        if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getMapByPlayer((ServerPlayer) event.getEntity());
-        if (map == null) return;
-        FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
-        if (shop == null) return;
-
-        // 如果不是Tacz的枪就是根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
-        ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
-        if(slot != null){
-            if (event.getStack().getCount() > 1 && slot.type() == ShopData.ItemType.THROWABLE){
-                if(slot.boughtCount() < 2 && slot.index() == 0){
-                    slot.bought(slot.boughtCount() != 1);
-                }else{
-                    slot.bought();
-                }
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
-            }else{
-                slot.bought();
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
-            }
+            FPSMCore.GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
         }
     }
 

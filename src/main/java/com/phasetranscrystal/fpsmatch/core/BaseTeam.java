@@ -4,9 +4,11 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.scores.PlayerTeam;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -173,7 +175,28 @@ public class BaseTeam extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag pCompoundTag) {
-        return null;
+    public @NotNull CompoundTag save(CompoundTag compoundTag) {
+        compoundTag.putString("Name", this.name);
+        compoundTag.putInt("PlayerLimit", this.playerLimit);
+        compoundTag.putInt("Scores", this.scores);
+
+        // 保存玩家数据
+        CompoundTag playerData = new CompoundTag();
+        for (PlayerData data : this.players.values()) {
+            playerData.put(data.getOwner().toString(),data.save(new CompoundTag()));
+        }
+        compoundTag.put("playerData", playerData);
+
+        // 保存出生点数据
+        ListTag spawnPointsTag = new ListTag();
+        for (SpawnPointData spawnPointData : this.spawnPointsData) {
+            CompoundTag spawnPointCompound = new CompoundTag();
+            // 假设 SpawnPointData 类有一个 save 方法来保存其数据
+            spawnPointData.save(spawnPointCompound);
+            spawnPointsTag.add(spawnPointCompound);
+        }
+        compoundTag.put("SpawnPoints", spawnPointsTag);
+
+        return compoundTag;
     }
 }

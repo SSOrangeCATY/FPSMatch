@@ -4,6 +4,9 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.client.telemetry.events.WorldUnloadEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +18,8 @@ import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +28,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class MapTeams {
     protected final ServerLevel level;
     private final Map<String,BaseTeam> teams = new HashMap<>();
@@ -300,116 +304,27 @@ public class MapTeams {
         }));
     }
 
+    public CompoundTag save(CompoundTag compoundTag) {
+        ListTag teamsTag = new ListTag();
 
-    @SubscribeEvent
-    public static void onPlayerDeath(LivingDeathEvent event){
-         if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getMapByPlayer(player);
-             if(map != null && map.isStart){
-                MapTeams teams = map.getMapTeams();
-                BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
-                if(deadPlayerTeam != null){
-                    PlayerData data = deadPlayerTeam.getPlayerData(player.getUUID());
-                    if(data == null) return;
-                    data.getTabData().addDeaths();
-                    data.setLiving(false);
-                    player.heal(player.getMaxHealth());
-                    player.setGameMode(GameType.SPECTATOR);
-                    List<UUID> uuids = teams.getSameTeamPlayerUUIDs(player);
-                    Entity entity = null;
-                    if(uuids.size() > 1){
-                        Random random = new Random();
-                        entity = map.getServerLevel().getEntity(uuids.get(random.nextInt(0,uuids.size())));
-                    }else if(!uuids.isEmpty()){
-                         entity = map.getServerLevel().getEntity(uuids.get(0));
-                    }
-                    if(entity != null) player.setCamera(entity);
-                    player.setRespawnPosition(player.level().dimension(),player.getOnPos().above(),0f,true,false);
-                    event.setCanceled(true);
-                }
+        for (Map.Entry<String, BaseTeam> entry : teams.entrySet()) {
+            CompoundTag teamTag = new CompoundTag();
+            teamTag.putString("TeamName", entry.getKey());
+            teamTag.putInt("PlayerLimit", entry.getValue().getPlayerLimit());
 
-                if(event.getSource().getEntity() instanceof ServerPlayer killer){
-                    BaseTeam killerPlayerTeam = teams.getTeamByPlayer(killer);
-                    if(killerPlayerTeam != null){
-                        PlayerData data = killerPlayerTeam.getPlayerData(player.getUUID());
-                        if(data == null) return;
-                        data.getTabData().addKills();
+            ListTag playersTag = new ListTag();
+            playersTag.add(StringTag.of(playerUUID.toString()));
 
-                        Map<UUID, Float> hurtDataMap = teams.getLivingHurtData().get(player.getUUID());
-                        if(hurtDataMap != null && !hurtDataMap.isEmpty()){
+            teamTag.put("Players", playersTag);
 
-                            List<Map.Entry<UUID, Float>> sortedDamageEntries = hurtDataMap.entrySet().stream()
-                                    .filter(entry -> !entry.getKey().equals(killer.getUUID()) && entry.getValue() > 4)
-                                    .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
-                                    .limit(2)
-                                    .toList();
+            // 保存队伍的其他数据，例如击杀数据等
+            CompoundTag teamDataTag = entry.getValue().save(new CompoundTag());
+            teamTag.put("TeamData", teamDataTag);
 
-                            for (Map.Entry<UUID, Float> sortedDamageEntry : sortedDamageEntries) {
-                                UUID assistId = sortedDamageEntry.getKey();
-                                Player assist = map.getServerLevel().getPlayerByUUID(assistId);
-                                if (assist != null && teams.getJoinedPlayers().contains(assistId)) {
-                                    BaseTeam assistPlayerTeam = teams.getTeamByPlayer(killer);
-                                    if(assistPlayerTeam != null){
-                                        PlayerData assistData = assistPlayerTeam.getPlayerData(assistId);
-                                        if(assistData == null) return;
-                                        assistData.getTabData().addAssist();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            teamsTag.add(teamTag);
         }
-    }
 
-    @SubscribeEvent
-    public static void onPlayerOffline(PlayerEvent.PlayerLoggedInEvent event){
-        if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getMapByPlayer(player);
-            if(map != null && map.isStart){
-                MapTeams teams = map.getMapTeams();
-                BaseTeam playerTeam = teams.getTeamByPlayer(player);
-                if(playerTeam != null) {
-                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
-                    if(data == null) return;
-                    data.setOffline(false);
-                    //TODO
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerOffline(PlayerEvent.PlayerLoggedOutEvent event){
-        if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getMapByPlayer(player);
-            if(map != null && map.isStart){
-                MapTeams teams = map.getMapTeams();
-                BaseTeam playerTeam = teams.getTeamByPlayer(player);
-                if(playerTeam != null) {
-                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
-                    if(data == null) return;
-                    data.setOffline(true);
-                    data.getTabDataTemp().addDeaths();
-                    player.heal(player.getMaxHealth());
-                    player.setGameMode(GameType.SPECTATOR);
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public void onLivingHurtEvent(LivingHurtEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            DamageSource damageSource = event.getSource();
-            if(damageSource.getEntity() instanceof ServerPlayer from){
-                BaseMap map = FPSMCore.getMapByPlayer(player);
-                if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
-                    float damage = event.getAmount();
-                    map.getMapTeams().addHurtData(player,from.getUUID(),damage);
-                }
-            }
-        }
+        compoundTag.put("Teams", teamsTag);
+        return compoundTag;
     }
 }
