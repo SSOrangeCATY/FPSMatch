@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.*;
+import com.phasetranscrystal.fpsmatch.core.data.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
@@ -103,7 +104,6 @@ public class FPSMEvents {
                     PlayerData data = playerTeam.getPlayerData(player.getUUID());
                     if(data == null) return;
                     data.setOffline(false);
-                    data.setDirty();
                     //TODO
                 }
             }
@@ -190,9 +190,8 @@ public class FPSMEvents {
 
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        FPSMCore.getAllMaps().forEach((type,gameList)->{
-            gameList.forEach(SavedData::setDirty);
-        });
+        FileHelper.saveShopData();
+        FileHelper.saveSpawnPoints();
     }
 
 

@@ -28,7 +28,7 @@ base {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(18)
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
 minecraft {

@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.data.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
@@ -23,7 +24,7 @@ public class FPSMShop {
     public final String name;
     private final ShopData defaultShopData;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
-    private static final Map<String,FPSMShop> gamesFPSMShop = new HashMap<>();
+    private static final Map<String,FPSMShop> gamesFPSMShop = FileHelper.loadShopData();
 
     public FPSMShop(String name){
         this.defaultShopData = new ShopData();
@@ -35,12 +36,18 @@ public class FPSMShop {
         this.name = name;
     }
 
+
     @Nullable
     public static FPSMShop getShopByMapName(String map){
         return gamesFPSMShop.getOrDefault(map,null);
     }
 
+    public static Map<String,FPSMShop> getAllShopData(){
+        return gamesFPSMShop;
+    }
+
     public static void putShopData(String map,FPSMShop shopData){
+        if(gamesFPSMShop.containsKey(map)) return;
         gamesFPSMShop.put(map,shopData);
     }
 

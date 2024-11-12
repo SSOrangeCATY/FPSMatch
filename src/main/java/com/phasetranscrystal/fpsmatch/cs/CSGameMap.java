@@ -63,9 +63,9 @@ public class CSGameMap extends BaseMap {
                 {1800,2700,3000,1700,4750},
                 {200,300,300,400,50}
         };
-        Map<ShopData.ItemType, List<ShopData.ShopSlot>> data = new HashMap<>();
+        Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> data = new HashMap<>();
         for(ShopData.ItemType c : ShopData.ItemType.values()) {
-            List<ShopData.ShopSlot> shopSlots = new ArrayList<>();
+            ArrayList<ShopData.ShopSlot> shopSlots = new ArrayList<>();
             for (int i = 0;i <= 4 ; i++){
                 ShopData.ShopSlot shopSlot = new ShopData.ShopSlot(i,c,itemStack,d[c.typeIndex][i]);
                 shopSlots.add(shopSlot);

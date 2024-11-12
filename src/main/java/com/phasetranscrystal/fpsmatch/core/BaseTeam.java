@@ -147,6 +147,10 @@ public class BaseTeam {
         this.spawnPointsData.add(data);
     }
 
+    public void addAllSpawnPointData(@Nonnull List<SpawnPointData> data){
+        this.spawnPointsData.addAll(data);
+    }
+
     public void resetSpawnPointData(){
         this.spawnPointsData.clear();
     }

@@ -43,6 +43,23 @@ public class MapTeams {
         return t.getSpawnPointsData();
     }
 
+    public Map<String,List<SpawnPointData>> getAllSpawnPoints(){
+        Map<String,List<SpawnPointData>> data = new HashMap<>();
+        this.teams.forEach((n,t)->{
+            data.put(n,t.getSpawnPointsData());
+        });
+        return data;
+    }
+
+    public void putAllSpawnPoints(Map<String,List<SpawnPointData>> data){
+        data.forEach((n,list)->{
+            if (teams.containsKey(n)){
+                teams.get(n).addAllSpawnPointData(list);
+            }
+        });
+    }
+
+
     public void setTeamsSpawnPoints(){
             this.teams.forEach(((s, t) -> t.randomSpawnPoints()));
     }

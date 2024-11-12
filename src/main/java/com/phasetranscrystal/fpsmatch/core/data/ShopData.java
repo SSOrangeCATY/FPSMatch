@@ -1,16 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import com.google.gson.JsonElement;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DynamicOps;
-import com.mojang.serialization.JsonOps;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.tacz.guns.api.item.IGun;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -19,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ShopData {
-    private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
+    private static final Map<ItemType, ArrayList<ShopSlot>> defaultData = getDefaultShopItemData(true);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
     public int money = 10000;
     private int nextRoundMinMoney = 1000;
@@ -33,11 +24,14 @@ public class ShopData {
     }
 
 
-    public ShopData(Map<ItemType, List<ShopSlot>> data){
+    public ShopData(Map<ItemType, ArrayList<ShopSlot>> data){
         checkData(data);
         this.data.putAll(data);
     }
 
+    public Map<ItemType, List<ShopSlot>> getData(){
+        return data;
+    }
     public int getNextRoundMinMoney() {
         return nextRoundMinMoney;
     }
@@ -49,7 +43,7 @@ public class ShopData {
     public ShopSlot getSlotData(ItemType type, int index) {
         return data.get(type).get(index);
     }
-    public static void checkData(Map<ItemType, List<ShopSlot>> data) {
+    public static void checkData(Map<ItemType, ArrayList<ShopSlot>> data) {
         for (ItemType type : ItemType.values()) {
             List<ShopSlot> slots = data.getOrDefault(type, null);
             if (slots != null && slots.size() == 5) {
@@ -113,7 +107,7 @@ public class ShopData {
         return false;
     }
 
-    public static Map<ItemType, List<ShopSlot>> getDefaultShopItemData(boolean debug){
+    public static Map<ItemType, ArrayList<ShopSlot>> getDefaultShopItemData(boolean debug){
         ItemStack itemStack = debug ? null : ItemStack.EMPTY;
         int[][] d = new int[][]{
                 {650,1000,200,200,200},
@@ -122,9 +116,9 @@ public class ShopData {
                 {1800,2700,3000,1700,4750},
                 {200,300,300,400,50}
         };
-        Map<ItemType, List<ShopSlot>> data = new HashMap<>();
+        Map<ItemType, ArrayList<ShopSlot>> data = new HashMap<>();
         for(ItemType c : ItemType.values()) {
-            List<ShopSlot> shopSlots = new ArrayList<>();
+            ArrayList<ShopSlot> shopSlots = new ArrayList<>();
             for (int i = 0;i <= 4 ; i++){
                 ShopSlot shopSlot = new ShopSlot(i,c,itemStack,d[c.typeIndex][i]);
                 shopSlots.add(shopSlot);

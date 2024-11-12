@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class BaseMap extends SavedData {
+public abstract class BaseMap{
     public final String mapName;
     public String gameType = "error";
     public boolean isStart = false;
@@ -113,11 +113,4 @@ public abstract class BaseMap extends SavedData {
         return gameType;
     }
 
-    @Override
-    public @NotNull CompoundTag save(CompoundTag compound) {
-        compound.putString("MapName", this.mapName);
-        compound.putString("GameType", this.gameType);
-        this.mapTeams.save(compound);
-        return compound;
-    }
 }
