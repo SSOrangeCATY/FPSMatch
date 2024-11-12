@@ -5,19 +5,22 @@ import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.data.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraftforge.event.TickEvent;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
@@ -191,8 +195,24 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
         FileHelper.saveShopData();
-        FileHelper.saveSpawnPoints();
+        FileHelper.saveMaps();
     }
 
-
+    @SubscribeEvent
+    public static void onServerStartedEvent(ServerStartedEvent event) {
+        Map<ResourceLocation, Map<String, List<SpawnPointData>>> savedMaps = FileHelper.loadMaps();
+        savedMaps.forEach((rl, teamData) -> {
+            String mapName = rl.getPath();
+            String type = rl.getNamespace();
+            BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getPreBuildGame(type);
+            ResourceKey<Level> level = teamData.values().stream().findFirst().get().get(0).getDimension();
+            if (game != null) {
+                BaseMap map = FPSMCore.registerMap(type, game.apply(event.getServer().getLevel(level), mapName));
+                if(map != null){
+                    map.setGameType(type);
+                    map.getMapTeams().putAllSpawnPoints(teamData);
+                }
+            }
+        });
+    }
 }

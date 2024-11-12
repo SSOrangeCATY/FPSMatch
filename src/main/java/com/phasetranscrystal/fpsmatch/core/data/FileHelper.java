@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.FMLLoader;
 
 import java.io.File;
@@ -63,17 +64,17 @@ public class FileHelper {
         return shops;
     }
 
-    public static void saveSpawnPoints(){
+    public static void saveMaps(){
         Map<String, List<BaseMap>> maps = FPSMCore.getAllMaps();
         Path gamePath = FMLLoader.getGamePath();
         File fpsmatchDir = new File(gamePath.toFile(), "fpsmatch");
         if(checkOrCreateFile(fpsmatchDir)){
             File file = new File(fpsmatchDir,"spawnpoints.json");
-            Map<String, Map<String, List<SpawnPointData>>> data = new HashMap<>(FPSMCore.getSavedSpawnPoints());
+            Map<ResourceLocation, Map<String, List<SpawnPointData>>> data = new HashMap<>();
             maps.forEach((key, mapList) -> {
                 mapList.forEach((map)->{
                     Map<String, List<SpawnPointData>> d = map.getMapTeams().getAllSpawnPoints();
-                    data.put(map.mapName,d);
+                    data.put(new ResourceLocation(key,map.mapName),d);
                 });
             });
 
@@ -89,8 +90,8 @@ public class FileHelper {
     }
 
 
-    public static Map<String,Map<String,List<SpawnPointData>>> loadSpawnPoints(){
-        Map<String,Map<String,List<SpawnPointData>>> data = new HashMap<>();
+    public static Map<ResourceLocation,Map<String,List<SpawnPointData>>> loadMaps(){
+        Map<ResourceLocation,Map<String,List<SpawnPointData>>> data = new HashMap<>();
         Path gamePath = FMLLoader.getGamePath();
         File fpsmatchDir = new File(gamePath.toFile(), "fpsmatch");
         File file = new File(fpsmatchDir,"spawnpoints.json");

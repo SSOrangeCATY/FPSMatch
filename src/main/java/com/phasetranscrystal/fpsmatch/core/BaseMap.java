@@ -29,6 +29,7 @@ public abstract class BaseMap{
         this.serverLevel = serverLevel;
         this.mapName = mapName;
         this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams()));
+        this.setShopData();
     }
 
     public Map<String,Integer> getTeams(){

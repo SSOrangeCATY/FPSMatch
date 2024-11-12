@@ -95,16 +95,16 @@ public class FPSMCodec {
             SPAWN_POINT_DATA_CODEC.listOf()
     );
 
-    public static final UnboundedMapCodec<String, Map<String, List<SpawnPointData>>> MAP_SPAWN_POINT_CODEC = new UnboundedMapCodec<>(
-            Codec.STRING,
+    public static final UnboundedMapCodec<ResourceLocation, Map<String, List<SpawnPointData>>> MAP_SPAWN_POINT_CODEC = new UnboundedMapCodec<>(
+            ResourceLocation.CODEC,
             SPAWN_POINT_DATA_MAP_LIST_CODEC
     );
 
-    public static JsonElement encodeMapSpawnPointDataToJson(Map<String, Map<String, List<SpawnPointData>>> data) {
+    public static JsonElement encodeMapSpawnPointDataToJson(Map<ResourceLocation, Map<String, List<SpawnPointData>>> data) {
         return MAP_SPAWN_POINT_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new RuntimeException(e); });
     }
 
-    public static Map<String, Map<String, List<SpawnPointData>>> decodeMapSpawnPointDataFromJson(JsonElement json) {
+    public static Map<ResourceLocation, Map<String, List<SpawnPointData>>> decodeMapSpawnPointDataFromJson(JsonElement json) {
         return MAP_SPAWN_POINT_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
     }
 }

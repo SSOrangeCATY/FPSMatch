@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.TickEvent;
@@ -17,15 +18,9 @@ import java.util.function.BiFunction;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
-    private static final Map<String,Map<String,List<SpawnPointData>>> savedSpawnPoints = FileHelper.loadSpawnPoints();
     private static final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private static final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
     private static final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
-
-
-    public static Map<String,Map<String,List<SpawnPointData>>> getSavedSpawnPoints(){
-        return savedSpawnPoints;
-    }
 
     @Nullable public static BaseMap getMapByPlayer(ServerPlayer player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
@@ -39,12 +34,11 @@ public class FPSMCore {
 
     public static BaseMap registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
+            new ResourceLocation(type,map.mapName);
+
             if(getMapNames(type).contains(map.getMapName())){
                 FPSMatch.LOGGER.error("error : has same map name -> " + map.getMapName());
                 return null;
-            }
-            if(savedSpawnPoints.containsKey(map.mapName)){
-                map.getMapTeams().putAllSpawnPoints(savedSpawnPoints.get(map.mapName));
             }
             List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
             maps.add(map);
@@ -91,6 +85,7 @@ public class FPSMCore {
     }
 
     public static void registerGameType(String typeName, BiFunction<ServerLevel,String,BaseMap> map, boolean enableShop){
+        ResourceLocation.isValidResourceLocation(typeName);
         REGISTRY.put(typeName,map);
         GAMES_SHOP.put(typeName,enableShop);
     }

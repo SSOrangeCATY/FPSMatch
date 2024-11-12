@@ -44,8 +44,7 @@ public class FPSMCommand {
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                         .suggests(CommandSuggests.MAP_NAMES_WITH_GAME_TYPE_SUGGESTION)
                                         .then(Commands.literal("modify")
-                                                .then(Commands.argument("action",StringArgumentType.string())
-                                                        .suggests(CommandSuggests.SHOP_ACTION_SUGGESTION)
+                                                .then(Commands.literal("set")
                                                         .then(Commands.argument("shopType",StringArgumentType.string())
                                                                 .suggests(CommandSuggests.SHOP_ITEM_TYPES_SUGGESTION)
                                                                 .then(Commands.argument("shopSlot", IntegerArgumentType.integer(1,5))
@@ -84,7 +83,6 @@ public class FPSMCommand {
         if(game != null){
             BaseMap map = FPSMCore.registerMap(type, game.apply(context.getSource().getLevel(),mapName));
             if(map != null) {
-                map.setShopData();
                 map.setGameType(type);
             }else return 0;
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
@@ -108,25 +106,16 @@ public class FPSMCommand {
 
     private int handleModifyShop(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
-        String action = StringArgumentType.getString(context, "action");
         String shopType = StringArgumentType.getString(context, "shopType");
         int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
         int cost = IntegerArgumentType.getInteger(context,"cost");
         BaseMap map = FPSMCore.getMapByName(mapName);
 
         if (map != null) {
-            switch (action) {
-                case "set": {
-                    if (context.getSource().getEntity() instanceof Player player){
-                        ItemStack itemStack = player.getMainHandItem().copy();
-                        FPSMShop.putShopData(mapName,new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)),itemStack,cost));
-                        FPSMShop.syncShopData(mapName);
-                        break;
-                    }
-                }
-                case "reset" : {
-                    break;
-                }
+            if (context.getSource().getEntity() instanceof Player player) {
+                ItemStack itemStack = player.getMainHandItem().copy();
+                FPSMShop.putShopData(mapName, new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
+                FPSMShop.syncShopData(mapName);
             }
         }
         return 1;
@@ -179,6 +168,7 @@ public class FPSMCommand {
                     case "join":
                         if (map.getMapTeams().checkTeam(team)) {
                             map.getMapTeams().joinTeam(team, player);
+                            FPSMShop.syncShopData(mapName,player);
                             context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team), true);
                         } else {
                             context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
