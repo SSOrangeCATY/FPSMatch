@@ -205,12 +205,15 @@ public class FPSMEvents {
             String mapName = rl.getPath();
             String type = rl.getNamespace();
             BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getPreBuildGame(type);
-            ResourceKey<Level> level = teamData.values().stream().findFirst().get().get(0).getDimension();
-            if (game != null) {
-                BaseMap map = FPSMCore.registerMap(type, game.apply(event.getServer().getLevel(level), mapName));
-                if(map != null){
-                    map.setGameType(type);
-                    map.getMapTeams().putAllSpawnPoints(teamData);
+            List<SpawnPointData> data = teamData.values().stream().findFirst().get();
+            if(!data.isEmpty()){
+                ResourceKey<Level> level = data.get(0).getDimension();
+                if (game != null) {
+                    BaseMap map = FPSMCore.registerMap(type, game.apply(event.getServer().getLevel(level), mapName));
+                    if(map != null){
+                        map.setGameType(type);
+                        map.getMapTeams().putAllSpawnPoints(teamData);
+                    }
                 }
             }
         });
