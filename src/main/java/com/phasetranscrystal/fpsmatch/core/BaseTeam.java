@@ -14,7 +14,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class BaseTeam extends SavedData {
+public class BaseTeam {
     private final String name;
     private final int playerLimit;
     private final PlayerTeam playerTeam;
@@ -174,19 +174,7 @@ public class BaseTeam extends SavedData {
         return name;
     }
 
-    @Override
     public @NotNull CompoundTag save(CompoundTag compoundTag) {
-        compoundTag.putString("Name", this.name);
-        compoundTag.putInt("PlayerLimit", this.playerLimit);
-        compoundTag.putInt("Scores", this.scores);
-
-        // 保存玩家数据
-        CompoundTag playerData = new CompoundTag();
-        for (PlayerData data : this.players.values()) {
-            playerData.put(data.getOwner().toString(),data.save(new CompoundTag()));
-        }
-        compoundTag.put("playerData", playerData);
-
         // 保存出生点数据
         ListTag spawnPointsTag = new ListTag();
         for (SpawnPointData spawnPointData : this.spawnPointsData) {

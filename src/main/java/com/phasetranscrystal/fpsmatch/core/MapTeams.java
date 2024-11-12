@@ -305,16 +305,9 @@ public class MapTeams {
     }
 
     public CompoundTag save(CompoundTag compoundTag) {
-        ListTag teamsTag = new ListTag();
-
         for (Map.Entry<String, BaseTeam> entry : teams.entrySet()) {
-            CompoundTag teamTag = new CompoundTag();
-            teamTag.putString("TeamName", entry.getKey());
-            entry.getValue().save(teamTag);
-            teamsTag.add(teamTag);
+            compoundTag.put(entry.getKey(), entry.getValue().save(new CompoundTag()));
         }
-
-        compoundTag.put("Teams", teamsTag);
         return compoundTag;
     }
 }

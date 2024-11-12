@@ -1,27 +1,24 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.resource.index.ClientGunIndex;
-import com.tacz.guns.resource.pojo.GunIndexPOJO;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.storage.DimensionDataStorage;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ShopData extends SavedData {
+public class ShopData {
     private static final Map<ItemType, List<ShopSlot>> defaultData = getDefaultShopItemData(true);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
     public int money = 10000;
@@ -31,61 +28,10 @@ public class ShopData extends SavedData {
         data.putAll(defaultData);
     }
 
-    @Override
-    public @NotNull CompoundTag save(@NotNull CompoundTag pCompoundTag) {
-        ListTag shopSlotsTag = new ListTag();
-        for (Map.Entry<ItemType, List<ShopSlot>> entry : data.entrySet()) {
-            ItemType type = entry.getKey();
-            List<ShopSlot> slots = entry.getValue();
-            ListTag typeTag = new ListTag();
-            for (ShopSlot slot : slots) {
-                typeTag.add(slot.save(new CompoundTag()));
-            }
-            shopSlotsTag.add(typeTag);
-        }
-        pCompoundTag.putInt("money", this.money);
-        pCompoundTag.putInt("nextRoundMinMoney", this.nextRoundMinMoney);
-        pCompoundTag.put("shopSlots", shopSlotsTag);
-        return pCompoundTag;
-    }
-
-    public static ShopData load(CompoundTag pCompoundTag) {
-        ShopData data = ShopData.create();
-        data.money = pCompoundTag.getInt("money");
-        data.nextRoundMinMoney = pCompoundTag.getInt("nextRoundMinMoney");
-
-        ListTag shopSlotsTag = pCompoundTag.getList("shopSlots", Tag.TAG_COMPOUND);
-        for (int i = 0; i < shopSlotsTag.size(); i++) {
-            ListTag typeTag = shopSlotsTag.getList(i);
-            ItemType type = ItemType.values()[typeTag.getInt(2)];
-            List<ShopSlot> slots = new ArrayList<>();
-
-            for (int j = 0; j < typeTag.size(); j++) {
-                CompoundTag slotTag = typeTag.getCompound(j);
-                ShopSlot slot = ShopSlot.load(slotTag);
-                slots.add(slot);
-            }
-
-            data.data.put(type, slots);
-        }
-        return data;
-    }
-
     public static ShopData create(){
         return new ShopData();
     }
 
-    public static ShopData getData(ServerPlayer player) {
-        ServerLevel level = player.serverLevel().getLevel();
-        return level.getDataStorage().get(ShopData::load, "shopData_"+ player.getUUID());
-    }
-
-    public static ShopData getData(ServerLevel level,String name) {
-        return level.getDataStorage().get(ShopData::load, "shopData_"+ name);
-    }
-    public void syncFileData(DimensionDataStorage storage, String fileName){
-        storage.computeIfAbsent(ShopData::load,ShopData::create,fileName);
-    }
 
     public ShopData(Map<ItemType, List<ShopSlot>> data){
         checkData(data);
@@ -253,6 +199,10 @@ public class ShopData extends SavedData {
         public ItemType type(){
             return type;
         }
+
+        public String typeStr(){
+            return type.toString();
+        }
         public ItemStack itemStack(){
             if(itemStack == null){
                 return null;
@@ -277,6 +227,10 @@ public class ShopData extends SavedData {
 
         public boolean enable(){
             return enable;
+        }
+
+        public int defaultCost() {
+            return defaultCost;
         }
 
         public int boughtCount(){
@@ -341,42 +295,6 @@ public class ShopData extends SavedData {
             }
         }
 
-
-        public CompoundTag save(CompoundTag compoundTag) {
-            compoundTag.putInt("Index", this.index);
-            compoundTag.putInt("DefaultCost", this.defaultCost);
-            compoundTag.putInt("Cost", this.cost);
-            compoundTag.putInt("BoughtCount", this.boughtCount);
-            compoundTag.putBoolean("Enable", this.enable);
-            compoundTag.putBoolean("CanReturn", this.canReturn);
-
-            if (this.itemStack != null) {
-                compoundTag.put("ItemStack", this.itemStack.save(new CompoundTag()));
-            }
-
-            compoundTag.putString("Type", this.type.toString());
-            compoundTag.putString("ItemName", this.itemName);
-            return compoundTag;
-        }
-
-        public static ShopSlot load(CompoundTag compoundTag) {
-            ShopSlot slot = new ShopSlot(compoundTag.getInt("Index"),
-                    ItemType.valueOf(compoundTag.getString("Type")),
-                    ItemStack.of(compoundTag.getCompound("ItemStack")),
-                    compoundTag.getInt("DefaultCost"));
-
-            slot.cost = compoundTag.getInt("Cost");
-            slot.boughtCount = compoundTag.getInt("BoughtCount");
-            slot.enable = compoundTag.getBoolean("Enable");
-            slot.canReturn = compoundTag.getBoolean("CanReturn");
-
-            if (compoundTag.contains("ItemStack", 10)) {
-                slot.itemStack = ItemStack.of(compoundTag.getCompound("ItemStack"));
-            }
-
-            slot.itemName = compoundTag.getString("ItemName");
-            return slot;
-        }
     }
 
     public enum ItemType{

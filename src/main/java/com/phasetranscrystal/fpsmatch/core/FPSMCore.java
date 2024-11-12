@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.TickEvent;
@@ -18,8 +17,7 @@ import java.util.function.BiFunction;
 public class FPSMCore {
     private static final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private static final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
-    private static final Map<String, ShopData> GAMES_DEFAULT_SHOP_DATA = new HashMap<>();
-    private static final Map<String, Map<UUID, ShopData>> GAMES_SHOP_DATA = new HashMap<>();
+    private static final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
 
     @Nullable public static BaseMap getMapByPlayer(ServerPlayer player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
@@ -83,29 +81,15 @@ public class FPSMCore {
 
     public static void registerGameType(String typeName, BiFunction<ServerLevel,String,BaseMap> map, boolean enableShop){
         REGISTRY.put(typeName,map);
-        if(enableShop) GAMES_DEFAULT_SHOP_DATA.put(typeName,new ShopData());
+        GAMES_SHOP.put(typeName,enableShop);
     }
 
     public static boolean checkGameIsEnableShop(String gameType){
-        return GAMES_DEFAULT_SHOP_DATA.getOrDefault(gameType,null) != null;
+        return GAMES_SHOP.getOrDefault(gameType,false);
     }
 
     public static List<String> getEnableShopGames(){
-        return GAMES_DEFAULT_SHOP_DATA.keySet().stream().filter((type)-> GAMES_DEFAULT_SHOP_DATA.getOrDefault(type,null) != null).toList();
-    }
-
-    public static void setGameDefaultData(String gameType, ShopData data){
-        if (checkGameIsEnableShop(gameType)){
-            GAMES_DEFAULT_SHOP_DATA.put(gameType,data);
-        }else FPSMatch.LOGGER.error(gameType + " is unsupported shop.");
-    }
-
-    public static void addPlayerShopData(String gameType,UUID player, ShopData data){
-        if (checkGameIsEnableShop(gameType)){
-            Map<UUID, ShopData> shopData = GAMES_SHOP_DATA.get(gameType);
-            shopData.put(player,data);
-            GAMES_SHOP_DATA.put(gameType,GAMES_SHOP_DATA.put(gameType,shopData));
-        }else FPSMatch.LOGGER.error(gameType + " is unsupported shop.");
+        return GAMES_SHOP.keySet().stream().filter((type)-> GAMES_SHOP.getOrDefault(type,false)).toList();
     }
 
     public static List<String> getGameTypes(){

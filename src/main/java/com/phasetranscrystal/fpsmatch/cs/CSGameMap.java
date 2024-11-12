@@ -39,7 +39,6 @@ public class CSGameMap extends BaseMap {
     private boolean isWaitingWinner = false;
     private final Map<String,Integer> teamScores = new HashMap<>();
 
-
     public CSGameMap(ServerLevel serverLevel,String mapName) {
         super(serverLevel,mapName);
     }
@@ -255,11 +254,6 @@ public class CSGameMap extends BaseMap {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), packet);
             }
         }));
-    }
-
-    @Override
-    public @NotNull CompoundTag save(CompoundTag pCompoundTag) {
-        return null;
     }
 
 }

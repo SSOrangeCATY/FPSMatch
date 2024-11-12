@@ -44,8 +44,6 @@ public  class CSGameOverlay implements IGuiOverlay {
         guiGraphics.pose().popPose();
     }
 
-
-
     public static String getCSGameTime(){
         String time;
         if(ClientData.isWaiting){
