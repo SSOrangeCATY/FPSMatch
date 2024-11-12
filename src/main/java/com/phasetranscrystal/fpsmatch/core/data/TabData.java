@@ -149,44 +149,4 @@ public class TabData {
         this.setDamage(this.damage + data.damage);
     }
 
-    public void save(CompoundTag pCompoundTag) {
-        pCompoundTag.putUUID("Owner",this.owner);
-        pCompoundTag.putInt("Kills", this.kills);
-        pCompoundTag.putInt("Deaths", this.deaths);
-        pCompoundTag.putInt("Assists", this.assists);
-        pCompoundTag.putFloat("Damage", this.damage);
-        pCompoundTag.putInt("Money", this.money);
-        pCompoundTag.putInt("MVPCount", this.mvpCount);
-        pCompoundTag.putBoolean("IsLiving", this.isLiving);
-
-        ListTag damageDataList = new ListTag();
-        for (UUID uuid : damageData.keySet()){
-            CompoundTag damageDataNBT = new CompoundTag();
-            damageDataNBT.putUUID("UUID",uuid);
-            damageDataNBT.putFloat("Value",damageData.get(uuid));
-            damageDataList.add(damageDataNBT);
-        }
-        pCompoundTag.put("DamageData",damageDataList);
-    }
-
-    public static TabData load(CompoundTag pCompoundTag) {
-        TabData data = new TabData(pCompoundTag.getUUID("Owner"));
-        data.kills = pCompoundTag.getInt("Kills");
-        data.deaths = pCompoundTag.getInt("Deaths");
-        data.assists = pCompoundTag.getInt("Assists");
-        data.damage = pCompoundTag.getFloat("Damage");
-        data.money = pCompoundTag.getInt("Money");
-        data.mvpCount = pCompoundTag.getInt("MVPCount");
-        data.isLiving = pCompoundTag.getBoolean("IsLiving");
-        ListTag damageDataList = pCompoundTag.getList("DamageData", Tag.TAG_COMPOUND);
-        for (int i = 0; i < damageDataList.size(); i++) {
-            CompoundTag damageDataNBT = damageDataList.getCompound(i);
-            UUID uuid = damageDataNBT.getUUID("UUID");
-            float value = damageDataNBT.getFloat("Value");
-            data.damageData.put(uuid, value);
-        }
-        return data;
-    }
-
-
 }

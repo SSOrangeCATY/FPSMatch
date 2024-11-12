@@ -321,10 +321,4 @@ public class MapTeams {
         }));
     }
 
-    public CompoundTag save(CompoundTag compoundTag) {
-        for (Map.Entry<String, BaseTeam> entry : teams.entrySet()) {
-            compoundTag.put(entry.getKey(), entry.getValue().save(new CompoundTag()));
-        }
-        return compoundTag;
-    }
 }

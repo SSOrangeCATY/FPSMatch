@@ -49,26 +49,4 @@ public class SpawnPointData {
     public String toString() {
         return dimension.location().getPath() + " " + position.toString();
     }
-
-    public void save(CompoundTag pCompoundTag) {
-        pCompoundTag.putString("Dimension", this.dimension.location().toString());
-
-        if (this.position != null) {
-            pCompoundTag.putLong("Position", this.position.asLong());
-        }
-
-        pCompoundTag.putFloat("Yaw", this.pYaw);
-        pCompoundTag.putFloat("Pitch", this.pPitch);
-    }
-
-    public static SpawnPointData load(CompoundTag tag) {
-        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("Dimension")));
-        BlockPos position = tag.contains("Position") ? BlockPos.of(tag.getLong("Position")) : null;
-        float pYaw = tag.getFloat("Yaw");
-        float pPitch = tag.getFloat("Pitch");
-
-        return new SpawnPointData(dimension, position, pYaw, pPitch);
-    }
-
-
 }

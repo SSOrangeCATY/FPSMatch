@@ -178,17 +178,4 @@ public class BaseTeam {
         return name;
     }
 
-    public @NotNull CompoundTag save(CompoundTag compoundTag) {
-        // 保存出生点数据
-        ListTag spawnPointsTag = new ListTag();
-        for (SpawnPointData spawnPointData : this.spawnPointsData) {
-            CompoundTag spawnPointCompound = new CompoundTag();
-            // 假设 SpawnPointData 类有一个 save 方法来保存其数据
-            spawnPointData.save(spawnPointCompound);
-            spawnPointsTag.add(spawnPointCompound);
-        }
-        compoundTag.put("SpawnPoints", spawnPointsTag);
-
-        return compoundTag;
-    }
 }
