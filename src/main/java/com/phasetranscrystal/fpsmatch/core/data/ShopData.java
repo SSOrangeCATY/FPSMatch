@@ -29,6 +29,12 @@ public class ShopData {
         this.data.putAll(data);
     }
 
+    public ShopData(int startMoney){
+        checkData(defaultData);
+        this.data.putAll(defaultData);
+        this.money = startMoney;
+    }
+
     public Map<ItemType, List<ShopSlot>> getData(){
         return data;
     }

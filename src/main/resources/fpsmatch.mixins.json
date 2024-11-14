@@ -9,6 +9,7 @@
     "MixinZipPackTexture"
   ],
   "client": [
+    "MixinPlayerTabOverlay"
   ],
   "injectors": {
     "defaultRequire": 1

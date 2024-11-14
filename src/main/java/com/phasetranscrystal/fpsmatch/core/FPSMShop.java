@@ -26,6 +26,12 @@ public class FPSMShop {
     public final Map<UUID,ShopData> playersData = new HashMap<>();
     private static final Map<String,FPSMShop> gamesFPSMShop = FileHelper.loadShopData();
 
+
+    public FPSMShop(String name,int startMoney){
+        this.defaultShopData = new ShopData(startMoney);
+        this.name = name;
+    }
+
     public FPSMShop(String name){
         this.defaultShopData = new ShopData();
         this.name = name;
@@ -35,7 +41,11 @@ public class FPSMShop {
         this.defaultShopData = data;
         this.name = name;
     }
-
+    public FPSMShop(String name,ShopData data,int startMoney){
+        this.defaultShopData = data;
+        this.defaultShopData.setMoney(startMoney);
+        this.name = name;
+    }
 
     @Nullable
     public static FPSMShop getShopByMapName(String map){

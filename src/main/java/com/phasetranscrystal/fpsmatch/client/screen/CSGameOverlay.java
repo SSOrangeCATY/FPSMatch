@@ -10,13 +10,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
+import net.minecraft.client.gui.components.PlayerTabOverlay;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Overlay;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
-public  class CSGameOverlay implements IGuiOverlay {
+public class CSGameOverlay implements IGuiOverlay {
     public static final int PAUSE_TIME = 120;
     public static final int WINNER_WAITING_TIME = 8;
     public static final int WARM_UP_TIME = 60;
@@ -30,6 +33,7 @@ public  class CSGameOverlay implements IGuiOverlay {
     // 60*24 30*50
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        if (ClientData.currentMap.equals("fpsm_none")) return;
         Font font = Minecraft.getInstance().font;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;

@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.commands.TeleportCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -184,12 +185,10 @@ public class CSGameMap extends BaseMap {
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().setTeamsSpawnPoints();
         this.cleanupMap();
-        // 可以在这里添加更多的逻辑，比如重置得分板、装备武器等
     }
 
     @Override
     public void victory() {
-        // 重置游戏状态
         resetGame();
     }
     @Override
