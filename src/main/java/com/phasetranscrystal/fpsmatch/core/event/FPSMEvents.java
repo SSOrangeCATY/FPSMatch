@@ -98,7 +98,7 @@ public class FPSMEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerOffline(PlayerEvent.PlayerLoggedInEvent event){
+    public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getMapByPlayer(player);
             if(map != null && map.isStart){
@@ -115,7 +115,7 @@ public class FPSMEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerOffline(PlayerEvent.PlayerLoggedOutEvent event){
+    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getMapByPlayer(player);
             if(map != null && map.isStart){

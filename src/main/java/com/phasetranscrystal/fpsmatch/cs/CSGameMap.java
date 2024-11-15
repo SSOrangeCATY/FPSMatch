@@ -82,6 +82,14 @@ public class CSGameMap extends BaseMap {
             if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
                 if(!isRoundTimeEnd()){
                     if(!this.isDebug()) this.checkRoundVictory();
+
+                    if(this.isWaitingWinner){
+                        checkWinnerTime();
+
+                        if(this.currentPauseTime >= WINNER_WAITING_TIME){
+                            this.startNewRound();
+                        }
+                    }
                 }else{
                     if(!checkWinnerTime()){
                         this.roundVictory("ct");
@@ -147,23 +155,19 @@ public class CSGameMap extends BaseMap {
             this.currentPauseTime++;
         }else{
             if(this.canRestTime()) currentPauseTime = 0;
-            // 在StartNewRound方法中更改
         }
         return this.isWaitingWinner;
     }
 
-
     public void checkRoundVictory(){
-        Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
-        for (String teamName : teamsLiving.keySet()){
-            if(teamsLiving.get(teamName).isEmpty()){
-                teamsLiving.remove(teamName);
-            }
-        }
+        if(isWaitingWinner) return;
 
-        if(teamsLiving.keySet().size() == 1) {
+        Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+        if(teamsLiving.size() == 1){
             String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
             this.roundVictory(winnerTeam);
+        }else{
+            this.roundVictory("ct");
         }
     }
     public boolean isRoundTimeEnd(){
@@ -174,8 +178,10 @@ public class CSGameMap extends BaseMap {
     }
 
     private void roundVictory(String teamName) {
+        if(isWaitingWinner) return;
         this.isWaitingWinner = true;
-        this.teamScores.put(teamName,this.teamScores.getOrDefault(teamName,0) + 1);
+        int currentScore = this.teamScores.getOrDefault(teamName, 0);
+        this.teamScores.put(teamName, currentScore + 1);
     }
 
     public void startNewRound() {

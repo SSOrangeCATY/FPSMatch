@@ -165,7 +165,12 @@ public class MapTeams {
 
     public Map<String, List<UUID>> getTeamsLiving() {
         Map<String, List<UUID>> teamsLiving = new HashMap<>();
-        teams.forEach((s,t)-> teamsLiving.put(s,t.getLivingPlayers()));
+        teams.forEach((s,t)-> {
+            List<UUID> list = t.getLivingPlayers();
+            if(!list.isEmpty()){
+                teamsLiving.put(s,list);
+            }
+        });
         return teamsLiving;
     }
 

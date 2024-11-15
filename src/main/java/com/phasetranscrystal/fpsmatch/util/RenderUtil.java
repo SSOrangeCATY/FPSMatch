@@ -68,19 +68,4 @@ public class RenderUtil {
 
         return image;
     }
-
-
-    public static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((playerInfo) -> 0)
-            .thenComparing((playerInfo) -> Optionull.mapOrDefault(playerInfo.getTeam(), PlayerTeam::getName, ""))
-            .thenComparing((playerInfo) -> playerInfo.getProfile().getName(), String::compareToIgnoreCase);
-
-
-    public static List<PlayerInfo> getPlayerInfos() {
-        if (Minecraft.getInstance().player != null) {
-            return Minecraft.getInstance().player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList();
-        }
-        return new ArrayList<>();
-    }
-
-
 }

@@ -2,7 +2,6 @@ package com.phasetranscrystal.fpsmatch;
 
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
-import com.phasetranscrystal.fpsmatch.client.screen.FPSMTabOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
@@ -97,7 +96,6 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
             event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
-           // event.registerBelowAll("fpsm_cs_tab", new FPSMTabOverlay());
         }
     }
 }
