@@ -149,4 +149,8 @@ public class TabData {
         this.setDamage(this.damage + data.damage);
     }
 
+    public String getTabString(){
+        return kills + "/" + deaths + "/" + assists;
+    }
+
 }

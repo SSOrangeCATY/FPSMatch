@@ -1,20 +1,17 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
-import com.google.common.io.ByteSource;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.phasetranscrystal.fpsmatch.client.data.ClientData;
+import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -22,12 +19,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
-import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -37,11 +33,12 @@ import java.util.stream.Collectors;
 
 @Mixin(PlayerTabOverlay.class)
 public class MixinPlayerTabOverlay{
+    private static final ResourceLocation GUI_ICONS_LOCATION = new ResourceLocation("textures/gui/icons.png");
     @Final
     @Shadow
     private  Minecraft minecraft;
-    private Component footer = Component.literal("FPSM_TEST_END").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
-    private Component header = Component.literal("FPSM_TEST_HEAD").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
+    private Component footer = Component.literal("END").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
+    private Component header = Component.literal("FPSMatch").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
     @Final
     @Shadow
     private Map<UUID, Object> healthStates;
@@ -55,10 +52,8 @@ public class MixinPlayerTabOverlay{
         for (PlayerInfo playerInfo : playerInfoList) {
             int nameWidth = this.minecraft.font.width(this.getNameForDisplay(playerInfo));
             maxNameWidth = Math.max(maxNameWidth, nameWidth);
-            if (objective != null && objective.getRenderType() != ObjectiveCriteria.RenderType.HEARTS) {
-                int scoreWidth = this.minecraft.font.width(" " + scoreboard.getOrCreatePlayerScore(playerInfo.getProfile().getName(), objective).getScore());
-                maxScoreWidth = Math.max(maxScoreWidth, scoreWidth);
-            }
+            int scoreWidth = this.minecraft.font.width(" " + ClientData.tabData.getOrDefault(playerInfo.getProfile().getId(),new TabData(playerInfo.getProfile().getId())).getTabString());
+            maxScoreWidth = Math.max(maxScoreWidth, scoreWidth);
         }
 
         if (!this.healthStates.isEmpty()) {
@@ -76,16 +71,7 @@ public class MixinPlayerTabOverlay{
             ++columnCount;
         }
         boolean isLocalServerOrEncrypted = true;
-        int scoreTextWidth;
-        if (objective != null) {
-            if (objective.getRenderType() == ObjectiveCriteria.RenderType.HEARTS) {
-                scoreTextWidth = 90;
-            } else {
-                scoreTextWidth = maxScoreWidth;
-            }
-        } else {
-            scoreTextWidth = 0;
-        }
+        int scoreTextWidth = maxScoreWidth + 200;
 
         int itemWidth = Math.min(columnCount * (isLocalServerOrEncrypted ? 9 : 0) + maxNameWidth + scoreTextWidth + 13, windowWidth - 50) / columnCount;
         int xStart = windowWidth / 2 - (itemWidth * columnCount + (columnCount - 1) * 5) / 2;
@@ -137,18 +123,26 @@ public class MixinPlayerTabOverlay{
                 Player player = this.minecraft.level.getPlayerByUUID(gameProfile.getId());
                 boolean isUpsideDown = player != null && LivingEntityRenderer.isEntityUpsideDown(player);
                 boolean isHatVisible = player != null && player.isModelPartShown(PlayerModelPart.HAT);
-                PlayerFaceRenderer.draw(guiGraphics, playerInfo.getSkinLocation(), x, y, 8, isHatVisible, isUpsideDown);
-                x += 9;
 
-                guiGraphics.drawString(this.minecraft.font, this.getNameForDisplay(playerInfo), x, y, playerInfo.getGameMode() == GameType.SPECTATOR ? -1862270977 : -1);
-                if (objective != null && playerInfo.getGameMode() != GameType.SPECTATOR) {
-                    int scoreTextStart = x + maxNameWidth + 1;
-                    int scoreTextEnd = scoreTextStart + scoreTextWidth;
-                    if (scoreTextEnd - scoreTextStart > 5) {
-                        this.renderTablistScore(objective, y, gameProfile.getName(), scoreTextStart, scoreTextEnd, gameProfile.getId(), guiGraphics);
-                    }
+                // 绘制ping图标和值
+                this.fPSMatch$renderPingIcon(guiGraphics, itemWidth, x + 2, y, playerInfo);
+                int avatarAndNameStartX = x + 28; // Ping图标和值之后的10像素加上图标宽度
+
+                // 绘制玩家头像
+                PlayerFaceRenderer.draw(guiGraphics, playerInfo.getSkinLocation(), avatarAndNameStartX, y, 8, isHatVisible, isUpsideDown);
+                int nameAndScoreStartX = avatarAndNameStartX + 9; // 头像宽度
+
+                // 绘制玩家名字
+                guiGraphics.drawString(this.minecraft.font, this.getNameForDisplay(playerInfo), nameAndScoreStartX, y, playerInfo.getGameMode() == GameType.SPECTATOR ? -1862270977 : -1);
+
+                // 计算tab分数的绘制起始位置
+                int scoreTextStart = nameAndScoreStartX + maxNameWidth + 10; // 玩家名字之后的10像素加上名字宽度
+                int scoreTextEnd = scoreTextStart + scoreTextWidth;
+
+                // 绘制tab分数，居中显示在剩余空间中
+                if (scoreTextEnd - scoreTextStart > 5) {
+                    this.fPSMatch$renderTablistScore(y, scoreTextStart, scoreTextEnd, gameProfile.getId(), guiGraphics);
                 }
-                this.renderPingIcon(guiGraphics, itemWidth, x - 9, y, playerInfo);
             }
         }
 
@@ -170,12 +164,39 @@ public class MixinPlayerTabOverlay{
         return null;
     }
 
-    @Shadow
-    private void renderPingIcon(GuiGraphics pGuiGraphics, int i1, int i, int l2, PlayerInfo playerinfo1) {
+    @Unique
+    protected void fPSMatch$renderPingIcon(GuiGraphics pGuiGraphics, int itemWidth, int x, int y, PlayerInfo playerInfo) {
+        int latencyIndex;
+        if (playerInfo.getLatency() < 0) {
+            latencyIndex = 5;
+        } else if (playerInfo.getLatency() < 150) {
+            latencyIndex = 0;
+        } else if (playerInfo.getLatency() < 300) {
+            latencyIndex = 1;
+        } else if (playerInfo.getLatency() < 600) {
+            latencyIndex = 2;
+        } else if (playerInfo.getLatency() < 1000) {
+            latencyIndex = 3;
+        } else {
+            latencyIndex = 4;
+        }
+        String text = String.valueOf(playerInfo.getLatency());
+        int textWidth = Minecraft.getInstance().font.width(text);
+
+        pGuiGraphics.pose().pushPose();
+        pGuiGraphics.pose().translate(0.0F, 0.0F, 100.0F);
+        // Ping图标绘制在x位置，y位置不变
+        pGuiGraphics.blit(GUI_ICONS_LOCATION, x, y, 0, 176 + latencyIndex * 8, 10, 8);
+        // Ping值文本绘制在图标右侧，加上图标的宽度和一点间距
+        pGuiGraphics.drawString(Minecraft.getInstance().font, text, x + 12, y, RenderUtil.color(25,180,60));
+        pGuiGraphics.pose().popPose();
     }
 
-    @Shadow
-    private void renderTablistScore(Objective pObjective, int l2, String name, int l4, int i5, UUID id, GuiGraphics pGuiGraphics) {
+
+    @Unique
+    private void fPSMatch$renderTablistScore(int pY, int start, int end, UUID pPlayerUuid, GuiGraphics pGuiGraphics) {
+        String s = ClientData.tabData.getOrDefault(pPlayerUuid,new TabData(pPlayerUuid)).getTabString();
+        pGuiGraphics.drawString(this.minecraft.font, s, start + (end - start) / 2 - this.minecraft.font.width(s), pY, 16777215);
     }
 
     @Shadow
