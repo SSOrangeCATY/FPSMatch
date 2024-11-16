@@ -15,7 +15,6 @@ public class TabData {
     private int deaths;
     private int assists;
     private float damage;
-    private int money;
     private int mvpCount;
     private boolean isLiving;
 
@@ -25,7 +24,6 @@ public class TabData {
         this.deaths = 0;
         this.assists = 0;
         this.damage = 0;
-        this.money = 0;
     }
 
     public UUID getOwner() {
@@ -91,18 +89,6 @@ public class TabData {
 
     public void addDamage(float damage){
         this.damage += damage;
-    }
-
-    public void setMoney(int money) {
-        this.money = money;
-    }
-
-    public void addMoney(int money){
-        this.money += money;
-    }
-
-    public int getMoney(){
-        return this.money;
     }
 
     public float getDamage() {

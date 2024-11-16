@@ -1,7 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import net.minecraft.client.renderer.blockentity.StructureBlockRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
@@ -9,13 +11,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.StructureBlockEntity;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public abstract class BaseMap{
     public final String mapName;
@@ -24,6 +24,8 @@ public abstract class BaseMap{
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private MapTeams mapTeams;
+    private boolean isBlast = false;
+    private List<BombAreaData> bombAreaData = new ArrayList<>();
 
     public BaseMap(ServerLevel serverLevel, String mapName) {
         this.serverLevel = serverLevel;
@@ -114,4 +116,11 @@ public abstract class BaseMap{
         return gameType;
     }
 
+    public void putBombAreaData(BombAreaData data){
+        this.bombAreaData.add(data);
+    }
+
+    public void setBlast(boolean blast) {
+        isBlast = blast;
+    }
 }

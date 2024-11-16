@@ -22,7 +22,6 @@ public class CSGameTabStatsS2CPacket {
         this.tabData.setDeaths(buf.readInt());
         this.tabData.setAssists(buf.readInt());
         this.tabData.setDamage(buf.readFloat());
-        this.tabData.setMoney(buf.readInt());
     }
 
     public static void encode(CSGameTabStatsS2CPacket packet, FriendlyByteBuf buf) {
@@ -31,7 +30,6 @@ public class CSGameTabStatsS2CPacket {
         buf.writeInt(packet.tabData.getDeaths());
         buf.writeInt(packet.tabData.getAssists());
         buf.writeFloat(packet.tabData.getDamage());
-        buf.writeInt(packet.tabData.getMoney());
     }
 
     public static CSGameTabStatsS2CPacket decode(FriendlyByteBuf buf) {

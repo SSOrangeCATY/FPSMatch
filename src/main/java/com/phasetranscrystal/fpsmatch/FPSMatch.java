@@ -1,9 +1,11 @@
 package com.phasetranscrystal.fpsmatch;
 
 import com.mojang.logging.LogUtils;
+import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
+import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
@@ -11,9 +13,12 @@ import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -45,6 +50,7 @@ public class FPSMatch {
         MinecraftForge.EVENT_BUS.register(this);
         MapRegister.register();
         TestRegister.ITEMS.register(modEventBus);
+        EntityRegister.ENTITY_TYPES.register(modEventBus);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -96,6 +102,20 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
             event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
+        }
+
+
+        @SubscribeEvent
+        public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
+            event.registerEntityRenderer(EntityRegister.C4.get(), new C4Renderer());
+        }
+
+
+        @SubscribeEvent
+        public static void onRenderTickEvent(RenderLevelStageEvent event) {
+            if(event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS){
+
+            }
         }
     }
 }
