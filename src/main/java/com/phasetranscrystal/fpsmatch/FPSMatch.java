@@ -1,16 +1,16 @@
 package com.phasetranscrystal.fpsmatch;
 
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
-import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -72,17 +72,17 @@ public class FPSMatch {
                 .consumerNetworkThread(ShopActionC2SPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopActionS2CPacket.class, 3)
-                .encoder(ShopActionS2CPacket::encode)
-                .decoder(ShopActionS2CPacket::decode)
-                .consumerNetworkThread(ShopActionS2CPacket::handle)
+        INSTANCE.messageBuilder(BombActionC2SPacket.class, 3)
+                .encoder(BombActionC2SPacket::encode)
+                .decoder(BombActionC2SPacket::decode)
+                .consumerNetworkThread(BombActionC2SPacket::handle)
                 .add();
-    }
 
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-        // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+        INSTANCE.messageBuilder(BombActionS2CPacket.class, 4)
+                .encoder(BombActionS2CPacket::encode)
+                .decoder(BombActionS2CPacket::decode)
+                .consumerNetworkThread(BombActionS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
@@ -110,12 +110,12 @@ public class FPSMatch {
             event.registerEntityRenderer(EntityRegister.C4.get(), new C4Renderer());
         }
 
-
-        @SubscribeEvent
-        public static void onRenderTickEvent(RenderLevelStageEvent event) {
-            if(event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS){
-
-            }
-        }
     }
+
+    @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+    public static class ClientEvents {
+
+    }
+
+
 }

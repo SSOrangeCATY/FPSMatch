@@ -21,5 +21,6 @@
   "key.fpsm.open.shop.failed.game.not_started": "Cannot open the store because game not started",
   "key.fpsm.open.shop.failed.purchase_time.expired": "Cannot open the store because purchase time expired",
   "key.fpsm.open.shop.failed.left.purchase_area": "Cannot open the store because left purchase area",
-  "key.fpsm.open.shop.failed.game_type.no_shop": "Cannot open the store because joined game does not support store"
+  "key.fpsm.open.shop.failed.game_type.no_shop": "Cannot open the store because joined game does not support store",
+  "key.fpsm.dismantle_bomb.desc": "Dismantle bomb"
 }

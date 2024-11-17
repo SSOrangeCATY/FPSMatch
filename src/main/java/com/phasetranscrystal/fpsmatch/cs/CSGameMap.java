@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.IForgeRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -48,6 +49,7 @@ public class CSGameMap extends BaseMap {
         Map<String,Integer> teams = new HashMap<>();
         teams.put("ct",5);
         teams.put("t",5);
+        this.setBlastTeam("t");
         return teams;
     }
 
@@ -81,13 +83,19 @@ public class CSGameMap extends BaseMap {
         if(isStart){
             if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
                 if(!isRoundTimeEnd()){
-                    if(!this.isDebug()) this.checkRoundVictory();
+                    if(!this.isDebug()){
+                        switch (this.isBlasting()){
+                            case 1 : this.checkBlastingVictory();
+                            case 2 : if(!isWaitingWinner) this.roundVictory("ct");
+                            default : this.checkRoundVictory();
+                        }
 
-                    if(this.isWaitingWinner){
-                        checkWinnerTime();
+                        if(this.isWaitingWinner){
+                            checkWinnerTime();
 
-                        if(this.currentPauseTime >= WINNER_WAITING_TIME){
-                            this.startNewRound();
+                            if(this.currentPauseTime >= WINNER_WAITING_TIME){
+                                this.startNewRound();
+                            }
                         }
                     }
                 }else{
@@ -161,13 +169,18 @@ public class CSGameMap extends BaseMap {
 
     public void checkRoundVictory(){
         if(isWaitingWinner) return;
-
         Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
         if(teamsLiving.size() == 1){
             String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
             this.roundVictory(winnerTeam);
         }else{
             this.roundVictory("ct");
+        }
+    }
+    public void checkBlastingVictory(){
+        if(isWaitingWinner) return;
+        if(this.isExploded()) {
+            this.roundVictory("t");
         }
     }
     public boolean isRoundTimeEnd(){

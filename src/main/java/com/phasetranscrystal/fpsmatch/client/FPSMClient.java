@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.client.key.DismantleBombKey;
 import com.phasetranscrystal.fpsmatch.client.key.OpenShopKey;
 import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
@@ -21,6 +22,7 @@ public class FPSMClient {
     public static void onClientSetup(RegisterKeyMappingsEvent event) {
         // 注册键位
         event.register(OpenShopKey.OPEN_SHOP_KEY);
+        event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
     }
 
 

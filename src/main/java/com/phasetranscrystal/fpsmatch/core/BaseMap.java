@@ -1,21 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
-import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.client.renderer.blockentity.StructureBlockRenderer;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.entity.StructureBlockEntity;
-import net.minecraft.world.level.saveddata.SavedData;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class BaseMap{
     public final String mapName;
@@ -24,8 +15,12 @@ public abstract class BaseMap{
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private MapTeams mapTeams;
-    private boolean isBlast = false;
-    private List<BombAreaData> bombAreaData = new ArrayList<>();
+    private int isBlasting = 0; // 是否放置炸弹 0 = 未放置 | 1 = 已放置 | 2 = 已拆除
+    private boolean isExploded = false; // 炸弹是否爆炸
+    private final List<BombAreaData> bombAreaData = new ArrayList<>();
+    private String blastTeam;
+    private int demolitionStates = 0;
+
 
     public BaseMap(ServerLevel serverLevel, String mapName) {
         this.serverLevel = serverLevel;
@@ -38,11 +33,34 @@ public abstract class BaseMap{
         Map<String,Integer> teams = new HashMap<>();
         teams.put("teamA",5);
         teams.put("teamB",5);
+        setBlastTeam("teamB");
         return teams;
     }
 
     public final void setMapTeams(MapTeams teams){
         this.mapTeams = teams;
+    }
+
+    public final void setBlastTeam(String team){
+        this.blastTeam = team;
+    }
+
+    public boolean checkCanPlacingBombs(String team){
+        if(this.blastTeam == null) this.blastTeam = this.getTeams().keySet().stream().findFirst().get();
+        return this.blastTeam.equals(team);
+    }
+
+
+    public boolean checkPlayerIsInBombArea(Player player){
+        AtomicBoolean a = new AtomicBoolean(false);
+        this.bombAreaData.forEach(area->{
+            if(!a.get()) a.set(area.isPlayerInArea(player));
+        });
+        return a.get();
+    }
+
+    public List<BombAreaData> getBombAreaData() {
+        return bombAreaData;
     }
 
     public final void mapTick(){
@@ -65,7 +83,7 @@ public abstract class BaseMap{
 
     public abstract void startGame();
 
-    public boolean checkGameHasPlayer(ServerPlayer player){
+    public boolean checkGameHasPlayer(Player player){
         boolean flag = false;
         if(!this.getMapTeams().getJoinedPlayers().contains(player.getUUID()) || getMapTeams().getTeamByPlayer(player) != null){
             flag = true;
@@ -120,7 +138,31 @@ public abstract class BaseMap{
         this.bombAreaData.add(data);
     }
 
-    public void setBlast(boolean blast) {
-        isBlast = blast;
+    public void setBlasting(int blasting) {
+        isBlasting = blasting;
+    }
+
+    public void setExploded(boolean exploded) {
+        isExploded = exploded;
+    }
+
+    public int isBlasting() {
+        return isBlasting;
+    }
+
+    public boolean isExploded() {
+        return isExploded;
+    }
+
+    public boolean isStart() {
+        return isStart;
+    }
+
+    public int demolitionStates() {
+        return demolitionStates;
+    }
+
+    public void setDemolitionStates(int demolitionStates) {
+        this.demolitionStates = demolitionStates;
     }
 }

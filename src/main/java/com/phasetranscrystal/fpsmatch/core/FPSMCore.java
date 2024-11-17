@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -22,7 +23,7 @@ public class FPSMCore {
     private static final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
     private static final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
 
-    @Nullable public static BaseMap getMapByPlayer(ServerPlayer player){
+    @Nullable public static BaseMap getMapByPlayer(Player player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
         GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
             if(baseMap.checkGameHasPlayer(player)){
