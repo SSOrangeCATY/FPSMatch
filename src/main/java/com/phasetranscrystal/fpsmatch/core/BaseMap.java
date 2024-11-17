@@ -46,10 +46,9 @@ public abstract class BaseMap{
     }
 
     public boolean checkCanPlacingBombs(String team){
-        if(this.blastTeam == null) this.blastTeam = this.getTeams().keySet().stream().findFirst().get();
+        if(this.blastTeam == null) return false;
         return this.blastTeam.equals(team);
     }
-
 
     public boolean checkPlayerIsInBombArea(Player player){
         AtomicBoolean a = new AtomicBoolean(false);
@@ -57,6 +56,10 @@ public abstract class BaseMap{
             if(!a.get()) a.set(area.isPlayerInArea(player));
         });
         return a.get();
+    }
+
+    public void addBombArea(BombAreaData area){
+        this.bombAreaData.add(area);
     }
 
     public List<BombAreaData> getBombAreaData() {

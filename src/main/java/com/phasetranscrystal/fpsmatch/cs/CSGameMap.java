@@ -85,9 +85,9 @@ public class CSGameMap extends BaseMap {
                 if(!isRoundTimeEnd()){
                     if(!this.isDebug()){
                         switch (this.isBlasting()){
-                            case 1 : this.checkBlastingVictory();
-                            case 2 : if(!isWaitingWinner) this.roundVictory("ct");
-                            default : this.checkRoundVictory();
+                            case 1 : this.checkBlastingVictory(); break;
+                            case 2 : if(!isWaitingWinner) this.roundVictory("ct"); break;
+                            default : this.checkRoundVictory(); break;
                         }
 
                         if(this.isWaitingWinner){
@@ -173,8 +173,6 @@ public class CSGameMap extends BaseMap {
         if(teamsLiving.size() == 1){
             String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
             this.roundVictory(winnerTeam);
-        }else{
-            this.roundVictory("ct");
         }
     }
     public void checkBlastingVictory(){
@@ -221,6 +219,9 @@ public class CSGameMap extends BaseMap {
 
     @Override
     public void cleanupMap() {
+        this.setBlasting(0);
+        this.setDemolitionStates(0);
+        this.setExploded(false);
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.getMapTeams().setTeamsSpawnPoints();

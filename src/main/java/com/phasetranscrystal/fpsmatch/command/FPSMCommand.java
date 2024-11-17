@@ -12,14 +12,17 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.commands.FillCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -60,7 +63,12 @@ public class FPSMCommand {
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_SUGGESTION)
-                                        .then(Commands.literal("debug")
+                                        .then(Commands.literal("bombArea")
+                                                .then(Commands.literal("add")
+                                                        .then(Commands.argument("from", BlockPosArgument.blockPos())
+                                                                .then(Commands.argument("to", BlockPosArgument.blockPos())
+                                                                        .executes(this::handleBombAreaAction)))))
+                                                .then(Commands.literal("debug")
                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                         .suggests(CommandSuggests.MAP_DEBUG_SUGGESTION)
                                                         .executes(this::handleDebugAction)))
@@ -120,7 +128,17 @@ public class FPSMCommand {
         }
         return 1;
     }
-
+    private int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
+        BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
+        BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");
+        String mapName = StringArgumentType.getString(context, "mapName");
+        BaseMap map = FPSMCore.getMapByName(mapName);
+        if (map != null) {
+            map.addBombArea(new BombAreaData(pos1,pos2));
+            return 1;
+        }
+        return 0;
+    }
     private int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String action = StringArgumentType.getString(context, "action");

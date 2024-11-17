@@ -51,7 +51,7 @@ public class CompositionC4 extends Item {
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 1.0F, 1.0F);
             return InteractionResultHolder.consume(itemstack);
         }else{
-            if(canPlace) {
+            if(!canPlace) {
                 player.displayClientMessage(Component.literal("You cannot place bombs!"), true);
             }else{
                 if(map.getBombAreaData().isEmpty()) {
@@ -82,11 +82,7 @@ public class CompositionC4 extends Item {
 
     @Override
     public int getUseDuration(ItemStack itemstack) {
-        if (itemstack.getTag() != null && itemstack.getTag().contains("pos1") && itemstack.getTag().contains("pos2")) {
-            return 80;
-        } else {
-            return 0;
-        }
+        return 80;
     }
 
 
