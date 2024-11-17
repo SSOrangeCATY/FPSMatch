@@ -25,8 +25,6 @@ public record BombAreaData(BlockPos pos1, BlockPos pos2) {
         );
         return area.contains(new Vec3(player.getX(), player.getY(), player.getZ()));
     }
-
-
     //TODO
     public void renderArea(MultiBufferSource multiBufferSource, PoseStack poseStack) {
         VertexConsumer vertexconsumer = multiBufferSource.getBuffer(RenderType.lines());

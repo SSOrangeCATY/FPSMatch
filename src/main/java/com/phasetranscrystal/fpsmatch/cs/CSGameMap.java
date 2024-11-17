@@ -182,6 +182,10 @@ public class CSGameMap extends BaseMap {
         }
     }
     public boolean isRoundTimeEnd(){
+        if(this.isBlasting() > 0){
+            this.currentRoundTime = -1;
+            return false;
+        }
         if(this.currentRoundTime < this.roundTimeLimit){
             this.currentRoundTime++;
         }

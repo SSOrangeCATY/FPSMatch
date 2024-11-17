@@ -43,7 +43,13 @@ public class CSGameOverlay implements IGuiOverlay {
         guiGraphics.fillGradient((screenWidth / 2) + 1, 16, ((screenWidth / 2) + 16), 35, -1072689136, noColor);
         guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 9 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
         guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
-        String roundTime = getCSGameTime();
+        String roundTime;
+        if(ClientData.roundTime == -1){
+            roundTime = "xx:xx";
+            textRoundTimeColor = color(240,40,40);
+        }else{
+            roundTime  = getCSGameTime();
+        }
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
         guiGraphics.pose().popPose();
     }

@@ -18,7 +18,7 @@ public class C4Renderer implements EntityRendererProvider<CompositionC4Entity> {
     @Override
     public @NotNull EntityRenderer<CompositionC4Entity> create(Context pContext) {
         return new EntityRenderer<>(pContext) {
-            ItemEntity item = null  ;
+            ItemEntity item = null;
             ItemEntityRenderer itemRender = null;
             @Override
             public @NotNull ResourceLocation getTextureLocation(CompositionC4Entity pEntity) {
@@ -33,7 +33,7 @@ public class C4Renderer implements EntityRendererProvider<CompositionC4Entity> {
                     item = new ItemEntity(pEntity.level(),pEntity.getX(),pEntity.getY(),pEntity.getZ(),new ItemStack(Items.TNT));
                     itemRender = new ItemEntityRenderer(pContext);
                 }
-                itemRender.render(item,pEntityYaw,20,pPoseStack,pBuffer,pPackedLight);
+                itemRender.render(item,pEntityYaw,0,pPoseStack,pBuffer,pPackedLight);
                 pPoseStack.popPose();
                 super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
             }
