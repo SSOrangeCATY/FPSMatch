@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.data;
+package com.phasetranscrystal.fpsmatch.core.data.save;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,6 +8,8 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
+import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.FMLLoader;
 

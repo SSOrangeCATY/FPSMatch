@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.client.data;
 
-import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 
@@ -25,7 +24,7 @@ public class ClientData {
     public static boolean isWaitingWinner = false;
     public static int nextRoundMoney = 0;
     public static int purchaseTime = 1;
-    public static boolean leavePurchaseArea = false;
+    public static boolean isLeavePurchaseArea = false;
     public static int dismantleBombStates = 0; // 0 = 没拆呢 | 1 = 正在拆 | 2 = 错误可能是不在队伍或者地图导致的
     public static UUID bombUUID = null;
 

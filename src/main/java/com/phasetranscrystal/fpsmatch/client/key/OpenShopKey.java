@@ -44,17 +44,22 @@ public class OpenShopKey {
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.no_map"));
                     return;
                 }
+
                 if(!ClientData.currentMapSupportShop){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.game_type.no_shop"));
                     return;
                 }
+
                 if(ClientData.purchaseTime <= 0){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.purchase_time.expired"));
                     return;
                 }
-                if(ClientData.leavePurchaseArea){
+
+                if(!ClientData.isLeavePurchaseArea){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.left.purchase_area"));
+                    return;
                 }
+
                 if(ClientData.isStart){
                     MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
                 }else{

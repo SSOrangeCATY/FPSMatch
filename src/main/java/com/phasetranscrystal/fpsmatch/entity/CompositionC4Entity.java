@@ -100,7 +100,6 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 this.setDemolitionProgress(0);
             }else{
                 this.setDemolitionProgress(this.getDemolitionProgress() + 1);
-                System.out.println(this.getDemolitionProgress());
             }
 
             int j = 200;

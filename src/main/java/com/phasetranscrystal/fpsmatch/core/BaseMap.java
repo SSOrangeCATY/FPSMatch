@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core;
 
-import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -17,7 +17,7 @@ public abstract class BaseMap{
     private MapTeams mapTeams;
     private int isBlasting = 0; // 是否放置炸弹 0 = 未放置 | 1 = 已放置 | 2 = 已拆除
     private boolean isExploded = false; // 炸弹是否爆炸
-    private final List<BombAreaData> bombAreaData = new ArrayList<>();
+    private final List<AreaData> bombAreaData = new ArrayList<>();
     private String blastTeam;
 
 
@@ -57,11 +57,11 @@ public abstract class BaseMap{
         return a.get();
     }
 
-    public void addBombArea(BombAreaData area){
+    public void addBombArea(AreaData area){
         this.bombAreaData.add(area);
     }
 
-    public List<BombAreaData> getBombAreaData() {
+    public List<AreaData> getBombAreaData() {
         return bombAreaData;
     }
 
@@ -136,7 +136,7 @@ public abstract class BaseMap{
         return gameType;
     }
 
-    public void putBombAreaData(BombAreaData data){
+    public void putBombAreaData(AreaData data){
         this.bombAreaData.add(data);
     }
 

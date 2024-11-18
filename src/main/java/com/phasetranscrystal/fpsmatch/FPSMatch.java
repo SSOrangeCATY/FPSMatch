@@ -1,25 +1,19 @@
 package com.phasetranscrystal.fpsmatch;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
-import com.phasetranscrystal.fpsmatch.core.data.BombAreaData;
 import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;

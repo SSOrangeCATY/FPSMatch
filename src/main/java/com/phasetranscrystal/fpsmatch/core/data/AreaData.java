@@ -11,7 +11,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 
-public record BombAreaData(BlockPos pos1, BlockPos pos2) {
+public record AreaData(BlockPos pos1, BlockPos pos2) {
     public boolean isPlayerInArea(Player player) {
         AABB area = new AABB(
                 Math.min(pos1.getX(), pos2.getX()),
