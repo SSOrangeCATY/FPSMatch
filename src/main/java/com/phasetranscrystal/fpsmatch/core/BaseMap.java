@@ -19,7 +19,6 @@ public abstract class BaseMap{
     private boolean isExploded = false; // 炸弹是否爆炸
     private final List<BombAreaData> bombAreaData = new ArrayList<>();
     private String blastTeam;
-    private int demolitionStates = 0;
 
 
     public BaseMap(ServerLevel serverLevel, String mapName) {
@@ -161,11 +160,4 @@ public abstract class BaseMap{
         return isStart;
     }
 
-    public int demolitionStates() {
-        return demolitionStates;
-    }
-
-    public void setDemolitionStates(int demolitionStates) {
-        this.demolitionStates = demolitionStates;
-    }
 }

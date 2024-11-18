@@ -224,7 +224,6 @@ public class CSGameMap extends BaseMap {
     @Override
     public void cleanupMap() {
         this.setBlasting(0);
-        this.setDemolitionStates(0);
         this.setExploded(false);
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;

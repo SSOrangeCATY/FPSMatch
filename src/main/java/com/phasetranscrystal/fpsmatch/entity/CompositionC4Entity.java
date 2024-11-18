@@ -29,13 +29,15 @@ import java.util.Random;
 public class CompositionC4Entity extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_RADIUS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_DEMOLITION_STATE = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DEMOLITION_PROGRESS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DELETE_TIME = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
-
     private static final int DEFAULT_FUSE_TIME = 900; // 45秒
     private static final int DEFAULT_EXPLOSION_RADIUS = 20;
     @Nullable
-    private LivingEntity owner;
+    private Player owner;
+    @Nullable
+    private Player demolisher;
     private BaseMap map;
     private boolean deleting =false;
 
@@ -48,7 +50,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.setDeleteTime(0);
     }
 
-    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, @Nullable LivingEntity pOwner, BaseMap map) {
+    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, @Nullable Player pOwner, BaseMap map) {
         this(EntityRegister.C4.get(), pLevel);
         this.setPos(pX, pY, pZ);
         this.owner = pOwner;
@@ -62,6 +64,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.entityData.define(DATA_EXPLOSION_RADIUS, DEFAULT_EXPLOSION_RADIUS);
         this.entityData.define(DATA_DEMOLITION_PROGRESS,0);
         this.entityData.define(DATA_DELETE_TIME,0);
+        this.entityData.define(DATA_DEMOLITION_STATE, 0);
     }
 
     @Override
@@ -75,33 +78,45 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void tick() {
-        if(this.deleting){
-            int d = this.getDeleteTime() + 1;
-            this.setFuse(d);
-            if(d >= 140){
-                this.discard();
-            }
-            return;
-        }
-
-        if(this.map == null) {
+        if(this.getDeleteTime() >= 140){
             this.discard();
-            return;
         }
 
-        if(this.map.demolitionStates() == 0){
-            this.setDemolitionProgress(0);
+        if(!this.level().isClientSide){
+            if(this.deleting){
+                int d = this.getDeleteTime() + 1;
+                this.setDeleteTime(d);
+                return;
+            }
+
+            if(this.map == null) {
+                this.discard();
+                return;
+            }
+
             int i = this.getFuse() - 1;
             this.setFuse(i);
+            if(demolisher == null){
+                this.setDemolitionProgress(0);
+            }else{
+                this.setDemolitionProgress(this.getDemolitionProgress() + 1);
+                System.out.println(this.getDemolitionProgress());
+            }
+
+            int j = 200;
+            if(this.demolitionStates() == 2){
+                j = 100;
+            }
+
+            if(this.getDemolitionProgress() >= j){
+                this.deleting = true;
+                map.setBlasting(2);
+                return;
+            }
+
             if (i <= 0) {
-                this.discard();
                 if (!this.level().isClientSide) {
                     this.explode();
-                }
-            } else {
-                this.updateInWaterStateAndDoFluidPushing();
-                if (this.level().isClientSide) {
-                    this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
                 }
             }
 
@@ -120,32 +135,24 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
                 }
             }
-        }else{
-            this.setDemolitionProgress(this.getDemolitionProgress() + 1);
-        }
-
-        int j = 200;
-        if(this.map.demolitionStates() == 2){
-            j = 100;
-        }
-
-        if(this.getDemolitionProgress() >= j){
-            this.deleting = true;
-            map.setBlasting(2);
         }
 
         if (!this.isNoGravity()) {
             this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.04D, 0.0D)); // 重力
         }
+
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D)); // 空气阻力
+
+        if (this.level().isClientSide && this.getDeleteTime() <= 0) {
+            this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
+        }
     }
 
     private void explode() {
         float explosionRadius = this.getExplosionRadius(); // 爆炸半径
-        if(this.owner instanceof Player player){
-            Objects.requireNonNull(FPSMCore.getMapByPlayer(player)).setExploded(true);
-        }
+        this.deleting = true;
+        Objects.requireNonNull(FPSMCore.getMapByPlayer(this.owner)).setExploded(true);
         this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionRadius, Level.ExplosionInteraction.NONE);
     }
 
@@ -192,5 +199,22 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
     public BaseMap getMap() {
         return map;
+    }
+
+    public void setDemolisher(Player player){
+        this.demolisher = player;
+    }
+
+    @Nullable
+    public Player getDemolisher() {
+        return demolisher;
+    }
+
+    public int demolitionStates() {
+        return this.entityData.get(DATA_DEMOLITION_STATE);
+    }
+
+    public void setDemolitionStates(int demolitionStates) {
+        this.entityData.set(DATA_DEMOLITION_STATE, demolitionStates);
     }
 }

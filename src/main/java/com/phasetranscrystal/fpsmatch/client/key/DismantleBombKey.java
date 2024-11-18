@@ -46,19 +46,19 @@ public class DismantleBombKey {
 
     @SubscribeEvent
     public static void onInspectPress(InputEvent.Key event) {
-        if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode())) {
+        if (isInGame() && event.getAction() == GLFW.GLFW_REPEAT && DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode())) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player == null || player.isSpectator()) {
                 return;
             }
            HitResult hitResult = ProjectileUtil.getHitResultOnViewVector(player,(entity -> entity instanceof CompositionC4Entity),2);
-            if(hitResult instanceof EntityHitResult){
-                if(ClientData.dismantleBombStates != 1) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(1));
+            if(hitResult instanceof EntityHitResult result){
+                if(ClientData.dismantleBombStates != 1) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(1,result.getEntity().getUUID()));
             }else{
-                if(ClientData.dismantleBombStates != 0) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(0));
+                if(ClientData.dismantleBombStates != 0 && ClientData.bombUUID != null) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(0,ClientData.bombUUID));
             }
         }else if (isInGame() && event.getAction() == GLFW.GLFW_RELEASE && !DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode())) {
-            if(ClientData.dismantleBombStates != 0) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(0));
+            if(ClientData.dismantleBombStates != 0 && ClientData.bombUUID != null) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(0,ClientData.bombUUID));
         }
     }
 
