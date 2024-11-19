@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -151,17 +152,18 @@ public class FPSMEvents {
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer((ServerPlayer) event.getPlayer());
-        if (map == null) return;
-        FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
-        if (shop == null) return;
-        ShopData.ShopSlot slot = shop.getPlayerShopData(event.getPlayer().getUUID()).checkItemStackIsInData(event.getEntity().getItem());
-        if(slot != null){
-            if (event.getEntity().getItem().getCount() > 1 && slot.canReturn()){
-                shop.resetSlot((ServerPlayer) event.getPlayer(),slot.type(),slot.index());
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,2,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
-            }else{
-                slot.returnGoods();
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,0,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
+        if (map instanceof ShopMap shopMap){
+            FPSMShop shop = shopMap.getShop();
+            if (shop == null) return;
+            ShopData.ShopSlot slot = shop.getPlayerShopData(event.getPlayer().getUUID()).checkItemStackIsInData(event.getEntity().getItem());
+            if(slot != null){
+                if (event.getEntity().getItem().getCount() > 1 && slot.canReturn()){
+                    shop.resetSlot((ServerPlayer) event.getPlayer(),slot.type(),slot.index());
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,2,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
+                }else{
+                    slot.returnGoods();
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,0,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
+                }
             }
         }
     }
@@ -171,31 +173,37 @@ public class FPSMEvents {
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer((ServerPlayer) event.getEntity());
-        if (map == null) return;
-        FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
-        if (shop == null) return;
-
-        // 如果不是Tacz的枪就是根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
-        ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
-        if(slot != null){
-            if (event.getStack().getCount() > 1 && slot.type() == ShopData.ItemType.THROWABLE){
-                if(slot.boughtCount() < 2 && slot.index() == 0){
-                    slot.bought(slot.boughtCount() != 1);
+        if (map instanceof ShopMap shopMap) {
+            FPSMShop shop = shopMap.getShop();
+            if (shop == null) return;
+            // 如果不是Tacz的枪就是根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
+            ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
+            if(slot != null){
+                if (event.getStack().getCount() > 1 && slot.type() == ShopData.ItemType.THROWABLE){
+                    if(slot.boughtCount() < 2 && slot.index() == 0){
+                        slot.bought(slot.boughtCount() != 1);
+                    }else{
+                        slot.bought();
+                    }
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
                 }else{
                     slot.bought();
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
                 }
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
-            }else{
-                slot.bought();
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
             }
         }
     }
 
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        String name =  event.getServer().getWorldData().getLevelName();
-        FileHelper.saveShopData(name);
+        String name = event.getServer().getWorldData().getLevelName();
+        FPSMCore.getInstance().getAllMaps().forEach((type,gameList)->{
+            gameList.forEach((map)->{
+                if(map instanceof ShopMap shopMap){
+                    FileHelper.saveShopData(name,shopMap.getShop());
+                }
+            });
+        });
         FileHelper.saveMaps(name);
     }
 

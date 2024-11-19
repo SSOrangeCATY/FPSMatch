@@ -23,7 +23,7 @@ public record BombActionS2CPacket(int action, UUID uuid) {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ClientData.dismantleBombStates = action;
-            ClientData.bombUUID = action == 2 ? null:uuid;
+            ClientData.bombUUID = (action == 2 || action == 0) ? null : uuid;
         });
         ctx.get().setPacketHandled(true);
     }

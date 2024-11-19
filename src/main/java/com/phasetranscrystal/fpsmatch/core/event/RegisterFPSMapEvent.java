@@ -2,11 +2,10 @@ package com.phasetranscrystal.fpsmatch.core.event;
 
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventListenerHelper;
 
-public class RegisterFPSMapTypeEvent extends Event {
+public class RegisterFPSMapEvent extends Event {
     private final FPSMCore fpsmCore;
-    public RegisterFPSMapTypeEvent(FPSMCore fpsmCore){
+    public RegisterFPSMapEvent(FPSMCore fpsmCore){
         this.fpsmCore = fpsmCore;
     }
     @Override

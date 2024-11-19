@@ -16,10 +16,8 @@ public class FPSMShop {
     public final String name;
     private final ShopData defaultShopData;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
-    private static final Map<String,FPSMShop> gamesFPSMShop = FileHelper.loadShopData(FPSMCore.getInstance().archiveName);
 
-
-    public FPSMShop(String name,int startMoney){
+    public FPSMShop(String name, int startMoney){
         this.defaultShopData = new ShopData(startMoney);
         this.name = name;
     }
@@ -39,75 +37,59 @@ public class FPSMShop {
         this.name = name;
     }
 
-    @Nullable
-    public static FPSMShop getShopByMapName(String map){
-        return gamesFPSMShop.getOrDefault(map,null);
-    }
-
-    public static Map<String,FPSMShop> getAllShopData(){
-        return gamesFPSMShop;
-    }
-
-    public static void putShopData(String map,FPSMShop shopData){
-        if(gamesFPSMShop.containsKey(map)) return;
-        gamesFPSMShop.put(map,shopData);
-    }
-
-    public static void putShopData(String map, ShopData.ShopSlot shopData){
-        if(gamesFPSMShop.containsKey(map)){
-            gamesFPSMShop.get(map).getDefaultShopData().addShopSlot(shopData);
-        }
-    }
-
-    public static void syncShopData(String map){
-        if(!gamesFPSMShop.containsKey(map)) return;
-        BaseMap baseMap = FPSMCore.getInstance().getMapByName(map);
-        if(baseMap != null && FPSMCore.getInstance().checkGameIsEnableShop(baseMap.gameType)) {
-            List<UUID> players = baseMap.getMapTeams().getJoinedPlayers();
-            players.forEach((uuid)-> {
-                ServerPlayer player = baseMap.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                if (player != null) {
-                    ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(uuid);
+    public void syncShopData() {
+        BaseMap map = FPSMCore.getInstance().getMapByName(name);
+        if(map != null){
+            for (UUID uuid : map.getMapTeams().getJoinedPlayers()) {
+                ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
+                if (player != null){
+                    ShopData shopData = this.getPlayerShopData(uuid);
                     for (ShopData.ItemType type : ShopData.ItemType.values()) {
                         List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
                         slots.forEach((shopSlot -> {
-                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map));
+                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, name));
                         }));
                     }
                 }
-            });
+            }
         }
     }
 
-    public static void syncShopData(String map, ServerPlayer player){
-        if(!gamesFPSMShop.containsKey(map)) return;
-        BaseMap baseMap = FPSMCore.getInstance().getMapByName(map);
-        if(baseMap != null && FPSMCore.getInstance().checkGameIsEnableShop(baseMap.gameType)) {
-            ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID());
+    public void syncShopData(List<ServerPlayer> players){
+        for (ServerPlayer player : players) {
+            ShopData shopData = this.getPlayerShopData(player.getUUID());
             for (ShopData.ItemType type : ShopData.ItemType.values()) {
                 List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
                 slots.forEach((shopSlot -> {
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, map));
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, name));
                 }));
             }
         }
     }
 
-    public static void syncShopData(String map, ServerPlayer player, ShopData.ShopSlot slot){
-        if(!gamesFPSMShop.containsKey(map)) return;
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(slot, map));
+    public void syncShopData(ServerPlayer player){
+        ShopData shopData = this.getPlayerShopData(player.getUUID());
+        for (ShopData.ItemType type : ShopData.ItemType.values()) {
+            List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
+            slots.forEach((shopSlot -> {
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, name));
+            }));
+        }
+
     }
 
-    public static void syncShopAction(String map, ServerPlayer player, ShopData.ItemType type, int index, int action){
-        if(!gamesFPSMShop.containsKey(map)) return;
-        int money = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID()).getMoney();
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopActionS2CPacket(map,type,index,action,money));
+    public void syncShopData(ServerPlayer player, ShopData.ShopSlot slot){
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(slot, name));
     }
 
-    public static void syncShopAction(String map, ServerPlayer player, ShopData.ShopSlot shopSlot, int action){
-        if(!gamesFPSMShop.containsKey(map)) return;
-        int money = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID()).getMoney();
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopActionS2CPacket(map,shopSlot,action,money));
+    public void syncShopAction(ServerPlayer player, ShopData.ItemType type, int index, int action){
+        int money = this.getPlayerShopData(player.getUUID()).getMoney();
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopActionS2CPacket(name,type,index,action,money));
+    }
+
+    public void syncShopAction(ServerPlayer player, ShopData.ShopSlot shopSlot, int action){
+        int money = this.getPlayerShopData(player.getUUID()).getMoney();
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopActionS2CPacket(name,shopSlot,action,money));
     }
 
     public ShopData getPlayerShopData(UUID uuid){
@@ -145,8 +127,8 @@ public class FPSMShop {
         data.takeMoney(cost);
         getCostOrBuy(player,type, index, true);
         player.getInventory().add(currentSlot.itemStack());
-        syncShopData(name,player);
-        syncShopAction(name,player,currentSlot,1);
+        syncShopData(player);
+        syncShopAction(player,currentSlot,1);
         ShopData.ShopSlot shopSlot = shopSlotList.get(index);
         System.out.println("bought : " + (shopSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : shopSlot.itemStack().getDisplayName().getString()) + " cost->" + shopSlot.cost());
         System.out.println(data.getMoney() +"<-"+ cost);
@@ -169,8 +151,8 @@ public class FPSMShop {
             return; // 商品未购买
         }
         data.addMoney(returnTheGun(player,currentSlot));
-        syncShopData(name, player, currentSlot);
-        syncShopAction(name, player, currentSlot,0);
+        syncShopData(player, currentSlot);
+        syncShopAction(player, currentSlot,0);
     }
 
     private int buyEquipment(ServerPlayer serverPlayer, ShopData.ItemType type, int index, boolean bought) {
@@ -198,7 +180,7 @@ public class FPSMShop {
             if(shopSlot.index() != index && shopSlot.boughtCount() > 0){
                 if(bought) {
                     returnTheGun(serverPlayer, shopSlot);
-                    syncShopAction(name,serverPlayer,shopSlot,0);
+                    syncShopAction(serverPlayer,shopSlot,0);
                 };
                 cost.addAndGet(-shopSlot.cost());
             }
@@ -218,7 +200,7 @@ public class FPSMShop {
                 if(shopSlot.boughtCount() > 0 && shopSlot.index() != index){
                     if(bought) {
                         returnTheGun(serverPlayer,shopSlot);
-                        syncShopAction(name,serverPlayer,shopSlot,0);
+                        syncShopAction(serverPlayer,shopSlot,0);
                     }
                     cost.addAndGet(-shopSlot.cost());
                 }
@@ -228,7 +210,7 @@ public class FPSMShop {
                 if(shopSlot.boughtCount() > 0){
                     if(bought) {
                         returnTheGun(serverPlayer,shopSlot);
-                        syncShopAction(name,serverPlayer,shopSlot,0);
+                        syncShopAction(serverPlayer,shopSlot,0);
                     }
                     cost.addAndGet(-shopSlot.cost());
                 }
@@ -238,7 +220,7 @@ public class FPSMShop {
                 if(shopSlot.boughtCount() > 0 && shopSlot.index() != index){
                     if(bought) {
                         returnTheGun(serverPlayer,shopSlot);
-                        syncShopAction(name,serverPlayer,shopSlot,0);
+                        syncShopAction(serverPlayer,shopSlot,0);
                     }
                     cost.addAndGet(-shopSlot.cost());
                 }
@@ -248,7 +230,7 @@ public class FPSMShop {
                 if(shopSlot.boughtCount() > 0){
                     if(bought) {
                         returnTheGun(serverPlayer,shopSlot);
-                        syncShopAction(name,serverPlayer,shopSlot,0);
+                        syncShopAction(serverPlayer,shopSlot,0);
                     }
                     cost.addAndGet(-shopSlot.cost());
                 }
@@ -303,7 +285,7 @@ public class FPSMShop {
         List<ShopData.ShopSlot> slotList = data.getShopSlotsByType(type);
         ShopData.ShopSlot currentSlot = slotList.get(index);
         while (currentSlot.canReturn()) currentSlot.returnGoods();
-        syncShopAction(name,serverPlayer,currentSlot,2);
+        syncShopAction(serverPlayer,currentSlot,2);
     }
 
     public ShopData getDefaultShopData() {

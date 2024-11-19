@@ -27,6 +27,7 @@ public class ClientData {
     public static boolean isLeavePurchaseArea = false;
     public static int dismantleBombStates = 0; // 0 = 没拆呢 | 1 = 正在拆 | 2 = 错误可能是不在队伍或者地图导致的
     public static UUID bombUUID = null;
+    public static float dismantleBombProgress = 0;
 
     public static ShopData.ShopSlot getSlotData(ShopData.ItemType type, int index) {
         return clientShopData.getSlotData(type,index);
@@ -35,7 +36,5 @@ public class ClientData {
     public static int getMoney(){
         return clientShopData.getMoney();
     }
-
-
 
 }

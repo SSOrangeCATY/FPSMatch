@@ -64,16 +64,28 @@ public class FPSMatch {
                 .consumerNetworkThread(ShopActionC2SPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(BombActionC2SPacket.class, 3)
+        INSTANCE.messageBuilder(ShopActionS2CPacket.class, 3)
+                .encoder(ShopActionS2CPacket::encode)
+                .decoder(ShopActionS2CPacket::decode)
+                .consumerNetworkThread(ShopActionS2CPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(BombActionC2SPacket.class, 4)
                 .encoder(BombActionC2SPacket::encode)
                 .decoder(BombActionC2SPacket::decode)
                 .consumerNetworkThread(BombActionC2SPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(BombActionS2CPacket.class, 4)
+        INSTANCE.messageBuilder(BombActionS2CPacket.class, 5)
                 .encoder(BombActionS2CPacket::encode)
                 .decoder(BombActionS2CPacket::decode)
                 .consumerNetworkThread(BombActionS2CPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(BombDemolitionProgressS2CPacket.class, 6)
+                .encoder(BombDemolitionProgressS2CPacket::encode)
+                .decoder(BombDemolitionProgressS2CPacket::decode)
+                .consumerNetworkThread(BombDemolitionProgressS2CPacket::handle)
                 .add();
     }
 

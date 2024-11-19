@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ShopData {
     private static final Map<ItemType, ArrayList<ShopSlot>> defaultData = getDefaultShopItemData(true);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
-    public int money = 10000;
+    public int money = 800;
     private int nextRoundMinMoney = 1000;
     public ShopData(){
         checkData(defaultData);
@@ -22,7 +23,6 @@ public class ShopData {
     public static ShopData create(){
         return new ShopData();
     }
-
 
     public ShopData(Map<ItemType, ArrayList<ShopSlot>> data){
         checkData(data);
@@ -114,7 +114,7 @@ public class ShopData {
     }
 
     public static Map<ItemType, ArrayList<ShopSlot>> getDefaultShopItemData(boolean debug){
-        ItemStack itemStack = debug ? null : ItemStack.EMPTY;
+        ItemStack itemStack = debug ? null : new ItemStack(Items.APPLE);
         int[][] d = new int[][]{
                 {650,1000,200,200,200},
                 {200,700,600,500,300},
@@ -126,7 +126,7 @@ public class ShopData {
         for(ItemType c : ItemType.values()) {
             ArrayList<ShopSlot> shopSlots = new ArrayList<>();
             for (int i = 0;i <= 4 ; i++){
-                ShopSlot shopSlot = new ShopSlot(i,c,itemStack,d[c.typeIndex][i]);
+                ShopSlot shopSlot = new ShopSlot(i,c,itemStack == null ? null : itemStack.copy(),d[c.typeIndex][i]);
                 shopSlots.add(shopSlot);
             }
             data.put(c,shopSlots);
@@ -150,12 +150,13 @@ public class ShopData {
         return totalBought.get();
     }
 
+    // TODO 后面会拓展Money
     public int getMoney() {
         return money;
     }
 
     public void setMoney(int money) {
-        this.money = Math.min(money, 16000);
+        this.money = Math.min(money, 99999);
         if(this.money < 0) this.money = 0;
     }
 
@@ -166,6 +167,7 @@ public class ShopData {
 
     public void takeMoney(int money){
         this.money -= money;
+        if(this.money < 0) this.money = 0;
     }
 
     public static class ShopSlot{

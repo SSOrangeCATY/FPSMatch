@@ -12,6 +12,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
@@ -108,12 +109,11 @@ public class FPSMCommand {
         int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
         int cost = IntegerArgumentType.getInteger(context,"cost");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
-
         if (map != null) {
-            if (context.getSource().getEntity() instanceof Player player) {
+            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
-                FPSMShop.putShopData(mapName, new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
-                FPSMShop.syncShopData(mapName);
+                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
+                shopMap.getShop().syncShopData();
             }
         }
         return 1;
@@ -176,7 +176,9 @@ public class FPSMCommand {
                     case "join":
                         if (map.getMapTeams().checkTeam(team)) {
                             map.getMapTeams().joinTeam(team, player);
-                            FPSMShop.syncShopData(mapName,player);
+                            if(map instanceof ShopMap shopMap){
+                                shopMap.getShop().syncShopData(player);
+                            }
                             context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team), true);
                         } else {
                             context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));

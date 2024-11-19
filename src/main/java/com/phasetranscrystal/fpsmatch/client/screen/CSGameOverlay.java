@@ -6,6 +6,7 @@ import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,7 +14,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Overlay;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
@@ -28,12 +33,13 @@ public class CSGameOverlay implements IGuiOverlay {
     public static int textCTWinnerRoundsColor = color(7,128,215);
     public static int textTWinnerRoundsColor = color(253,217,141);
     public static int noColor = color(0,0,0,0);
-
     public static int textRoundTimeColor = color(255,255,255);
+    public static final String code = "7355608";
+    public static final String defaultCode = "[§k-------]";
     // 60*24 30*50
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (ClientData.currentMap.equals("fpsm_none")) return;
+        if (ClientData.currentMap.equals("fpsm_non")) return;
         Font font = Minecraft.getInstance().font;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -44,14 +50,28 @@ public class CSGameOverlay implements IGuiOverlay {
         guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 9 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
         guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
         String roundTime;
-        if(ClientData.roundTime == -1){
-            roundTime = "xx:xx";
+        if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner){
+            roundTime = "--:--";
             textRoundTimeColor = color(240,40,40);
         }else{
             roundTime  = getCSGameTime();
         }
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
+        if(ClientData.dismantleBombProgress > 0){
+            for (int i = 1; i < 8 ; i++){
+                boolean flag = getDemolitionProgressTextStyle(i);
+                String c = flag ? String.valueOf(code.toCharArray()[i - 1]) : "§k-";
+                int w = font.width("0");
+                int color = flag ? 5635925 : 16777215;
+                guiGraphics.drawString(font,c,(screenWidth / 2) - (w * 7 / 2 ) + w * (i - 1),screenHeight - (screenHeight / 3), color ,false);
+            }
+        }
         guiGraphics.pose().popPose();
+    }
+
+    public static boolean getDemolitionProgressTextStyle(int index){
+        float i = (float) index / 7;
+        return ClientData.dismantleBombProgress >= i;
     }
 
     public static String getCSGameTime(){

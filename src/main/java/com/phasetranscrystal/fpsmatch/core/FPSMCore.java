@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapTypeEvent;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -132,6 +132,6 @@ public class FPSMCore {
     @SubscribeEvent
     public static void onServerStartingEvent(ServerStartingEvent event) {
          FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
-         MinecraftForge.EVENT_BUS.post(new RegisterFPSMapTypeEvent(FPSMCore.getInstance()));
+         MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
     }
 }

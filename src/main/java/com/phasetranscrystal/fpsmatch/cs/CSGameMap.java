@@ -1,14 +1,14 @@
 package com.phasetranscrystal.fpsmatch.cs;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.MapTeams;
+import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mc.forge.ModernUIForge;
@@ -25,11 +25,12 @@ import net.minecraft.world.level.GameType;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class CSGameMap extends BaseMap implements BlastModeMap {
+public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
     public static final int WINNER_ROUND = 13;
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
@@ -48,10 +49,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap {
     private boolean isExploded = false; // 炸弹是否爆炸
     private final List<AreaData> bombAreaData = new ArrayList<>();
     private String blastTeam;
-
+    private final FPSMShop shop;
 
     public CSGameMap(ServerLevel serverLevel,String mapName) {
         super(serverLevel,mapName);
+        this.shop = FileHelper.loadShopData(FPSMCore.getInstance().archiveName, this);
     }
 
     public Map<String,Integer> getTeams(){
@@ -62,29 +64,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap {
         return teams;
     }
 
-    public void setShopData(){
-        FPSMShop.putShopData(mapName, new FPSMShop(mapName,buildShopData()));
+    @Override
+    public FPSMShop getShop() {
+        return shop;
     }
 
-    public ShopData buildShopData(){
-        ItemStack itemStack = new ItemStack(Items.APPLE);
-        int[][] d = new int[][]{
-                {650,1000,200,200,200},
-                {200,700,600,500,300},
-                {1500,1050,1700,2350,1050},
-                {1800,2700,3000,1700,4750},
-                {200,300,300,400,50}
-        };
-        Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> data = new HashMap<>();
-        for(ShopData.ItemType c : ShopData.ItemType.values()) {
-            ArrayList<ShopData.ShopSlot> shopSlots = new ArrayList<>();
-            for (int i = 0;i <= 4 ; i++){
-                ShopData.ShopSlot shopSlot = new ShopData.ShopSlot(i,c,itemStack,d[c.typeIndex][i]);
-                shopSlots.add(shopSlot);
-            }
-            data.put(c,shopSlots);
-        }
-        return new ShopData(data);
+    @Override
+    public @Nullable ShopData defineShopData() {
+        return null;
     }
 
     @Override
@@ -246,6 +233,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap {
                 this.teleportPlayerToReSpawnPoint(player);
             }
         }));
+
     }
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){

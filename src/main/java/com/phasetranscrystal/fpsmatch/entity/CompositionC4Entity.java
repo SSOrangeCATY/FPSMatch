@@ -1,8 +1,12 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -22,11 +26,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.UUID;
 
 public class CompositionC4Entity extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
@@ -130,6 +137,13 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 j = 100;
             }
 
+            float k = (float) this.getDemolitionProgress() / j;
+            if(k > 0 && demolisher != null){
+                this.syncDemolitionProgress(k);
+            }else {
+                this.syncDemolitionProgress(0);
+            }
+
             if(this.getDemolitionProgress() >= j){
                 this.deleting = true;
                 map.setBlasting(2);
@@ -177,6 +191,19 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.map.setExploded(true);
         this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionRadius, this.explosionInteraction());
     }
+
+    public void syncDemolitionProgress(float progress){
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(owner);
+        if(map != null){
+            map.getMapTeams().getJoinedPlayers().forEach((pUUID)->{
+                ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
+                if(receiver != null){
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                }
+            });
+        }
+    }
+
 
     @Nullable
     public LivingEntity getOwner() {

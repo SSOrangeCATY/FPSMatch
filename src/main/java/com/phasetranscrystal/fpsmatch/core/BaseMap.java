@@ -20,7 +20,6 @@ public abstract class BaseMap{
         this.serverLevel = serverLevel;
         this.mapName = mapName;
         this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams()));
-        this.setShopData();
     }
 
     public Map<String,Integer> getTeams(){
@@ -86,15 +85,9 @@ public abstract class BaseMap{
         return this.isDebug;
     }
 
-    public void setShopData(){
-    }
 
     public String getMapName(){
         return mapName;
-    }
-
-    public static void syncShopDataToClient(String mapName, ServerPlayer player){
-        FPSMShop.syncShopData(mapName,player);
     }
 
     public void setGameType(String gameType) {

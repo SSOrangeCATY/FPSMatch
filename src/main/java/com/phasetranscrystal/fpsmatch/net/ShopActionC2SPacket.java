@@ -1,7 +1,10 @@
 package com.phasetranscrystal.fpsmatch.net;
 
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -50,20 +53,26 @@ public class ShopActionC2SPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            FPSMShop shop =  FPSMShop.getShopByMapName(this.name);
-            ServerPlayer serverPlayer = ctx.get().getSender();
-            if (shop == null || serverPlayer == null) return;
+            BaseMap map = FPSMCore.getInstance().getMapByName(name);
+            if(map instanceof ShopMap shopMap){
+                FPSMShop shop = shopMap.getShop();
+                ServerPlayer serverPlayer = ctx.get().getSender();
+                if (shop == null || serverPlayer == null) {
+                    ctx.get().setPacketHandled(true);
+                    return;
+                }
 
-            if (this.action == 0){
-                shop.handleReturnButton(serverPlayer, this.type, this.index);
-            }
+                if (this.action == 0){
+                    shop.handleReturnButton(serverPlayer, this.type, this.index);
+                }
 
-            if(this.action == 1){
-                shop.handleShopButton(serverPlayer, this.type, this.index);
-            }
+                if(this.action == 1){
+                    shop.handleShopButton(serverPlayer, this.type, this.index);
+                }
 
-            if(this.action == 2){
-                shop.resetSlot(serverPlayer,this.type, this.index);
+                if(this.action == 2){
+                    shop.resetSlot(serverPlayer,this.type, this.index);
+                }
             }
         });
         ctx.get().setPacketHandled(true);
