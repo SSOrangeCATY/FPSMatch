@@ -38,7 +38,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getMapByPlayer(player);
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
                 BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
@@ -100,7 +100,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getMapByPlayer(player);
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
@@ -117,7 +117,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getMapByPlayer(player);
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
@@ -138,7 +138,7 @@ public class FPSMEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             DamageSource damageSource = event.getSource();
             if(damageSource.getEntity() instanceof ServerPlayer from){
-                BaseMap map = FPSMCore.getMapByPlayer(player);
+                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
                 if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
                     float damage = event.getAmount();
                     map.getMapTeams().addHurtData(player,from.getUUID(),damage);
@@ -150,7 +150,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getMapByPlayer((ServerPlayer) event.getPlayer());
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer((ServerPlayer) event.getPlayer());
         if (map == null) return;
         FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
         if (shop == null) return;
@@ -170,7 +170,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getMapByPlayer((ServerPlayer) event.getEntity());
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer((ServerPlayer) event.getEntity());
         if (map == null) return;
         FPSMShop shop = FPSMShop.getShopByMapName(map.getMapName());
         if (shop == null) return;
@@ -194,22 +194,23 @@ public class FPSMEvents {
 
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        FileHelper.saveShopData();
-        FileHelper.saveMaps();
+        String name =  event.getServer().getWorldData().getLevelName();
+        FileHelper.saveShopData(name);
+        FileHelper.saveMaps(name);
     }
 
     @SubscribeEvent
     public static void onServerStartedEvent(ServerStartedEvent event) {
-        Map<ResourceLocation, Map<String, List<SpawnPointData>>> savedMaps = FileHelper.loadMaps();
+        Map<ResourceLocation, Map<String, List<SpawnPointData>>> savedMaps = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
         savedMaps.forEach((rl, teamData) -> {
             String mapName = rl.getPath();
             String type = rl.getNamespace();
-            BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getPreBuildGame(type);
+            BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
             List<SpawnPointData> data = teamData.values().stream().findFirst().get();
             if(!data.isEmpty()){
                 ResourceKey<Level> level = data.get(0).getDimension();
                 if (game != null) {
-                    BaseMap map = FPSMCore.registerMap(type, game.apply(event.getServer().getLevel(level), mapName));
+                    BaseMap map = FPSMCore.getInstance().registerMap(type, game.apply(event.getServer().getLevel(level), mapName));
                     if(map != null){
                         map.setGameType(type);
                         map.getMapTeams().putAllSpawnPoints(teamData);

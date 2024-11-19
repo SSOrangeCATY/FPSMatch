@@ -11,6 +11,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
@@ -29,7 +30,7 @@ import java.util.function.BiFunction;
 public class FPSMCommand {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
-        LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm")
+        LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
                 .then(Commands.literal("shop")
                         .then(Commands.argument("gameType", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION)
@@ -52,7 +53,7 @@ public class FPSMCommand {
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_SUGGESTION)
-                                        .then(Commands.literal("bombArea")
+                                        .then(Commands.literal("bombArea").requires((permission)-> permission.hasPermission(2))
                                                 .then(Commands.literal("add")
                                                         .then(Commands.argument("from", BlockPosArgument.blockPos())
                                                                 .then(Commands.argument("to", BlockPosArgument.blockPos())
@@ -76,9 +77,9 @@ public class FPSMCommand {
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String type = StringArgumentType.getString(context, "gameType");
-        BiFunction<ServerLevel,String,BaseMap> game = FPSMCore.getPreBuildGame(type);
+        BiFunction<ServerLevel,String,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
         if(game != null){
-            BaseMap map = FPSMCore.registerMap(type, game.apply(context.getSource().getLevel(),mapName));
+            BaseMap map = FPSMCore.getInstance().registerMap(type, game.apply(context.getSource().getLevel(),mapName));
             if(map != null) {
                 map.setGameType(type);
             }else return 0;
@@ -106,7 +107,7 @@ public class FPSMCommand {
         String shopType = StringArgumentType.getString(context, "shopType");
         int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
         int cost = IntegerArgumentType.getInteger(context,"cost");
-        BaseMap map = FPSMCore.getMapByName(mapName);
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
 
         if (map != null) {
             if (context.getSource().getEntity() instanceof Player player) {
@@ -121,8 +122,8 @@ public class FPSMCommand {
         BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
         BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");
         String mapName = StringArgumentType.getString(context, "mapName");
-        BaseMap map = FPSMCore.getMapByName(mapName);
-        if (map != null) {
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
+        if (baseMap instanceof BlastModeMap map) {
             map.addBombArea(new AreaData(pos1,pos2));
             return 1;
         }
@@ -131,7 +132,7 @@ public class FPSMCommand {
     private int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String action = StringArgumentType.getString(context, "action");
-        BaseMap map = FPSMCore.getMapByName(mapName);
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
             switch (action) {
                 case "start":
@@ -168,7 +169,7 @@ public class FPSMCommand {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
-        BaseMap map = FPSMCore.getMapByName(mapName);
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             if (map != null) {
                 switch (action) {
@@ -208,7 +209,7 @@ public class FPSMCommand {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
-        BaseMap map = FPSMCore.getMapByName(mapName);
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
 
         if (map != null) {
             switch (action) {

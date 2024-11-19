@@ -15,11 +15,6 @@ public abstract class BaseMap{
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private MapTeams mapTeams;
-    private int isBlasting = 0; // 是否放置炸弹 0 = 未放置 | 1 = 已放置 | 2 = 已拆除
-    private boolean isExploded = false; // 炸弹是否爆炸
-    private final List<AreaData> bombAreaData = new ArrayList<>();
-    private String blastTeam;
-
 
     public BaseMap(ServerLevel serverLevel, String mapName) {
         this.serverLevel = serverLevel;
@@ -32,37 +27,11 @@ public abstract class BaseMap{
         Map<String,Integer> teams = new HashMap<>();
         teams.put("teamA",5);
         teams.put("teamB",5);
-        setBlastTeam("teamB");
         return teams;
     }
 
     public final void setMapTeams(MapTeams teams){
         this.mapTeams = teams;
-    }
-
-    public final void setBlastTeam(String team){
-        this.blastTeam = team;
-    }
-
-    public boolean checkCanPlacingBombs(String team){
-        if(this.blastTeam == null) return false;
-        return this.blastTeam.equals(team);
-    }
-
-    public boolean checkPlayerIsInBombArea(Player player){
-        AtomicBoolean a = new AtomicBoolean(false);
-        this.bombAreaData.forEach(area->{
-            if(!a.get()) a.set(area.isPlayerInArea(player));
-        });
-        return a.get();
-    }
-
-    public void addBombArea(AreaData area){
-        this.bombAreaData.add(area);
-    }
-
-    public List<AreaData> getBombAreaData() {
-        return bombAreaData;
     }
 
     public final void mapTick(){
@@ -134,26 +103,6 @@ public abstract class BaseMap{
 
     public String getGameType() {
         return gameType;
-    }
-
-    public void putBombAreaData(AreaData data){
-        this.bombAreaData.add(data);
-    }
-
-    public void setBlasting(int blasting) {
-        isBlasting = blasting;
-    }
-
-    public void setExploded(boolean exploded) {
-        isExploded = exploded;
-    }
-
-    public int isBlasting() {
-        return isBlasting;
-    }
-
-    public boolean isExploded() {
-        return isExploded;
     }
 
     public boolean isStart() {

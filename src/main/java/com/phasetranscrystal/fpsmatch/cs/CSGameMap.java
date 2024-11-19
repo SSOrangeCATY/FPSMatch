@@ -5,9 +5,13 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.MapTeams;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.mc.forge.ModernUIForge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.commands.TeleportCommand;
@@ -25,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class CSGameMap extends BaseMap {
+public class CSGameMap extends BaseMap implements BlastModeMap {
     public static final int WINNER_ROUND = 13;
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
@@ -40,6 +44,11 @@ public class CSGameMap extends BaseMap {
     private boolean isWarmTime = false;
     private boolean isWaitingWinner = false;
     private final Map<String,Integer> teamScores = new HashMap<>();
+    private int isBlasting = 0; // 是否放置炸弹 0 = 未放置 | 1 = 已放置 | 2 = 已拆除
+    private boolean isExploded = false; // 炸弹是否爆炸
+    private final List<AreaData> bombAreaData = new ArrayList<>();
+    private String blastTeam;
+
 
     public CSGameMap(ServerLevel serverLevel,String mapName) {
         super(serverLevel,mapName);
@@ -268,6 +277,45 @@ public class CSGameMap extends BaseMap {
     }
 
 
+    public final void setBlastTeam(String team){
+        this.blastTeam = team;
+    }
+
+    public boolean checkCanPlacingBombs(String team){
+        if(this.blastTeam == null) return false;
+        return this.blastTeam.equals(team);
+    }
+
+    public boolean checkPlayerIsInBombArea(Player player){
+        AtomicBoolean a = new AtomicBoolean(false);
+        this.bombAreaData.forEach(area->{
+            if(!a.get()) a.set(area.isPlayerInArea(player));
+        });
+        return a.get();
+    }
+
+    public void addBombArea(AreaData area){
+        this.bombAreaData.add(area);
+    }
+
+    public List<AreaData> getBombAreaData() {
+        return bombAreaData;
+    }
+
+    public void setBlasting(int blasting) {
+        isBlasting = blasting;
+    }
+    public void setExploded(boolean exploded) {
+        isExploded = exploded;
+    }
+
+    public int isBlasting() {
+        return isBlasting;
+    }
+
+    public boolean isExploded() {
+        return isExploded;
+    }
     public void syncToClient() {
         CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0), this.currentPauseTime,this.currentRoundTime,this.isDebug(),this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {

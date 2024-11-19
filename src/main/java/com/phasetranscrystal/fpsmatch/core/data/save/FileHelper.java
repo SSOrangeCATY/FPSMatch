@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.FMLLoader;
 
@@ -21,18 +22,20 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class FileHelper {
-    public static void saveShopData() {
+    public static void saveShopData(String levelName) {
         Map<String, FPSMShop> data = FPSMShop.getAllShopData();
         Path gamePath = FMLLoader.getGamePath();
         File fpsmatchDir = new File(gamePath.toFile(), "fpsmatch");
         if(checkOrCreateFile(fpsmatchDir)){
-            File shopDataDir = new File(fpsmatchDir, "shop");
+            File shopDataDir = new File(fpsmatchDir, levelName);
             if(!checkOrCreateFile(shopDataDir)) return;
+            File levelData = new File(shopDataDir, "shop");
+            if(!checkOrCreateFile(levelData)) return;
             data.forEach((key, shop) -> {
                 JsonElement json = FPSMCodec.encodeShopDataMapToJson(shop.getDefaultShopData().getData());
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
                 String jsonStr = gson.toJson(json);
-                File file = new File(shopDataDir, key + ".json");
+                File file = new File(levelData, key + ".json");
                 try (FileWriter writer = new FileWriter(file)) {
                     writer.write(jsonStr);
                 } catch (IOException e) {
@@ -42,13 +45,13 @@ public class FileHelper {
         };
     }
 
-    public static Map<String, FPSMShop> loadShopData() {
+    public static Map<String, FPSMShop> loadShopData(String levelName) {
         Map<String, FPSMShop> shops = new HashMap<>();
         Path gamePath = FMLLoader.getGamePath();
         File fpsmatchDir = new File(gamePath.toFile(), "fpsmatch");
-        File shopDataDir = new File(fpsmatchDir, "shop");
-
-        if (shopDataDir.exists() && shopDataDir.isDirectory()) {
+        File levelData = new File(fpsmatchDir, levelName);
+        File shopDataDir = new File(levelData, "shop");
+        if (checkOrCreateFile(levelData) && shopDataDir.exists() && shopDataDir.isDirectory()) {
             for (File file : Objects.requireNonNull(shopDataDir.listFiles())) {
                 if (file.isFile() && file.getName().endsWith(".json")) {
                     try (FileReader reader = new FileReader(file)) {
@@ -66,12 +69,14 @@ public class FileHelper {
         return shops;
     }
 
-    public static void saveMaps(){
-        Map<String, List<BaseMap>> maps = FPSMCore.getAllMaps();
+    public static void saveMaps(String levelName){
+        Map<String, List<BaseMap>> maps = FPSMCore.getInstance().getAllMaps();
         Path gamePath = FMLLoader.getGamePath();
         File fpsmatchDir = new File(gamePath.toFile(), "fpsmatch");
         if(checkOrCreateFile(fpsmatchDir)){
-            File file = new File(fpsmatchDir,"spawnpoints.json");
+            File levelData = new File(fpsmatchDir, levelName);
+            if(!checkOrCreateFile(levelData)) return;
+            File file = new File(levelData,"spawnpoints.json");
             Map<ResourceLocation, Map<String, List<SpawnPointData>>> data = new HashMap<>();
             maps.forEach((key, mapList) -> {
                 mapList.forEach((map)->{
@@ -92,12 +97,13 @@ public class FileHelper {
     }
 
 
-    public static Map<ResourceLocation,Map<String,List<SpawnPointData>>> loadMaps(){
+    public static Map<ResourceLocation,Map<String,List<SpawnPointData>>> loadMaps(String levelName){
         Map<ResourceLocation,Map<String,List<SpawnPointData>>> data = new HashMap<>();
         Path gamePath = FMLLoader.getGamePath();
         File fpsmatchDir = new File(gamePath.toFile(), "fpsmatch");
-        File file = new File(fpsmatchDir,"spawnpoints.json");
-        if (file.exists()) {
+        File levelData = new File(fpsmatchDir, levelName);
+        File file = new File(levelData,"spawnpoints.json");
+        if (checkOrCreateFile(levelData) && file.exists()) {
             try (FileReader reader = new FileReader(file)) {
                 JsonElement jsonElement = new Gson().fromJson(reader, JsonElement.class);
                 JsonObject jsonObject = jsonElement.getAsJsonObject();

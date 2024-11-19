@@ -18,12 +18,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 public class CommandSuggests {
-    public static final FPSMSuggestionProvider GAME_TYPES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getGameTypes()));
-    public static final FPSMSuggestionProvider MAP_NAMES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getMapNames()));
-    public static final FPSMSuggestionProvider MAP_NAMES_WITH_GAME_TYPE_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getMapNames(StringArgumentType.getString(c, "gameType"))));
-    public static final FPSMSuggestionProvider MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getEnableShopGames()));
+    public static final FPSMSuggestionProvider GAME_TYPES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getInstance().getGameTypes()));
+    public static final FPSMSuggestionProvider MAP_NAMES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getInstance().getMapNames()));
+    public static final FPSMSuggestionProvider MAP_NAMES_WITH_GAME_TYPE_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getInstance().getMapNames(StringArgumentType.getString(c, "gameType"))));
+    public static final FPSMSuggestionProvider MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION = new FPSMSuggestionProvider((c, b)-> CommandSuggests.getSuggestions(b, FPSMCore.getInstance().getEnableShopGames()));
     public static final FPSMSuggestionProvider TEAM_NAMES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
-        BaseMap map = FPSMCore.getMapByName(StringArgumentType.getString(c, "mapName"));
+        BaseMap map = FPSMCore.getInstance().getMapByName(StringArgumentType.getString(c, "mapName"));
         Suggestions suggestions = CommandSuggests.getSuggestions(b, new ArrayList<>());
         if (map != null){
             suggestions = CommandSuggests.getSuggestions(b, map.getMapTeams().getTeamsName());

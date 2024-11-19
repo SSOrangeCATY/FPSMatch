@@ -16,7 +16,7 @@ public class FPSMShop {
     public final String name;
     private final ShopData defaultShopData;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
-    private static final Map<String,FPSMShop> gamesFPSMShop = FileHelper.loadShopData();
+    private static final Map<String,FPSMShop> gamesFPSMShop = FileHelper.loadShopData(FPSMCore.getInstance().archiveName);
 
 
     public FPSMShop(String name,int startMoney){
@@ -61,8 +61,8 @@ public class FPSMShop {
 
     public static void syncShopData(String map){
         if(!gamesFPSMShop.containsKey(map)) return;
-        BaseMap baseMap = FPSMCore.getMapByName(map);
-        if(baseMap != null && FPSMCore.checkGameIsEnableShop(baseMap.gameType)) {
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(map);
+        if(baseMap != null && FPSMCore.getInstance().checkGameIsEnableShop(baseMap.gameType)) {
             List<UUID> players = baseMap.getMapTeams().getJoinedPlayers();
             players.forEach((uuid)-> {
                 ServerPlayer player = baseMap.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
@@ -81,8 +81,8 @@ public class FPSMShop {
 
     public static void syncShopData(String map, ServerPlayer player){
         if(!gamesFPSMShop.containsKey(map)) return;
-        BaseMap baseMap = FPSMCore.getMapByName(map);
-        if(baseMap != null && FPSMCore.checkGameIsEnableShop(baseMap.gameType)) {
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(map);
+        if(baseMap != null && FPSMCore.getInstance().checkGameIsEnableShop(baseMap.gameType)) {
             ShopData shopData = gamesFPSMShop.get(map).getPlayerShopData(player.getUUID());
             for (ShopData.ItemType type : ShopData.ItemType.values()) {
                 List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);

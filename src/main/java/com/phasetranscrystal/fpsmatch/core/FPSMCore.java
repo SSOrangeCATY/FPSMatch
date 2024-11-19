@@ -1,10 +1,13 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapTypeEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
@@ -16,11 +19,26 @@ import java.util.function.BiFunction;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
-    private static final Map<String, List<BaseMap>> GAMES = new HashMap<>();
-    private static final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
-    private static final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
+    private static FPSMCore INSTANCE;
+    public final String archiveName;
+    private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
+    private final Map<String, BiFunction<ServerLevel,String,BaseMap>> REGISTRY = new HashMap<>();
+    private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
 
-    @Nullable public static BaseMap getMapByPlayer(Player player){
+    public FPSMCore(String archiveName) {
+        this.archiveName = archiveName;
+    }
+    public static FPSMCore getInstance(){
+        if(INSTANCE == null) throw new RuntimeException("error : fpsm not install.");
+        return INSTANCE;
+    }
+
+    protected static void setInstance(String archiveName){
+        if(INSTANCE != null && INSTANCE.archiveName.equals(archiveName)) return;
+        INSTANCE = new FPSMCore(archiveName);
+    }
+
+    @Nullable public BaseMap getMapByPlayer(Player player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
         GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
             if(baseMap.checkGameHasPlayer(player)){
@@ -30,7 +48,7 @@ public class FPSMCore {
          return map.get();
     }
 
-    public static BaseMap registerMap(String type, BaseMap map){
+    public BaseMap registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
             new ResourceLocation(type,map.mapName);
 
@@ -48,7 +66,7 @@ public class FPSMCore {
         }
     }
 
-    @Nullable public static BaseMap getMapByName(String name){
+    @Nullable public BaseMap getMapByName(String name){
         AtomicReference<BaseMap> map = new AtomicReference<>();
         GAMES.forEach((type,mapList)-> mapList.forEach((baseMap)->{
             if(baseMap.getMapName().equals(name)) {
@@ -58,7 +76,7 @@ public class FPSMCore {
        return map.get();
     }
 
-    public static List<String> getMapNames(){
+    public List<String> getMapNames(){
         List<String> names = new ArrayList<>();
         GAMES.forEach((type,mapList)-> mapList.forEach((map->{
             names.add(map.getMapName());
@@ -66,50 +84,54 @@ public class FPSMCore {
         return names;
     }
 
-    public static List<String> getMapNames(String type){
+    public List<String> getMapNames(String type){
         List<String> names = new ArrayList<>();
         List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
         maps.forEach((map-> names.add(map.getMapName())));
         return names;
     }
 
-    public static boolean checkGameType(String mapType){
+    public boolean checkGameType(String mapType){
        return REGISTRY.containsKey(mapType);
     }
 
-    @Nullable public static BiFunction<ServerLevel,String,BaseMap> getPreBuildGame(String mapType){
+    @Nullable public BiFunction<ServerLevel,String,BaseMap> getPreBuildGame(String mapType){
          if(checkGameType(mapType)) return REGISTRY.get(mapType);
          return null;
     }
 
-    public static void registerGameType(String typeName, BiFunction<ServerLevel,String,BaseMap> map, boolean enableShop){
+    public void registerGameType(String typeName, BiFunction<ServerLevel,String,BaseMap> map, boolean enableShop){
         ResourceLocation.isValidResourceLocation(typeName);
         REGISTRY.put(typeName,map);
         GAMES_SHOP.put(typeName,enableShop);
     }
 
-    public static boolean checkGameIsEnableShop(String gameType){
+    public boolean checkGameIsEnableShop(String gameType){
         return GAMES_SHOP.getOrDefault(gameType,false);
     }
 
-    public static List<String> getEnableShopGames(){
+    public List<String> getEnableShopGames(){
         return GAMES_SHOP.keySet().stream().filter((type)-> GAMES_SHOP.getOrDefault(type,false)).toList();
     }
 
-    public static List<String> getGameTypes(){
+    public List<String> getGameTypes(){
         return REGISTRY.keySet().stream().toList();
     }
 
 
-    public static Map<String, List<BaseMap>> getAllMaps(){
+    public Map<String, List<BaseMap>> getAllMaps(){
         return GAMES;
     }
 
     @SubscribeEvent
-    public static void tick(TickEvent.ServerTickEvent event){
+    public void tick(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
-            FPSMCore.GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
+            FPSMCore.getInstance().GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
         }
     }
-
+    @SubscribeEvent
+    public static void onServerStartingEvent(ServerStartingEvent event) {
+         FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
+         MinecraftForge.EVENT_BUS.post(new RegisterFPSMapTypeEvent(FPSMCore.getInstance()));
+    }
 }

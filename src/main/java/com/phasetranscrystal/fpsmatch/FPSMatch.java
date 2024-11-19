@@ -4,7 +4,6 @@ import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
-import com.phasetranscrystal.fpsmatch.cs.MapRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.test.TestRegister;
@@ -42,7 +41,6 @@ public class FPSMatch {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
-        MapRegister.register();
         TestRegister.ITEMS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
     }

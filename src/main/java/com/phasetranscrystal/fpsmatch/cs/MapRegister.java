@@ -1,10 +1,15 @@
 package com.phasetranscrystal.fpsmatch.cs;
 
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapTypeEvent;
+import net.minecraftforge.fml.common.Mod;
 
+
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class MapRegister {
-    public static void register(){
-        FPSMCore.registerGameType("cs", CSGameMap::new,true);
+
+    public static void onMapRegister(RegisterFPSMapTypeEvent event){
+        event.getFpsmCore().registerGameType("cs", CSGameMap::new,true);
     }
-    
+
 }
