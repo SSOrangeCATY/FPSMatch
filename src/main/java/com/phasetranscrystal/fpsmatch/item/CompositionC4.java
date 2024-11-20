@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -70,6 +71,13 @@ public class CompositionC4 extends Item {
         if (pLivingEntity instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof BlastModeMap blastModeMap){
+                BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
+                if(team != null && map instanceof ShopMap shopMap){
+                    team.getPlayers().forEach((uuid -> {
+                        shopMap.addPlayerMoney(uuid,300);
+                        shopMap.getShop().syncShopMoneyData(uuid);
+                    }));
+                }
                 CompositionC4Entity entityC4 = new CompositionC4Entity(pLevel,player.getX(), player.getY(), player.getZ(),player,blastModeMap);
                 pLevel.addFreshEntity(entityC4);
             }else{

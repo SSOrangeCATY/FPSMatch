@@ -87,6 +87,18 @@ public class FPSMatch {
                 .decoder(BombDemolitionProgressS2CPacket::decode)
                 .consumerNetworkThread(BombDemolitionProgressS2CPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(ShopMoneyS2CPacket.class, 7)
+                .encoder(ShopMoneyS2CPacket::encode)
+                .decoder(ShopMoneyS2CPacket::decode)
+                .consumerNetworkThread(ShopMoneyS2CPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(ShopStatesS2CPacket.class, 8)
+                .encoder(ShopStatesS2CPacket::encode)
+                .decoder(ShopStatesS2CPacket::decode)
+                .consumerNetworkThread(ShopStatesS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent

@@ -21,6 +21,8 @@ public class BaseTeam {
     private int scores = 0;
     private final Map<UUID, PlayerData> players = new HashMap<>();
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
+    private int loseStreak;
+    private int compensationFactor;
 
     public BaseTeam(String name, int playerLimit, PlayerTeam playerTeam) {
         this.name = name;
@@ -176,6 +178,26 @@ public class BaseTeam {
 
     public String getName() {
         return name;
+    }
+
+    // 获取连败次数
+    public int getLoseStreak() {
+        return loseStreak;
+    }
+
+    // 设置连败次数
+    public void setLoseStreak(int loseStreak) {
+        this.loseStreak = loseStreak;
+    }
+
+    // 获取战败补偿因数
+    public int getCompensationFactor() {
+        return compensationFactor;
+    }
+
+    // 设置战败补偿因数
+    public void setCompensationFactor(int compensationFactor) {
+        this.compensationFactor = Math.max(0, Math.min(compensationFactor, 4));
     }
 
 }

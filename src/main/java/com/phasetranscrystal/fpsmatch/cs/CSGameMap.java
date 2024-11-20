@@ -6,30 +6,30 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
+import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
-import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.mc.forge.ModernUIForge;
+import com.phasetranscrystal.fpsmatch.net.ShopStatesS2CPacket;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.commands.TeleportCommand;
+import net.minecraft.server.commands.GameRuleCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.IForgeRegistry;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
     public static final int WINNER_ROUND = 13;
     public static final int PAUSE_TIME = 2400;
@@ -82,7 +82,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
                     if(!this.isDebug()){
                         switch (this.isBlasting()){
                             case 1 : this.checkBlastingVictory(); break;
-                            case 2 : if(!isWaitingWinner) this.roundVictory("ct"); break;
+                            case 2 : if(!isWaitingWinner) this.roundVictory("ct",WinnerReason.DEFUSE_BOMB); break;
                             default : this.checkRoundVictory(); break;
                         }
 
@@ -96,7 +96,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
                     }
                 }else{
                     if(!checkWinnerTime()){
-                        this.roundVictory("ct");
+                        this.roundVictory("ct",WinnerReason.TIME_OUT);
                     }else if(this.currentPauseTime >= WINNER_WAITING_TIME){
                         this.startNewRound();
                     }
@@ -118,6 +118,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         }));
 
         if (!checkFlag.get() && !this.isError) return;
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            this.setPlayerMoney(uuid,800);
+        }));
+
+        this.getServerLevel().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true,null);
+        this.getServerLevel().getGameRules().getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(true,null);
+        this.getServerLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false,null);
+        this.getServerLevel().getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false,null);
+        this.getServerLevel().getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false,null);
+        this.getServerLevel().getServer().setDifficulty(Difficulty.HARD,true);
         startNewRound();
     }
 
@@ -150,6 +160,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         }else {
             if(this.canRestTime()) currentPauseTime = 0;
             isWaiting = false;
+            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                if(serverPlayer != null){
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(false));
+                }
+            }));
+
         }
         return this.isWaiting;
     }
@@ -168,13 +185,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
         if(teamsLiving.size() == 1){
             String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-            this.roundVictory(winnerTeam);
+            this.roundVictory(winnerTeam,WinnerReason.ACED);
         }
     }
     public void checkBlastingVictory(){
         if(isWaitingWinner) return;
         if(this.isExploded()) {
-            this.roundVictory("t");
+            this.roundVictory("t",WinnerReason.DETONATE_BOMB);
         }
     }
     public boolean isRoundTimeEnd(){
@@ -188,12 +205,77 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         return this.currentRoundTime >= this.roundTimeLimit;
     }
 
-    private void roundVictory(String teamName) {
-        if(isWaitingWinner) return;
-        this.isWaitingWinner = true;
-        int currentScore = this.teamScores.getOrDefault(teamName, 0);
-        this.teamScores.put(teamName, currentScore + 1);
+    private void roundVictory(String winnerTeamName, WinnerReason reason) {
+        if(this.getMapTeams().checkTeam(winnerTeamName)){
+            if(isWaitingWinner) return;
+            this.isWaitingWinner = true;
+
+            // 获取当前队伍分数
+            int currentScore = this.teamScores.getOrDefault(winnerTeamName, 0);
+            // 更新分数
+            this.teamScores.put(winnerTeamName, currentScore + 1);
+
+            // 获取胜利队伍和失败队伍列表
+            BaseTeam winnerTeam = this.getMapTeams().getTeamByName(winnerTeamName);
+            List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
+            lostTeams.remove(winnerTeam);
+
+            // 处理胜利经济奖励
+            int reward = reason.winMoney;
+
+            // 对于拆除炸弹的胜利，额外奖励800
+            if (reason == WinnerReason.DEFUSE_BOMB) {
+                reward += 800;
+            }
+
+            if (winnerTeam == null) return;
+            // 遍历所有玩家，更新经济
+            int finalReward = reward;
+            this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
+                // 如果是胜利队伍的玩家
+                if (winnerTeam.getPlayers().contains(uuid)) {
+                    this.addPlayerMoney(uuid, finalReward);
+                } else { // 失败队伍的玩家
+                    lostTeams.forEach((lostTeam)->{
+                        if (lostTeam.getPlayers().contains(uuid)) {
+                            int defaultEconomy = 1400;
+                            int compensation = 500;
+                            int compensationFactor = lostTeam.getCompensationFactor();
+                            // 计算失败补偿
+                            int loss = defaultEconomy + compensation * compensationFactor;
+                            if(!Objects.requireNonNull(lostTeam.getPlayerData(uuid)).getTabData().isLiving()){
+                                this.addPlayerMoney(uuid, loss);
+                            }
+                        }
+                    });
+                }
+            });
+            checkLoseStreaks(winnerTeamName);
+            this.getShop().syncShopMoneyData();
+        }
     }
+
+    private void checkLoseStreaks(String winnerTeam) {
+        // 遍历所有队伍，检查连败情况
+        this.getMapTeams().getTeams().forEach(team -> {
+            if (team.getName().equals(winnerTeam)) {
+                // 胜利，连败次数重置
+                team.setLoseStreak(0);
+            } else {
+                // 失败，连败次数加1
+                team.setLoseStreak(team.getLoseStreak() + 1);
+            }
+
+            // 更新补偿因数
+            int compensationFactor = team.getCompensationFactor();
+            if (team.getLoseStreak() > 0) {
+                // 连败，补偿因数加1
+                compensationFactor = Math.min(compensationFactor + 1, 4);
+            }
+            team.setCompensationFactor(compensationFactor);
+        });
+    }
+
 
     public void startNewRound() {
         this.isStart = true;
@@ -202,6 +284,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().setTeamsSpawnPoints();
         this.cleanupMap();
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
+            }
+        }));
     }
 
     @Override
@@ -314,4 +402,31 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         }));
     }
 
+    @SubscribeEvent
+    public static void onPlayerKillOnMap(PlayerKillOnMapEvent event){
+        if(event.getBaseMap() instanceof CSGameMap csGameMap){
+            BaseTeam killerTeam = csGameMap.getMapTeams().getTeamByPlayer(event.getKiller());
+            BaseTeam deadTeam = csGameMap.getMapTeams().getTeamByPlayer(event.getDead());
+            if(killerTeam == null || deadTeam == null) return;
+            if (killerTeam.getName().equals(deadTeam.getName())){
+                csGameMap.removePlayerMoney(event.getKiller().getUUID(),300);
+                csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
+            }else{
+                csGameMap.addPlayerMoney(event.getKiller().getUUID(),300);
+                csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
+            }
+        }
+    }
+
+    public enum WinnerReason{
+        TIME_OUT(3250),
+        ACED(3250),
+        DEFUSE_BOMB(3500),
+        DETONATE_BOMB(3500);
+        public final int winMoney;
+
+        WinnerReason(int winMoney) {
+            this.winMoney = winMoney;
+        }
+    }
 }

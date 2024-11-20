@@ -11,6 +11,7 @@ public class ClientData {
     public static boolean currentMapSupportShop = true;
     public static final ShopData clientShopData = new ShopData(ShopData.getDefaultShopItemData(false));
     public static final Map<UUID, TabData> tabData = new HashMap<>();
+    public static final Map<UUID,Integer> playerMoney = new HashMap<>();
     public static int cTWinnerRounds = 0;
     public static int tWinnerRounds = 0;
     public static int pauseTime = 0;
@@ -24,7 +25,7 @@ public class ClientData {
     public static boolean isWaitingWinner = false;
     public static int nextRoundMoney = 0;
     public static int purchaseTime = 1;
-    public static boolean isLeavePurchaseArea = false;
+    public static boolean canOpenShop = false;
     public static int dismantleBombStates = 0; // 0 = 没拆呢 | 1 = 正在拆 | 2 = 错误可能是不在队伍或者地图导致的
     public static UUID bombUUID = null;
     public static float dismantleBombProgress = 0;

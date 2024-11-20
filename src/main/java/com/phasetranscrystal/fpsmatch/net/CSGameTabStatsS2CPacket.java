@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.net;
 
+import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -38,18 +39,7 @@ public class CSGameTabStatsS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            // 这里可以获取 Minecraft 服务器上的 Player 对象
-            // 假设有一个方法可以获取 Player 对象，例如 getPlayerByUUID
-            // Player player = getPlayerByUUID(uuid);
-            // 如果 player 不为空，我们可以更新他的 TabData
-            // if (player != null) {
-            //     TabData playerTabData = player.getTabData();
-            //     playerTabData.setKills(tabData.getKills());
-            //     playerTabData.setDeaths(tabData.getDeaths());
-            //     playerTabData.setAssists(tabData.getAssists());
-            //     playerTabData.setDamage(tabData.getDamage());
-            //     playerTabData.setMoney(tabData.getMoney());
-            // }
+            ClientData.tabData.put(this.uuid,this.tabData);
         });
         ctx.get().setPacketHandled(true);
     }

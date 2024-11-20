@@ -55,7 +55,7 @@ public class OpenShopKey {
                     return;
                 }
 
-                if(!ClientData.isLeavePurchaseArea){
+                if(!ClientData.canOpenShop){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.left.purchase_area"));
                     return;
                 }

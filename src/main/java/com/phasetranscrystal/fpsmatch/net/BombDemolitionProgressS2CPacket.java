@@ -6,11 +6,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class BombDemolitionProgressS2CPacket {
-    public final float progress;
-    public BombDemolitionProgressS2CPacket(float progress){
-        this.progress = progress;
-    }
+public record BombDemolitionProgressS2CPacket(float progress) {
 
     public static void encode(BombDemolitionProgressS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeFloat(packet.progress);

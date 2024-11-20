@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.ShopMoneyS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +52,29 @@ public class FPSMShop {
                         }));
                     }
                 }
+            }
+        }
+    }
+    public void syncShopMoneyData() {
+        BaseMap map = FPSMCore.getInstance().getMapByName(name);
+        if(map != null){
+            for (UUID uuid : map.getMapTeams().getJoinedPlayers()) {
+                ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
+                if (player != null){
+                    ShopData shopData = this.getPlayerShopData(uuid);
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
+                }
+            }
+        }
+    }
+
+    public void syncShopMoneyData(UUID uuid) {
+        BaseMap map = FPSMCore.getInstance().getMapByName(name);
+        if(map != null){
+            ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
+            if (player != null){
+                ShopData shopData = this.getPlayerShopData(uuid);
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
             }
         }
     }
