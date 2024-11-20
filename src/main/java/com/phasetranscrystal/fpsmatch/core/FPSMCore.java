@@ -123,12 +123,10 @@ public class FPSMCore {
         return GAMES;
     }
 
-    @SubscribeEvent
-    public void tick(TickEvent.ServerTickEvent event){
-        if(event.phase == TickEvent.Phase.END){
-            FPSMCore.getInstance().GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
-        }
+    public void onServerTick(){
+        this.GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
     }
+
     @SubscribeEvent
     public static void onServerStartingEvent(ServerStartingEvent event) {
          FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());

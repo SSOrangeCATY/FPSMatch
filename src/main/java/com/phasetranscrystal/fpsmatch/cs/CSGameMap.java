@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopStatesS2CPacket;
 import net.minecraft.core.BlockPos;
@@ -17,6 +18,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -29,7 +32,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
     public static final int WINNER_ROUND = 13;
     public static final int PAUSE_TIME = 2400;
@@ -118,16 +121,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         }));
 
         if (!checkFlag.get() && !this.isError) return;
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            this.setPlayerMoney(uuid,800);
-        }));
-
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true,null);
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(true,null);
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false,null);
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false,null);
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false,null);
+        this.getServerLevel().getGameRules().getRule(GameRules.RULE_NATURAL_REGENERATION).set(false,null);
         this.getServerLevel().getServer().setDifficulty(Difficulty.HARD,true);
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            this.setPlayerMoney(uuid,800);
+        }));
         startNewRound();
     }
 
@@ -281,15 +284,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         this.isStart = true;
         this.isWaiting = true;
         this.isWaitingWinner = false;
-        this.getMapTeams().resetLivingPlayers();
-        this.getMapTeams().setTeamsSpawnPoints();
         this.cleanupMap();
+        this.getMapTeams().setTeamsSpawnPoints();
+        this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
+                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
             }
         }));
+
     }
 
     @Override
@@ -335,12 +341,20 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
     }
 
     public void clearPlayerInventory(ServerPlayer player){
-        player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
-        player.containerMenu.broadcastChanges();
-        player.inventoryMenu.slotsChanged(player.getInventory());
+        if(!Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByPlayer(player)).getPlayerTabData(player.getUUID())).isLiving()){
+            player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
+            player.containerMenu.broadcastChanges();
+            player.inventoryMenu.slotsChanged(player.getInventory());
+        }
     }
 
     public void resetGame() {
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if (player != null) {
+                player.removeAllEffects();
+            }
+        }));
         this.teamScores.clear();
         this.isError = false;
         this.isStart = false;
@@ -349,12 +363,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
         this.isWarmTime = false;
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
+        this.isBlasting = 0;
+        this.isExploded = false;
         this.getMapTeams().reset();
     }
 
 
     public final void setBlastTeam(String team){
-        this.blastTeam = team;
+        this.blastTeam = this.getGameType()+"_"+this.getMapName()+"_"+team;
     }
 
     public boolean checkCanPlacingBombs(String team){

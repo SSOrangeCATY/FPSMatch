@@ -205,7 +205,7 @@ public class FPSMShop {
                 if(bought) {
                     returnTheGun(serverPlayer, shopSlot);
                     syncShopAction(serverPlayer,shopSlot,0);
-                };
+                }
                 cost.addAndGet(-shopSlot.cost());
             }
         }));

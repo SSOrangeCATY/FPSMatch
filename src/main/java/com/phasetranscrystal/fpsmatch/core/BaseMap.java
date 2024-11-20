@@ -19,7 +19,6 @@ public abstract class BaseMap{
     public BaseMap(ServerLevel serverLevel, String mapName) {
         this.serverLevel = serverLevel;
         this.mapName = mapName;
-        this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams()));
     }
 
     public Map<String,Integer> getTeams(){
@@ -85,13 +84,13 @@ public abstract class BaseMap{
         return this.isDebug;
     }
 
-
     public String getMapName(){
         return mapName;
     }
 
     public void setGameType(String gameType) {
         this.gameType = gameType;
+        this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams(),this));
     }
 
     public String getGameType() {

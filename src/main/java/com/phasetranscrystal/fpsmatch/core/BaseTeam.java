@@ -164,6 +164,10 @@ public class BaseTeam {
         return playerLimit;
     }
 
+    public int getRemainingLimit(){
+        return playerLimit - this.players.size();
+    }
+
     public PlayerTeam getPlayerTeam() {
         return playerTeam;
     }

@@ -6,7 +6,7 @@ import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
-import com.phasetranscrystal.fpsmatch.test.TestRegister;
+import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -41,7 +41,7 @@ public class FPSMatch {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
-        TestRegister.ITEMS.register(modEventBus);
+        FPSMItemRegister.ITEMS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
     }
 
@@ -98,6 +98,12 @@ public class FPSMatch {
                 .encoder(ShopStatesS2CPacket::encode)
                 .decoder(ShopStatesS2CPacket::decode)
                 .consumerNetworkThread(ShopStatesS2CPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(CSGameTabStatsS2CPacket.class, 9)
+                .encoder(CSGameTabStatsS2CPacket::encode)
+                .decoder(CSGameTabStatsS2CPacket::decode)
+                .consumerNetworkThread(CSGameTabStatsS2CPacket::handle)
                 .add();
     }
 

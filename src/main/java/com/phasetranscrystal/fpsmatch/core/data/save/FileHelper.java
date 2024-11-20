@@ -40,7 +40,7 @@ public class FileHelper {
             } catch (IOException e) {
                 throw  new RuntimeException(e);
             }
-        };
+        }
     }
 
     public static FPSMShop loadShopData(String levelName, BaseMap map) {
@@ -104,7 +104,7 @@ public class FileHelper {
             } catch (IOException e) {
                 throw  new RuntimeException(e);
             }
-        };
+        }
     }
 
 

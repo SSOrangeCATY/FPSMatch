@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.commands.GiveCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -41,7 +42,6 @@ public class CommandSuggests {
         }
         return CommandSuggests.getSuggestions(b,typeNames);
     });
-    public static final FPSMSuggestionProvider SHOP_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("set","reset")));
     public static final FPSMSuggestionProvider SHOP_SET_SLOT_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("1","2","3","4","5")));
 
     public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {

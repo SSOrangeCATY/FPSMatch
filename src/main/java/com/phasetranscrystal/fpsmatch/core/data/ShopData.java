@@ -77,7 +77,7 @@ public class ShopData {
                 shopSlots.forEach(shopSlot -> {
                     if(shopSlot.itemStack.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(shopSlot.itemStack))){
                         flag.set(shopSlot);
-                    };
+                    }
                 });
             }));
         }else {
@@ -85,7 +85,7 @@ public class ShopData {
                 shopSlots.forEach(shopSlot -> {
                     if(itemStack.getDisplayName().getString().equals(shopSlot.itemStack().getDisplayName().getString())){
                         flag.set(shopSlot);
-                    };
+                    }
                 });
             }));
         }

@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
+import com.mojang.blaze3d.platform.Window;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
@@ -16,7 +17,10 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.mc.MuiModApi;
 import icyllis.modernui.mc.ScreenCallback;
+import icyllis.modernui.mc.forge.ModernUIForge;
+import icyllis.modernui.mc.forge.MuiForgeApi;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
@@ -72,7 +76,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         System.gc();
     }
     public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
-        if (window == null) {
+        if (window == null) {//???
             window = new RelativeLayout(getContext());
             var content = new LinearLayout(getContext());
             content.setOrientation(LinearLayout.HORIZONTAL);
@@ -82,7 +86,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
             background.setImageDrawable(imageDrawable);
             background.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
             var shopWindow = new LinearLayout(this.getContext());
             for (int i = 0; i < 5; i++) {
                 var shopTitleBackground = new ShapeDrawable();
@@ -90,7 +93,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 shopTitleBackground.setStroke(0, 0xFFFF0000);
                 var typeBar = new LinearLayout(getContext());
                 typeBar.setOrientation(LinearLayout.VERTICAL);
-
                 var titleBar = new LinearLayout(getContext());
 
                 int gunButtonWeight = switch (i) {
@@ -112,16 +114,15 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 title.setTextSize(21);
                 title.setGravity(Gravity.CENTER);
 
-                titleBar.addView(numTab, new LinearLayout.LayoutParams(25, -1));
-                titleBar.addView(title, new LinearLayout.LayoutParams(gunButtonWeight - 25, -1));
-                typeBar.addView(titleBar, new LinearLayout.LayoutParams(-1, 44));
+                titleBar.addView(numTab, new LinearLayout.LayoutParams(numTab.dp(25), -1));
+                titleBar.addView(title, new LinearLayout.LayoutParams(title.dp(gunButtonWeight - 25), -1));
+                typeBar.addView(titleBar, new LinearLayout.LayoutParams(-1, titleBar.dp(44)));
                 List<GunButtonLayout> buttons = new ArrayList<>();
                 for (int j = 0; j < 5; j++) {
                     var shopHolderBackground = new ShapeDrawable();
                     shopHolderBackground.setShape(ShapeDrawable.RECTANGLE);
                     shopHolderBackground.setCornerRadius(3);
                     shopHolderBackground.setColor(RenderUtil.color(42, 42, 42));
-
                     var shop = new LinearLayout(getContext());
                     var gun = new LinearLayout(getContext());
                     if (shopButtons.getOrDefault(ShopData.ItemType.values()[i], new ArrayList<>()).isEmpty()) {
@@ -129,27 +130,28 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     } else buttons.add(new GunButtonLayout(getContext(), ShopData.ItemType.values()[i], j));
                     gun.addView(buttons.get(j), new LinearLayout.LayoutParams(-1, -1));
                     shop.setGravity(Gravity.CENTER);
-                    shop.addView(gun, new LinearLayout.LayoutParams(gunButtonWeight, 90));
-                    typeBar.addView(shop, new LinearLayout.LayoutParams(-1, 98));
+                    shop.addView(gun, new LinearLayout.LayoutParams(gun.dp(gunButtonWeight), gun.dp(90)));
+                    typeBar.addView(shop, new LinearLayout.LayoutParams(-1, shop.dp(98)));
                 }
                 shopButtons.put(ShopData.ItemType.values()[i], buttons);
-                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(gunButtonWeight + 30, -1));
+                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(typeBar.dp(gunButtonWeight + 30), -1));
             }
-            content.addView(shopWindow, new LinearLayout.LayoutParams(950, 550));
+            content.addView(shopWindow, new LinearLayout.LayoutParams(shopWindow.dp(950), shopWindow.dp(550)));
             RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
-            shopWindowParams.setMargins(240, 170 + 40, 0, 0);
+            shopWindowParams.setMargins(content.dp(240), content.dp(170 + 40), 0, 0);
 
             RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
-                    950,
-                    550);
-            shopWindowBackGroundParams.setMargins(240, 170 + 38, 0, 0);
+                    background.dp(950),
+                    background.dp(550));
+            shopWindowBackGroundParams.setMargins(background.dp(240), background.dp(208), 0, 0);
 
-            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(950, 38);
-            titleBarParams.setMargins(240, 170, 0, 0);
+            HeadBarLayout headBarLayout = new HeadBarLayout(getContext());
+            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(headBarLayout.dp(950), headBarLayout.dp(38));
+            titleBarParams.setMargins(headBarLayout.dp(240), headBarLayout.dp(170), 0, 0);
 
-            window.addView(new HeadBarLayout(getContext()), titleBarParams);
+            window.addView(headBarLayout, titleBarParams);
             window.addView(background, shopWindowBackGroundParams);
             window.addView(content, shopWindowParams);
         }
@@ -379,7 +381,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 }
                 if(this.index == 0){
                     return ClientData.clientShopData.getSlotData(this.type, this.index).boughtCount() < 2;
-                };
+                }
             }
             if(this.type == ShopData.ItemType.EQUIPMENT){
                 if(this.index == 0){
@@ -446,6 +448,4 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             updateButtonState();
         }
     }
-
-
 }

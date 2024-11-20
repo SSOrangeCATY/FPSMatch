@@ -5,6 +5,8 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import net.minecraft.core.particles.ParticleTypes;
@@ -16,6 +18,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -23,6 +26,8 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -189,11 +194,12 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         float explosionRadius = this.getExplosionRadius(); // 爆炸半径
         this.deleting = true;
         this.map.setExploded(true);
+        this.syncDemolitionProgress(0);
         this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionRadius, this.explosionInteraction());
     }
 
     public void syncDemolitionProgress(float progress){
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(owner);
+        BaseMap map = (BaseMap) this.map;
         if(map != null){
             map.getMapTeams().getJoinedPlayers().forEach((pUUID)->{
                 ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);

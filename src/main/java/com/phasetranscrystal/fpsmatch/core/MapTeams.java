@@ -7,7 +7,10 @@ import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.client.telemetry.events.WorldUnloadEvent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.OutgoingChatMessage;
+import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -31,9 +34,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MapTeams {
     protected final ServerLevel level;
     private final Map<String,BaseTeam> teams = new HashMap<>();
-    public MapTeams(ServerLevel level,Map<String,Integer> team){
+    public MapTeams(ServerLevel level,Map<String,Integer> team, BaseMap map){
         this.level = level;
-        team.forEach(this::addTeam);
+        team.forEach((name,limit)->{
+            this.addTeam(name,limit,map);
+        });
     }
 
     @Nullable
@@ -80,9 +85,10 @@ public class MapTeams {
         this.teams.forEach((s,t)-> t.resetSpawnPointData());
     }
 
-    public void addTeam(String teamName,int limit){
-        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(teamName), () -> this.level.getScoreboard().addPlayerTeam(teamName));
-        this.teams.put(teamName, new BaseTeam(teamName,limit,playerteam));
+    public void addTeam(String teamName,int limit,BaseMap map){
+        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
+        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
+        this.teams.put(teamName, new BaseTeam(fixedName,limit,playerteam));
     }
 
     public void delTeam(PlayerTeam team){
@@ -93,8 +99,8 @@ public class MapTeams {
 
     @Nullable public BaseTeam getTeamByPlayer(Player player){
         PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
-        if(currentTeam != null && this.checkTeam(currentTeam.getName())){
-            return this.teams.getOrDefault(currentTeam.getName(),null);
+        if(currentTeam != null && this.checkTeam(currentTeam.getName().split("_")[2])){
+            return this.teams.getOrDefault(currentTeam.getName().split("_")[2],null);
         }
         return null;
     }
@@ -141,7 +147,7 @@ public class MapTeams {
 
 
     public List<BaseTeam> getTeams(){
-        return (List<BaseTeam>) teams.values();
+        return new ArrayList<>(teams.values().stream().toList());
     }
 
     public List<String> getTeamsName(){

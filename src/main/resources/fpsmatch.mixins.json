@@ -6,6 +6,7 @@
   "refmap": "FPSMatch.refmap.json",
   "mixins": [
     "MixinFilePackTexture",
+    "MixinItemEntity",
     "MixinZipPackTexture"
   ],
   "client": [

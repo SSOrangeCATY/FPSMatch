@@ -5,7 +5,9 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
@@ -15,9 +17,11 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.commands.GiveCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -25,6 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
+import java.util.Collection;
 import java.util.Locale;
 import java.util.function.BiFunction;
 
@@ -70,9 +75,11 @@ public class FPSMCommand {
                                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                                         .suggests(CommandSuggests.SPAWNPOINTS_ACTION_SUGGESTION)
                                                                         .executes(this::handleSpawnAction)))
-                                                        .then(Commands.argument("action", StringArgumentType.string())
-                                                                .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                .executes(this::handleTeamAction)))))));
+                                                        .then(Commands.literal("players")
+                                                                .then(Commands.argument("targets", EntityArgument.players())
+                                                                        .then(Commands.argument("action", StringArgumentType.string())
+                                                                                .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
+                                                                                .executes(this::handleTeamAction)))))))));
         dispatcher.register(literal);
     }
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
@@ -165,31 +172,37 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleTeamAction(CommandContext<CommandSourceStack> context) {
+    private int handleTeamAction(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
         String mapName = StringArgumentType.getString(context, "mapName");
-        String team = StringArgumentType.getString(context, "teamName");
+        String teamName = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
-        if (context.getSource().getEntity() instanceof ServerPlayer player) {
             if (map != null) {
+                BaseTeam team = map.getMapTeams().getTeamByName(teamName);
                 switch (action) {
                     case "join":
-                        if (map.getMapTeams().checkTeam(team)) {
-                            map.getMapTeams().joinTeam(team, player);
-                            if(map instanceof ShopMap shopMap){
-                                shopMap.getShop().syncShopData(player);
+                            if (team != null && team.getRemainingLimit() - players.size() >= 0) {
+                                for(ServerPlayer player : players) {
+                                    map.getMapTeams().joinTeam(teamName, player);
+                                    if(map instanceof ShopMap shopMap){
+                                        shopMap.getShop().syncShopData(player);
+                                    }
+                                    context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getName()), true);
+                                }
+                            } else {
+                                context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
                             }
-                            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team), true);
-                        } else {
-                            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
-                        }
+
                         break;
                     case "leave":
-                        if (map.getMapTeams().checkTeam(team)) {
-                            map.getMapTeams().leaveTeam(player);
-                            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
+                        if (team != null) {
+                            for(ServerPlayer player : players) {
+                                map.getMapTeams().leaveTeam(player);
+                                context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
+                            }
                         } else {
-                            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", team));
+                            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", teamName));
                         }
                         break;
                     default:
@@ -200,10 +213,6 @@ public class FPSMCommand {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
                 return 0;
             }
-        } else {
-            context.getSource().sendFailure(Component.literal("[FPSM] 执行失败,执行对象不是玩家！"));
-            return 0;
-        }
         return 1;
     }
 

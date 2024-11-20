@@ -37,8 +37,8 @@ public class MixinPlayerTabOverlay{
     @Final
     @Shadow
     private  Minecraft minecraft;
-    private Component footer = Component.literal("END").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
-    private Component header = Component.literal("FPSMatch").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
+    private final Component footer = Component.literal("END").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
+    private final Component header = Component.literal("FPSMatch").setStyle(Style.EMPTY.withBold(true).withColor(RenderUtil.color(40,255,128)));
     @Final
     @Shadow
     private Map<UUID, Object> healthStates;
