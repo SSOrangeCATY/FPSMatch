@@ -22,7 +22,7 @@ public class SpawnPointData {
     float pYaw;
     float pPitch;
 
-    public SpawnPointData(ResourceKey<Level> pDimension, @Nullable BlockPos pPosition, float pYaw, float pPitch) {
+    public SpawnPointData(ResourceKey<Level> pDimension, BlockPos pPosition, float pYaw, float pPitch) {
         this.dimension = pDimension;
         this.position = pPosition;
         this.pYaw = pYaw;

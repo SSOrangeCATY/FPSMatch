@@ -50,13 +50,8 @@ public class OpenShopKey {
                     return;
                 }
 
-                if(ClientData.purchaseTime <= 0){
-                    Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.purchase_time.expired"));
-                    return;
-                }
-
                 if(!ClientData.canOpenShop){
-                    Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.left.purchase_area"));
+                    Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.purchase_time.expired"));
                     return;
                 }
 

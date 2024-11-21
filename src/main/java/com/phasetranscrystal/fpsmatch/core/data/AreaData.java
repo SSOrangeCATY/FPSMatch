@@ -10,8 +10,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import javax.annotation.Nonnull;
 
-public record AreaData(BlockPos pos1, BlockPos pos2) {
+
+public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
     public boolean isPlayerInArea(Player player) {
         AABB area = new AABB(
                 Math.min(pos1.getX(), pos2.getX()),

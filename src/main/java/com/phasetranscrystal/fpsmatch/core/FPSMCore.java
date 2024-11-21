@@ -127,9 +127,15 @@ public class FPSMCore {
         this.GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
     }
 
+    protected void clearData(){
+        GAMES.clear();
+        GAMES_SHOP.clear();
+    }
+
     @SubscribeEvent
     public static void onServerStartingEvent(ServerStartingEvent event) {
          FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
+         FPSMCore.getInstance().clearData();
          MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
     }
 }

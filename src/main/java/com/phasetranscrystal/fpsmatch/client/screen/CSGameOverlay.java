@@ -39,7 +39,7 @@ public class CSGameOverlay implements IGuiOverlay {
     // 60*24 30*50
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (ClientData.currentMap.equals("fpsm_non")) return;
+        if (ClientData.currentMap.equals("fpsm_none")) return;
         Font font = Minecraft.getInstance().font;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;

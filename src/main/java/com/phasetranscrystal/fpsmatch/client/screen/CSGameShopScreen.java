@@ -76,7 +76,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         System.gc();
     }
     public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
-        if (window == null) {//???
+        if (window == null) {
             window = new RelativeLayout(getContext());
             var content = new LinearLayout(getContext());
             content.setOrientation(LinearLayout.HORIZONTAL);

@@ -5,23 +5,20 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ShopData {
-    private static final Map<ItemType, ArrayList<ShopSlot>> defaultData = getDefaultShopItemData(true);
+    private static final Map<ItemType, ArrayList<ShopSlot>> defaultData = getDefaultShopItemData(false);
     private final Map<ItemType, List<ShopSlot>> data = new HashMap<>();
     public int money = 800;
     private int nextRoundMinMoney = 1000;
     public ShopData(){
         checkData(defaultData);
         data.putAll(defaultData);
-    }
-
-    public static ShopData create(){
-        return new ShopData();
     }
 
     public ShopData(Map<ItemType, ArrayList<ShopSlot>> data){
@@ -33,6 +30,10 @@ public class ShopData {
         checkData(defaultData);
         this.data.putAll(defaultData);
         this.money = startMoney;
+    }
+    public void setData(Map<ItemType, ArrayList<ShopSlot>> shopData){
+        this.data.clear();
+        this.data.putAll(shopData);
     }
 
     public Map<ItemType, List<ShopSlot>> getData(){
@@ -67,6 +68,23 @@ public class ShopData {
                 }
             }
         }
+    }
+
+    public static boolean checkShopData(Map<ItemType, ArrayList<ShopSlot>> data) {
+        for (ItemType type : ItemType.values()) {
+            List<ShopSlot> slots = data.getOrDefault(type, null);
+            if (slots != null && slots.size() == 5) {
+                for (int i = 0; i <= 4; i++) {
+                    ShopSlot slot = slots.get(i);
+                    if (slot.index != i) {
+                        return false;
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     public ShopSlot checkItemStackIsInData(ItemStack itemStack){

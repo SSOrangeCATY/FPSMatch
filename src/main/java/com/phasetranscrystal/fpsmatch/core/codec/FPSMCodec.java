@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.serialization.codecs.UnboundedMapCodec;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.core.BlockPos;
@@ -54,7 +55,6 @@ public class FPSMCodec {
         return ITEM_TYPE_TO_SHOP_SLOT_LIST_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> {
             throw new RuntimeException(e);
         });
-
     }
 
     public static Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> decodeShopDataMapFromJson(JsonElement json) {
@@ -74,13 +74,12 @@ public class FPSMCodec {
 
     public static final Codec<SpawnPointData> SPAWN_POINT_DATA_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("Dimension").forGetter(spawnPointData -> spawnPointData.getDimension().location().toString()),
-            Codec.LONG.optionalFieldOf("Position", 0L).forGetter(spawnPointData -> spawnPointData.getPosition() != null ? spawnPointData.getPosition().asLong() : 0L),
+            BlockPos.CODEC.optionalFieldOf("Position", BlockPos.of(0L)).forGetter(SpawnPointData::getPosition),
             Codec.FLOAT.fieldOf("Yaw").forGetter(SpawnPointData::getYaw),
             Codec.FLOAT.fieldOf("Pitch").forGetter(SpawnPointData::getPitch)
     ).apply(instance, (dimensionStr, position, yaw, pitch) -> {
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimensionStr));
-        BlockPos pos = position == 0L ? null : BlockPos.of(position);
-        return new SpawnPointData(dimension, pos, yaw, pitch);
+        return new SpawnPointData(dimension, position, yaw, pitch);
     }));
 
     public static JsonElement encodeSpawnPointDataToJson(SpawnPointData spawnPointData) {
@@ -95,16 +94,42 @@ public class FPSMCodec {
             SPAWN_POINT_DATA_CODEC.listOf()
     );
 
-    public static final UnboundedMapCodec<ResourceLocation, Map<String, List<SpawnPointData>>> MAP_SPAWN_POINT_CODEC = new UnboundedMapCodec<>(
-            ResourceLocation.CODEC,
-            SPAWN_POINT_DATA_MAP_LIST_CODEC
-    );
-
-    public static JsonElement encodeMapSpawnPointDataToJson(Map<ResourceLocation, Map<String, List<SpawnPointData>>> data) {
-        return MAP_SPAWN_POINT_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new RuntimeException(e); });
+    public static JsonElement encodeMapSpawnPointDataToJson(Map<String, List<SpawnPointData>> data) {
+        return SPAWN_POINT_DATA_MAP_LIST_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new RuntimeException(e); });
     }
 
-    public static Map<ResourceLocation, Map<String, List<SpawnPointData>>> decodeMapSpawnPointDataFromJson(JsonElement json) {
-        return MAP_SPAWN_POINT_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    public static Map<String, List<SpawnPointData>> decodeMapSpawnPointDataFromJson(JsonElement json) {
+        return SPAWN_POINT_DATA_MAP_LIST_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    }
+
+    public static final Codec<AreaData> AREA_DATA_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            BlockPos.CODEC.optionalFieldOf("Position1", BlockPos.of(0L)).forGetter(AreaData::pos1),
+            BlockPos.CODEC.optionalFieldOf("Position2", BlockPos.of(0L)).forGetter(AreaData::pos2)
+    ).apply(instance, AreaData::new));
+
+    public static JsonElement encodeAreaDataToJson(AreaData areaData) {
+        return AREA_DATA_CODEC.encodeStart(JsonOps.INSTANCE, areaData).getOrThrow(false, e -> { throw new RuntimeException(e); });
+    }
+
+    public static AreaData decodeAreaDataFromJson(JsonElement json) {
+        return AREA_DATA_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    }
+
+    public static final Codec<List<AreaData>> List_AREA_DATA_CODEC = AREA_DATA_CODEC.listOf();
+
+    public static JsonElement encodeAreaDataListToJson(List<AreaData> areaDataList) {
+        return List_AREA_DATA_CODEC.encodeStart(JsonOps.INSTANCE, areaDataList).getOrThrow(false, e -> { throw new RuntimeException(e); });
+    }
+
+    public static List<AreaData> decodeAreaDataListFromJson(JsonElement json) {
+        return List_AREA_DATA_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    }
+
+    public static JsonElement encodeLevelResourceKeyToJson(ResourceKey<Level> resourceKey) {
+        return ResourceLocation.CODEC.encodeStart(JsonOps.INSTANCE, resourceKey.location()).getOrThrow(false, e -> { throw new RuntimeException(e); });
+    }
+
+    public static ResourceKey<Level> decodeLevelResourceKeyFromJson(JsonElement json) {
+        return ResourceKey.create(Registries.DIMENSION, ResourceLocation.CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst());
     }
 }

@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
@@ -208,34 +209,36 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
         String name = event.getServer().getWorldData().getLevelName();
-        FPSMCore.getInstance().getAllMaps().forEach((type,gameList)->{
-            gameList.forEach((map)->{
-                if(map instanceof ShopMap shopMap){
-                    FileHelper.saveShopData(name,shopMap.getShop());
-                }
-            });
-        });
         FileHelper.saveMaps(name);
     }
 
     @SubscribeEvent
     public static void onServerStartedEvent(ServerStartedEvent event) {
-        Map<ResourceLocation, Map<String, List<SpawnPointData>>> savedMaps = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
-        savedMaps.forEach((rl, teamData) -> {
-            String mapName = rl.getPath();
-            String type = rl.getNamespace();
-            BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
-            List<SpawnPointData> data = teamData.values().stream().findFirst().get();
-            if(!data.isEmpty()){
-                ResourceKey<Level> level = data.get(0).getDimension();
-                if (game != null) {
-                    BaseMap map = FPSMCore.getInstance().registerMap(type, game.apply(event.getServer().getLevel(level), mapName));
-                    if(map != null){
-                        map.setGameType(type);
-                        map.getMapTeams().putAllSpawnPoints(teamData);
+        List<FileHelper.RawMapData> rawMapDataList = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
+            for(FileHelper.RawMapData rawMapData : rawMapDataList){
+                String mapType = rawMapData.mapRL.getNamespace();
+                String mapName = rawMapData.mapRL.getPath();
+                BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(mapType);
+                Map<String, List<SpawnPointData>> data = rawMapData.teamsData;
+                if(!data.isEmpty()){
+                    ResourceKey<Level> level = rawMapData.levelResourceKey;
+                    if (game != null) {
+                        BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(event.getServer().getLevel(level), mapName));
+                        if(map != null){
+                            map.setGameType(mapType);
+                            map.getMapTeams().putAllSpawnPoints(data);
+                            if(map instanceof ShopMap shopMap && rawMapData.shop != null && ShopData.checkShopData(rawMapData.shop)){
+                                shopMap.getShop().getDefaultShopData().setData(rawMapData.shop);
+                            }
+
+                            if(map instanceof BlastModeMap blastModeMap){
+                                if (rawMapData.blastAreaDataList != null) {
+                                    rawMapData.blastAreaDataList.forEach(blastModeMap::addBombArea);
+                                }
+                            }
+                        }
                     }
                 }
             }
-        });
     }
 }

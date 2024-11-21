@@ -56,7 +56,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
 
     public CSGameMap(ServerLevel serverLevel,String mapName) {
         super(serverLevel,mapName);
-        this.shop = FileHelper.loadShopData(FPSMCore.getInstance().archiveName, this);
+        this.shop = new FPSMShop(mapName);
     }
 
     public Map<String,Integer> getTeams(){
