@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.scores.PlayerTeam;
 import org.jetbrains.annotations.NotNull;
@@ -49,8 +50,12 @@ public class BaseTeam {
 
     public void handleOffline(ServerPlayer player){
         UUID uuid = player.getUUID();
-        players.get(uuid).setLiving(false);
-        players.get(uuid).setOffline(true);
+        PlayerData playerData = players.get(uuid);
+        playerData.setLiving(false);
+        playerData.setOffline(true);
+        playerData.getTabDataTemp().addDeaths();
+        player.heal(player.getMaxHealth());
+        player.setGameMode(GameType.SPECTATOR);
     }
     public void resetLiving(){
         this.players.values().forEach((data)->{

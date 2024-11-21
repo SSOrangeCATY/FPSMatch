@@ -78,12 +78,7 @@ public class FPSMEvents {
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {
-                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
-                    if(data == null) return;
-                    data.setOffline(true);
-                    data.getTabDataTemp().addDeaths();
-                    player.heal(player.getMaxHealth());
-                    player.setGameMode(GameType.SPECTATOR);
+                    playerTeam.handleOffline(player);
                 }
             }
         }

@@ -1,12 +1,14 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
 
-public interface BlastModeMap {
+public interface BlastModeMap<T extends BaseMap> {
     //TODO WIP
+    T getMap();
     void addBombArea(AreaData area);
     List<AreaData> getBombAreaData(); // Arraylist
     void setBlastTeam(String team);

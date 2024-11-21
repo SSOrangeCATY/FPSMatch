@@ -1,12 +1,14 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public interface ShopMap {
+public interface ShopMap<T extends BaseMap> {
+    T getMap();
     FPSMShop getShop();
     @Nullable
     ShopData defineShopData();

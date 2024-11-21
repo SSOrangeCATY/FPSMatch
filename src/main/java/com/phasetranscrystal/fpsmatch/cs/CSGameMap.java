@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
@@ -21,6 +22,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -33,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
+public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap> {
     public static final int WINNER_ROUND = 13;
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
@@ -384,6 +386,26 @@ public class CSGameMap extends BaseMap implements BlastModeMap , ShopMap {
             if(!a.get()) a.set(area.isPlayerInArea(player));
         });
         return a.get();
+    }
+
+    @Override
+    public CSGameMap getMap() {
+        return this;
+    }
+
+    @Override
+    public List<ItemStack> getKits(String team) {
+        return null;
+    }
+
+    @Override
+    public void setKits(String team, ItemStack itemStack) {
+
+    }
+
+    @Override
+    public void setAllTeamKits(ItemStack itemStack) {
+
     }
 
     public void addBombArea(AreaData area){
