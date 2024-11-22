@@ -225,7 +225,7 @@ public class ShopData {
         }
         public ItemStack itemStack(){
             if(itemStack == null){
-                return null;
+                return ItemStack.EMPTY;
             }
             return itemStack.copy();
         }

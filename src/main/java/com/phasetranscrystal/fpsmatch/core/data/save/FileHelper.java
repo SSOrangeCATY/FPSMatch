@@ -50,7 +50,7 @@ public class FileHelper {
                             throw  new RuntimeException(e);
                         }
 
-                        if(map instanceof ShopMap shopMap){
+                        if(map instanceof ShopMap<?> shopMap){
                             JsonElement json = FPSMCodec.encodeShopDataMapToJson(shopMap.getShop().getDefaultShopData().getData());
                             String jsonStr = gson.toJson(json);
                             File file = new File(mapDir, "shop.json");
@@ -61,7 +61,7 @@ public class FileHelper {
                             }
                         }
 
-                        if (map instanceof BlastModeMap blastModeMap){
+                        if (map instanceof BlastModeMap<?> blastModeMap){
                             JsonElement json = FPSMCodec.encodeAreaDataListToJson(blastModeMap.getBombAreaData());
                             String jsonStr = gson.toJson(json);
                             File file = new File(mapDir,"blast.json");

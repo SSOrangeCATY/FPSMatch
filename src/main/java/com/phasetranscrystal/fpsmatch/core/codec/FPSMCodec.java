@@ -132,4 +132,17 @@ public class FPSMCodec {
     public static ResourceKey<Level> decodeLevelResourceKeyFromJson(JsonElement json) {
         return ResourceKey.create(Registries.DIMENSION, ResourceLocation.CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst());
     }
+
+    public static final UnboundedMapCodec<String, List<ItemStack>> TEAM_ITEMS_KITS_CODEC = new UnboundedMapCodec<>(
+            Codec.STRING,
+            ItemStack.CODEC.listOf()
+    );
+
+    public static JsonElement encodeTeamKitsToJson(Map<String, List<ItemStack>> data) {
+        return TEAM_ITEMS_KITS_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new RuntimeException(e); });
+    }
+
+    public static Map<String, List<ItemStack>> decodeTeamKitsFromJson(JsonElement json) {
+        return TEAM_ITEMS_KITS_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    }
 }

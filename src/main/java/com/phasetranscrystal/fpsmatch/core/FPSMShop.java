@@ -80,15 +80,7 @@ public class FPSMShop {
     }
 
     public void syncShopData(List<ServerPlayer> players){
-        for (ServerPlayer player : players) {
-            ShopData shopData = this.getPlayerShopData(player.getUUID());
-            for (ShopData.ItemType type : ShopData.ItemType.values()) {
-                List<ShopData.ShopSlot> slots = shopData.getShopSlotsByType(type);
-                slots.forEach((shopSlot -> {
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(shopSlot, name));
-                }));
-            }
-        }
+        players.forEach(this::syncShopData);
     }
 
     public void syncShopData(ServerPlayer player){

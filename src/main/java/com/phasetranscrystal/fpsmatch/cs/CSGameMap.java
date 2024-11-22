@@ -28,6 +28,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -55,6 +56,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final List<AreaData> bombAreaData = new ArrayList<>();
     private String blastTeam;
     private final FPSMShop shop;
+    private final Map<String,List<ItemStack>> startKits = new HashMap<>();
 
     public CSGameMap(ServerLevel serverLevel,String mapName) {
         super(serverLevel,mapName);
@@ -389,23 +391,23 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
-    public CSGameMap getMap() {
+    public @NotNull CSGameMap getMap() {
         return this;
     }
 
     @Override
-    public List<ItemStack> getKits(String team) {
-        return null;
+    public List<ItemStack> getKits(BaseTeam team) {
+        return startKits.getOrDefault(team.getName(),new ArrayList<>());
     }
 
     @Override
-    public void setKits(String team, ItemStack itemStack) {
-
+    public void setKits(BaseTeam team, ItemStack itemStack) {
+        this.startKits.computeIfAbsent(team.getName(),t -> new ArrayList<>()).add(itemStack);
     }
 
     @Override
     public void setAllTeamKits(ItemStack itemStack) {
-
+        this.startKits.values().forEach((v) -> v.add(itemStack));
     }
 
     public void addBombArea(AreaData area){
