@@ -118,7 +118,6 @@ public class FileHelper {
                                 }
                             }
 
-
                             File shopFile = new File(mapDir, "shop.json");
                             if (shopFile.exists() && shopFile.isFile()) {
                                 try (FileReader shopReader = new FileReader(shopFile)) {
