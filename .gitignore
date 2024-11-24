@@ -116,3 +116,12 @@ run/
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
+/.eclipse/configurations/FPSMatch - prepareRunClient.launch
+/.eclipse/configurations/FPSMatch - prepareRunData.launch
+/.eclipse/configurations/FPSMatch - prepareRunGameTestServer.launch
+/.eclipse/configurations/FPSMatch - prepareRunServer.launch
+/.eclipse/configurations/FPSMatch - runClientSlim.launch
+/.eclipse/configurations/FPSMatch - runDataSlim.launch
+/.eclipse/configurations/FPSMatch - runGameTestServerSlim.launch
+/.eclipse/configurations/FPSMatch - runServerSlim.launch
+/logs/
