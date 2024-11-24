@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.tacz.guns.GunMod;
 import net.minecraft.resources.ResourceKey;
@@ -51,6 +52,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
+            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchStatsResetS2CPacket());
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
@@ -159,7 +161,7 @@ public class FPSMEvents {
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
-        if (map instanceof ShopMap shopMap){
+        if (map instanceof ShopMap<?> shopMap){
             FPSMShop shop = shopMap.getShop();
             if (shop == null) return;
             ShopData.ShopSlot slot = shop.getPlayerShopData(event.getPlayer().getUUID()).checkItemStackIsInData(event.getEntity().getItem());
@@ -180,7 +182,7 @@ public class FPSMEvents {
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
-        if (map instanceof ShopMap shopMap) {
+        if (map instanceof ShopMap<?> shopMap) {
             FPSMShop shop = shopMap.getShop();
             if (shop == null) return;
             // 如果不是Tacz的枪就是根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
@@ -222,11 +224,11 @@ public class FPSMEvents {
                         if(map != null){
                             map.setGameType(mapType);
                             map.getMapTeams().putAllSpawnPoints(data);
-                            if(map instanceof ShopMap shopMap && rawMapData.shop != null && ShopData.checkShopData(rawMapData.shop)){
+                            if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null && ShopData.checkShopData(rawMapData.shop)){
                                 shopMap.getShop().getDefaultShopData().setData(rawMapData.shop);
                             }
 
-                            if(map instanceof BlastModeMap blastModeMap){
+                            if(map instanceof BlastModeMap<?> blastModeMap){
                                 if (rawMapData.blastAreaDataList != null) {
                                     rawMapData.blastAreaDataList.forEach(blastModeMap::addBombArea);
                                 }

@@ -12,6 +12,7 @@ import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopStatesS2CPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.commands.GameRuleCommand;
@@ -195,6 +196,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.roundVictory(winnerTeam,WinnerReason.ACED);
         }
     }
+
     public void checkBlastingVictory(){
         if(isWaitingWinner) return;
         if(this.isExploded()) {
@@ -212,9 +214,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return this.currentRoundTime >= this.roundTimeLimit;
     }
 
+    /**
+     * 处理回合胜利的逻辑
+     *
+     * @param winnerTeamName 胜利队伍的名称
+     * @param reason 胜利原因
+     */
     private void roundVictory(String winnerTeamName, WinnerReason reason) {
+        // 检查获胜队伍是否存在
         if(this.getMapTeams().checkTeam(winnerTeamName)){
+            // 如果已经在等待胜利者，则直接返回
             if(isWaitingWinner) return;
+            // 设置为等待胜利者状态
             this.isWaitingWinner = true;
 
             // 获取当前队伍分数
@@ -223,7 +234,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.teamScores.put(winnerTeamName, currentScore + 1);
 
             // 获取胜利队伍和失败队伍列表
-            BaseTeam winnerTeam = this.getMapTeams().getTeamByName(winnerTeamName);
+            MapTeams mapTeams = this.getMapTeams();
+            //这个地方获取到了吗
+            BaseTeam winnerTeam = mapTeams.getTeamByName(winnerTeamName);
             List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
             lostTeams.remove(winnerTeam);
 
@@ -250,6 +263,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                             int compensationFactor = lostTeam.getCompensationFactor();
                             // 计算失败补偿
                             int loss = defaultEconomy + compensation * compensationFactor;
+                            // 如果玩家没有活着，则给予失败补偿
                             if(!Objects.requireNonNull(lostTeam.getPlayerData(uuid)).getTabData().isLiving()){
                                 this.addPlayerMoney(uuid, loss);
                             }
@@ -257,10 +271,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     });
                 }
             });
+            // 检查连败情况
             checkLoseStreaks(winnerTeamName);
+            // 同步商店金钱数据
             this.getShop().syncShopMoneyData();
         }
     }
+
 
     private void checkLoseStreaks(String winnerTeam) {
         // 遍历所有队伍，检查连败情况
@@ -282,8 +299,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             team.setCompensationFactor(compensationFactor);
         });
     }
-
-
     public void startNewRound() {
         this.isStart = true;
         this.isWaiting = true;
@@ -299,11 +314,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
             }
         }));
-
+        this.getShop().syncShopData();
     }
 
     @Override
     public void victory() {
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new FPSMatchStatsResetS2CPacket());
+                serverPlayer.removeAllEffects();
+            }
+        }));
         resetGame();
     }
     @Override
@@ -370,6 +392,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isBlasting = 0;
         this.isExploded = false;
         this.getMapTeams().reset();
+        this.getShop().clearPlayerShopData();
     }
 
 
@@ -449,10 +472,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseTeam deadTeam = csGameMap.getMapTeams().getTeamByPlayer(event.getDead());
             if(killerTeam == null || deadTeam == null) return;
             if (killerTeam.getName().equals(deadTeam.getName())){
-                csGameMap.removePlayerMoney(event.getKiller().getUUID(),300);
+                csGameMap.removePlayerMoney(event.getKiller().getUUID(),200);
                 csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
             }else{
-                csGameMap.addPlayerMoney(event.getKiller().getUUID(),300);
+                csGameMap.addPlayerMoney(event.getKiller().getUUID(),200);
                 csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
             }
         }

@@ -176,16 +176,34 @@ public class ShopData {
     public void setMoney(int money) {
         this.money = Math.min(money, 99999);
         if(this.money < 0) this.money = 0;
+        System.out.println("Money: " + this.money);
     }
 
     public void addMoney(int money){
         this.money += money;
         if(this.money > 16000) this.money = 16000;
+        System.out.println("Money: " + this.money);
     }
 
     public void takeMoney(int money){
         this.money -= money;
         if(this.money < 0) this.money = 0;
+        System.out.println("Money: " + this.money);
+    }
+
+    public void reset() {
+        money = 800;
+        data.clear();
+        data.putAll(defaultData);
+    }
+
+    public ShopData copy() {
+        ShopData newData = new ShopData();
+        newData.money = this.money;
+        newData.data.clear();
+        newData.data.putAll(this.data);
+        newData.nextRoundMinMoney = this.nextRoundMinMoney;
+        return newData;
     }
 
     public static class ShopSlot{

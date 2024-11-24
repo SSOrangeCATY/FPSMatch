@@ -124,7 +124,7 @@ public class FPSMCore {
     }
 
     public void onServerTick(){
-        this.GAMES.forEach((type,mapList)-> mapList.forEach(BaseMap::mapTick));
+        this.GAMES.forEach((type,mapList) -> mapList.forEach(BaseMap::mapTick));
     }
 
     protected void clearData(){

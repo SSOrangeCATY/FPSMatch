@@ -45,7 +45,8 @@ public class DataProvider<T, I extends ISavedData<T>> {
 
     public <M extends BaseMap> void save(M map) {
         if (this.getClazz().isInstance(map)) {
-            JsonElement json = encode(((I) map).getData());
+            T data = ((I) map).getData();
+            JsonElement json = encode(data);
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             String jsonStr = gson.toJson(json);
             try (FileWriter writer = new FileWriter(this.getFile())) {

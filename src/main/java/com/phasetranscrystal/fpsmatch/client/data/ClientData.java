@@ -38,4 +38,29 @@ public class ClientData {
         return clientShopData.getMoney();
     }
 
+    public static void reset() {
+        currentMap = "fpsm_none";
+        currentGameType = "error";
+        currentMapSupportShop = true;
+        clientShopData.reset();
+        tabData.clear();
+        playerMoney.clear();
+        cTWinnerRounds = 0;
+        tWinnerRounds = 0;
+        pauseTime = 0;
+        roundTime = 0;
+        isDebug = false;
+        isStart = false;
+        isError = false;
+        isPause = false;
+        isWaiting = false;
+        isWarmTime = false;
+        isWaitingWinner = false;
+        nextRoundMoney = 0;
+        purchaseTime = 1;
+        canOpenShop = false;
+        dismantleBombStates = 0;
+        bombUUID = null;
+        dismantleBombProgress = 0;
+    }
 }

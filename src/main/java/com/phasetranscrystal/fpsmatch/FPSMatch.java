@@ -105,6 +105,12 @@ public class FPSMatch {
                 .decoder(CSGameTabStatsS2CPacket::decode)
                 .consumerNetworkThread(CSGameTabStatsS2CPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(FPSMatchStatsResetS2CPacket.class, 10)
+              .encoder(FPSMatchStatsResetS2CPacket::encode)
+              .decoder(FPSMatchStatsResetS2CPacket::decode)
+              .consumerNetworkThread(FPSMatchStatsResetS2CPacket::handle)
+              .add();
     }
 
     @SubscribeEvent

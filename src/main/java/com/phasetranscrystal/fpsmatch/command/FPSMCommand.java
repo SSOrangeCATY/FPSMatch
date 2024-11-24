@@ -185,7 +185,7 @@ public class FPSMCommand {
                             if (team != null && team.getRemainingLimit() - players.size() >= 0) {
                                 for(ServerPlayer player : players) {
                                     map.getMapTeams().joinTeam(teamName, player);
-                                    if(map instanceof ShopMap shopMap){
+                                    if(map instanceof ShopMap<?> shopMap){
                                         shopMap.getShop().syncShopData(player);
                                     }
                                     context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getName()), true);

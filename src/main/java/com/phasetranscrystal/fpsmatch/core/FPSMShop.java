@@ -111,12 +111,19 @@ public class FPSMShop {
     public ShopData getPlayerShopData(UUID uuid){
         ShopData data = this.playersData.getOrDefault(uuid,null);
         if(data == null){
-            this.playersData.put(uuid,this.defaultShopData);
+            this.playersData.put(uuid,this.defaultShopData.copy());
             data = this.playersData.get(uuid);
         }
         return data;
     }
 
+    public void resetPlayerShopData(UUID uuid){
+        this.playersData.put(uuid,this.defaultShopData.copy());
+    }
+
+    public void clearPlayerShopData(){
+        this.playersData.clear();
+    }
     public ShopData.ShopSlot getSlotData(UUID uuid, ShopData.ItemType type, int index) {
         return getPlayerShopData(uuid).getSlotData(type,index);
     }
