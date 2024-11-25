@@ -9,19 +9,21 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.resource.index.CommonGunIndex;
+import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.commands.GiveCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -31,6 +33,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class FPSMCommand {
@@ -48,8 +51,10 @@ public class FPSMCommand {
                                                                 .suggests(CommandSuggests.SHOP_ITEM_TYPES_SUGGESTION)
                                                                 .then(Commands.argument("shopSlot", IntegerArgumentType.integer(1,5))
                                                                         .suggests(CommandSuggests.SHOP_SET_SLOT_ACTION_SUGGESTION)
-                                                                        .then(Commands.argument("cost", IntegerArgumentType.integer(1))
-                                                                                .executes(this::handleModifyShop)))))))))
+                                                                        .then(Commands.argument("cost", IntegerArgumentType.integer(0))
+                                                                                .executes(this::handleModifyShop)
+                                                                                .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
+                                                                                        .executes(this::handleGunModifyShop))))))))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
                                 .then(Commands.argument("gameType", StringArgumentType.string())
@@ -117,20 +122,58 @@ public class FPSMCommand {
         int cost = IntegerArgumentType.getInteger(context,"cost");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
-            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
+            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap<?> shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
                 shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
                 shopMap.getShop().syncShopData();
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
+                return 1;
+            } else {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+                return 0;
             }
+        }else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+            return 0;
         }
-        return 1;
+    }
+
+    private int handleGunModifyShop(CommandContext<CommandSourceStack> context) {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String shopType = StringArgumentType.getString(context, "shopType");
+        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
+        int cost = IntegerArgumentType.getInteger(context,"cost");
+        int dummyAmmoAmount = IntegerArgumentType.getInteger(context,"dummyAmmoAmount");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        if (map != null) {
+            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap<?> shopMap) {
+                ItemStack itemStack = player.getMainHandItem().copy();
+                if (itemStack.getItem() instanceof IGun iGun){
+                    GunData gunData = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).get().getGunData();
+                    iGun.useDummyAmmo(itemStack);
+                    iGun.setMaxDummyAmmoAmount(itemStack,dummyAmmoAmount);
+                    iGun.setDummyAmmoAmount(itemStack,dummyAmmoAmount);
+                    iGun.setCurrentAmmoCount(itemStack,gunData.getBulletData().getBulletAmount());
+                }
+                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
+                shopMap.getShop().syncShopData();
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
+                return 1;
+            } else {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+                return 0;
+            }
+        }else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+            return 0;
+        }
     }
     private int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
         BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
         BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
-        if (baseMap instanceof BlastModeMap map) {
+        if (baseMap instanceof BlastModeMap<?> map) {
             map.addBombArea(new AreaData(pos1,pos2));
             return 1;
         }
@@ -191,6 +234,7 @@ public class FPSMCommand {
                                     context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getName()), true);
                                 }
                             } else {
+                                // 翻译文本
                                 context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
                             }
 

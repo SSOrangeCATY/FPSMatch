@@ -6,7 +6,9 @@ import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopMoneyS2CPacket;
+import com.tacz.guns.api.item.IGun;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 

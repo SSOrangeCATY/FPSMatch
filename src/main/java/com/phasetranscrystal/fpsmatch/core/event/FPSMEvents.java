@@ -224,6 +224,7 @@ public class FPSMEvents {
                         if(map != null){
                             map.setGameType(mapType);
                             map.getMapTeams().putAllSpawnPoints(data);
+
                             if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null && ShopData.checkShopData(rawMapData.shop)){
                                 shopMap.getShop().getDefaultShopData().setData(rawMapData.shop);
                             }

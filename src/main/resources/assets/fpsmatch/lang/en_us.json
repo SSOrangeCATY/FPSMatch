@@ -5,6 +5,7 @@
   "commands.fpsm.debug.cleanup.success": "Map '%1$s' has been cleaned up.",
   "commands.fpsm.create.success": "Map '%1$s' created successfully.",
   "commands.fpsm.team.join.success": "%1$s joined the team %2$s.",
+  "commands.fpsm.team.join.failure": "%1$s is full.",
   "commands.fpsm.team.leave.success": "%1$s left the team.",
   "commands.fpsm.team.invalidAction": "Specified an invalid team action.",
   "commands.fpsm.team.notFound": "Team not found.",
@@ -22,5 +23,8 @@
   "key.fpsm.open.shop.failed.purchase_time.expired": "Cannot open the store because purchase time expired",
   "key.fpsm.open.shop.failed.left.purchase_area": "Cannot open the store because left purchase area",
   "key.fpsm.open.shop.failed.game_type.no_shop": "Cannot open the store because joined game does not support store",
-  "key.fpsm.dismantle_bomb.desc": "Dismantle bomb"
+  "key.fpsm.dismantle_bomb.desc": "Dismantle bomb",
+  "commands.fpsm.team.leave.failure": "team not found",
+  "commands.fpsm.shop.modify.success": "Successfully modified the shop slot type %2$d index %3$d for '%1$s' shop with item '%4$s' at a cost of %5$d.",
+  "commands.fpsm.shop.modify.failed": "Failed to modify the shop. Please check your permissions or if the shop exists."
 }

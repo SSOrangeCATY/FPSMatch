@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "com.phasetranscrystal.fpsmatch.mixin",
   "compatibilityLevel": "JAVA_8",
-  "refmap": "FPSMatch.refmap.json",
+  "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "MixinFilePackTexture",
     "MixinItemEntity",

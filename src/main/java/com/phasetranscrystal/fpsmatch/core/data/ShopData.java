@@ -1,7 +1,10 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.resource.index.CommonGunIndex;
+import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -32,6 +35,24 @@ public class ShopData {
         this.money = startMoney;
     }
     public void setData(Map<ItemType, ArrayList<ShopSlot>> shopData){
+        shopData.forEach((itemType, shopSlots) -> {
+            shopSlots.forEach((shopSlot) -> {
+                ItemStack itemStack = shopSlot.itemStack();
+                if(itemStack.getItem() instanceof IGun iGun){
+                    Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
+                    if(gunIndexOptional.isPresent()){
+                        GunData gunData = gunIndexOptional.get().getGunData();
+                        iGun.setCurrentAmmoCount(itemStack,gunData.getAmmoAmount());
+                    }
+                    int maxAmmo = iGun.getMaxDummyAmmoAmount(itemStack);
+                    if(maxAmmo > 0){
+                        iGun.useDummyAmmo(itemStack);
+                        iGun.setDummyAmmoAmount(itemStack,maxAmmo);
+                    }
+                    shopSlot.setItemStack(itemStack);
+                }
+            });
+        });
         this.data.clear();
         this.data.putAll(shopData);
     }
