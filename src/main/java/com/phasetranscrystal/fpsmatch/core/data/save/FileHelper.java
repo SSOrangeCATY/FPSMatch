@@ -163,7 +163,16 @@ public class FileHelper {
                                 if (startKitFile.exists() && startKitFile.isFile()) {
                                     try (FileReader startKitReader = new FileReader(startKitFile)) {
                                         JsonElement startKitJson = new Gson().fromJson(startKitReader, JsonElement.class);
-                                        Map<String,List<ItemStack>> startKitList = FPSMCodec.decodeTeamKitsFromJson(startKitJson);
+                                        Map<String,List<ItemStack>> rawData = FPSMCodec.decodeTeamKitsFromJson(startKitJson);
+                                        Map<String, ArrayList<ItemStack>> startKitList = new HashMap<>();
+                                        for (String teamName : rawData.keySet()){
+                                            ArrayList<ItemStack> itemStacks = new ArrayList<>();
+                                            for (ItemStack itemStack : rawData.get(teamName)){
+                                                ItemStack stack = itemStack.copy();
+                                                itemStacks.add(stack);
+                                            }
+                                            startKitList.put(teamName,itemStacks);
+                                        }
                                         rawMapData.setStartKits(startKitList);
                                     } catch (IOException e) {
                                         throw new RuntimeException(e);
@@ -196,7 +205,7 @@ public class FileHelper {
         @NotNull public final Map<String,List<SpawnPointData>> teamsData;
         @Nullable public Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop;
         @Nullable public List<AreaData> blastAreaDataList;
-        @Nullable public Map<String,List<ItemStack>> startKits;
+        @Nullable public Map<String,ArrayList<ItemStack>> startKits;
 
         public RawMapData(@NotNull ResourceLocation mapRL, @NotNull Map<String, List<SpawnPointData>> teamsData, @NotNull ResourceKey<Level> levelResourceKey) {
             this.mapRL = mapRL;
@@ -204,7 +213,7 @@ public class FileHelper {
             this.levelResourceKey = levelResourceKey;
         }
 
-        public void setStartKits(@Nullable Map<String,List<ItemStack>> startKits) {
+        public void setStartKits(@Nullable Map<String,ArrayList<ItemStack>> startKits) {
             this.startKits = startKits;
         }
 

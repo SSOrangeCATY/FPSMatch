@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,10 +20,10 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
         this.clearTeamKits(team);
         this.getKits(team).addAll(itemStack);
     }
-    void setStartKits(Map<String,List<ItemStack>> kits);
+    void setStartKits(Map<String,ArrayList<ItemStack>> kits);
     void setAllTeamKits(ItemStack itemStack);
     default void clearTeamKits(BaseTeam team){
-        this.getKits(team).clear();
+        this.setTeamKits(team,new ArrayList<>());
     }
     default boolean removeItem(BaseTeam team, ItemStack itemStack){
         AtomicBoolean flag = new AtomicBoolean(false);
@@ -48,7 +49,13 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
         if(team != null){
             List<ItemStack> items = this.getKits(team);
             player.getInventory().clearContent();
-            items.forEach(player.getInventory()::add);
+            items.forEach((itemStack -> {
+                player.getInventory().add(itemStack.copy());
+                player.inventoryMenu.broadcastChanges();
+                player.inventoryMenu.slotsChanged(player.getInventory());
+            }));
+        }else{
+            System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString());
         }
     }
     default void giveTeamKits(@NotNull BaseTeam team){
@@ -58,7 +65,9 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
             if (player != null){
                 List<ItemStack> items = this.getKits(team);
                 player.getInventory().clearContent();
-                items.forEach(player.getInventory()::add);
+                items.forEach((itemStack -> {
+                    player.getInventory().add(itemStack.copy());
+                }));
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             }
@@ -74,10 +83,16 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 if(team != null){
                     List<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
-                    items.forEach(player.getInventory()::add);
+                    items.forEach((itemStack -> {
+                        player.getInventory().add(itemStack.copy());
+                    }));
                     player.inventoryMenu.broadcastChanges();
                     player.inventoryMenu.slotsChanged(player.getInventory());
+                }else{
+                    System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString());
                 }
+            }else{
+                System.out.println("givePlayerKits: player not found ->" + uuid);
             }
         };
     }

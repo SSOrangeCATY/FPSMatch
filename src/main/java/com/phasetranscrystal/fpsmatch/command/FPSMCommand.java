@@ -309,19 +309,18 @@ public class FPSMCommand {
         }
         return 1;
     }
-    private int handleKitsWithItemAction(CommandContext<CommandSourceStack> context, int count) {
+    private int handleKitsWithItemAction(CommandContext<CommandSourceStack> context, int count) throws CommandSyntaxException {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
-        ItemInput itemInput = ItemArgument.getItem(context, "item");
-        ItemStack itemStack = new ItemStack(itemInput.getItem(),count);
+        ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(count, false);
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
 
         if (map instanceof GiveStartKitsMap<?> startKitMap) {
             switch (action) {
                 case "add":
                     if (map.getMapTeams().checkTeam(team)) {
-                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack.copy());
+                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
                         context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.modify.kits.add.success",itemStack.getDisplayName(), team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));

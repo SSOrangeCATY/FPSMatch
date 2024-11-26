@@ -141,8 +141,29 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             this.setPlayerMoney(uuid,800);
         }));
+        this.isStart = true;
+        this.isWaiting = true;
+        this.isWaitingWinner = false;
+        this.setBlasting(0);
+        this.setExploded(false);
+        this.currentRoundTime = 0;
+        this.currentPauseTime = 0;
+        this.getMapTeams().setTeamsSpawnPoints();
+        this.getMapTeams().resetLivingPlayers();
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
+                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
+                serverPlayer.heal(serverPlayer.getMaxHealth());
+                serverPlayer.setGameMode(GameType.ADVENTURE);
+                this.clearPlayerInventory(serverPlayer);
+                this.teleportPlayerToReSpawnPoint(serverPlayer);
+            }
+        }));
         this.giveAllPlayersKits();
-        startNewRound();
+        this.getShop().syncShopData();
     }
 
     public boolean canRestTime(){
@@ -315,7 +336,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isWaiting = true;
         this.isWaitingWinner = false;
         this.cleanupMap();
-        this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
@@ -386,14 +406,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
-    public void givePlayerKits(ServerPlayer player) {
-        this.getKits(Objects.requireNonNull(this.getMapTeams().getTeamByPlayer(player))).forEach((itemStack -> {
-            player.addItem(itemStack);
-            player.containerMenu.broadcastChanges();
-            player.inventoryMenu.slotsChanged(player.getInventory());
-        }));
-    }
-
     @Override
     public Map<String, List<ItemStack>> getStartKits() {
         return this.startKits;
@@ -445,7 +457,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     @Override
     public List<ItemStack> getKits(BaseTeam team) {
-        return startKits.getOrDefault(team.getName(),new ArrayList<>());
+        List<ItemStack> itemStacks = new ArrayList<>();
+        this.startKits.getOrDefault(team.getName(),new ArrayList<>()).forEach((itemStack) -> {
+            itemStacks.add(itemStack.copy());
+        });
+        return itemStacks;
     }
 
     @Override
@@ -454,7 +470,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
-    public void setStartKits(Map<String, List<ItemStack>> kits) {
+    public void setStartKits(Map<String, ArrayList<ItemStack>> kits) {
         kits.forEach((s, list) -> {
             list.forEach((itemStack) -> {
                 if(itemStack.getItem() instanceof IGun iGun){
