@@ -143,6 +143,16 @@ public class MapTeams {
         return null;
     }
 
+    @Nullable public BaseTeam getTeamByComplexName(String teamName){
+        AtomicReference<BaseTeam> team = new AtomicReference<>();
+        teams.forEach((s,t)-> {
+            if (t.getName().equals(teamName)){
+                team.set(t);
+            }
+        });
+        return team.get();
+    }
+
     public void reset(){
         this.setDonePlayerStatsTemp();
         this.resetAllHurtData();

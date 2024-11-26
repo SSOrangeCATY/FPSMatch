@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
@@ -163,6 +164,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
         }));
         this.giveAllPlayersKits();
+        this.giveBlastTeamBomb();
         this.getShop().syncShopData();
     }
 
@@ -345,6 +347,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
             }
         }));
+        this.giveBlastTeamBomb();
         this.getShop().syncShopData();
     }
 
@@ -398,6 +401,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         float f = Mth.wrapDegrees(data.getYaw());
         float f1 = Mth.wrapDegrees(data.getPitch());
         player.teleportTo(Objects.requireNonNullElse(this.getServerLevel().getServer().getLevel(data.getDimension()),this.getServerLevel()),pos.getX(),pos.getY(),pos.getZ(),f, f1);
+    }
+
+    public void giveBlastTeamBomb(){
+        BaseTeam team = this.getMapTeams().getTeamByComplexName(this.blastTeam);
+        if(team != null){
+            Random random = new Random();
+            // 随机选择一个玩家作为炸弹携带者
+            if(team.getPlayers().isEmpty()) return;
+            UUID uuid = team.getPlayers().get(random.nextInt(team.getPlayers().size()));
+            if(uuid!= null){
+                ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                if(player!= null){
+                    player.addItem(new ItemStack(FPSMItemRegister.C4.get(),1));
+                    player.inventoryMenu.broadcastChanges();
+                    player.inventoryMenu.slotsChanged(player.getInventory());
+                }
+            }
+        }
     }
 
     public void clearPlayerInventory(ServerPlayer player){
