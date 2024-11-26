@@ -23,7 +23,7 @@ public abstract class MixinItemEntity {
 
     @Inject(at = @At("HEAD"), method = "playerTouch", cancellable = true)
     public void fpsMatch$playerTouch$CustomC4(Player player, CallbackInfo ci) {
-        if(!player.isCreative()){
+        if(!player.isCreative() && !player.level().isClientSide){
             if(this.getItem().getItem() instanceof CompositionC4){
                 BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
                 if (map == null) {

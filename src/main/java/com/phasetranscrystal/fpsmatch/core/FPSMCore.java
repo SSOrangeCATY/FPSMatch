@@ -34,7 +34,6 @@ public class FPSMCore {
     }
 
     protected static void setInstance(String archiveName){
-        if(INSTANCE != null && INSTANCE.archiveName.equals(archiveName)) return;
         INSTANCE = new FPSMCore(archiveName);
     }
 
