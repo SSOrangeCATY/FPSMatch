@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
@@ -234,6 +235,11 @@ public class FPSMEvents {
                                     rawMapData.blastAreaDataList.forEach(blastModeMap::addBombArea);
                                 }
                             }
+
+                            if(map instanceof GiveStartKitsMap<?> startKitsMap && rawMapData.startKits != null){
+                                startKitsMap.setStartKits(rawMapData.startKits);
+                            }
+
                         }
                     }
                 }

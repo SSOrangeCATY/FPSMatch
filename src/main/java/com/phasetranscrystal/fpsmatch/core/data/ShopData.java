@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
@@ -39,16 +41,7 @@ public class ShopData {
             shopSlots.forEach((shopSlot) -> {
                 ItemStack itemStack = shopSlot.itemStack();
                 if(itemStack.getItem() instanceof IGun iGun){
-                    Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
-                    if(gunIndexOptional.isPresent()){
-                        GunData gunData = gunIndexOptional.get().getGunData();
-                        iGun.setCurrentAmmoCount(itemStack,gunData.getAmmoAmount());
-                    }
-                    int maxAmmo = iGun.getMaxDummyAmmoAmount(itemStack);
-                    if(maxAmmo > 0){
-                        iGun.useDummyAmmo(itemStack);
-                        iGun.setDummyAmmoAmount(itemStack,maxAmmo);
-                    }
+                    FPSMUtil.fixGunItem(itemStack, iGun);
                     shopSlot.setItemStack(itemStack);
                 }
             });

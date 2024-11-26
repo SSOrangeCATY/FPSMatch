@@ -26,5 +26,10 @@
   "key.fpsm.dismantle_bomb.desc": "Dismantle bomb",
   "commands.fpsm.team.leave.failure": "team not found",
   "commands.fpsm.shop.modify.success": "Successfully modified the shop slot type %2$d index %3$d for '%1$s' shop with item '%4$s' at a cost of %5$d.",
-  "commands.fpsm.shop.modify.failed": "Failed to modify the shop. Please check your permissions or if the shop exists."
+  "commands.fpsm.shop.modify.failed": "Failed to modify the shop. Please check your permissions or if the shop exists.",
+  "commands.fpsm.modify.kits.add.success": "Successfully added start kit '%1$s' for team '%2$s'.",
+  "commands.fpsm.modify.kits.clear.success": "Successfully cleared start kits for team '%1$s'.",
+  "commands.fpsm.modify.kits.clear.failed": "Failed to clear start kits for team '%1$s'.",
+  "commands.fpsm.modify.kits.invalidAction": "Invalid action.",
+  "commands.fpsm.modify.kits.list.success": "Start kits list for team '%1$s': %2$d items."
 }

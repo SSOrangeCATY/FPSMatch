@@ -8,12 +8,40 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
     List<ItemStack> getKits(BaseTeam team);
-    void setKits(BaseTeam team, ItemStack itemStack);
+    void addKits(BaseTeam team, ItemStack itemStack);
+    default void setTeamKits(BaseTeam team, List<ItemStack> itemStack){
+        this.clearTeamKits(team);
+        this.getKits(team).addAll(itemStack);
+    }
+    void setStartKits(Map<String,List<ItemStack>> kits);
     void setAllTeamKits(ItemStack itemStack);
+    default void clearTeamKits(BaseTeam team){
+        this.getKits(team).clear();
+    }
+    default boolean removeItem(BaseTeam team, ItemStack itemStack){
+        AtomicBoolean flag = new AtomicBoolean(false);
+        this.getKits(team).forEach((itemStack1 -> {
+            if(itemStack1.is(itemStack.getItem())){
+                itemStack1.shrink(itemStack.getCount());
+                flag.set(true);
+            }
+        }));
+        return flag.get();
+    }
+
+
+    default void clearAllTeamKits(){
+        for(BaseTeam team : this.getMap().getMapTeams().getTeams()){
+            this.clearTeamKits(team);
+        }
+    }
+
     default void givePlayerKits(ServerPlayer player){
         BaseMap map = this.getMap();
         BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
@@ -31,6 +59,8 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 List<ItemStack> items = this.getKits(team);
                 player.getInventory().clearContent();
                 items.forEach(player.getInventory()::add);
+                player.inventoryMenu.broadcastChanges();
+                player.inventoryMenu.slotsChanged(player.getInventory());
             }
         };
     }
@@ -45,8 +75,12 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                     List<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
                     items.forEach(player.getInventory()::add);
+                    player.inventoryMenu.broadcastChanges();
+                    player.inventoryMenu.slotsChanged(player.getInventory());
                 }
             }
         };
     }
+
+    Map<String,List<ItemStack>> getStartKits();
 }

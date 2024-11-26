@@ -13,15 +13,17 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.index.CommonGunIndex;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.commands.arguments.item.ItemInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -32,8 +34,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class FPSMCommand {
@@ -69,13 +71,21 @@ public class FPSMCommand {
                                                         .then(Commands.argument("from", BlockPosArgument.blockPos())
                                                                 .then(Commands.argument("to", BlockPosArgument.blockPos())
                                                                         .executes(this::handleBombAreaAction)))))
-                                                .then(Commands.literal("debug")
+                                        .then(Commands.literal("debug")
                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                         .suggests(CommandSuggests.MAP_DEBUG_SUGGESTION)
                                                         .executes(this::handleDebugAction)))
                                         .then(Commands.literal("team")
                                                 .then(Commands.argument("teamName", StringArgumentType.string())
                                                 .suggests(CommandSuggests.TEAM_NAMES_SUGGESTION)
+                                                        .then(Commands.literal("kits")
+                                                                .then(Commands.argument("action", StringArgumentType.string())
+                                                                        .suggests(CommandSuggests.SKITS_SUGGESTION)
+                                                                        .executes(this::handleKitsWithoutItemAction)
+                                                                        .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
+                                                                                .executes((c) -> this.handleKitsWithItemAction(c,1))
+                                                                                .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                                                        .executes((c) -> this.handleKitsWithItemAction(c,IntegerArgumentType.getInteger(c,"amount")))))))
                                                         .then(Commands.literal("spawnpoints")
                                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                                         .suggests(CommandSuggests.SPAWNPOINTS_ACTION_SUGGESTION)
@@ -179,6 +189,7 @@ public class FPSMCommand {
         }
         return 0;
     }
+
     private int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String action = StringArgumentType.getString(context, "action");
@@ -258,6 +269,100 @@ public class FPSMCommand {
                 return 0;
             }
         return 1;
+    }
+
+    private int handleKitsWithoutItemAction(CommandContext<CommandSourceStack> context) {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String team = StringArgumentType.getString(context, "teamName");
+        String action = StringArgumentType.getString(context, "action");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+
+        if (map instanceof GiveStartKitsMap<?> startKitMap && context.getSource().getEntity() instanceof Player player) {
+            switch (action) {
+                case "add":
+                    if (map.getMapTeams().checkTeam(team)) {
+                        ItemStack itemStack = player.getMainHandItem().copy();
+                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
+                        context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+                    }
+                    break;
+                case "clear":
+                    if (map.getMapTeams().checkTeam(team)) {
+                        startKitMap.clearTeamKits(map.getMapTeams().getTeamByName(team));
+                        context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+                    }
+                    break;
+                case "list":
+                    handleKitsListAction(context, team, map, startKitMap);
+                    break;
+                default:
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.invalidAction"));
+                    return 0;
+            }
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
+            return 0;
+        }
+        return 1;
+    }
+    private int handleKitsWithItemAction(CommandContext<CommandSourceStack> context, int count) {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String team = StringArgumentType.getString(context, "teamName");
+        String action = StringArgumentType.getString(context, "action");
+        ItemInput itemInput = ItemArgument.getItem(context, "item");
+        ItemStack itemStack = new ItemStack(itemInput.getItem(),count);
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+
+        if (map instanceof GiveStartKitsMap<?> startKitMap) {
+            switch (action) {
+                case "add":
+                    if (map.getMapTeams().checkTeam(team)) {
+                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack.copy());
+                        context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.modify.kits.add.success",itemStack.getDisplayName(), team), true);
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+                    }
+                    break;
+                case "clear":
+                    if (map.getMapTeams().checkTeam(team)) {
+                        boolean flag = startKitMap.removeItem(map.getMapTeams().getTeamByName(team),itemStack);
+                        if(flag){
+                            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
+                        }else{
+                            context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.clear.failed"));
+                        }
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+                    }
+                    break;
+                case "list":
+                    handleKitsListAction(context, team, map, startKitMap);
+                    break;
+                default:
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.invalidAction"));
+                    return 0;
+            }
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
+            return 0;
+        }
+        return 1;
+    }
+
+    private void handleKitsListAction(CommandContext<CommandSourceStack> context, String team, BaseMap map, GiveStartKitsMap<?> startKitMap) {
+        if (map.getMapTeams().checkTeam(team)) {
+            List<ItemStack> itemStacks = startKitMap.getKits(map.getMapTeams().getTeamByName(team));
+            for(ItemStack itemStack1 : itemStacks) {
+                context.getSource().sendSuccess(itemStack1::getDisplayName, true);
+            }
+            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.modify.kits.list.success", team, itemStacks.size()), true);
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+        }
     }
 
     private int handleSpawnAction(CommandContext<CommandSourceStack> context) {

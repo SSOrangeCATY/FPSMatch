@@ -26,5 +26,10 @@
   "key.fpsm.dismantle_bomb.desc": "拆除炸弹",
   "commands.fpsm.team.leave.failure": "队伍未找到",
   "commands.fpsm.shop.modify.success": "成功修改了“%1$s”商店的第%3$d个类型为%2$d的商品槽，商品为“%4$s”，价格为%5$d。",
-  "commands.fpsm.shop.modify.failed": "修改商店失败。请检查您的权限或商店是否存在。"
+  "commands.fpsm.shop.modify.failed": "修改商店失败。请检查您的权限或商店是否存在。",
+  "commands.fpsm.modify.kits.add.success": "成功为队伍 '%2$s' 添加了起始装备 '%1$s'。",
+  "commands.fpsm.modify.kits.clear.success": "成功清除了队伍 '%1$s' 的起始装备。",
+  "commands.fpsm.modify.kits.clear.failed": "清除队伍 '%1$s' 的起始装备失败。",
+  "commands.fpsm.modify.kits.invalidAction": "无效的操作。",
+  "commands.fpsm.modify.kits.list.success": "队伍 '%1$s' 的起始装备列表：%2$d 件。"
 }

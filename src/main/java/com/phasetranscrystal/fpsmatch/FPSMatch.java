@@ -23,12 +23,12 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(FPSMatch.MODID)
 public class FPSMatch {
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LogUtils.getLogger();
     private static final String PROTOCOL_VERSION = "1";
+
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation("fpsmatch", "main"),
             () -> PROTOCOL_VERSION,
