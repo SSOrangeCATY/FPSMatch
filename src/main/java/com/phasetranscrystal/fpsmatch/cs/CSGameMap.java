@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
@@ -40,6 +41,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -412,6 +414,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             Random random = new Random();
             // 随机选择一个玩家作为炸弹携带者
             if(team.getPlayers().isEmpty()) return;
+
+            team.getPlayers().forEach((uuid)->{
+                clearPlayerInventory(uuid,(itemStack) -> itemStack.getItem() instanceof CompositionC4);
+            });
+
             UUID uuid = team.getPlayers().get(random.nextInt(team.getPlayers().size()));
             if(uuid!= null){
                 ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
@@ -422,6 +429,19 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 }
             }
         }
+    }
+
+    public void clearPlayerInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
+        Player player = this.getServerLevel().getPlayerByUUID(uuid);
+        if(player != null){
+            this.clearPlayerInventory(player.getUUID(),inventoryPredicate);
+        }
+    }
+
+    public void clearPlayerInventory(ServerPlayer player, Predicate<ItemStack> predicate){
+        player.getInventory().clearOrCountMatchingItems(predicate, -1, player.inventoryMenu.getCraftSlots());
+        player.containerMenu.broadcastChanges();
+        player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
     public void clearPlayerInventory(ServerPlayer player){
