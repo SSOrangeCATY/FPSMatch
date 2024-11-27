@@ -1,7 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
+import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.*;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
@@ -17,6 +19,7 @@ import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.tacz.guns.GunMod;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.commands.KillCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -184,12 +187,12 @@ public class FPSMEvents {
             for(FileHelper.RawMapData rawMapData : rawMapDataList){
                 String mapType = rawMapData.mapRL.getNamespace();
                 String mapName = rawMapData.mapRL.getPath();
-                BiFunction<ServerLevel, String, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(mapType);
+                Function3<ServerLevel,String, AreaData,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(mapType);
                 Map<String, List<SpawnPointData>> data = rawMapData.teamsData;
                 if(!data.isEmpty()){
                     ResourceKey<Level> level = rawMapData.levelResourceKey;
                     if (game != null) {
-                        BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(event.getServer().getLevel(level), mapName));
+                        BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(event.getServer().getLevel(level), mapName, rawMapData.areaData));
                         if(map != null){
                             map.setGameType(mapType);
                             map.getMapTeams().putAllSpawnPoints(data);
@@ -197,6 +200,7 @@ public class FPSMEvents {
                             if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null && ShopData.checkShopData(rawMapData.shop)){
                                 shopMap.getShop().getDefaultShopData().setData(rawMapData.shop);
                             }
+
 
                             if(map instanceof BlastModeMap<?> blastModeMap){
                                 if (rawMapData.blastAreaDataList != null) {

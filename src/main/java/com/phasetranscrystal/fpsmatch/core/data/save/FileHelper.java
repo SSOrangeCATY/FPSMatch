@@ -53,6 +53,15 @@ public class FileHelper {
                             throw  new RuntimeException(e);
                         }
 
+                        JsonElement aj = FPSMCodec.encodeAreaDataToJson(map.getMapArea());
+                        String aStr = gson.toJson(aj);
+                        File aFile = new File(mapDir, "area.json");
+                        try (FileWriter writer = new FileWriter(aFile)) {
+                            writer.write(aStr);
+                        } catch (IOException e) {
+                            throw  new RuntimeException(e);
+                        }
+
                         if(map instanceof ShopMap<?> shopMap){
                             JsonElement json = FPSMCodec.encodeShopDataMapToJson(shopMap.getShop().getDefaultShopData().getData());
                             String jsonStr = gson.toJson(json);
@@ -117,9 +126,10 @@ public class FileHelper {
                     String mapName = mapDir.getName().split("_")[1];
                     ResourceLocation mapRL = new ResourceLocation(gameType, mapName);
 
-                    List<AreaData> blastAreaDataList = null;
-                    Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop = null;
+                    List<AreaData> blastAreaDataList;
+                    Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop;
                     ResourceKey<Level> levelResourceKey = null;
+                    AreaData areaData = null;
                     // Load teams.json
                     File mapData = new File(mapDir, "teams.json");
                     if (mapData.exists() && mapData.isFile()) {
@@ -135,8 +145,19 @@ public class FileHelper {
                                     throw new RuntimeException(e);
                                 }
                             }
-                            if(levelResourceKey != null){
-                                RawMapData rawMapData = new RawMapData(mapRL, teamsData,levelResourceKey);
+
+                            File aF = new File(mapDir, "area.json");
+                            if (aF.exists() && aF.isFile()) {
+                                try (FileReader fileReader = new FileReader(aF)) {
+                                    JsonElement jsonElement = new Gson().fromJson(fileReader, JsonElement.class);
+                                    areaData = FPSMCodec.decodeAreaDataFromJson(jsonElement);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+
+                            if(levelResourceKey != null && areaData!= null){
+                                RawMapData rawMapData = new RawMapData(mapRL, teamsData,levelResourceKey,areaData);
                                 File shopFile = new File(mapDir, "shop.json");
                                 if (shopFile.exists() && shopFile.isFile()) {
                                     try (FileReader shopReader = new FileReader(shopFile)) {
@@ -202,15 +223,17 @@ public class FileHelper {
     public static class RawMapData{
         @NotNull public final ResourceLocation mapRL;
         @NotNull public final ResourceKey<Level> levelResourceKey;
+        @NotNull public final AreaData areaData;
         @NotNull public final Map<String,List<SpawnPointData>> teamsData;
         @Nullable public Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop;
         @Nullable public List<AreaData> blastAreaDataList;
         @Nullable public Map<String,ArrayList<ItemStack>> startKits;
 
-        public RawMapData(@NotNull ResourceLocation mapRL, @NotNull Map<String, List<SpawnPointData>> teamsData, @NotNull ResourceKey<Level> levelResourceKey) {
+        public RawMapData(@NotNull ResourceLocation mapRL, @NotNull Map<String, List<SpawnPointData>> teamsData, @NotNull ResourceKey<Level> levelResourceKey, AreaData areaData) {
             this.mapRL = mapRL;
             this.teamsData = teamsData;
             this.levelResourceKey = levelResourceKey;
+            this.areaData = areaData;
         }
 
         public void setStartKits(@Nullable Map<String,ArrayList<ItemStack>> startKits) {

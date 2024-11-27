@@ -65,8 +65,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final FPSMShop shop;
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
 
-    public CSGameMap(ServerLevel serverLevel,String mapName) {
-        super(serverLevel,mapName);
+    public CSGameMap(ServerLevel serverLevel,String mapName,AreaData areaData) {
+        super(serverLevel,mapName,areaData);
         this.shop = new FPSMShop(mapName);
     }
 
@@ -166,6 +166,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
         this.giveAllPlayersKits();
         this.giveBlastTeamBomb();
+        super.cleanupMap();
         this.getShop().syncShopData();
     }
 
@@ -374,6 +375,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     @Override
     public void cleanupMap() {
+        super.cleanupMap();
         this.setBlasting(0);
         this.setExploded(false);
         this.currentRoundTime = 0;
@@ -539,9 +541,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if(player != null){
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), packet);
-                if(this.isExploded || this.isBlasting == 2){
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombDemolitionProgressS2CPacket(0));
-                }
             }
         }));
     }

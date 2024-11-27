@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -62,7 +63,9 @@ public class FPSMCommand {
                                 .then(Commands.argument("gameType", StringArgumentType.string())
                                         .suggests(CommandSuggests.GAME_TYPES_SUGGESTION)
                                         .then(Commands.argument("mapName", StringArgumentType.string())
-                                                .executes(this::handleCreateMapWithoutSpawnPoint))))
+                                                .then(Commands.argument("from", BlockPosArgument.blockPos())
+                                                        .then(Commands.argument("to", BlockPosArgument.blockPos())
+                                                                .executes(this::handleCreateMapWithoutSpawnPoint))))))
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_SUGGESTION)
@@ -100,9 +103,11 @@ public class FPSMCommand {
     private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String type = StringArgumentType.getString(context, "gameType");
-        BiFunction<ServerLevel,String,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
+        BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
+        BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");
+        Function3<ServerLevel,String, AreaData,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
         if(game != null){
-            BaseMap map = FPSMCore.getInstance().registerMap(type, game.apply(context.getSource().getLevel(),mapName));
+            BaseMap map = FPSMCore.getInstance().registerMap(type, game.apply(context.getSource().getLevel(),mapName,new AreaData(pos1,pos2)));
             if(map != null) {
                 map.setGameType(type);
             }else return 0;

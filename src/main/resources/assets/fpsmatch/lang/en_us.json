@@ -31,5 +31,9 @@
   "commands.fpsm.modify.kits.clear.success": "Successfully cleared start kits for team '%1$s'.",
   "commands.fpsm.modify.kits.clear.failed": "Failed to clear start kits for team '%1$s'.",
   "commands.fpsm.modify.kits.invalidAction": "Invalid action.",
-  "commands.fpsm.modify.kits.list.success": "Start kits list for team '%1$s': %2$d items."
+  "commands.fpsm.modify.kits.list.success": "Start kits list for team '%1$s': %2$d items.",
+  "key.fpsm.custom.tab.on": "Custom Tab On",
+  "key.fpsm.custom.tab.off": "Custom Tab Off",
+  "key.fpsm.custom.tab.desc": "Switch Custom Tab"
+
 }

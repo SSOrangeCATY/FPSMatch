@@ -3,6 +3,8 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.*;
@@ -15,10 +17,12 @@ public abstract class BaseMap{
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private MapTeams mapTeams;
+    public final AreaData mapArea;
 
-    public BaseMap(ServerLevel serverLevel, String mapName) {
+    public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
         this.serverLevel = serverLevel;
         this.mapName = mapName;
+        this.mapArea = areaData;
     }
 
     public Map<String,Integer> getTeams(){
@@ -64,7 +68,15 @@ public abstract class BaseMap{
     public  void startNewRound(){}
     public abstract void victory();
     public abstract boolean victoryGoal();
-    public abstract void cleanupMap();
+    public void cleanupMap(){
+        AreaData areaData = this.getMapArea();
+        ServerLevel serverLevel = this.getServerLevel();
+        serverLevel.getEntities().getAll().forEach(entity -> {
+            if(areaData.isEntityInArea(entity) && entity instanceof ItemEntity ){
+                entity.discard();
+            }
+        });
+    };
     public abstract void resetGame();
 
     public MapTeams getMapTeams() {
@@ -108,4 +120,7 @@ public abstract class BaseMap{
         }
     }
 
+    public AreaData getMapArea() {
+        return mapArea;
+    }
 }
