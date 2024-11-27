@@ -14,14 +14,17 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
     ShopData defineShopData();
     default void addPlayerMoney(UUID uuid, int money){
         this.getShop().getPlayerShopData(uuid).addMoney(money);
+        this.getShop().syncShopMoneyData(uuid);
     }
 
     default void removePlayerMoney(UUID uuid, int money){
         this.getShop().getPlayerShopData(uuid).takeMoney(money);
+        this.getShop().syncShopMoneyData(uuid);
     }
 
     default void setPlayerMoney(UUID uuid, int money){
         this.getShop().getPlayerShopData(uuid).setMoney(money);
+        this.getShop().syncShopMoneyData(uuid);
     }
 
 

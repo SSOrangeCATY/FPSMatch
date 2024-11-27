@@ -93,11 +93,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(isStart){
             if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
                 if(!isRoundTimeEnd()){
-                    if(!this.isDebug() && this.getMapTeams().getJoinedPlayers().size() != 1){
+                    if(!this.isDebug()){
+                        boolean flag = this.getMapTeams().getJoinedPlayers().size() != 1;
                         switch (this.isBlasting()){
                             case 1 : this.checkBlastingVictory(); break;
                             case 2 : if(!isWaitingWinner) this.roundVictory("ct",WinnerReason.DEFUSE_BOMB); break;
-                            default : this.checkRoundVictory(); break;
+                            default : if(flag) this.checkRoundVictory(); break;
                         }
 
                         if(this.isWaitingWinner){
@@ -538,6 +539,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if(player != null){
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), packet);
+                if(this.isExploded || this.isBlasting == 2){
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombDemolitionProgressS2CPacket(0));
+                }
             }
         }));
     }

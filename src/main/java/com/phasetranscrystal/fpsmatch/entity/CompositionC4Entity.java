@@ -48,12 +48,12 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_DELETE_TIME = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_INTERACTION = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final int DEFAULT_FUSE_TIME = 900; // 45秒
-    private static final int DEFAULT_EXPLOSION_RADIUS = 20;
+    private static final int DEFAULT_EXPLOSION_RADIUS = 60;
     @Nullable
     private Player owner;
     @Nullable
     private Player demolisher;
-    private BlastModeMap map;
+    private BlastModeMap<?> map;
     private boolean deleting = false;
 
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
@@ -63,7 +63,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.setDeleteTime(0);
     }
 
-    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, @Nullable Player pOwner, @NotNull BlastModeMap map) {
+    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, @Nullable Player pOwner, @NotNull BlastModeMap<?> map) {
         this(EntityRegister.C4.get(), pLevel);
         this.setFuse(DEFAULT_FUSE_TIME);
         this.setExplosionRadius(DEFAULT_EXPLOSION_RADIUS);
@@ -73,7 +73,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         map.setBlasting(1);
     }
 
-    public CompositionC4Entity(Level pLevel, Vec3 pos, @Nullable Player pOwner, @NotNull BlastModeMap map, int fuseTime, int explosionRadius) {
+    public CompositionC4Entity(Level pLevel, Vec3 pos, @Nullable Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius) {
         this(EntityRegister.C4.get(), pLevel);
         this.setFuse(fuseTime);
         this.setExplosionRadius(explosionRadius);
@@ -82,7 +82,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.map = map;
         map.setBlasting(1);
     }
-    public CompositionC4Entity(Level pLevel, Vec3 pos, @Nullable Player pOwner, @NotNull BlastModeMap map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
+    public CompositionC4Entity(Level pLevel, Vec3 pos, @Nullable Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
         this(EntityRegister.C4.get(), pLevel);
         this.setExplosionInteraction(explosionInteraction);
         this.setFuse(fuseTime);
@@ -216,7 +216,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         return this.owner;
     }
 
-    protected float getEyeHeight(Pose pPose, EntityDimensions pSize) {
+    protected float getEyeHeight(@NotNull Pose pPose, @NotNull EntityDimensions pSize) {
         return 0.15F;
     }
 
@@ -252,11 +252,11 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.entityData.set(DATA_DELETE_TIME, progress);
     }
 
-    public BlastModeMap getMap() {
+    public BlastModeMap<?> getMap() {
         return map;
     }
 
-    public void setDemolisher(Player player){
+    public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
         this.demolisher = player;
     }
 

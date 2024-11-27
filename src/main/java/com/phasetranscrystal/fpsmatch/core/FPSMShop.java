@@ -154,6 +154,7 @@ public class FPSMShop {
         player.getInventory().add(currentSlot.itemStack());
         syncShopData(player);
         syncShopAction(player,currentSlot,1);
+        this.syncShopMoneyData(player.getUUID());
         ShopData.ShopSlot shopSlot = shopSlotList.get(index);
         System.out.println("bought : " + (shopSlot.itemStack() == null ? currentSlot.type().toString()+currentSlot.index() : shopSlot.itemStack().getDisplayName().getString()) + " cost->" + shopSlot.cost());
         System.out.println(data.getMoney() +"<-"+ cost);
@@ -178,6 +179,7 @@ public class FPSMShop {
         data.addMoney(returnTheGun(player,currentSlot));
         syncShopData(player, currentSlot);
         syncShopAction(player, currentSlot,0);
+        this.syncShopMoneyData(player.getUUID());
     }
 
     private int buyEquipment(ServerPlayer serverPlayer, ShopData.ItemType type, int index, boolean bought) {

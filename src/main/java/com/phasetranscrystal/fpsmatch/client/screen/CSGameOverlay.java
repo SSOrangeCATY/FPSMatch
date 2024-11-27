@@ -43,6 +43,7 @@ public class CSGameOverlay implements IGuiOverlay {
         Font font = Minecraft.getInstance().font;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
+        if(mc.player == null) return;
         guiGraphics.pose().pushPose();
         guiGraphics.fillGradient((screenWidth / 2) - 16, 2, (screenWidth / 2) + 16, 15, -1072689136, -804253680);
         guiGraphics.fillGradient(((screenWidth / 2) - 16), 16, (screenWidth / 2) - 1, 35, -1072689136, noColor);
@@ -58,13 +59,13 @@ public class CSGameOverlay implements IGuiOverlay {
         }
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
         if(ClientData.dismantleBombProgress > 0){
+            MutableComponent component = Component.empty();
             for (int i = 1; i < 8 ; i++){
                 boolean flag = getDemolitionProgressTextStyle(i);
-                String c = flag ? String.valueOf(code.toCharArray()[i - 1]) : "§k-";
-                int w = font.width("0");
                 int color = flag ? 5635925 : 16777215;
-                guiGraphics.drawString(font,c,(screenWidth / 2) - (w * 7 / 2 ) + w * (i - 1),screenHeight - (screenHeight / 3), color ,false);
+                component.append(Component.literal(String.valueOf(code.toCharArray()[i - 1])).withStyle(Style.EMPTY.withColor(color).withObfuscated(!flag)));
             }
+            player.displayClientMessage(component,true);
         }
         guiGraphics.pose().popPose();
     }
