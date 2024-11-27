@@ -100,5 +100,12 @@ public abstract class BaseMap{
     public boolean isStart() {
         return isStart;
     }
+    public boolean equals(Object object){
+        if(object instanceof BaseMap map){
+            return map.getMapName().equals(this.getMapName()) && map.getGameType().equals(this.getGameType());
+        }else{
+            return false;
+        }
+    }
 
 }
