@@ -433,8 +433,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public void clearPlayerInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
         Player player = this.getServerLevel().getPlayerByUUID(uuid);
-        if(player != null){
-            this.clearPlayerInventory(player.getUUID(),inventoryPredicate);
+        if(player instanceof ServerPlayer serverPlayer){
+            this.clearPlayerInventory(serverPlayer,inventoryPredicate);
         }
     }
 
