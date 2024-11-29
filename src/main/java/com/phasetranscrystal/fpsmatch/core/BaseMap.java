@@ -69,13 +69,6 @@ public abstract class BaseMap{
     public abstract void victory();
     public abstract boolean victoryGoal();
     public void cleanupMap(){
-        AreaData areaData = this.getMapArea();
-        ServerLevel serverLevel = this.getServerLevel();
-        serverLevel.getEntities().getAll().forEach(entity -> {
-            if(areaData.isEntityInArea(entity) && entity instanceof ItemEntity ){
-                entity.discard();
-            }
-        });
     };
     public abstract void resetGame();
 

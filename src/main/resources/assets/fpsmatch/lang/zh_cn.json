@@ -17,7 +17,7 @@
   "fpsm.shop.title.cooldown": "剩余购买时间 %1$s",
   "fpsm.shop.title.min.money": "下一轮的最低金额 %1$s",
   "key.fpsm.open.shop.desc": "打开枪械商店",
-  "key.category.fpsm": "FPSMacth",
+  "key.category.fpsm": "FPS Match",
   "key.fpsm.open.shop.failed.no_map": "因为没有加入任何地图，所以无法打开商店",
   "key.fpsm.open.shop.failed.game.not_started": "因为游戏未开始，所以无法打开商店",
   "key.fpsm.open.shop.failed.purchase_time.expired": "因为购买时间已过期，所以无法打开商店",
@@ -31,5 +31,10 @@
   "commands.fpsm.modify.kits.clear.success": "成功清除了队伍 '%1$s' 的起始装备。",
   "commands.fpsm.modify.kits.clear.failed": "清除队伍 '%1$s' 的起始装备失败。",
   "commands.fpsm.modify.kits.invalidAction": "无效的操作。",
-  "commands.fpsm.modify.kits.list.success": "队伍 '%1$s' 的起始装备列表：%2$d 件。"
+  "commands.fpsm.modify.kits.list.success": "队伍 '%1$s' 的起始装备列表：%2$d 件。",
+  "key.fpsm.custom.tab.on": "自定义Tab 开启",
+  "key.fpsm.custom.tab.off": "自定义Tab 关闭",
+  "key.fpsm.custom.tab.desc": "切换自定义Tab",
+  "commands.fpsm.save.success": "保存成功。",
+  "item.fpsmatch.c4": "C4"
 }

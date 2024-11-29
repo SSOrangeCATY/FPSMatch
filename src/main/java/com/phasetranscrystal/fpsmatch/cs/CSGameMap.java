@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
@@ -29,6 +30,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
@@ -378,6 +380,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public void cleanupMap() {
         super.cleanupMap();
+        AreaData areaData = this.getMapArea();
+        ServerLevel serverLevel = this.getServerLevel();
+        serverLevel.getEntities().getAll().forEach(entity -> {
+            if(areaData.isEntityInArea(entity) && entity instanceof ItemEntity){
+                entity.discard();
+            }
+
+            if(entity instanceof CompositionC4Entity c4){
+                c4.discard();
+            }
+        });
+
         this.setBlasting(0);
         this.setExploded(false);
         this.currentRoundTime = 0;

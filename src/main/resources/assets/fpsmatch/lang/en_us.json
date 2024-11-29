@@ -17,7 +17,7 @@
   "fpsm.shop.title.cooldown": "Remaining purchase time %1$s",
   "fpsm.shop.title.min.money": "Minimum amount for next round %1$s",
   "key.fpsm.open.shop.desc": "Open gun shop",
-  "key.category.fpsm": "FPSMacth",
+  "key.category.fpsm": "FPS Match",
   "key.fpsm.open.shop.failed.no_map": "Cannot open the store because you have not joined any maps",
   "key.fpsm.open.shop.failed.game.not_started": "Cannot open the store because game not started",
   "key.fpsm.open.shop.failed.purchase_time.expired": "Cannot open the store because purchase time expired",
@@ -35,6 +35,8 @@
   "key.fpsm.custom.tab.on": "Custom Tab On",
   "key.fpsm.custom.tab.off": "Custom Tab Off",
   "key.fpsm.custom.tab.desc": "Switch Custom Tab",
-  "commands.fpsm.save.success": "Saved successfully."
+  "commands.fpsm.save.success": "Saved successfully.",
+
+  "item.fpsmatch.c4" : "C4"
 
 }
