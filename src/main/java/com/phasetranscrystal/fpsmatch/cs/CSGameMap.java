@@ -95,6 +95,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public void tick() {
         if(isStart){
+            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                if(serverPlayer!= null){
+                    this.getShop().getPlayerShopData(uuid).setShopSlot(serverPlayer);
+                }
+            }));
+
+
             if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
                 if(!isRoundTimeEnd()){
                     if(!this.isDebug()){

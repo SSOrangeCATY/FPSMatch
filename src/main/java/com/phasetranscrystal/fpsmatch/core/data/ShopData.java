@@ -2,14 +2,19 @@ package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -220,6 +225,37 @@ public class ShopData {
         return newData;
     }
 
+    public void setShopSlot(ServerPlayer serverPlayer) {
+        this.data.forEach((itemType, shopSlots) -> {
+            shopSlots.forEach((shopSlot) -> {
+                int i = serverPlayer.getInventory().clearOrCountMatchingItems((itemStack -> {
+                    // 检查物品是否是相同的
+                    if(shopSlot.itemStack().getItem() instanceof IGun iGun){
+                        return iGun.getGunId(itemStack).equals(iGun.getGunId(shopSlot.itemStack()));
+                    }else {
+                        return itemStack.is(shopSlot.itemStack().getItem());
+                    }
+                }), 0,serverPlayer.inventoryMenu.getCraftSlots());
+                // 如果i为0，说明没有找到相同的物品
+                boolean canBuyTwo = shopSlot.type == ItemType.THROWABLE && shopSlot.index == 0;
+                int k = canBuyTwo ? Math.min(2,i): 1;
+                if(i > 0 && shopSlot.boughtCount != k){
+                    shopSlot.boughtCount = k;
+                    shopSlot.canReturn = true;
+                    shopSlot.enable = canBuyTwo && shopSlot.boughtCount < 2;
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ShopActionS2CPacket("null",shopSlot,3, shopSlot.boughtCount));
+                }else if(i == 0 && shopSlot.boughtCount != 0){
+                    while (shopSlot.canReturn()){
+                        shopSlot.returnGoods();
+                        if(!shopSlot.canReturn()){
+                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new ShopActionS2CPacket("null",shopSlot,2,money));
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     public static class ShopSlot{
         private ResourceLocation texture = new ResourceLocation(FPSMatch.MODID,"gun/hud/ai_awp");
         private String itemName;
@@ -332,8 +368,10 @@ public class ShopData {
             this.canReturn = true;
             this.enable = false;
         }
+
         public void returnGoods() {
             this.boughtCount--;
+            if(boughtCount < 0) boughtCount = 0; // 防止负数
             this.canReturn = boughtCount >= 1;
             this.enable = true;
         }
@@ -345,6 +383,13 @@ public class ShopData {
             }else{
                 return false;
             }
+        }
+
+        public void reset(int money){
+            this.boughtCount = 0;
+            this.canReturn = false;
+            this.enable = money >= defaultCost;
+            this.cost = defaultCost;
         }
 
     }

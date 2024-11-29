@@ -103,10 +103,6 @@ public class FPSMEvents {
                 if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
                     float damage = event.getAmount();
                     map.getMapTeams().addHurtData(player,from.getUUID(),damage);
-                    if(damage >= player.getHealth()) {
-                        FPSMEvents.handlePlayerDeath(map,player,from);
-                    }
-                    event.setCanceled(true);
                 }
             }
         }

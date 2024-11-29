@@ -57,20 +57,40 @@ public class ShopActionS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientData.currentMap = name;
+            if(!name.equals("null")){
+                ClientData.currentMap = name;
+            }
+            ShopData.ShopSlot slot = ClientData.clientShopData.getSlotData(type,index);
             ClientData.clientShopData.setMoney(money);
 
             if(action == ACTION_BUY) {
-                ClientData.clientShopData.getSlotData(type,index).bought();
+                slot.bought();
             }
 
             if(action == ACTION_RETURN){
-                ClientData.clientShopData.getSlotData(type,index).returnGoods();
+                slot.returnGoods();
             }
 
             if(action == 2){
-                while (ClientData.clientShopData.getSlotData(type,index).canReturn()){
-                    ClientData.clientShopData.getSlotData(type,index).returnGoods();
+                while (slot.canReturn()){
+                    slot.returnGoods();
+                }
+            }
+
+            if(action == 3){
+                boolean canBuyTwo = type == ShopData.ItemType.THROWABLE && index == 0;
+                if (slot.boughtCount() < money){
+                    for (int i = 0; i <= 2; i++){
+                        if(canBuyTwo){
+                            slot.bought(i != 2);
+                        }else {
+                            slot.bought(false);
+                        }
+                    }
+                }else{
+                    while (slot.boughtCount() > money){
+                        slot.returnGoods();
+                    }
                 }
             }
 
