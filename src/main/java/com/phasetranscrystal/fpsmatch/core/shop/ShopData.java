@@ -4,11 +4,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.tacz.guns.api.item.IGun;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class ShopData {
 //    public static final ShopData defaultData = new ShopData();//TODO
@@ -69,6 +72,47 @@ public class ShopData {
 
     public Map<ItemType, ImmutableList<ShopSlot>> getData() {
         return data;
+    }
+
+    public static ShopData getDefaultData(){
+        Map<ItemType, List<ShopSlot>> map = new HashMap<>();
+        int[][] c = new int[][]{
+                {650,1000,200,200,200},
+                {200,700,600,500,300},
+                {1500,1050,1700,2350,1050},
+                {1800,2700,3000,1700,4750},
+                {200,300,300,400,50}
+        };
+
+        Item[][] i = new Item[][]{
+                {Items.APPLE,Items.STONE,Items.ACACIA_WOOD,Items.OAK_WOOD,Items.BIRCH_WOOD},
+                {Items.ENDER_PEARL,Items.DIAMOND,Items.DIAMOND_AXE,Items.DIAMOND_PICKAXE,Items.IRON_AXE},
+                {Items.EMERALD,Items.IRON_BLOCK,Items.DIAMOND_BLOCK,Items.EGG,Items.MAP},
+                {Items.WARPED_HYPHAE,Items.ENDER_CHEST,Items.HOPPER,Items.KELP,Items.DEEPSLATE},
+                {Items.ACACIA_FENCE,Items.CAMEL_SPAWN_EGG,Items.BEE_SPAWN_EGG,Items.GLOW_INK_SAC,Items.MAGENTA_STAINED_GLASS_PANE}
+        };
+
+        for (int j = 0; j < 5; j++) {
+            map.put(ItemType.values()[j], new ArrayList<>());
+            for (int k = 0; k < 5; k++) {
+                ItemStack itemStack = new ItemStack(i[j][k]);
+                Supplier<ItemStack> supplier = itemStack::copy;
+                ShopSlot slot = new ShopSlot(supplier,c[j][k],
+                        1,
+                        j,
+                        stack -> { ItemStack itemStack1 = supplier.get();
+                    if(stack.getItem() instanceof IGun iGun && itemStack1.getItem() instanceof IGun iGun1){
+                        return iGun.getGunId(stack).equals(iGun1.getGunId(itemStack1));
+                    }else{
+                        return stack.is(itemStack1.getItem());
+                    }
+                });
+                slot.setIndex(k);
+                map.get(ItemType.values()[j]).add(new ShopSlot(new ItemStack(i[j][k]),c[j][k]));
+            }
+        }
+
+        return new ShopData(map);
     }
 
 }

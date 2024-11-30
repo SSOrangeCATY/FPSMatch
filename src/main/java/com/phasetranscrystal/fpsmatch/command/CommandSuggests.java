@@ -7,9 +7,8 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.server.commands.GiveCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -37,9 +36,9 @@ public class CommandSuggests {
     public static final FPSMSuggestionProvider SKITS_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("add","clear","list")));
 
     public static final FPSMSuggestionProvider SHOP_ITEM_TYPES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
-        ShopData.ItemType[] types = ShopData.ItemType.values();
+        ItemType[] types = ItemType.values();
         List<String> typeNames = new ArrayList<>();
-        for (ShopData.ItemType t : types){
+        for (ItemType t : types){
             typeNames.add(t.name().toLowerCase());
         }
         return CommandSuggests.getSuggestions(b,typeNames);

@@ -8,6 +8,7 @@ import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -27,7 +28,7 @@ public class FPSMCodec {
             Codec.STRING.fieldOf("Type").forGetter(ShopData.ShopSlot::typeStr),
             ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopData.ShopSlot::itemStack),
             Codec.INT.fieldOf("DefaultCost").forGetter(ShopData.ShopSlot::defaultCost)
-    ).apply(instance, (index, type, itemStack, defaultCost) -> new ShopData.ShopSlot(index, ShopData.ItemType.valueOf(type), itemStack, defaultCost)));
+    ).apply(instance, (index, type, itemStack, defaultCost) -> new ShopData.ShopSlot(index, ItemType.valueOf(type), itemStack, defaultCost)));
 
     public static JsonElement encodeShopSlotToJson(ShopData.ShopSlot shopSlot) {
         return SHOP_SLOT_CODEC.encodeStart(JsonOps.INSTANCE, shopSlot).getOrThrow(false, e -> {
@@ -46,7 +47,7 @@ public class FPSMCodec {
             SHOP_SLOT_CODEC.listOf()
     );
 
-    public static JsonElement encodeShopDataMapToJson(Map<ShopData.ItemType, List<ShopData.ShopSlot>> itemTypeListMap) {
+    public static JsonElement encodeShopDataMapToJson(Map<ItemType, List<ShopData.ShopSlot>> itemTypeListMap) {
         Map<String, List<ShopData.ShopSlot>> data = new HashMap<>();
         itemTypeListMap.forEach((t,l)->{
             data.put(t.name(),l);
@@ -57,15 +58,15 @@ public class FPSMCodec {
         });
     }
 
-    public static Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> decodeShopDataMapFromJson(JsonElement json) {
+    public static Map<ItemType, ArrayList<ShopData.ShopSlot>> decodeShopDataMapFromJson(JsonElement json) {
         Map<String, List<ShopData.ShopSlot>> m = ITEM_TYPE_TO_SHOP_SLOT_LIST_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
             throw new RuntimeException(e);
         }).getFirst();
 
-        Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> data = new HashMap<>();
+        Map<ItemType, ArrayList<ShopData.ShopSlot>> data = new HashMap<>();
         m.forEach((t,l)->{
             ArrayList<ShopData.ShopSlot> list = new ArrayList<>(l);
-            data.put(ShopData.ItemType.valueOf(t),list);
+            data.put(ItemType.valueOf(t),list);
         });
 
         return data;
