@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.net;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -16,12 +17,12 @@ public class ShopActionS2CPacket {
 
     public final String name;
 
-    public final ShopData.ItemType type;
+    public final ItemType type;
     public final int index;
     public final int action;
     public final int money;
 
-    public ShopActionS2CPacket(String mapName, ShopData.ItemType type, int index, int action, int money){
+    public ShopActionS2CPacket(String mapName, ItemType type, int index, int action, int money){
         this.name = mapName;
         this.type = type;
         this.index = index;
@@ -48,7 +49,7 @@ public class ShopActionS2CPacket {
     public static ShopActionS2CPacket decode(FriendlyByteBuf buf) {
         return new ShopActionS2CPacket(
                 buf.readUtf(),
-                ShopData.ItemType.values()[buf.readInt()],
+                ItemType.values()[buf.readInt()],
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt()
@@ -78,7 +79,7 @@ public class ShopActionS2CPacket {
             }
 
             if(action == 3){
-                boolean canBuyTwo = type == ShopData.ItemType.THROWABLE && index == 0;
+                boolean canBuyTwo = type == ItemType.THROWABLE && index == 0;
                 if (slot.boughtCount() < money){
                     for (int i = 0; i <= 2; i++){
                         if(canBuyTwo){

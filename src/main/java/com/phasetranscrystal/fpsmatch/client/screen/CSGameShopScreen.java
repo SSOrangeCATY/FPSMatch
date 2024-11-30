@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import icyllis.modernui.ModernUI;
@@ -44,7 +45,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static final String TACZ_MODID = "tacz";
     public static final String TACZ_AWP_ICON = "gun/hud/ai_awp.png";
-    public static final Map<ShopData.ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
+    public static final Map<ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
     public static final String BACKGROUND = "ui/cs/background.png";
     public static final int CT_COLOR = RenderUtil.color(150,200,250);
     public static final int T_COLOR = RenderUtil.color(234, 192, 85);
@@ -125,15 +126,15 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     shopHolderBackground.setColor(RenderUtil.color(42, 42, 42));
                     var shop = new LinearLayout(getContext());
                     var gun = new LinearLayout(getContext());
-                    if (shopButtons.getOrDefault(ShopData.ItemType.values()[i], new ArrayList<>()).isEmpty()) {
-                        buttons.add(new GunButtonLayout(getContext(), ShopData.ItemType.values()[i], j));
-                    } else buttons.add(new GunButtonLayout(getContext(), ShopData.ItemType.values()[i], j));
+                    if (shopButtons.getOrDefault(ItemType.values()[i], new ArrayList<>()).isEmpty()) {
+                        buttons.add(new GunButtonLayout(getContext(), ItemType.values()[i], j));
+                    } else buttons.add(new GunButtonLayout(getContext(), ItemType.values()[i], j));
                     gun.addView(buttons.get(j), new LinearLayout.LayoutParams(-1, -1));
                     shop.setGravity(Gravity.CENTER);
                     shop.addView(gun, new LinearLayout.LayoutParams(gun.dp(gunButtonWeight), gun.dp(90)));
                     typeBar.addView(shop, new LinearLayout.LayoutParams(-1, shop.dp(98)));
                 }
-                shopButtons.put(ShopData.ItemType.values()[i], buttons);
+                shopButtons.put(ItemType.values()[i], buttons);
                 shopWindow.addView(typeBar, new LinearLayout.LayoutParams(typeBar.dp(gunButtonWeight + 30), -1));
             }
             content.addView(shopWindow, new LinearLayout.LayoutParams(shopWindow.dp(950), shopWindow.dp(550)));
@@ -227,7 +228,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                         DISABLE_TEXTURE_COLOR,
                         T_COLOR
                 });
-        public final ShopData.ItemType type;
+        public final ItemType type;
         public final int index;
         public final ImageView imageView;
         public final ShapeDrawable backgroud;
@@ -240,7 +241,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public final TextView returnGoodsText;
         public Image icon = Image.create(FPSMatch.MODID,TACZ_AWP_ICON);
 
-        public GunButtonLayout(Context context, ShopData.ItemType type, int index) {
+        public GunButtonLayout(Context context, ItemType type, int index) {
             super(context);
             this.type = type;
             this.index = index;
@@ -375,7 +376,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
         public boolean checkSlots(boolean enable){
             if (!enable) return false;
-            if(this.type == ShopData.ItemType.THROWABLE){
+            if(this.type == ItemType.THROWABLE){
                 if (ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
                     return false;
                 }
@@ -383,11 +384,11 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     return ClientData.clientShopData.getSlotData(this.type, this.index).boughtCount() < 2;
                 }
             }
-            if(this.type == ShopData.ItemType.EQUIPMENT){
+            if(this.type == ItemType.EQUIPMENT){
                 if(this.index == 0){
                     if(ClientData.clientShopData.getSlotData(this.type, this.index).canReturn()){
-                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
-                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
+                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
+                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).invalidate();
                         return false;
                     }
                 }
@@ -402,10 +403,10 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             if(!ClientData.clientShopData.getSlotData(this.type,this.index).canReturn()){
                 backgroud.setStroke(0,RenderUtil.color(255,255,255));
                 returnGoodsLayout.setEnabled(false);
-                if(this.type == ShopData.ItemType.EQUIPMENT){
+                if(this.type == ItemType.EQUIPMENT){
                     if(this.index == 0){
-                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
-                        CSGameShopScreen.shopButtons.get(ShopData.ItemType.EQUIPMENT).get(1).invalidate();
+                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
+                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).invalidate();
                     }
                 }
             }
@@ -436,7 +437,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 this.imageView.setImageDrawable(new ImageDrawable(this.icon));
 
                 this.invalidate();
-                if(this.type == ShopData.ItemType.THROWABLE && this.index == 4){
+                if(this.type == ItemType.THROWABLE && this.index == 4){
                     refreshFlag = false;
                 }
             }

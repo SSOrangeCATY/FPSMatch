@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -17,11 +18,11 @@ public class ShopActionC2SPacket {
 
     public final String name;
 
-    public final ShopData.ItemType type;
+    public final ItemType type;
     public final int index;
     public final int action;
 
-    public ShopActionC2SPacket(String mapName, ShopData.ItemType type, int index, int action){
+    public ShopActionC2SPacket(String mapName, ItemType type, int index, int action){
         this.name = mapName;
         this.type = type;
         this.index = index;
@@ -45,7 +46,7 @@ public class ShopActionC2SPacket {
     public static ShopActionC2SPacket decode(FriendlyByteBuf buf) {
         return new ShopActionC2SPacket(
                 buf.readUtf(),
-                ShopData.ItemType.values()[buf.readInt()],
+                ItemType.values()[buf.readInt()],
                 buf.readInt(),
                 buf.readInt()
         );

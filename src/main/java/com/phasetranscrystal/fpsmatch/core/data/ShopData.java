@@ -1,21 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.index.CommonGunIndex;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -392,16 +386,6 @@ public class ShopData {
             this.canReturn = false;
             this.enable = money >= defaultCost;
             this.cost = defaultCost;
-        }
-
-    }
-
-    public enum ItemType{
-        EQUIPMENT(0),PISTOL(1),MID_RANK(2),RIFLE(3),THROWABLE(4);
-        public final int typeIndex;
-
-        ItemType(int typeIndex) {
-            this.typeIndex = typeIndex;
         }
 
     }

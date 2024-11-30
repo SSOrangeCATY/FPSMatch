@@ -1,5 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.shop;
 
-public interface SlotType {
-    String getType();
+public interface GroupIndex {
+    int getIndex();
 }

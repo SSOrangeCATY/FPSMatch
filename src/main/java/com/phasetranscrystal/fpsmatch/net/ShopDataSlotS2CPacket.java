@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.net;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
@@ -13,12 +14,12 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class ShopDataSlotS2CPacket {
-    public final ShopData.ItemType type;
+    public final ItemType type;
     public final int index;
     public final String name;
     public final ItemStack itemStack;
     public final int cost;
-    public ShopDataSlotS2CPacket(ShopData.ItemType type, int index, String name, ItemStack itemStack, int cost){
+    public ShopDataSlotS2CPacket(ItemType type, int index, String name, ItemStack itemStack, int cost){
         this.type = type;
         this.index = index;
         this.name = name;
@@ -44,7 +45,7 @@ public class ShopDataSlotS2CPacket {
 
     public static ShopDataSlotS2CPacket decode(FriendlyByteBuf buf) {
         return new ShopDataSlotS2CPacket(
-                ShopData.ItemType.values()[buf.readInt()],
+                ItemType.values()[buf.readInt()],
                 buf.readInt(),
                 buf.readUtf(),
                 buf.readItem(),
