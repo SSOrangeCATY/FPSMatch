@@ -74,6 +74,7 @@ public class ShopData {
             List<ShopSlot> slots = data.getOrDefault(type, null);
             if (slots != null && slots.size() == 5) {
                 for (int i = 0; i <= 4; i++) {
+                    //WTF IS THIS???
                     ShopSlot slot = slots.get(i);
                     if (slot.index != i) {
                         throw new RuntimeException("Index mismatch for " + type + " at position " + i + ". Expected index " + i + " but found " + slot.index);
@@ -89,6 +90,7 @@ public class ShopData {
         }
     }
 
+    //AND WTF IS THIS?????
     public static boolean checkShopData(Map<ItemType, ArrayList<ShopSlot>> data) {
         for (ItemType type : ItemType.values()) {
             List<ShopSlot> slots = data.getOrDefault(type, null);

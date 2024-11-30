@@ -147,7 +147,7 @@ public class FPSMEvents {
 
 
     @SubscribeEvent
-    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
+    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){//??????????
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
         if (map instanceof ShopMap<?> shopMap) {
