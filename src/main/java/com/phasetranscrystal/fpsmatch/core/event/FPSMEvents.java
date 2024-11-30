@@ -226,7 +226,7 @@ public class FPSMEvents {
                 data.setLiving(false);
 
                 // 清除c4,并掉落c4
-                int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, 1, player.inventoryMenu.getCraftSlots());
+                int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
                 if (im > 0) {
                     player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false);
                     player.getInventory().setChanged();
