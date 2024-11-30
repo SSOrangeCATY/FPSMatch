@@ -5,24 +5,20 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 public class ShopSlot {
-    public final SlotType slotType;
-    public final int index;
     public final ItemStack itemStack;
     public final int defaultCost;
     public int cost;
     public int boughtCount = 0;
     public int maxBuyCount = 1;
     public boolean lockedReturn = false;
-    public ShopSlot(SlotType slotType, int index, ItemStack itemStack, int defaultCost) {
-        this.index = index;
+    public ShopSlot(ItemStack itemStack, int defaultCost) {
         this.itemStack = itemStack.copy();
         this.defaultCost = defaultCost;
         this.cost = defaultCost;
-        this.slotType = slotType;
     }
 
-    public ShopSlot(SlotType slotType, int index, ItemStack itemStack, int defaultCost, int maxBuyCount) {
-        this(slotType, index, itemStack, defaultCost);
+    public ShopSlot(ItemStack itemStack, int defaultCost, int maxBuyCount) {
+        this(itemStack, defaultCost);
         this.maxBuyCount = maxBuyCount;
     }
 
@@ -92,12 +88,5 @@ public class ShopSlot {
 
     public void setMaxBuyCount(int maxBuyCount) {
         this.maxBuyCount = maxBuyCount;
-    }
-    public SlotType getSlotType() {
-        return slotType;
-    }
-
-    public int getIndex() {
-        return index;
     }
 }
