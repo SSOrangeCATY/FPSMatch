@@ -1,5 +1,9 @@
-package com.phasetranscrystal.fpsmatch.core.shop;
+package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -34,6 +38,10 @@ public class ShopSlot {
      */
     public int getCost() {
         return cost;
+    }
+
+    public int getDefaultCost() {
+        return defaultCost;
     }
 
     /**
@@ -126,7 +134,7 @@ public class ShopSlot {
      * 设置索引
      * @param index 索引
      */
-    void setIndex(int index){
+    public void setIndex(int index){
         if(this.index < 0){
             this.index = index;
         }
@@ -172,6 +180,18 @@ public class ShopSlot {
 
     /**
      * 构造函数，用于创建一个新的物品槽位，并设置组ID和返回检查器
+     * @param itemStack 物品
+     * @param defaultCost 默认价格
+     * @param maxBuyCount 最大购买数量
+     * @param groupId 组ID
+     */
+    public ShopSlot(ItemStack itemStack, int defaultCost, int maxBuyCount, int groupId) {
+        this(itemStack,defaultCost,maxBuyCount);
+        this.groupId = groupId;
+    }
+
+    /**
+     * 构造函数，用于创建一个新的物品槽位，并设置组ID和返回检查器
      * @param supplier 物品供应器
      * @param defaultCost 默认价格
      * @param maxBuyCount 最大购买数量
@@ -211,6 +231,10 @@ public class ShopSlot {
         cost = defaultCost;
         boughtCount = 0;
         locked = false;
+    }
+
+    public ItemStack itemStack(){
+        return this.itemSupplier.get();
     }
 
     // TODO flag规范：>0表示购入，<0表示返回.数值对应数量。
@@ -266,5 +290,18 @@ public class ShopSlot {
         player.inventoryMenu.broadcastChanges();
         boughtCount -= count;
         return count;
+    }
+
+    public String getType(){
+        return this.getClass().getName();
+    }
+
+    public Codec<? extends ShopSlot> getCodec(){
+        return RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("Type").forGetter(ShopSlot::getType),
+                ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::itemStack),
+                Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
+                Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId)
+        ).apply(instance, (type,itemstack,dC,gId)-> new ShopSlot(itemstack,dC,gId)));
     }
 }

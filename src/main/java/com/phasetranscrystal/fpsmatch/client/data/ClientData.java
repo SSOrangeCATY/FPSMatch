@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 
 import java.util.*;
 
@@ -31,7 +32,7 @@ public class ClientData {
     public static float dismantleBombProgress = 0;
     public static boolean customTab = true;
 
-    public static ShopData.ShopSlot getSlotData(ShopData.ItemType type, int index) {
+    public static ShopData.ShopSlot getSlotData(ItemType type, int index) {
         return clientShopData.getSlotData(type,index);
     }
 

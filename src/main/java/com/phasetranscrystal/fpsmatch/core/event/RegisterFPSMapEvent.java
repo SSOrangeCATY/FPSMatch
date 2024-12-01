@@ -1,6 +1,10 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
+import com.mojang.datafixers.util.Function3;
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.eventbus.api.Event;
 
 public class RegisterFPSMapEvent extends Event {
@@ -13,7 +17,8 @@ public class RegisterFPSMapEvent extends Event {
     {
         return false;
     }
-    public FPSMCore getFpsmCore() {
-        return fpsmCore;
+    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map, boolean enableShop) {
+        this.fpsmCore.registerGameType(typeName,map,enableShop);
     }
+
 }

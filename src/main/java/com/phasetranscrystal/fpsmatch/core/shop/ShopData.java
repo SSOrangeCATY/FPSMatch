@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.TriggerSlot;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -15,6 +17,8 @@ import java.util.function.Supplier;
 
 public class ShopData {
 //    public static final ShopData defaultData = new ShopData();//TODO
+    private int money;
+    private int willBeAddMoney;
 
     // 存储数据
     private final Map<ItemType, ImmutableList<ShopSlot>> data;
@@ -97,7 +101,7 @@ public class ShopData {
             for (int k = 0; k < 5; k++) {
                 ItemStack itemStack = new ItemStack(i[j][k]);
                 Supplier<ItemStack> supplier = itemStack::copy;
-                ShopSlot slot = new ShopSlot(supplier,c[j][k],
+                TriggerSlot slot = new TriggerSlot(supplier,c[j][k],
                         1,
                         j,
                         stack -> { ItemStack itemStack1 = supplier.get();
@@ -107,8 +111,7 @@ public class ShopData {
                         return stack.is(itemStack1.getItem());
                     }
                 });
-                slot.setIndex(k);
-                map.get(ItemType.values()[j]).add(new ShopSlot(new ItemStack(i[j][k]),c[j][k]));
+                map.get(ItemType.values()[j]).add(slot);
             }
         }
 

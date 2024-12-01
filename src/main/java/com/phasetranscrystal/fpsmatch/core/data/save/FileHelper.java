@@ -15,6 +15,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -127,7 +128,7 @@ public class FileHelper {
                     ResourceLocation mapRL = new ResourceLocation(gameType, mapName);
 
                     List<AreaData> blastAreaDataList;
-                    Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop;
+                    Map<ItemType, ArrayList<ShopData.ShopSlot>> shop;
                     ResourceKey<Level> levelResourceKey = null;
                     AreaData areaData = null;
                     // Load teams.json
@@ -225,7 +226,7 @@ public class FileHelper {
         @NotNull public final ResourceKey<Level> levelResourceKey;
         @NotNull public final AreaData areaData;
         @NotNull public final Map<String,List<SpawnPointData>> teamsData;
-        @Nullable public Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop;
+        @Nullable public Map<ItemType, ArrayList<ShopData.ShopSlot>> shop;
         @Nullable public List<AreaData> blastAreaDataList;
         @Nullable public Map<String,ArrayList<ItemStack>> startKits;
 
@@ -244,7 +245,7 @@ public class FileHelper {
             this.blastAreaDataList = blastAreaDataList;
         }
 
-        public void setShop(@Nullable Map<ShopData.ItemType, ArrayList<ShopData.ShopSlot>> shop) {
+        public void setShop(@Nullable Map<ItemType, ArrayList<ShopData.ShopSlot>> shop) {
             this.shop = shop;
         }
 

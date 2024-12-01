@@ -11,7 +11,7 @@ public class MapRegister {
 
     @SubscribeEvent
     public static void onMapRegister(RegisterFPSMapEvent event){
-        event.getFpsmCore().registerGameType("cs", CSGameMap::new,true);
+        event.registerGameType("cs", CSGameMap::new,true);
     }
 
 }

@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -146,4 +147,5 @@ public class FPSMCodec {
     public static Map<String, List<ItemStack>> decodeTeamKitsFromJson(JsonElement json) {
         return TEAM_ITEMS_KITS_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
     }
+
 }

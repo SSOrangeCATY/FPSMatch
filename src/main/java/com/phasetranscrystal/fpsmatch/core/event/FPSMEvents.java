@@ -11,6 +11,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
@@ -156,7 +157,7 @@ public class FPSMEvents {
             // 如果不是Tacz的枪就是根据名称判断的！！！ 他会先遍历装备到投掷物 index 0 到 4 所以尽量不要重名!
             ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
             if(slot != null){
-                if (event.getStack().getCount() > 1 && slot.type() == ShopData.ItemType.THROWABLE){
+                if (event.getStack().getCount() > 1 && slot.type() == ItemType.THROWABLE){
                     if(slot.boughtCount() < 2 && slot.index() == 0){
                         slot.bought(slot.boughtCount() != 1);
                     }else{

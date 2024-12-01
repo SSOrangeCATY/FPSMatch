@@ -17,6 +17,7 @@ import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
@@ -148,7 +149,7 @@ public class FPSMCommand {
         if (map != null) {
             if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap<?> shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
-                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
+                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
                 shopMap.getShop().syncShopData();
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
                 return 1;
@@ -179,7 +180,7 @@ public class FPSMCommand {
                     iGun.setDummyAmmoAmount(itemStack,dummyAmmoAmount);
                     iGun.setCurrentAmmoCount(itemStack,gunData.getBulletData().getBulletAmount());
                 }
-                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ShopData.ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
+                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
                 shopMap.getShop().syncShopData();
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
                 return 1;
