@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.BroadcastSlot;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.TriggerSlot;
 import com.tacz.guns.api.item.IGun;
@@ -78,44 +79,43 @@ public class ShopData {
         return data;
     }
 
-    public static ShopData getDefaultData(){
+    public static ShopData getDefaultData() {
         Map<ItemType, List<ShopSlot>> map = new HashMap<>();
         int[][] c = new int[][]{
-                {650,1000,200,200,200},
-                {200,700,600,500,300},
-                {1500,1050,1700,2350,1050},
-                {1800,2700,3000,1700,4750},
-                {200,300,300,400,50}
+                {650, 1000, 200, 200, 200},
+                {200, 700, 600, 500, 300},
+                {1500, 1050, 1700, 2350, 1050},
+                {1800, 2700, 3000, 1700, 4750},
+                {200, 300, 300, 400, 50}
         };
 
         Item[][] i = new Item[][]{
-                {Items.APPLE,Items.STONE,Items.ACACIA_WOOD,Items.OAK_WOOD,Items.BIRCH_WOOD},
-                {Items.ENDER_PEARL,Items.DIAMOND,Items.DIAMOND_AXE,Items.DIAMOND_PICKAXE,Items.IRON_AXE},
-                {Items.EMERALD,Items.IRON_BLOCK,Items.DIAMOND_BLOCK,Items.EGG,Items.MAP},
-                {Items.WARPED_HYPHAE,Items.ENDER_CHEST,Items.HOPPER,Items.KELP,Items.DEEPSLATE},
-                {Items.ACACIA_FENCE,Items.CAMEL_SPAWN_EGG,Items.BEE_SPAWN_EGG,Items.GLOW_INK_SAC,Items.MAGENTA_STAINED_GLASS_PANE}
+                {Items.APPLE, Items.STONE, Items.ACACIA_WOOD, Items.OAK_WOOD, Items.BIRCH_WOOD},
+                {Items.ENDER_PEARL, Items.DIAMOND, Items.DIAMOND_AXE, Items.DIAMOND_PICKAXE, Items.IRON_AXE},
+                {Items.EMERALD, Items.IRON_BLOCK, Items.DIAMOND_BLOCK, Items.EGG, Items.MAP},
+                {Items.WARPED_HYPHAE, Items.ENDER_CHEST, Items.HOPPER, Items.KELP, Items.DEEPSLATE},
+                {Items.ACACIA_FENCE, Items.CAMEL_SPAWN_EGG, Items.BEE_SPAWN_EGG, Items.GLOW_INK_SAC, Items.MAGENTA_STAINED_GLASS_PANE}
         };
 
-        for (int j = 0; j < 5; j++) {
-            map.put(ItemType.values()[j], new ArrayList<>());
-            for (int k = 0; k < 5; k++) {
-                ItemStack itemStack = new ItemStack(i[j][k]);
-                Supplier<ItemStack> supplier = itemStack::copy;
-                TriggerSlot slot = new TriggerSlot(supplier,c[j][k],
-                        1,
-                        j,
-                        stack -> { ItemStack itemStack1 = supplier.get();
-                    if(stack.getItem() instanceof IGun iGun && itemStack1.getItem() instanceof IGun iGun1){
-                        return iGun.getGunId(stack).equals(iGun1.getGunId(itemStack1));
-                    }else{
-                        return stack.is(itemStack1.getItem());
+        for (int typeIndex = 0; typeIndex < ItemType.values().length; typeIndex++) {
+            ItemType type = ItemType.values()[typeIndex];
+            List<ShopSlot> slots = new ArrayList<>();
+
+            for (int slotIndex = 0; slotIndex < i[typeIndex].length; slotIndex++) {
+                Item item = i[typeIndex][slotIndex];
+                int cost = c[typeIndex][slotIndex];
+                ShopSlot slot = new BroadcastSlot(new ItemStack(item), cost, 1, typeIndex);
+                slot.setOnGroupSlotChangedListener((event) -> {
+                    if (event.flag() > 0) {
+
                     }
                 });
-                map.get(ItemType.values()[j]).add(slot);
+                slots.add(slot);
             }
+
+            map.put(type, slots);
         }
 
         return new ShopData(map);
     }
-
 }

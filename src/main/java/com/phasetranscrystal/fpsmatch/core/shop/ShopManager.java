@@ -11,11 +11,10 @@ import java.util.Map;
 
 public class ShopManager {
     ShopManager(){}
-
     protected final Map<String, Codec<? extends ShopSlot>> SLOT_REGISTRY = new HashMap<>();
 
-    public void registerSlotCodec(@NotNull String type,@NotNull Codec<? extends ShopSlot> codec) {
-        SLOT_REGISTRY.put(type, codec);
+    public <T extends ShopSlot> void registerSlotCodec(@NotNull Class<T> type, @NotNull Codec<T> codec) {
+        SLOT_REGISTRY.put(type.getName(), codec);
     }
 
     public <T extends ShopSlot> JsonElement getShopSlotJson(T shopSlot) {

@@ -95,14 +95,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public void tick() {
         if(isStart){
-            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                if(serverPlayer!= null){
-                    this.getShop().getPlayerShopData(uuid).setShopSlot(serverPlayer);
-                }
-            }));
-
-
             if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
                 if(!isRoundTimeEnd()){
                     if(!this.isDebug()){
@@ -391,8 +383,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         AreaData areaData = this.getMapArea();
         ServerLevel serverLevel = this.getServerLevel();
         serverLevel.getEntities().getAll().forEach(entity -> {
-            if(areaData.isEntityInArea(entity) && entity instanceof ItemEntity){
-                entity.discard();
+            if(entity instanceof ItemEntity itemEntity && areaData.isEntityInArea(itemEntity)){
+                itemEntity.discard();
             }
 
             if(entity instanceof CompositionC4Entity c4){

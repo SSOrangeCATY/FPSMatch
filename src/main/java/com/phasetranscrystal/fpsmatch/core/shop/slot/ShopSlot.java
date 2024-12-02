@@ -9,10 +9,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class ShopSlot {
+public class ShopSlot{
     // 物品供应器，用于提供物品栈
     public final Supplier<ItemStack> itemSupplier;
     // 返回检查器，用于检查物品栈是否可以返回
@@ -31,6 +32,7 @@ public class ShopSlot {
     private boolean locked = false;
     // 索引
     private int index = -1;
+    private Consumer<ShopSlotChangeEvent> listener;
 
     /**
      * 获取当前价格
@@ -237,16 +239,21 @@ public class ShopSlot {
         return this.itemSupplier.get();
     }
 
-    // TODO flag规范：>0表示购入，<0表示返回.数值对应数量。
-
     /**
      * 当组内物品槽位发生变化时调用
      * @param changedSlot 变化的物品槽位
      * @param player 玩家
-     * @param grouped 组内物品槽位
      * @param flag 变化标志
+     * flag 规范：>0表示购入，<0表示返回。数值对应数量。
      */
-    public void onGroupSlotChanged(ShopSlot changedSlot, Player player, List<ShopSlot> grouped, int flag) {
+    public final void onGroupSlotChanged(ShopSlot changedSlot, Player player, int flag) {
+        if(this.listener != null){
+            listener.accept(new ShopSlotChangeEvent(this,changedSlot,player,flag));
+        }
+    }
+
+    public void setOnGroupSlotChangedListener(Consumer<ShopSlotChangeEvent> listener) {
+        this.listener = listener;
     }
 
     //不要直接使用！从ShopData层判定与调用
@@ -302,6 +309,6 @@ public class ShopSlot {
                 ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::itemStack),
                 Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
                 Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId)
-        ).apply(instance, (type,itemstack,dC,gId)-> new ShopSlot(itemstack,dC,gId)));
+        ).apply(instance, (type,itemstack,dC,gId) -> new ShopSlot(itemstack,dC,gId)));
     }
 }

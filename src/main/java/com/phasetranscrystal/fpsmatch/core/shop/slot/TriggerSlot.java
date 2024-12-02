@@ -1,5 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -8,37 +10,26 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class TriggerSlot extends ShopSlot {
-    public int triggerIndex;
-    public int changedCost;
+    public final int triggerIndex;
 
-    public TriggerSlot(Supplier<ItemStack> supplier, int defaultCost, int maxBuyCount, int groupId, Predicate<ItemStack> checker) {
-        super(supplier, defaultCost, maxBuyCount, groupId, checker);
-    }
-
-    public TriggerSlot(Supplier<ItemStack> supplier, int defaultCost, int maxBuyCount, int groupId, Predicate<ItemStack> checker, int changedCost, int triggerIndex) {
-        super(supplier, defaultCost, maxBuyCount, groupId, checker);
-        this.changedCost = changedCost;
+    public TriggerSlot(ItemStack itemStack, int defaultCost, int maxBuyCount, int groupId, int triggerIndex) {
+        super(itemStack, defaultCost, maxBuyCount, groupId);
         this.triggerIndex = triggerIndex;
     }
-
 
     public int getTriggerIndex() {
         return triggerIndex;
     }
 
-    public int getChangedCost() {
-        return changedCost;
-    }
-
-    void setTrigger(int triggerIndex,int changedCost){
-        this.triggerIndex = triggerIndex;
-        this.changedCost = changedCost;
-    }
-
     @Override
-    public void onGroupSlotChanged(ShopSlot changedSlot, Player player, List<ShopSlot> grouped, int flag) {
-        if(changedSlot.getIndex() == this.triggerIndex){
-            this.setCost(this.changedCost);
-        }
+    public Codec<TriggerSlot> getCodec(){
+        return RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("Type").forGetter(TriggerSlot::getType),
+                ItemStack.CODEC.fieldOf("ItemStack").forGetter(TriggerSlot::itemStack),
+                Codec.INT.fieldOf("DefaultCost").forGetter(TriggerSlot::getDefaultCost),
+                Codec.INT.fieldOf("GroupId").forGetter(TriggerSlot::getGroupId),
+                Codec.INT.fieldOf("MaxBuyCount").forGetter(TriggerSlot::getMaxBuyCount),
+                Codec.INT.fieldOf("TriggerIndex").forGetter(TriggerSlot::getTriggerIndex)
+        ).apply(instance, (type,itemstack,dC,gId,mB,tI) -> new TriggerSlot(itemstack,dC,gId,mB,tI)));
     }
 }

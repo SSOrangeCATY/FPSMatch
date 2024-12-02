@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopManager;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraftforge.eventbus.api.Event;
+import org.jetbrains.annotations.NotNull;
 
 public class RegisterShopSlotTypeEvent extends Event {
     ShopManager shopManager;
@@ -16,7 +17,7 @@ public class RegisterShopSlotTypeEvent extends Event {
         return false;
     }
 
-    public void register(String type, Codec<? extends ShopSlot> codec){
+    public <T extends ShopSlot> void registerSlotCodec(@NotNull Class<T> type, @NotNull Codec<T> codec){
         this.shopManager.registerSlotCodec(type,codec);
     }
 }
