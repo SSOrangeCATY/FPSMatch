@@ -546,15 +546,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public void setAllTeamKits(ItemStack itemStack) {
         this.startKits.values().forEach((v) -> v.add(itemStack));
     }
-
     public void addBombArea(AreaData area){
         this.bombAreaData.add(area);
     }
-
     public List<AreaData> getBombAreaData() {
         return bombAreaData;
     }
-
     public void setBlasting(int blasting) {
         isBlasting = blasting;
     }

@@ -235,21 +235,20 @@ public class ShopSlot{
         locked = false;
     }
 
-    public ItemStack itemStack(){
-        return this.itemSupplier.get();
-    }
-
     /**
      * 当组内物品槽位发生变化时调用
      * @param changedSlot 变化的物品槽位
      * @param player 玩家
-     * @param flag 变化标志
-     * flag 规范：>0表示购入，<0表示返回。数值对应数量。
+     * @param flag 变化标志。
+     * @apiNote flag 规范：>0表示购入，<0表示返回。数值对应数量。
+     * @return 变化后的物品槽位的的价值
      */
-    public final void onGroupSlotChanged(ShopSlot changedSlot, Player player, int flag) {
+    public final int onGroupSlotChanged(ShopSlot changedSlot, Player player, int flag) {
+        int savedBoughtCount = this.boughtCount;
         if(this.listener != null){
             listener.accept(new ShopSlotChangeEvent(this,changedSlot,player,flag));
         }
+        return (savedBoughtCount - this.boughtCount) * cost;
     }
 
     public void setOnGroupSlotChangedListener(Consumer<ShopSlotChangeEvent> listener) {
@@ -306,7 +305,7 @@ public class ShopSlot{
     public Codec<? extends ShopSlot> getCodec(){
         return RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("Type").forGetter(ShopSlot::getType),
-                ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::itemStack),
+                ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
                 Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
                 Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId)
         ).apply(instance, (type,itemstack,dC,gId) -> new ShopSlot(itemstack,dC,gId)));

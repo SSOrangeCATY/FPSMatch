@@ -5,7 +5,4 @@ import org.jetbrains.annotations.NotNull;
 
 public interface IMap<T extends BaseMap> {
     @NotNull T getMap();
-    default void process(T map){
-
-    };
 }

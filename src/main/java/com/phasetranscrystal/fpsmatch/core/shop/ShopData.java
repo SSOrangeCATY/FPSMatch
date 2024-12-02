@@ -6,21 +6,19 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.BroadcastSlot;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.core.shop.slot.TriggerSlot;
-import com.tacz.guns.api.item.IGun;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 public class ShopData {
 //    public static final ShopData defaultData = new ShopData();//TODO
     private int money;
     private int willBeAddMoney;
-
     // 存储数据
     private final Map<ItemType, ImmutableList<ShopSlot>> data;
     // 分组数据
@@ -77,6 +75,39 @@ public class ShopData {
 
     public Map<ItemType, ImmutableList<ShopSlot>> getData() {
         return data;
+    }
+
+    public void handleShopButton(ServerPlayer player, ItemType type, int index) {
+        List<ShopSlot> shopSlotList = data.get(type);
+        if (index < 0 || index >= shopSlotList.size()) {
+            return;
+        }
+        ShopSlot currentSlot = shopSlotList.get(index);
+        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
+        AtomicInteger groupCost = new AtomicInteger();
+        groupSlot.forEach(slot ->
+                groupCost.addAndGet(slot.onGroupSlotChanged(currentSlot, player, 1)));
+        int cost = currentSlot.getCost() - groupCost.get();
+
+        if (!currentSlot.canBuy(this.money)) {
+            return;
+        }
+
+        this.money -= cost;
+        player.getInventory().add(currentSlot.process());
+    }
+
+    private int getFixedCost(ShopSlot currentSlot, Player player) {
+        AtomicInteger cost = new AtomicInteger(currentSlot.getCost());
+        if(currentSlot.haveGroup()){
+            List<ShopSlot> groupSlot = this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
+            groupSlot.forEach(slot -> {
+                if(slot.getBoughtCount() > 0){
+                    cost.addAndGet(-slot.getCost());
+                }
+            });
+        }
+        return cost.get();
     }
 
     public static ShopData getDefaultData() {

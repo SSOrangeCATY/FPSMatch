@@ -26,7 +26,7 @@ public class BroadcastSlot extends ShopSlot{
     public Codec<BroadcastSlot> getCodec(){
         return RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("Type").forGetter(ShopSlot::getType),
-                ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::itemStack),
+                ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
                 Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
                 Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId)
         ).apply(instance, (type,itemstack,dC,gId) -> new BroadcastSlot(itemstack,dC,gId)));

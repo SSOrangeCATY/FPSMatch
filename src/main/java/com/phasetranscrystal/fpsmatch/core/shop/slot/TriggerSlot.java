@@ -25,7 +25,7 @@ public class TriggerSlot extends ShopSlot {
     public Codec<TriggerSlot> getCodec(){
         return RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("Type").forGetter(TriggerSlot::getType),
-                ItemStack.CODEC.fieldOf("ItemStack").forGetter(TriggerSlot::itemStack),
+                ItemStack.CODEC.fieldOf("ItemStack").forGetter(TriggerSlot::process),
                 Codec.INT.fieldOf("DefaultCost").forGetter(TriggerSlot::getDefaultCost),
                 Codec.INT.fieldOf("GroupId").forGetter(TriggerSlot::getGroupId),
                 Codec.INT.fieldOf("MaxBuyCount").forGetter(TriggerSlot::getMaxBuyCount),
