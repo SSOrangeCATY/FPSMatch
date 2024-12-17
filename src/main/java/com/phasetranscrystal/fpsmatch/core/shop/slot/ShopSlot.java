@@ -2,13 +2,18 @@ package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -32,7 +37,7 @@ public class ShopSlot{
     private boolean locked = false;
     // 索引
     private int index = -1;
-    private Consumer<ShopSlotChangeEvent> listener;
+    private final ArrayList<ListenerModule> listener = new ArrayList<>();
 
     /**
      * 获取当前价格
@@ -222,8 +227,12 @@ public class ShopSlot{
      * 判断是否可以返回
      * @return 是否可以返回
      */
-    public boolean canReturn() {
-        return boughtCount > 0 && !locked;
+    public boolean canReturn(Player player) {
+        if(player.getInventory().clearOrCountMatchingItems(this.returningChecker,0,player.inventoryMenu.getCraftSlots()) > 0){
+            return boughtCount > 0 && !locked;
+        }else{
+            return false;
+        }
     }
 
     /**
@@ -237,22 +246,24 @@ public class ShopSlot{
 
     /**
      * 当组内物品槽位发生变化时调用
-     * @param changedSlot 变化的物品槽位
-     * @param player 玩家
-     * @param flag 变化标志。
-     * @apiNote flag 规范：>0表示购入，<0表示返回。数值对应数量。
-     * @return 变化后的物品槽位的的价值
      */
-    public final int onGroupSlotChanged(ShopSlot changedSlot, Player player, int flag) {
-        int savedBoughtCount = this.boughtCount;
-        if(this.listener != null){
-            listener.accept(new ShopSlotChangeEvent(this,changedSlot,player,flag));
+    public final void onGroupSlotChanged(ShopSlotChangeEvent event) {
+        if(!this.listener.isEmpty()){
+            listener.forEach(listenerModule -> {
+                listenerModule.handle(event);
+            });
         }
-        return (savedBoughtCount - this.boughtCount) * cost;
     }
 
-    public void setOnGroupSlotChangedListener(Consumer<ShopSlotChangeEvent> listener) {
-        this.listener = listener;
+    public void addListener(ListenerModule listener) {
+        this.listener.add(listener);
+    }
+    public List<String> getListenerNames(){
+        List<String> names = new ArrayList<>();
+        this.listener.forEach(listenerModule -> {
+            names.add(listenerModule.getName());
+        });
+        return names;
     }
 
     //不要直接使用！从ShopData层判定与调用
@@ -298,16 +309,25 @@ public class ShopSlot{
         return count;
     }
 
-    public String getType(){
-        return this.getClass().getName();
-    }
 
     public Codec<? extends ShopSlot> getCodec(){
         return RecordCodecBuilder.create(instance -> instance.group(
-                Codec.STRING.fieldOf("Type").forGetter(ShopSlot::getType),
                 ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
                 Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
-                Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId)
-        ).apply(instance, (type,itemstack,dC,gId) -> new ShopSlot(itemstack,dC,gId)));
+                Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId),
+                Codec.list(Codec.STRING).fieldOf("listenerModule").forGetter(ShopSlot::getListenerNames)
+        ).apply(instance, (itemstack,dC,gId,fL) -> {
+            ShopSlot shopSlot = new ShopSlot(itemstack,dC,gId);
+            fL.forEach(name->{
+                ListenerModule lm = FPSMatch.listenerModuleManager.getListenerModule(name);
+                if(lm != null){
+                    shopSlot.addListener(lm);
+                }else{
+                    System.out.println("error : couldn't find listener module by -> " + name);
+                }
+            });
+            return shopSlot;
+        }));
     }
+
 }

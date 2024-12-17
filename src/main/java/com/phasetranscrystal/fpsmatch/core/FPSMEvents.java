@@ -9,10 +9,12 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
@@ -284,5 +286,10 @@ public class FPSMEvents {
                 FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(from.getUUID(), data.getTabData()));
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterListenerModuleEvent(RegisterListenerModuleEvent event){
+        event.register(new ReturnGoodsModule());
     }
 }

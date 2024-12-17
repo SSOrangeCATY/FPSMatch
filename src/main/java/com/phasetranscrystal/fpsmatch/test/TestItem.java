@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.test;
 
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
-import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -16,7 +15,12 @@ public class TestItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pUsedHand) {
         if(pLevel.isClientSide){
-            MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
+            try{
+                //寻找class
+                icyllis.modernui.mc.forge.MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
+            }catch (Exception e){
+                throw new RuntimeException(e);
+            }
         }
         return super.use(pLevel,pPlayer,pUsedHand);
     }

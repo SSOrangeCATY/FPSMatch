@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.net.*;
@@ -47,6 +48,8 @@ public class FPSMatch {
             PROTOCOL_VERSION::equals
     );
 
+    public static LMManager listenerModuleManager;
+
     public FPSMatch(FMLJavaModLoadingContext context)
     {
         IEventBus modEventBus = context.getModEventBus();
@@ -54,6 +57,7 @@ public class FPSMatch {
         MinecraftForge.EVENT_BUS.register(this);
         FPSMItemRegister.ITEMS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
+        listenerModuleManager = new LMManager();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

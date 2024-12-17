@@ -4,13 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.phasetranscrystal.fpsmatch.core.shop.slot.BroadcastSlot;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,69 +80,34 @@ public class ShopData {
         }
         ShopSlot currentSlot = shopSlotList.get(index);
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
-        AtomicInteger groupCost = new AtomicInteger();
-        groupSlot.forEach(slot ->
-                groupCost.addAndGet(slot.onGroupSlotChanged(currentSlot, player, 1)));
-        int cost = currentSlot.getCost() - groupCost.get();
+
+        groupSlot.forEach(slot -> {
+                ShopSlotChangeEvent event = new ShopSlotChangeEvent(slot, player,this.money,1);
+                slot.onGroupSlotChanged(event);
+                this.money = event.getMoney();
+        });
+
+        int cost = currentSlot.getCost();
 
         if (!currentSlot.canBuy(this.money)) {
             return;
         }
-
         this.money -= cost;
         player.getInventory().add(currentSlot.process());
     }
 
-    private int getFixedCost(ShopSlot currentSlot, Player player) {
-        AtomicInteger cost = new AtomicInteger(currentSlot.getCost());
-        if(currentSlot.haveGroup()){
-            List<ShopSlot> groupSlot = this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
-            groupSlot.forEach(slot -> {
-                if(slot.getBoughtCount() > 0){
-                    cost.addAndGet(-slot.getCost());
-                }
-            });
-        }
-        return cost.get();
-    }
-
     public static ShopData getDefaultData() {
-        Map<ItemType, List<ShopSlot>> map = new HashMap<>();
-        int[][] c = new int[][]{
-                {650, 1000, 200, 200, 200},
-                {200, 700, 600, 500, 300},
-                {1500, 1050, 1700, 2350, 1050},
-                {1800, 2700, 3000, 1700, 4750},
-                {200, 300, 300, 400, 50}
-        };
-
-        Item[][] i = new Item[][]{
-                {Items.APPLE, Items.STONE, Items.ACACIA_WOOD, Items.OAK_WOOD, Items.BIRCH_WOOD},
-                {Items.ENDER_PEARL, Items.DIAMOND, Items.DIAMOND_AXE, Items.DIAMOND_PICKAXE, Items.IRON_AXE},
-                {Items.EMERALD, Items.IRON_BLOCK, Items.DIAMOND_BLOCK, Items.EGG, Items.MAP},
-                {Items.WARPED_HYPHAE, Items.ENDER_CHEST, Items.HOPPER, Items.KELP, Items.DEEPSLATE},
-                {Items.ACACIA_FENCE, Items.CAMEL_SPAWN_EGG, Items.BEE_SPAWN_EGG, Items.GLOW_INK_SAC, Items.MAGENTA_STAINED_GLASS_PANE}
-        };
-
-        for (int typeIndex = 0; typeIndex < ItemType.values().length; typeIndex++) {
-            ItemType type = ItemType.values()[typeIndex];
-            List<ShopSlot> slots = new ArrayList<>();
-
-            for (int slotIndex = 0; slotIndex < i[typeIndex].length; slotIndex++) {
-                Item item = i[typeIndex][slotIndex];
-                int cost = c[typeIndex][slotIndex];
-                ShopSlot slot = new BroadcastSlot(new ItemStack(item), cost, 1, typeIndex);
-                slot.setOnGroupSlotChangedListener((event) -> {
-                    if (event.flag() > 0) {
-
-                    }
-                });
-                slots.add(slot);
+        Map<ItemType, List<ShopSlot>> data = new HashMap<>();
+        int cost = 0;
+        ItemStack empty = ItemStack.EMPTY;
+        for (ItemType type : ItemType.values()) {
+            List<ShopSlot> list = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                list.add(new ShopSlot(empty, cost));
             }
-
-            map.put(type, slots);
+            data.put(type, list);
         }
-
-        return new ShopData(map);
+        return new ShopData(data);
     }
+
 }
