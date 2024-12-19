@@ -79,12 +79,6 @@ public class FPSMatch {
                 .consumerNetworkThread(ShopActionC2SPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopActionS2CPacket.class, 3)
-                .encoder(ShopActionS2CPacket::encode)
-                .decoder(ShopActionS2CPacket::decode)
-                .consumerNetworkThread(ShopActionS2CPacket::handle)
-                .add();
-
         INSTANCE.messageBuilder(BombActionC2SPacket.class, 4)
                 .encoder(BombActionC2SPacket::encode)
                 .decoder(BombActionC2SPacket::decode)

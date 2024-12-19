@@ -11,7 +11,7 @@ public class ClientData {
     public static String currentMap = "fpsm_none";
     public static String currentGameType = "error";
     public static boolean currentMapSupportShop = true;
-    public static final Map<ItemType, List<ClientShopSlot>> clientShopData = new HashMap<>();
+    public static final Map<ItemType, List<ClientShopSlot>> clientShopData = getDefaultShopSlotData();
     public static int money = 0;
     public static int nextRoundMoney = 0;
     public static final Map<UUID, TabData> tabData = new HashMap<>();

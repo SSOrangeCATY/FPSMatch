@@ -37,8 +37,6 @@ import java.util.*;
 
 
 public class CSGameShopScreen extends Fragment implements ScreenCallback{
-    private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
-    private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static final String BROKEN_ICON = "gun/hud/broken.png";
     public static final Map<ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
     public static final String BACKGROUND = "ui/cs/background.png";
@@ -46,6 +44,8 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     public static final int T_COLOR = RenderUtil.color(234, 192, 85);
     public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
+    private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
+    private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static boolean refreshFlag = false;
     public static boolean debug;
     private static CSGameShopScreen INSTANCE;
@@ -62,22 +62,13 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         return INSTANCE;
     }
 
-    public static void main(String[] args) {
-        System.setProperty("java.awt.headless", "true");
-        Configurator.setRootLevel(Level.DEBUG);
-        try (ModernUI app = new ModernUI()) {
-            app.run(getInstance(true));
-        }
-        AudioManager.getInstance().close();
-        System.gc();
-    }
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
+    public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
         if (window == null) {
             window = new RelativeLayout(getContext());
             var content = new LinearLayout(getContext());
             content.setOrientation(LinearLayout.HORIZONTAL);
             ImageView background = new ImageView(getContext());
-            ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
+            ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, BACKGROUND));
             imageDrawable.setAlpha(60);
 
             background.setImageDrawable(imageDrawable);
@@ -203,13 +194,13 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         }
 
         @Override
-        public void draw(Canvas canvas) {
+        public void draw(@NotNull Canvas canvas) {
             super.draw(canvas);
             updateText();
         }
 
         public void updateText(){
-            moneyText.setText("$"+ClientData.getMoney());
+            moneyText.setText("$ "+ClientData.getMoney());
         }
     }
 
@@ -277,7 +268,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
             itemNameText = new TextView(getContext());
             itemNameText.setTextSize(13);
-            itemNameText.setText("AWP");
+            itemNameText.setText(I18n.get("fpsm.shop.slot.empty"));
             RelativeLayout.LayoutParams itemNameParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -304,15 +295,13 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 }
             };
             returnGoodsLayout.addView(returnGoodsText);
-            returnGoodsLayout.setOnClickListener((l)->{
-                FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap,this.type,this.index, ShopAction.RETURN));
-            });
+            returnGoodsLayout.setOnClickListener((l)-> FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap,this.type,this.index, ShopAction.RETURN)));
 
             returnGoodsLayout.setEnabled(false);
             addView(returnGoodsLayout);
 
             costText = new TextView(getContext());
-            costText.setText("$"+ClientData.getSlotData(this.type, this.index).cost);
+            costText.setText("$ "+ClientData.getSlotData(this.type, this.index).cost);
             costText.setTextSize(12);
             RelativeLayout.LayoutParams costParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -343,11 +332,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             });
 
             setOnClickListener((v) -> {
-                ClientShopSlot currentSlot = ClientData.getSlotData(this.type, this.index);
-                boolean actionFlag = ClientData.getMoney() >= currentSlot.cost();
-                if(checkSlots(actionFlag)) {
-                    FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
-                }
+                FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
             });
         }
 
@@ -356,73 +341,45 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             this.returnGoodsLayout.setEnabled(enable);
         }
 
-        public void setElementsColor(boolean enable){
+        public void setElements(boolean enable){
             imageView.setEnabled(enable);
+
             if(enable){
                 numText.setTextColor(CSGameShopScreen.T_COLOR);
                 itemNameText.setTextColor(CSGameShopScreen.T_COLOR);
                 costText.setTextColor(CSGameShopScreen.T_COLOR);
+
+                backgroud.setStroke(1,RenderUtil.color(255,255,255));
+
+                if(!ClientData.getSlotData(this.type,this.index).canReturn()){
+                    returnGoodsLayout.setEnabled(true);
+                }
             }else{
                 numText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
                 itemNameText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
                 costText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
-            }
-        }
 
-        public boolean checkSlots(boolean enable){
-            if (!enable) return false;
-            if(this.type == ItemType.THROWABLE){
-                if (ClientData.getThrowableTypeBoughtCount() >= 4){
-                    return false;
-                }
-                if(this.index == 0){
-                    return ClientData.getSlotData(this.type, this.index).boughtCount() < 2;
-                }
-            }
-            if(this.type == ItemType.EQUIPMENT){
-                if(this.index == 0){
-                    if(ClientData.getSlotData(this.type, this.index).canReturn()){
-                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.getSlotData(this.type, 1).cost());
-                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).invalidate();
-                        return false;
-                    }
-                }
-
-                if(this.index == 0){
-                    if(ClientData.getSlotData(this.type, 1).canReturn() && !ClientData.getSlotData(this.type, this.index).canReturn()){
-                        return false;
-                    }
-                }
-            }
-
-            if(!ClientData.getSlotData(this.type,this.index).canReturn()){
                 backgroud.setStroke(0,RenderUtil.color(255,255,255));
                 returnGoodsLayout.setEnabled(false);
-                if(this.type == ItemType.EQUIPMENT){
-                    if(this.index == 0){
-                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.getSlotData(this.type, 1).cost());
-                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).invalidate();
-                    }
-                }
             }
-
-            return !ClientData.getSlotData(this.type, this.index).canReturn();
         }
 
         public void updateButtonState() {
-           boolean enable = ClientData.getMoney() >= ClientData.getSlotData(this.type,this.index).cost();
-           setElementsColor(checkSlots(enable));
-           if(!this.isHovered()) {
-               backgroundAnimeFadeIn.start();
-           }else{
-               backgroundAnimeFadeOut.start();
-           }
+            ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
+            boolean enable = ClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty();
+            this.setElements(enable);
+
+            if(!this.isHovered()) {
+                backgroundAnimeFadeIn.start();
+            }else{
+                backgroundAnimeFadeOut.start();
+            }
 
             if(refreshFlag){
                 ClientShopSlot data = ClientData.getSlotData(this.type,this.index);
                 setStats(data.canReturn());
-                this.itemNameText.setText(data.name());
-                this.costText.setText("$"+ data.cost());
+                this.itemNameText.setText(data.itemStack().isEmpty() ? I18n.get("fpsm.shop.slot.empty") : data.name());
+                this.costText.setText("$ "+ data.cost());
                 ResourceLocation texture = data.texture();
                 if(texture != null){
                     this.icon = RenderUtil.getGunTextureByRL(texture);
@@ -436,6 +393,8 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 this.imageView.setImageDrawable(new ImageDrawable(this.icon));
 
                 this.invalidate();
+
+                //END
                 if(this.type == ItemType.THROWABLE && this.index == 4){
                     refreshFlag = false;
                 }

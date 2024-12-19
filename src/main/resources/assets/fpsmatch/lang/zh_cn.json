@@ -16,6 +16,7 @@
   "commands.fpsm.modify.spawn.invalidAction": "指定了无效的出生点操作。",
   "fpsm.shop.title.cooldown": "剩余购买时间 %1$s",
   "fpsm.shop.title.min.money": "下一轮的最低金额 %1$s",
+  "fpsm.shop.slot.empty" : "空",
   "key.fpsm.open.shop.desc": "打开枪械商店",
   "key.category.fpsm": "FPS Match",
   "key.fpsm.open.shop.failed.no_map": "因为没有加入任何地图，所以无法打开商店",

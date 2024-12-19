@@ -107,7 +107,7 @@ public class CompositionC4 extends Item {
                     return pStack;
                 }else{
                     BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
-                    if(team != null && map instanceof ShopMap<?> shopMap){
+                    if(team != null && map instanceof ShopMap shopMap){
                         team.getPlayers().forEach((uuid -> {
                             shopMap.addPlayerMoney(uuid,300);
                         }));

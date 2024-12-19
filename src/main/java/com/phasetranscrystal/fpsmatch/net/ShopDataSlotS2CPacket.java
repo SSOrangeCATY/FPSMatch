@@ -19,16 +19,18 @@ public class ShopDataSlotS2CPacket {
     public final int index;
     public final String name;
     public final ItemStack itemStack;
-
     public final int boughtCount;
     public final int cost;
-    public ShopDataSlotS2CPacket(ItemType type, int index, String name, ItemStack itemStack, int cost,int boughtCount){
+    public final boolean locked;
+
+    public ShopDataSlotS2CPacket(ItemType type, int index, String name, ItemStack itemStack, int cost,int boughtCount,boolean locked){
         this.type = type;
         this.index = index;
         this.name = name;
         this.itemStack =itemStack;
         this.cost = cost;
         this.boughtCount = boughtCount;
+        this.locked = locked;
     }
 
     public ShopDataSlotS2CPacket(ItemType type, ShopSlot shopSlot, String name){
@@ -38,6 +40,7 @@ public class ShopDataSlotS2CPacket {
         this.itemStack = shopSlot.process();
         this.cost = shopSlot.getCost();
         this.boughtCount = shopSlot.getBoughtCount();
+        this.locked = shopSlot.isLocked();
     }
 
     public static void encode(ShopDataSlotS2CPacket packet, FriendlyByteBuf buf) {
@@ -47,6 +50,7 @@ public class ShopDataSlotS2CPacket {
         buf.writeItemStack(packet.itemStack, false);
         buf.writeInt(packet.cost);
         buf.writeInt(packet.boughtCount);
+        buf.writeBoolean(packet.locked);
     }
 
     public static ShopDataSlotS2CPacket decode(FriendlyByteBuf buf) {
@@ -56,7 +60,8 @@ public class ShopDataSlotS2CPacket {
                 buf.readUtf(),
                 buf.readItem(),
                 buf.readInt(),
-                buf.readInt()
+                buf.readInt(),
+                buf.readBoolean()
         );
     }
 
@@ -67,14 +72,16 @@ public class ShopDataSlotS2CPacket {
             currentSlot.setItemStack(this.itemStack);
             currentSlot.setCost(cost);
             currentSlot.setBoughtCount(boughtCount);
+            currentSlot.setLock(locked);
 
             if(this.itemStack.getItem() instanceof IGun iGun){
-                ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(iGun.getGunId(this.itemStack)).orElse(null);
-                if (gunIndex != null){
-                    currentSlot.setTexture(gunIndex.getHUDTexture());
-                    CSGameShopScreen.refreshFlag = true;
-                }
+                TimelessAPI.getClientGunIndex(iGun.getGunId(this.itemStack)).ifPresent(gunIndex -> currentSlot.setTexture(gunIndex.getHUDTexture()));
             }
+
+            if(!CSGameShopScreen.refreshFlag){
+                CSGameShopScreen.refreshFlag = true;
+            }
+
         });
         ctx.get().setPacketHandled(true);
     }

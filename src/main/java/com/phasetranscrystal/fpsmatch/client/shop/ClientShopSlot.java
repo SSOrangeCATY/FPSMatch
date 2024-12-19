@@ -11,6 +11,7 @@ public class ClientShopSlot{
     @Nullable
     private ResourceLocation texture = null;
     private int boughtCount = 0;
+    private boolean locked = false;
     
     public ClientShopSlot(ItemStack itemStack, int defaultCost) {
         this.itemStack = itemStack;
@@ -31,6 +32,14 @@ public class ClientShopSlot{
 
     public int boughtCount(){
         return boughtCount;
+    }
+
+    public boolean isLocked(){
+        return locked;
+    }
+
+    public void setLock(boolean lock){
+        this.locked = lock;
     }
 
     public void setBoughtCount(int count){
@@ -57,6 +66,6 @@ public class ClientShopSlot{
     }
 
     public boolean canReturn() {
-        return this.boughtCount > 0;
+        return this.boughtCount > 0 && !locked;
     }
 }

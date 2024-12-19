@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * */
 public class ShopData {
 //    public static final ShopData defaultData = new ShopData();//TODO
-    private int money;
-    private int willBeAddMoney;
+    private int money = 800;
+    private int willBeAddMoney = 0;
     // 存储数据
     private final Map<ItemType, ImmutableList<ShopSlot>> data;
     // 分组数据
