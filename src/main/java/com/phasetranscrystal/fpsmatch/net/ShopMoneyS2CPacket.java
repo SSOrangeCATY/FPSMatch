@@ -23,7 +23,7 @@ public record ShopMoneyS2CPacket(UUID owner, int money) {
         ctx.get().enqueueWork(() -> {
             if (Minecraft.getInstance().player != null) {
                 if (this.owner.equals(Minecraft.getInstance().player.getUUID())) {
-                    ClientData.clientShopData.setMoney(money);
+                    ClientData.setMoney(money);
                 } else {
                     ClientData.playerMoney.put(this.owner, money);
                 }

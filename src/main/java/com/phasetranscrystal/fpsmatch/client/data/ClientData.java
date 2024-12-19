@@ -1,16 +1,19 @@
 package com.phasetranscrystal.fpsmatch.client.data;
 
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientData {
     public static String currentMap = "fpsm_none";
     public static String currentGameType = "error";
     public static boolean currentMapSupportShop = true;
-    public static final ShopData clientShopData = new ShopData(ShopData.getDefaultShopItemData(false));
+    public static final Map<ItemType, List<ClientShopSlot>> clientShopData = new HashMap<>();
+    public static int money = 0;
+    public static int nextRoundMoney = 0;
     public static final Map<UUID, TabData> tabData = new HashMap<>();
     public static final Map<UUID,Integer> playerMoney = new HashMap<>();
     public static int cTWinnerRounds = 0;
@@ -24,7 +27,6 @@ public class ClientData {
     public static boolean isWaiting = false;
     public static boolean isWarmTime = false;
     public static boolean isWaitingWinner = false;
-    public static int nextRoundMoney = 0;
     public static int purchaseTime = 1;
     public static boolean canOpenShop = false;
     public static int dismantleBombStates = 0; // 0 = 没拆呢 | 1 = 正在拆 | 2 = 错误可能是不在队伍或者地图导致的
@@ -32,19 +34,45 @@ public class ClientData {
     public static float dismantleBombProgress = 0;
     public static boolean customTab = true;
 
-    public static ShopData.ShopSlot getSlotData(ItemType type, int index) {
-        return clientShopData.getSlotData(type,index);
+    public static int getMoney(){
+        return money;
+    }
+    public static Map<ItemType, List<ClientShopSlot>> getDefaultShopSlotData(){
+        Map<ItemType, List<ClientShopSlot>> data = new HashMap<>();
+        for (ItemType type : ItemType.values()) {
+            List<ClientShopSlot> list = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                list.add(ClientShopSlot.getDefault());
+            }
+            data.put(type, list);
+        }
+
+        return data;
     }
 
-    public static int getMoney(){
-        return clientShopData.getMoney();
+    public static void resetShopData(){
+        clientShopData.clear();
+        clientShopData.putAll(getDefaultShopSlotData());
+    }
+
+    public static ClientShopSlot getSlotData(ItemType type,int index){
+        return clientShopData.get(type).get(index);
+    }
+
+    public static int getThrowableTypeBoughtCount(){
+        List<ClientShopSlot> slots = clientShopData.get(ItemType.THROWABLE);
+        AtomicInteger count = new AtomicInteger();
+        slots.forEach((slot)->{
+             count.addAndGet(slot.boughtCount());
+        });
+        return count.get();
     }
 
     public static void reset() {
         currentMap = "fpsm_none";
         currentGameType = "error";
         currentMapSupportShop = true;
-        clientShopData.reset();
+        resetShopData();
         tabData.clear();
         playerMoney.clear();
         cTWinnerRounds = 0;
@@ -64,5 +92,13 @@ public class ClientData {
         dismantleBombStates = 0;
         bombUUID = null;
         dismantleBombProgress = 0;
+    }
+
+    public static int getNextRoundMinMoney() {
+        return nextRoundMoney;
+    }
+
+    public static void setMoney(int count) {
+        money = count;
     }
 }

@@ -1,10 +1,10 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.mojang.blaze3d.platform.Window;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
+import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import icyllis.modernui.ModernUI;
@@ -18,10 +18,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.mc.MuiModApi;
 import icyllis.modernui.mc.ScreenCallback;
-import icyllis.modernui.mc.forge.ModernUIForge;
-import icyllis.modernui.mc.forge.MuiForgeApi;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
@@ -30,7 +27,6 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.Level;
@@ -43,8 +39,7 @@ import java.util.*;
 public class CSGameShopScreen extends Fragment implements ScreenCallback{
     private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
     private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
-    public static final String TACZ_MODID = "tacz";
-    public static final String TACZ_AWP_ICON = "gun/hud/ai_awp.png";
+    public static final String BROKEN_ICON = "gun/hud/broken.png";
     public static final Map<ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
     public static final String BACKGROUND = "ui/cs/background.png";
     public static final int CT_COLOR = RenderUtil.color(150,200,250);
@@ -198,7 +193,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
             minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", ClientData.clientShopData.getNextRoundMinMoney()));
+            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", ClientData.getNextRoundMinMoney()));
             minmoneyText.setMargins(0,0,20,0);
             nextRoundMinMoneyText.setLayoutParams(minmoneyText);
             nextRoundMinMoneyText.setTextSize(15);
@@ -239,7 +234,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public final TextView itemNameText;
         public final TextView costText;
         public final TextView returnGoodsText;
-        public Image icon = Image.create(FPSMatch.MODID,TACZ_AWP_ICON);
+        public Image icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
 
         public GunButtonLayout(Context context, ItemType type, int index) {
             super(context);
@@ -310,14 +305,14 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             };
             returnGoodsLayout.addView(returnGoodsText);
             returnGoodsLayout.setOnClickListener((l)->{
-                FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap,this.type,this.index, ShopActionC2SPacket.ACTION_RETURN));
+                FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap,this.type,this.index, ShopAction.RETURN));
             });
 
             returnGoodsLayout.setEnabled(false);
             addView(returnGoodsLayout);
 
             costText = new TextView(getContext());
-            costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, this.index).cost());
+            costText.setText("$"+ClientData.getSlotData(this.type, this.index).cost);
             costText.setTextSize(12);
             RelativeLayout.LayoutParams costParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -348,10 +343,10 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             });
 
             setOnClickListener((v) -> {
-                ShopData.ShopSlot currentSlot = ClientData.clientShopData.getSlotData(this.type, this.index);
+                ClientShopSlot currentSlot = ClientData.getSlotData(this.type, this.index);
                 boolean actionFlag = ClientData.getMoney() >= currentSlot.cost();
                 if(checkSlots(actionFlag)) {
-                    FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopActionC2SPacket.ACTION_BUY));
+                    FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
                 }
             });
         }
@@ -377,45 +372,45 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public boolean checkSlots(boolean enable){
             if (!enable) return false;
             if(this.type == ItemType.THROWABLE){
-                if (ClientData.clientShopData.getThrowableTypeBoughtCount() >= 4){
+                if (ClientData.getThrowableTypeBoughtCount() >= 4){
                     return false;
                 }
                 if(this.index == 0){
-                    return ClientData.clientShopData.getSlotData(this.type, this.index).boughtCount() < 2;
+                    return ClientData.getSlotData(this.type, this.index).boughtCount() < 2;
                 }
             }
             if(this.type == ItemType.EQUIPMENT){
                 if(this.index == 0){
-                    if(ClientData.clientShopData.getSlotData(this.type, this.index).canReturn()){
-                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
+                    if(ClientData.getSlotData(this.type, this.index).canReturn()){
+                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.getSlotData(this.type, 1).cost());
                         CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).invalidate();
                         return false;
                     }
                 }
 
                 if(this.index == 0){
-                    if(ClientData.clientShopData.getSlotData(this.type, 1).canReturn() && !ClientData.clientShopData.getSlotData(this.type, this.index).canReturn()){
+                    if(ClientData.getSlotData(this.type, 1).canReturn() && !ClientData.getSlotData(this.type, this.index).canReturn()){
                         return false;
                     }
                 }
             }
 
-            if(!ClientData.clientShopData.getSlotData(this.type,this.index).canReturn()){
+            if(!ClientData.getSlotData(this.type,this.index).canReturn()){
                 backgroud.setStroke(0,RenderUtil.color(255,255,255));
                 returnGoodsLayout.setEnabled(false);
                 if(this.type == ItemType.EQUIPMENT){
                     if(this.index == 0){
-                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.clientShopData.getSlotData(this.type, 1).cost());
+                        CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).costText.setText("$"+ClientData.getSlotData(this.type, 1).cost());
                         CSGameShopScreen.shopButtons.get(ItemType.EQUIPMENT).get(1).invalidate();
                     }
                 }
             }
 
-            return !ClientData.clientShopData.getSlotData(this.type, this.index).canReturn();
+            return !ClientData.getSlotData(this.type, this.index).canReturn();
         }
 
         public void updateButtonState() {
-           boolean enable = ClientData.getMoney() >= ClientData.clientShopData.getSlotData(this.type,this.index).cost();
+           boolean enable = ClientData.getMoney() >= ClientData.getSlotData(this.type,this.index).cost();
            setElementsColor(checkSlots(enable));
            if(!this.isHovered()) {
                backgroundAnimeFadeIn.start();
@@ -424,16 +419,20 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
            }
 
             if(refreshFlag){
-                ShopData.ShopSlot data = ClientData.clientShopData.getSlotData(this.type,this.index);
+                ClientShopSlot data = ClientData.getSlotData(this.type,this.index);
                 setStats(data.canReturn());
-                String fixedName = data.name().replace("[","").replace("]","").replaceAll("§.", "");
-                this.itemNameText.setText(fixedName);
+                this.itemNameText.setText(data.name());
                 this.costText.setText("$"+ data.cost());
-                ResourceLocation texture = data.getTexture();
-                this.icon = RenderUtil.getGunTextureByRL(texture);
-                if (this.icon == null){
-                    this.icon = Image.create(texture.getNamespace(), texture.getPath()+".png");
+                ResourceLocation texture = data.texture();
+                if(texture != null){
+                    this.icon = RenderUtil.getGunTextureByRL(texture);
                 }
+
+                //TODO ITEM TEXTURE RENDER
+                if (this.icon == null){
+                    this.icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
+                }
+
                 this.imageView.setImageDrawable(new ImageDrawable(this.icon));
 
                 this.invalidate();

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.shop;
+package com.phasetranscrystal.fpsmatch.core.shop.event;
 
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.world.entity.player.Player;

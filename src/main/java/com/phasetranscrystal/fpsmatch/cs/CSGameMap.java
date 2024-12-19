@@ -3,13 +3,12 @@ package com.phasetranscrystal.fpsmatch.cs;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
@@ -18,12 +17,8 @@ import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopStatesS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.index.CommonGunIndex;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.commands.GameRuleCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -47,7 +42,7 @@ import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap> {
+public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap , GiveStartKitsMap<CSGameMap> {
     public static final int WINNER_ROUND = 13;
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
@@ -85,11 +80,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public FPSMShop getShop() {
         return shop;
-    }
-
-    @Override
-    public @Nullable ShopData defineShopData() {
-        return null;
     }
 
     @Override

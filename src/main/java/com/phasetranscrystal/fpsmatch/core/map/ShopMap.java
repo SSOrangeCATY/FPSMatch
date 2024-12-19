@@ -2,23 +2,21 @@ package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
-import org.jetbrains.annotations.NotNull;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public interface ShopMap<T extends BaseMap> extends IMap<T> {
+public interface ShopMap {
     FPSMShop getShop();
-    @Nullable
-    ShopData defineShopData();
+
     default void addPlayerMoney(UUID uuid, int money){
         this.getShop().getPlayerShopData(uuid).addMoney(money);
         this.getShop().syncShopMoneyData(uuid);
     }
 
     default void removePlayerMoney(UUID uuid, int money){
-        this.getShop().getPlayerShopData(uuid).takeMoney(money);
+        this.getShop().getPlayerShopData(uuid).reduceMoney(money);
         this.getShop().syncShopMoneyData(uuid);
     }
 

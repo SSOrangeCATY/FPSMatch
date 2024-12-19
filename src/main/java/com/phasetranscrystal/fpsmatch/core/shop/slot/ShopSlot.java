@@ -1,24 +1,41 @@
 package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
-import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
-import com.phasetranscrystal.fpsmatch.core.shop.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class ShopSlot{
+    public static final Codec<ShopSlot> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
+            Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
+            Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId),
+            Codec.list(Codec.STRING).fieldOf("listenerModule").forGetter(ShopSlot::getListenerNames)
+    ).apply(instance, (itemstack,dC,gId,fL) -> {
+        ShopSlot shopSlot = new ShopSlot(itemstack,dC,gId);
+        fL.forEach(name->{
+            ListenerModule lm = FPSMatch.listenerModuleManager.getListenerModule(name);
+            if(lm != null){
+                shopSlot.addListener(lm);
+            }else{
+                System.out.println("error : couldn't find listener module by -> " + name);
+            }
+        });
+        return shopSlot;
+    }));
+
     // 物品供应器，用于提供物品栈
     public final Supplier<ItemStack> itemSupplier;
     // 返回检查器，用于检查物品栈是否可以返回
@@ -107,18 +124,30 @@ public class ShopSlot{
     }
 
     /**
-     * 锁定返回，设置为锁定状态并重置已购买数量
+     * 设置为锁定状态
      */
-    public void lockReturn() {
+    public void lock() {
         locked = true;
-        this.boughtCount = 0;
     }
 
+    public void lock(int boughtCount) {
+        locked = true;
+        this.boughtCount = Math.min(this.getMaxBuyCount(),boughtCount);
+    }
+
+
     /**
-     * 解锁返回，设置为非锁定状态
+     * 设置为非锁定状态
      */
-    public void unlockReturn() {
+    public void unlock() {
         locked = false;
+    }
+
+    public void unlock(int count) {
+        this.boughtCount -= Math.max(this.boughtCount,count);
+        if(boughtCount == 0){
+            this.unlock();
+        }
     }
 
     /**
@@ -164,14 +193,7 @@ public class ShopSlot{
         this.itemSupplier = itemStack::copy;
         this.defaultCost = defaultCost;
         this.cost = defaultCost;
-        this.returningChecker = stack -> {
-            ItemStack itemStack1 = this.itemSupplier.get();
-            if(stack.getItem() instanceof IGun iGun && itemStack1.getItem() instanceof IGun iGun1){
-                return iGun.getGunId(stack).equals(iGun1.getGunId(itemStack1));
-            }else{
-                return stack.is(itemStack1.getItem());
-            }
-        };
+        this.returningChecker = getDefaultChecker();
     }
 
     /**
@@ -235,6 +257,18 @@ public class ShopSlot{
         }
     }
 
+    public Predicate<ItemStack> getDefaultChecker(){
+        return (itemStack)->{
+            ItemStack shopItem = this.process();
+            if(itemStack.getItem() instanceof IGun iGun){
+                ResourceLocation gunId = iGun.getGunId(itemStack);
+                return shopItem.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(shopItem));
+            }else {
+                return itemStack.getDisplayName().getString().equals(shopItem.getDisplayName().getString()) && shopItem.getItem() == itemStack.getItem();
+            }
+        };
+    }
+
     /**
      * 重置物品槽位
      */
@@ -252,6 +286,12 @@ public class ShopSlot{
             listener.forEach(listenerModule -> {
                 listenerModule.handle(event);
             });
+        }
+    }
+
+    public void handleCheckCostEvent(CheckCostEvent event){
+        if(this.canReturn(event.player()) && getListenerNames().contains("returnGoods")){
+            event.addCost(this.getCost());
         }
     }
 
@@ -283,7 +323,6 @@ public class ShopSlot{
     }
 
     //同上
-    @Deprecated
     /**
      * 返回物品
      * @param player 玩家
@@ -293,7 +332,6 @@ public class ShopSlot{
         return returnItem(player, 1);
     }
 
-    @Deprecated
     /**
      * 返回指定数量的物品
      * @param player 玩家
@@ -309,25 +347,5 @@ public class ShopSlot{
         return count;
     }
 
-
-    public Codec<? extends ShopSlot> getCodec(){
-        return RecordCodecBuilder.create(instance -> instance.group(
-                ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
-                Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
-                Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId),
-                Codec.list(Codec.STRING).fieldOf("listenerModule").forGetter(ShopSlot::getListenerNames)
-        ).apply(instance, (itemstack,dC,gId,fL) -> {
-            ShopSlot shopSlot = new ShopSlot(itemstack,dC,gId);
-            fL.forEach(name->{
-                ListenerModule lm = FPSMatch.listenerModuleManager.getListenerModule(name);
-                if(lm != null){
-                    shopSlot.addListener(lm);
-                }else{
-                    System.out.println("error : couldn't find listener module by -> " + name);
-                }
-            });
-            return shopSlot;
-        }));
-    }
 
 }

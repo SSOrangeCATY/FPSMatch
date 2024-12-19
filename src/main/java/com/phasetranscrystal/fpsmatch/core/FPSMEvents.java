@@ -1,12 +1,11 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.mojang.datafixers.util.Function3;
+import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
@@ -14,21 +13,18 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopActionS2CPacket;
-import com.tacz.guns.GunMod;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.commands.KillCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -49,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.function.BiFunction;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -133,17 +128,16 @@ public class FPSMEvents {
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
-        if (map instanceof ShopMap<?> shopMap){
+        if (map instanceof ShopMap shopMap){
             FPSMShop shop = shopMap.getShop();
             if (shop == null) return;
-            ShopData.ShopSlot slot = shop.getPlayerShopData(event.getPlayer().getUUID()).checkItemStackIsInData(event.getEntity().getItem());
-            if(slot != null){
-                if (event.getEntity().getItem().getCount() > 1 && slot.canReturn()){
-                    shop.resetSlot((ServerPlayer) event.getPlayer(),slot.type(),slot.index());
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,2,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
-                }else{
-                    slot.returnGoods();
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getPlayer()), new ShopActionS2CPacket(map.getMapName(),slot,0,shop.getPlayerShopData(event.getPlayer().getUUID()).getMoney()));
+            ItemStack itemStack = event.getEntity().getItem();
+            ShopData shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+            Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
+            if(pair != null){
+                ShopSlot slot = pair.getSecond();
+                if(pair.getFirst() != ItemType.THROWABLE){
+                    slot.unlock(itemStack.getCount());
                 }
             }
         }
@@ -154,22 +148,15 @@ public class FPSMEvents {
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
-        if (map instanceof ShopMap<?> shopMap) {
+        if (map instanceof ShopMap shopMap) {
             FPSMShop shop = shopMap.getShop();
             if (shop == null) return;
-            ShopData.ShopSlot slot = shop.getPlayerShopData(event.getEntity().getUUID()).checkItemStackIsInData(event.getStack());
-            if(slot != null){
-                if (event.getStack().getCount() > 1 && slot.type() == ItemType.THROWABLE){
-                    if(slot.boughtCount() < 2 && slot.index() == 0){
-                        slot.bought(slot.boughtCount() != 1);
-                    }else{
-                        slot.bought();
-                    }
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
-                }else{
-                    slot.bought();
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.getEntity()), new ShopActionS2CPacket(map.getMapName(),slot,1,shop.getPlayerShopData(event.getEntity().getUUID()).getMoney()));
-                }
+
+            ShopData shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+            Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
+            if(pair != null){
+                ShopSlot slot = pair.getSecond();
+                slot.lock(event.getStack().getCount());
             }
         }
     }
@@ -196,10 +183,9 @@ public class FPSMEvents {
                             map.setGameType(mapType);
                             map.getMapTeams().putAllSpawnPoints(data);
 
-                            if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null && ShopData.checkShopData(rawMapData.shop)){
-                                shopMap.getShop().getDefaultShopData().setData(rawMapData.shop);
+                            if(map instanceof ShopMap shopMap && rawMapData.shop != null){
+                                shopMap.getShop().setDefaultShopData(rawMapData.shop);
                             }
-
 
                             if(map instanceof BlastModeMap<?> blastModeMap){
                                 if (rawMapData.blastAreaDataList != null) {

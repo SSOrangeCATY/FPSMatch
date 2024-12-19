@@ -4,13 +4,24 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.tacz.guns.api.item.IGun;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+
+/* *
+ * server side
+ * */
 public class ShopData {
 //    public static final ShopData defaultData = new ShopData();//TODO
     private int money;
@@ -24,7 +35,7 @@ public class ShopData {
      * 构造函数，初始化商店数据
      * @param shopData 商店数据
      */
-    public ShopData(Map<ItemType, List<ShopSlot>> shopData) {
+    public <T extends List<ShopSlot>> ShopData(Map<ItemType, T> shopData) {
         // 检查数据是否合法
         checkData(shopData);
 
@@ -51,11 +62,16 @@ public class ShopData {
         grouped = builder2.build();
     }
 
+    public <T extends List<ShopSlot>> ShopData(Map<ItemType, T> shopData,int money) {
+        this(shopData);
+        this.money = money;
+    }
+
     /**
      * 检查数据是否合法
      * @param data 数据
      */
-    public static void checkData(Map<ItemType, List<ShopSlot>> data) {
+    public static  <T extends List<ShopSlot>> void checkData(Map<ItemType, T> data) {
         // 遍历所有的物品类型
         for (ItemType type : ItemType.values()) {
             // 获取该类型的商店槽位列表
@@ -73,41 +89,136 @@ public class ShopData {
         return data;
     }
 
-    public void handleShopButton(ServerPlayer player, ItemType type, int index) {
-        List<ShopSlot> shopSlotList = data.get(type);
-        if (index < 0 || index >= shopSlotList.size()) {
-            return;
-        }
-        ShopSlot currentSlot = shopSlotList.get(index);
-        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
-
-        groupSlot.forEach(slot -> {
-                ShopSlotChangeEvent event = new ShopSlotChangeEvent(slot, player,this.money,1);
-                slot.onGroupSlotChanged(event);
-                this.money = event.getMoney();
-        });
-
-        int cost = currentSlot.getCost();
-
-        if (!currentSlot.canBuy(this.money)) {
-            return;
-        }
-        this.money -= cost;
-        player.getInventory().add(currentSlot.process());
-    }
-
-    public static ShopData getDefaultData() {
-        Map<ItemType, List<ShopSlot>> data = new HashMap<>();
+    public static Map<ItemType, ArrayList<ShopSlot>> getRawData(){
+        Map<ItemType, ArrayList<ShopSlot>> data = new HashMap<>();
         int cost = 0;
         ItemStack empty = ItemStack.EMPTY;
         for (ItemType type : ItemType.values()) {
-            List<ShopSlot> list = new ArrayList<>();
+            ArrayList<ShopSlot> list = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
                 list.add(new ShopSlot(empty, cost));
             }
             data.put(type, list);
         }
-        return new ShopData(data);
+        return data;
     }
+
+    public static ShopData getDefaultData() {
+        return new ShopData(getRawData());
+    }
+
+    public static ShopData getDefaultData(int money) {
+        return new ShopData(getRawData(),money);
+    }
+
+    public void setMoney(int money) {
+        this.money = Math.max(0,money);
+    }
+
+    public void reduceMoney(int money){
+        this.money -= Math.max(0,money);
+    }
+
+    public void addMoney(int money){
+        this.money += Math.min(0,money);
+    }
+
+    public List<ShopSlot> getShopSlotsByType(ItemType type) {
+        return this.data.get(type);
+    }
+
+    public void reset() {
+
+    }
+
+    public int getMoney() {
+        return this.money;
+    }
+
+    public void handleButton(ServerPlayer player, ItemType type, int index, ShopAction action){
+        List<ShopSlot> shopSlotList = data.get(type);
+        if (index < 0 || index >= shopSlotList.size()) {
+            return;
+        }
+        ShopSlot currentSlot = shopSlotList.get(index);
+
+        switch (action){
+            case BUY -> this.handleBuy(player,currentSlot);
+            case RETURN -> this.handleReturn(player,currentSlot);
+        }
+    }
+
+
+    protected void handleBuy(ServerPlayer player, ShopSlot currentSlot) {
+        boolean check = this.broadcastCostCheckEvent(player,currentSlot);
+        if(check || this.money >= currentSlot.getCost()){
+            this.broadcastGroupChangeEvent(player,currentSlot,1);
+            int cost = currentSlot.getCost();
+
+            if (!currentSlot.canBuy(this.money)) {
+                return;
+            }
+            this.money -= cost;
+            player.getInventory().add(currentSlot.process());
+        }
+    }
+
+
+    protected void handleReturn(ServerPlayer player, ShopSlot currentSlot) {
+        this.broadcastGroupChangeEvent(player,currentSlot,-1);
+        if(currentSlot.canReturn(player)){
+            this.addMoney(currentSlot.getCost());
+            currentSlot.returnItem(player);
+        }
+    }
+
+
+    protected boolean broadcastCostCheckEvent(ServerPlayer player ,ShopSlot currentSlot){
+        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
+        CheckCostEvent event = new CheckCostEvent(player,currentSlot.getCost());
+        groupSlot.forEach(slot -> {
+            slot.handleCheckCostEvent(event);
+        });
+
+        return event.success();
+
+    }
+    protected void broadcastGroupChangeEvent(ServerPlayer player ,ShopSlot currentSlot, int flag){
+        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
+
+        groupSlot.forEach(slot -> {
+            ShopSlotChangeEvent event = new ShopSlotChangeEvent(slot, player,this.money,flag);
+            slot.onGroupSlotChanged(event);
+            this.money = event.getMoney();
+        });
+    }
+
+    @Nullable
+    public Pair<ItemType, ShopSlot> checkItemStackIsInData(ItemStack itemStack){
+        AtomicReference<Pair<ItemType, ShopSlot>> flag = new AtomicReference<>();
+        if(itemStack.getItem() instanceof IGun iGun){
+            ResourceLocation gunId = iGun.getGunId(itemStack);
+            data.forEach(((itemType, shopSlots) -> {
+                shopSlots.forEach(shopSlot -> {
+                    ItemStack itemStack1 = shopSlot.process();
+                    if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1))){
+                        flag.set(new Pair<>(itemType,shopSlot));
+                    }
+                });
+            }));
+        }else {
+            data.forEach(((itemType, shopSlots) -> {
+                shopSlots.forEach(shopSlot -> {
+                    ItemStack itemStack1 = shopSlot.process();
+                    if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString())){
+                        flag.set(new Pair<>(itemType,shopSlot));
+                    }
+                });
+            }));
+        }
+        return flag.get();
+    }
+
+
 
 }

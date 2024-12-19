@@ -11,13 +11,13 @@ import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.ShopData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
@@ -26,7 +26,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
-import net.minecraft.commands.arguments.item.ItemInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -39,7 +38,6 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.BiFunction;
 
 public class FPSMCommand {
     public void onRegisterCommands(RegisterCommandsEvent event) {
@@ -147,12 +145,9 @@ public class FPSMCommand {
         int cost = IntegerArgumentType.getInteger(context,"cost");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
-            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap<?> shopMap) {
+            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
-                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
-                shopMap.getShop().syncShopData();
-                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
-                return 1;
+                return replaceSlot(context, mapName, shopType, slotNum, cost, shopMap, itemStack);
             } else {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
                 return 0;
@@ -163,6 +158,16 @@ public class FPSMCommand {
         }
     }
 
+    private int replaceSlot(CommandContext<CommandSourceStack> context, String mapName, String shopType, int slotNum, int cost, ShopMap shopMap, ItemStack itemStack) {
+        ItemType type = ItemType.valueOf(shopType.toUpperCase(Locale.ROOT));
+        int index = slotNum - 1;
+        ShopSlot replaceSlot = new ShopSlot(itemStack,cost);
+        shopMap.getShop().replaceDefaultShopData(type,index,replaceSlot);
+        shopMap.getShop().syncShopData();
+        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
+        return 1;
+    }
+
     private int handleGunModifyShop(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String shopType = StringArgumentType.getString(context, "shopType");
@@ -171,19 +176,17 @@ public class FPSMCommand {
         int dummyAmmoAmount = IntegerArgumentType.getInteger(context,"dummyAmmoAmount");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
-            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap<?> shopMap) {
+            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
-                if (itemStack.getItem() instanceof IGun iGun){
+                if (itemStack.getItem() instanceof IGun iGun && TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).isPresent()){
                     GunData gunData = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).get().getGunData();
                     iGun.useDummyAmmo(itemStack);
                     iGun.setMaxDummyAmmoAmount(itemStack,dummyAmmoAmount);
                     iGun.setDummyAmmoAmount(itemStack,dummyAmmoAmount);
                     iGun.setCurrentAmmoCount(itemStack,gunData.getBulletData().getBulletAmount());
                 }
-                shopMap.getShop().getDefaultShopData().addShopSlot(new ShopData.ShopSlot(slotNum - 1, ItemType.valueOf(shopType.toUpperCase(Locale.ROOT)), itemStack, cost));
-                shopMap.getShop().syncShopData();
-                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
-                return 1;
+
+                return replaceSlot(context, mapName, shopType, slotNum, cost, shopMap, itemStack);
             } else {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
                 return 0;
@@ -219,7 +222,7 @@ public class FPSMCommand {
                     map.resetGame();
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.reset.success", mapName), true);
                     break;
-                case "newround":
+                case "newRound":
                     map.startNewRound();
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.debug.newround.success", mapName), true);
                     break;
@@ -254,7 +257,7 @@ public class FPSMCommand {
                             if (team != null && team.getRemainingLimit() - players.size() >= 0) {
                                 for(ServerPlayer player : players) {
                                     map.getMapTeams().joinTeam(teamName, player);
-                                    if(map instanceof ShopMap<?> shopMap){
+                                    if(map instanceof ShopMap shopMap){
                                         shopMap.getShop().syncShopData(player);
                                     }
                                     context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getName()), true);

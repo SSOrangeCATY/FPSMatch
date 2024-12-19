@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.map.IMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -10,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class BaseMap{
+public abstract class BaseMap {
     public final String mapName;
     public String gameType = "error";
     public boolean isStart = false;
