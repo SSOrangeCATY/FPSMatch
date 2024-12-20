@@ -10,6 +10,7 @@ public class ShopSlotChangeEvent{
     public final Player player;
     public final int flag;
     private int money;
+    private boolean cancelLogic = false;
 
     /**
      * @param player 玩家
@@ -21,6 +22,15 @@ public class ShopSlotChangeEvent{
         this.money = money;
         this.flag = flag;
     }
+
+    public void setCancelLogic(boolean cancelLogic){
+        this.cancelLogic = cancelLogic;
+    }
+
+    public boolean isCancelLogic(){
+        return cancelLogic;
+    }
+
 
     public void addMoney(int count){
         this.money += count;

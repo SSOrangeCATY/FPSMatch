@@ -32,6 +32,7 @@ public class ShopData {
     private final Map<ItemType, ImmutableList<ShopSlot>> data;
     // 分组数据
     public final Multimap<Integer, ShopSlot> grouped;
+    public final Map<Integer,Integer> groupBuyCountLimit = new HashMap<>();
 
     /**
      * 构造函数，初始化商店数据
@@ -121,8 +122,12 @@ public class ShopData {
         return this.data.get(type);
     }
 
-    public void reset() {
+    public void setGroupBuyLimit(int groupId, int count){
+        this.groupBuyCountLimit.put(groupId,count);
+    }
 
+    public int getGroupBuyLimit(int groupId){
+        return this.groupBuyCountLimit.getOrDefault(groupId,Integer.MAX_VALUE);
     }
 
     public int getMoney() {
