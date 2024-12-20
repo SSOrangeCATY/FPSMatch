@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -38,7 +39,7 @@ public class ShopSlot{
     }));
 
     // 物品供应器，用于提供物品栈
-    public final Supplier<ItemStack> itemSupplier;
+    public Supplier<ItemStack> itemSupplier;
     // 返回检查器，用于检查物品栈是否可以返回
     public final Predicate<ItemStack> returningChecker;
     // 默认价格
@@ -65,6 +66,10 @@ public class ShopSlot{
         return cost;
     }
 
+    public void setCost(int count){
+        this.cost = count;
+    }
+
     public int getDefaultCost() {
         return defaultCost;
     }
@@ -75,6 +80,10 @@ public class ShopSlot{
      */
     public int getGroupId() {
         return groupId;
+    }
+
+    public void setGroupId(int groupId){
+        this.groupId = groupId;
     }
 
     /**
@@ -183,6 +192,9 @@ public class ShopSlot{
      * @param defaultCost 默认价格
      */
     public ShopSlot(ItemStack itemStack, int defaultCost) {
+        if(itemStack.getItem() instanceof IGun iGun){
+            FPSMUtil.fixGunItem(itemStack, iGun);
+        }
         this.itemSupplier = itemStack::copy;
         this.defaultCost = defaultCost;
         this.cost = defaultCost;
@@ -339,4 +351,7 @@ public class ShopSlot{
     }
 
 
+    public void removeListenerModule(String module) {
+        this.listener.removeIf(listenerModule -> listenerModule.getName().equals(module));
+    }
 }

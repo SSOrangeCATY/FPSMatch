@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -14,6 +15,8 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -32,11 +35,48 @@ import java.util.*;
 public class FileHelper {
     public static final File FPS_MATCH_DIR = new File(FMLLoader.getGamePath().toFile(), "fpsmatch");
 
+    public static void saveChangeItemListenerModule(ListenerModule module){
+        if(module instanceof ChangeShopItemModule cSIM){
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            File dir = new File(FPS_MATCH_DIR, "ChangeShopItemModule");
+            if(checkOrCreateFile(dir)){
+                File file = new File(dir, module.getName()+".json");
+                    try (FileWriter writer = new FileWriter(file)) {
+                        JsonElement json = ChangeShopItemModule.encodeToJson(cSIM);
+                        String str = gson.toJson(json);
+                        writer.write(str);
+                    }catch (Exception e){
+                        throw new RuntimeException(e);
+                    }
+            }
+        }
+    }
+
+    public static List<ChangeShopItemModule> loadListenerModules(){
+        List<ChangeShopItemModule> listenerModules = new ArrayList<>();
+        File dir = new File(FPS_MATCH_DIR, "ChangeShopItemModule");
+        if(checkOrCreateFile(dir)){
+            for (File file : Objects.requireNonNull(dir.listFiles())) {
+                if (file.isFile()) {
+                    try (FileReader reader = new FileReader(file)) {
+                        JsonElement jsonElement = new Gson().fromJson(reader, JsonElement.class);
+                        listenerModules.add(ChangeShopItemModule.decodeFromJson(jsonElement));
+                    }catch (Exception e){
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+        return listenerModules;
+    }
+
+
     public static void saveMaps(String levelName){
         Map<String, List<BaseMap>> maps = FPSMCore.getInstance().getAllMaps();
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         if(checkOrCreateFile(FPS_MATCH_DIR)) {
-            File dataDir = new File(FPS_MATCH_DIR, levelName);
+            File worldsDir = new File(FPS_MATCH_DIR, "world");
+            File dataDir = new File(worldsDir, levelName);
             if(!checkOrCreateFile(dataDir)) return;
             if (dataDir.exists() && dataDir.isDirectory()) {
                 for (List<BaseMap> baseMapList : maps.values()){
@@ -116,8 +156,8 @@ public class FileHelper {
 
     public static List<RawMapData> loadMaps(String levelName) {
         List<RawMapData> loadedMaps = new ArrayList<>();
-
-        File dataDir = new File(FPS_MATCH_DIR, levelName);
+        File worldsDir = new File(FPS_MATCH_DIR, "world");
+        File dataDir = new File(worldsDir, levelName);
         if(!checkOrCreateFile(dataDir)) return loadedMaps;
         if (dataDir.exists() && dataDir.isDirectory()) {
             for (File mapDir : Objects.requireNonNull(dataDir.listFiles())) {

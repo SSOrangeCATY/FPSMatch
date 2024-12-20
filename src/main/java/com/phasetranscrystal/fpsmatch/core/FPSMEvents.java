@@ -14,6 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
@@ -26,7 +27,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
@@ -166,6 +169,7 @@ public class FPSMEvents {
     public static void onServerStoppingEvent(ServerStoppingEvent event){
         String name = event.getServer().getWorldData().getLevelName();
         FileHelper.saveMaps(name);
+        FPSMatch.listenerModuleManager.save();
     }
 
     @SubscribeEvent
@@ -224,7 +228,10 @@ public class FPSMEvents {
                 // 清除c4,并掉落c4
                 int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
                 if (im > 0) {
-                    player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false);
+                   ItemEntity entity = player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false);
+                    if (entity != null) {
+                        entity.setGlowingTag(true);
+                    }
                     player.getInventory().setChanged();
                 }
 
@@ -284,5 +291,7 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onRegisterListenerModuleEvent(RegisterListenerModuleEvent event){
         event.register(new ReturnGoodsModule());
+        ChangeShopItemModule changeShopItemModule = new ChangeShopItemModule(new ItemStack(Items.APPLE), 50, new ItemStack(Items.GOLDEN_APPLE), 300);
+        event.register(changeShopItemModule);
     }
 }

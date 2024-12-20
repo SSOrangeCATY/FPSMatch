@@ -4,10 +4,12 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopMoneyS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
@@ -15,6 +17,7 @@ import java.util.*;
 public class FPSMShop {
     public final String name;
     private final Map<ItemType, ArrayList<ShopSlot>> defaultShopData;
+
     private final int startMoney;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
 
@@ -145,13 +148,36 @@ public class FPSMShop {
         this.defaultShopData.putAll(data);
     }
 
-
     public void replaceDefaultShopData(ItemType type, int index,ShopSlot shopSlot){
         this.defaultShopData.get(type).set(index,shopSlot);
     }
 
+    public void setDefaultShopDataGroupId(ItemType type, int index,int groupId){
+        this.defaultShopData.get(type).get(index).setGroupId(groupId);
+    }
+
+    public void addDefaultShopDataListenerModule(ItemType type, int index, ListenerModule listenerModule){
+        this.defaultShopData.get(type).get(index).addListener(listenerModule);
+    }
+
+    public void removeDefaultShopDataListenerModule(ItemType type, int index, String listenerModule){
+        this.defaultShopData.get(type).get(index).removeListenerModule(listenerModule);
+    }
+
+    public void setDefaultShopDataItemStack(ItemType type, int index, ItemStack itemStack){
+        this.defaultShopData.get(type).get(index).itemSupplier = itemStack::copy;
+    }
+
+    public void setDefaultShopDataCost(ItemType type, int index, int cost){
+        this.defaultShopData.get(type).get(index).setCost(cost);
+    }
+
     public ShopData getDefaultShopData() {
         return new ShopData(this.defaultShopData,this.startMoney);
+    }
+
+    public Map<ItemType, ArrayList<ShopSlot>> getDefaultShopDataMap() {
+        return this.defaultShopData;
     }
 
     public void handleButton(ServerPlayer serverPlayer, ItemType type, int index, ShopAction action) {

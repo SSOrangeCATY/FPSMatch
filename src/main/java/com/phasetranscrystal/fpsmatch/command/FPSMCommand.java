@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -17,6 +18,9 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
@@ -44,6 +48,13 @@ public class FPSMCommand {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
                 .then(Commands.literal("save").executes(this::handleSave))
+                .then(Commands.literal("reload").executes(this::handleReLoad))
+                .then(Commands.literal("listenerModule")
+                       .then(Commands.literal("add")
+                               .then(Commands.literal("changeItemModule")
+                                      .then(Commands.argument("changedCost", IntegerArgumentType.integer(1))
+                                              .then(Commands.argument("defaultCost", IntegerArgumentType.integer(1))
+                                                      .executes(this::handleChangeItemModule))))))
                 .then(Commands.literal("shop")
                         .then(Commands.argument("gameType", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION)
@@ -55,10 +66,29 @@ public class FPSMCommand {
                                                                 .suggests(CommandSuggests.SHOP_ITEM_TYPES_SUGGESTION)
                                                                 .then(Commands.argument("shopSlot", IntegerArgumentType.integer(1,5))
                                                                         .suggests(CommandSuggests.SHOP_SET_SLOT_ACTION_SUGGESTION)
-                                                                        .then(Commands.argument("cost", IntegerArgumentType.integer(0))
-                                                                                .executes(this::handleModifyShop)
+                                                                        .then(Commands.literal("listenerModule")
+                                                                                .then(Commands.literal("add")
+                                                                                        .then(Commands.argument("listenerModule", StringArgumentType.string())
+                                                                                                .suggests(CommandSuggests.SHOP_SLOT_ADD_LISTENER_MODULES_SUGGESTION)
+                                                                                                .executes(this::handleAddListenerModule)))
+                                                                                .then(Commands.literal("remove")
+                                                                                       .then(Commands.argument("listenerModule", StringArgumentType.string())
+                                                                                               .suggests(CommandSuggests.SHOP_SLOT_REMOVE_LISTENER_MODULES_SUGGESTION)
+                                                                                               .executes(this::handleRemoveListenerModule))))
+                                                                        .then(Commands.literal("groupID")
+                                                                               .then(Commands.argument("groupID", IntegerArgumentType.integer(0))
+                                                                                       .executes(this::handleModifyShopGroupID)))
+                                                                        .then(Commands.literal("cost")
+                                                                                .then(Commands.argument("cost", IntegerArgumentType.integer(0))
+                                                                                        .executes(this::handleModifyCost)))
+                                                                        .then(Commands.literal("item")
+                                                                                .executes(this::handleModifyItemWithoutValue)
+                                                                                .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
+                                                                                       .executes(this::handleModifyItem)))
+                                                                        .then(Commands.literal("dummyAmmoAmount")
                                                                                 .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
-                                                                                        .executes(this::handleGunModifyShop))))))))))
+                                                                                        .executes(this::handleGunModifyGunAmmoAmount)))
+                                                                )))))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
                                 .then(Commands.argument("gameType", StringArgumentType.string())
@@ -102,8 +132,79 @@ public class FPSMCommand {
         dispatcher.register(literal);
     }
 
+    private int handleModifyShopGroupID(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        int groupID = IntegerArgumentType.getInteger(commandSourceStackCommandContext, "groupID");
+        String mapName = StringArgumentType.getString(commandSourceStackCommandContext, "mapName");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        String shopTypeS = StringArgumentType.getString(commandSourceStackCommandContext, "shopType").toUpperCase(Locale.ROOT);
+        ItemType shopType = ItemType.valueOf(shopTypeS);
+        int slotNum = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"shopSlot") - 1;
+        if (map instanceof ShopMap shopMap) {
+            shopMap.getShop().setDefaultShopDataGroupId(shopType,slotNum,groupID);
+            commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.slot.modify.group.success",shopType,slotNum,groupID), true);
+            return 1;
+        }else{
+            commandSourceStackCommandContext.getSource().sendFailure(Component.translatable("commands.fpsm.shop.slot.modify.group.fail",mapName));
+            return 0;
+        }
+    }
+
+    private int handleRemoveListenerModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        String moduleName = StringArgumentType.getString(commandSourceStackCommandContext, "listenerModule");
+        String mapName = StringArgumentType.getString(commandSourceStackCommandContext, "mapName");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        ItemType shopType = ItemType.valueOf(StringArgumentType.getString(commandSourceStackCommandContext, "shopType").toUpperCase(Locale.ROOT));
+        int slotNum = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"shopSlot") - 1;
+        if (map instanceof ShopMap shopMap) {
+            shopMap.getShop().removeDefaultShopDataListenerModule(shopType,slotNum,moduleName);
+            commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.slot.listener.remove.success",moduleName), true);
+            return 1;
+        }else{
+            commandSourceStackCommandContext.getSource().sendFailure(Component.translatable("commands.fpsm.shop.slot.listener.remove.fail",moduleName));
+            return 0;
+        }
+    }
+
+    private int handleAddListenerModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        String moduleName = StringArgumentType.getString(commandSourceStackCommandContext, "listenerModule");
+        String mapName = StringArgumentType.getString(commandSourceStackCommandContext, "mapName");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        ItemType shopType = ItemType.valueOf(StringArgumentType.getString(commandSourceStackCommandContext, "shopType").toUpperCase(Locale.ROOT));
+        int slotNum = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"shopSlot") - 1;
+        LMManager manager = FPSMatch.listenerModuleManager;
+        if(map instanceof ShopMap shopMap){
+            ListenerModule module = manager.getListenerModule(moduleName);
+            shopMap.getShop().addDefaultShopDataListenerModule(shopType,slotNum,module);
+            commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.listener.add.success",moduleName), true);
+            return 1;
+        }else{
+            commandSourceStackCommandContext.getSource().sendFailure(Component.translatable("commands.fpsm.listener.add.fail",moduleName));
+            return 0;
+        }
+    }
+
+    private int handleChangeItemModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) throws CommandSyntaxException {
+        int defaultCost = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"defaultCost");
+        int changedCost = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"changedCost");
+        Player player = commandSourceStackCommandContext.getSource().getPlayerOrException();
+        ItemStack changedItem = player.getMainHandItem().copy();
+        ItemStack defaultItem = player.getOffhandItem().copy();
+        ChangeShopItemModule module = new ChangeShopItemModule(defaultItem,defaultCost,changedItem,changedCost);
+        FPSMatch.listenerModuleManager.addListenerType(module);
+        commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.listener.add.success",module.getName()), true);
+        return 1;
+    }
+
+    private int handleReLoad(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        FPSMatch.listenerModuleManager = new LMManager();
+        //TODO MORE
+        commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.reload.success"), true);
+        return 1;
+    }
+
     private int handleSave(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         FileHelper.saveMaps(FPSMCore.getInstance().archiveName);
+        FPSMatch.listenerModuleManager.save();
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
         return 1;
     }
@@ -138,46 +239,82 @@ public class FPSMCommand {
         return data;
     }
 
-    private int handleModifyShop(CommandContext<CommandSourceStack> context) {
+
+    private int handleModifyCost(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
-        String shopType = StringArgumentType.getString(context, "shopType");
-        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
+        String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
+        ItemType itemType = ItemType.valueOf(shopType);
+        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot") - 1;
         int cost = IntegerArgumentType.getInteger(context,"cost");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
-            if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
-                ItemStack itemStack = player.getMainHandItem().copy();
-                return replaceSlot(context, mapName, shopType, slotNum, cost, shopMap, itemStack);
+            if (map instanceof ShopMap shopMap) {
+                shopMap.getShop().setDefaultShopDataCost(itemType,slotNum,cost);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.cost.success",shopType,slotNum,cost), true);
+                return 1;
             } else {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.cost.failed"));
                 return 0;
             }
         }else {
-            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.cost.map.failed"));
             return 0;
         }
     }
 
-    private int replaceSlot(CommandContext<CommandSourceStack> context, String mapName, String shopType, int slotNum, int cost, ShopMap shopMap, ItemStack itemStack) {
-        ItemType type = ItemType.valueOf(shopType.toUpperCase(Locale.ROOT));
-        int index = slotNum - 1;
-        ShopSlot replaceSlot = new ShopSlot(itemStack,cost);
-        shopMap.getShop().replaceDefaultShopData(type,index,replaceSlot);
-        shopMap.getShop().syncShopData();
-        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.success", mapName,shopType, slotNum ,itemStack.getDisplayName(),cost), true);
-        return 1;
-    }
-
-    private int handleGunModifyShop(CommandContext<CommandSourceStack> context) {
+    private int handleModifyItemWithoutValue(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
-        String shopType = StringArgumentType.getString(context, "shopType");
-        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot");
-        int cost = IntegerArgumentType.getInteger(context,"cost");
-        int dummyAmmoAmount = IntegerArgumentType.getInteger(context,"dummyAmmoAmount");
+        String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
+        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot") - 1;
+        ItemType itemType = ItemType.valueOf(shopType);
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
             if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
+                shopMap.getShop().setDefaultShopDataItemStack(itemType,slotNum,itemStack);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success",shopType,slotNum,itemStack.getDisplayName()), true);
+                return 1;
+            } else {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+                return 0;
+            }
+        }else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+            return 0;
+        }
+    }
+
+    private int handleModifyItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
+        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot") - 1;
+        ItemType itemType = ItemType.valueOf(shopType);
+        ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(1,false);
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        if (map != null) {
+            if (map instanceof ShopMap shopMap) {
+                shopMap.getShop().setDefaultShopDataItemStack(itemType,slotNum,itemStack);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success",shopType,slotNum,itemStack.getDisplayName()), true);
+                return 1;
+            } else {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+                return 0;
+            }
+        }else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+            return 0;
+        }
+    }
+    private int handleGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
+        ItemType itemType = ItemType.valueOf(shopType);
+        int slotNum = IntegerArgumentType.getInteger(context,"shopSlot") - 1;
+        int dummyAmmoAmount = IntegerArgumentType.getInteger(context,"dummyAmmoAmount");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        if (map != null) {
+            if (map instanceof ShopMap shopMap) {
+                ItemStack itemStack = shopMap.getShop().getDefaultShopDataMap().get(itemType).get(slotNum).process();
                 if (itemStack.getItem() instanceof IGun iGun && TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).isPresent()){
                     GunData gunData = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).get().getGunData();
                     iGun.useDummyAmmo(itemStack);
@@ -185,17 +322,19 @@ public class FPSMCommand {
                     iGun.setDummyAmmoAmount(itemStack,dummyAmmoAmount);
                     iGun.setCurrentAmmoCount(itemStack,gunData.getBulletData().getBulletAmount());
                 }
-
-                return replaceSlot(context, mapName, shopType, slotNum, cost, shopMap, itemStack);
+                shopMap.getShop().setDefaultShopDataItemStack(itemType,slotNum,itemStack);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.gun.success",shopType,slotNum,itemStack.getDisplayName(),dummyAmmoAmount), true);
+                return 1;
             } else {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.gun.failed"));
                 return 0;
             }
         }else {
-            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed"));
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.gun.failed"));
             return 0;
         }
     }
+
     private int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
         BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
         BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");

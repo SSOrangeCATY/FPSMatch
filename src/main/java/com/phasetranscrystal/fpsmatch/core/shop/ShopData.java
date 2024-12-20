@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -157,8 +158,18 @@ public class ShopData {
 
 
     protected void handleReturn(ServerPlayer player, ShopSlot currentSlot) {
-        this.broadcastGroupChangeEvent(player,currentSlot,-1);
-        if(currentSlot.canReturn(player)){
+        AtomicBoolean checkFlag = new AtomicBoolean(true);
+        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList() : new ArrayList<>();
+        for (ShopSlot slot : groupSlot) {
+            slot.getListenerNames().forEach(name->{
+                if(name.contains("changeItem") && slot.getBoughtCount() > 0 && !slot.canReturn(player)){
+                    checkFlag.set(false);
+                }
+            });
+        }
+
+        if(currentSlot.canReturn(player) && checkFlag.get()){
+            this.broadcastGroupChangeEvent(player,currentSlot,-1);
             this.addMoney(currentSlot.getCost());
             currentSlot.returnItem(player);
         }
@@ -229,6 +240,9 @@ public class ShopData {
         return flag.get();
     }
 
+    public ShopData copy(){
+        return new ShopData(this.data,this.money);
+    }
 
 
 }

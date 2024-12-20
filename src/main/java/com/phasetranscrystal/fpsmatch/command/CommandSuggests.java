@@ -1,12 +1,15 @@
 package com.phasetranscrystal.fpsmatch.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +47,32 @@ public class CommandSuggests {
         return CommandSuggests.getSuggestions(b,typeNames);
     });
     public static final FPSMSuggestionProvider SHOP_SET_SLOT_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("1","2","3","4","5")));
+    public static final FPSMSuggestionProvider SHOP_SLOT_ADD_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
+    {
+        String mapName = StringArgumentType.getString(c, "mapName");
+        ItemType shopType = ItemType.valueOf(StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT));
+        int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        if (map instanceof ShopMap shopMap) {
+            List<String> stringList = FPSMatch.listenerModuleManager.getListenerModules();
+            stringList.removeAll(shopMap.getShop().getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames());
+            return CommandSuggests.getSuggestions(b, stringList);
+        }
+        return CommandSuggests.getSuggestions(b, new ArrayList<>());});
+
+    public static final FPSMSuggestionProvider SHOP_SLOT_REMOVE_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
+    {
+        String mapName = StringArgumentType.getString(c, "mapName");
+        ItemType shopType = ItemType.valueOf(StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT));
+        int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        if (map instanceof ShopMap shopMap) {
+            List<String> stringList = shopMap.getShop().getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames();
+            return CommandSuggests.getSuggestions(b, stringList);
+        }
+        return CommandSuggests.getSuggestions(b, new ArrayList<>());});
+
+
 
     public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
         @Override
