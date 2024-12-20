@@ -57,7 +57,6 @@ public class FPSMatch {
         MinecraftForge.EVENT_BUS.register(this);
         FPSMItemRegister.ITEMS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
-        listenerModuleManager = new LMManager();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

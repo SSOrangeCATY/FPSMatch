@@ -6,8 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 
 public class ClientShopSlot{
-    public ItemStack itemStack;
-    public int cost;
+    private ItemStack itemStack;
+    private int cost;
     @Nullable
     private ResourceLocation texture = null;
     private int boughtCount = 0;

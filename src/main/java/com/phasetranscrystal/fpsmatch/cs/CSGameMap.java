@@ -30,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -396,10 +397,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 if(!isLiving) {
                     this.clearPlayerInventory(player);
                     this.givePlayerKits(player);
+                }else{
+                    this.getShop().getPlayerShopData(uuid).lockShopSlots(player);
                 }
                 this.teleportPlayerToReSpawnPoint(player);
             }
         }));
+        this.getShop().syncShopData();
     }
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
@@ -460,10 +464,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void resetGame() {
+        this.getShop().clearPlayerShopData();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 player.removeAllEffects();
+                this.getShop().syncShopData(player);
             }
         }));
         this.teamScores.clear();
@@ -477,7 +483,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isBlasting = 0;
         this.isExploded = false;
         this.getMapTeams().reset();
-        this.getShop().clearPlayerShopData();
     }
 
 

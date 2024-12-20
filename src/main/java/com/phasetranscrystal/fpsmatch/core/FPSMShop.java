@@ -84,6 +84,16 @@ public class FPSMShop {
         }
     }
 
+    public void syncShopMoneyData(ServerPlayer player) {
+        BaseMap map = FPSMCore.getInstance().getMapByName(name);
+        if(map != null){
+            if (player != null){
+                ShopData shopData = this.getPlayerShopData(player.getUUID());
+                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(player.getUUID(), shopData.getMoney()));
+            }
+        }
+    }
+
     public void syncShopData(List<ServerPlayer> players){
         players.forEach(this::syncShopData);
     }
@@ -126,6 +136,10 @@ public class FPSMShop {
         this.playersData.clear();
     }
 
+    public void clearPlayerShopData(UUID uuid){
+        this.playersData.put(uuid,this.getDefaultShopData());
+    }
+
     public void setDefaultShopData(Map<ItemType, ArrayList<ShopSlot>> data){
         this.defaultShopData.clear();
         this.defaultShopData.putAll(data);
@@ -142,6 +156,7 @@ public class FPSMShop {
 
     public void handleButton(ServerPlayer serverPlayer, ItemType type, int index, ShopAction action) {
         this.getPlayerShopData(serverPlayer.getUUID()).handleButton(serverPlayer,type,index,action);
-        this.syncShopData(serverPlayer,type,index);
+        this.syncShopData(serverPlayer);
+        this.syncShopMoneyData(serverPlayer);
     }
 }

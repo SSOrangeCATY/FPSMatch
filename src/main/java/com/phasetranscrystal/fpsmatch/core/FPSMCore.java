@@ -26,10 +26,10 @@ public class FPSMCore {
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private final Map<String, Function3<ServerLevel,String, AreaData,BaseMap>> REGISTRY = new HashMap<>();
     private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
-
     public FPSMCore(String archiveName) {
         this.archiveName = archiveName;
     }
+
     public static FPSMCore getInstance(){
         if(INSTANCE == null) throw new RuntimeException("error : fpsm not install.");
         return INSTANCE;

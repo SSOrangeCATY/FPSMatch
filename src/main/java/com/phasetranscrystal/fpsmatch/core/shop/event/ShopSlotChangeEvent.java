@@ -23,7 +23,7 @@ public class ShopSlotChangeEvent{
     }
 
     public void addMoney(int count){
-        this.money += money;
+        this.money += count;
     }
 
     public void removeMoney(int count){

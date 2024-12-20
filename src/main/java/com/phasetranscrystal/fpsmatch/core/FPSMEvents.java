@@ -14,6 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
@@ -169,6 +170,7 @@ public class FPSMEvents {
 
     @SubscribeEvent
     public static void onServerStartedEvent(ServerStartedEvent event) {
+        FPSMatch.listenerModuleManager = new LMManager();
         List<FileHelper.RawMapData> rawMapDataList = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
             for(FileHelper.RawMapData rawMapData : rawMapDataList){
                 String mapType = rawMapData.mapRL.getNamespace();
@@ -206,6 +208,11 @@ public class FPSMEvents {
 
     public static void handlePlayerDeath(BaseMap map, ServerPlayer player, @Nullable ServerPlayer from){
         if(map.isStart) {
+
+            if(map instanceof ShopMap shopMap){
+                shopMap.getShop().clearPlayerShopData(player.getUUID());
+            }
+
             MapTeams teams = map.getMapTeams();
             BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
             if (deadPlayerTeam != null) {

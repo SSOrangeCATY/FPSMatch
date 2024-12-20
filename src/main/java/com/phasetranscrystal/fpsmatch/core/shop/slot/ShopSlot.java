@@ -21,10 +21,11 @@ public class ShopSlot{
     public static final Codec<ShopSlot> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ItemStack.CODEC.fieldOf("ItemStack").forGetter(ShopSlot::process),
             Codec.INT.fieldOf("defaultCost").forGetter(ShopSlot::getDefaultCost),
+            Codec.INT.fieldOf("maxBuyCount").forGetter(ShopSlot::getMaxBuyCount),
             Codec.INT.fieldOf("groupId").forGetter(ShopSlot::getGroupId),
             Codec.list(Codec.STRING).fieldOf("listenerModule").forGetter(ShopSlot::getListenerNames)
-    ).apply(instance, (itemstack,dC,gId,fL) -> {
-        ShopSlot shopSlot = new ShopSlot(itemstack,dC,gId);
+    ).apply(instance, (itemstack,dC,mBC,gId,fL) -> {
+        ShopSlot shopSlot = new ShopSlot(itemstack,dC,mBC,gId);
         fL.forEach(name->{
             ListenerModule lm = FPSMatch.listenerModuleManager.getListenerModule(name);
             if(lm != null){
@@ -106,14 +107,6 @@ public class ShopSlot{
      */
     public ItemStack process() {
         return itemSupplier.get();
-    }
-
-    /**
-     * 设置当前价格
-     * @param cost 当前价格
-     */
-    public void setCost(int cost) {
-        this.cost = cost;
     }
 
     /**
@@ -306,10 +299,8 @@ public class ShopSlot{
         return names;
     }
 
-    //不要直接使用！从ShopData层判定与调用
-    @Deprecated
     /**
-     * 购买物品
+     * 购买物品 不要直接使用！从ShopData层判定与调用
      * @param player 玩家
      * @param money 当前金钱
      * @return 购买后剩余金钱

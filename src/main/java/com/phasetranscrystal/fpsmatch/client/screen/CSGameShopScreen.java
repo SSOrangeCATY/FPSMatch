@@ -301,7 +301,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             addView(returnGoodsLayout);
 
             costText = new TextView(getContext());
-            costText.setText("$ "+ClientData.getSlotData(this.type, this.index).cost);
+            costText.setText("$ "+ClientData.getSlotData(this.type, this.index).cost());
             costText.setTextSize(12);
             RelativeLayout.LayoutParams costParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -332,7 +332,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             });
 
             setOnClickListener((v) -> {
-                FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
+                if(!ClientData.getSlotData(this.type,this.index).itemStack().isEmpty()) FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
             });
         }
 
@@ -342,26 +342,26 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         }
 
         public void setElements(boolean enable){
+            ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
             imageView.setEnabled(enable);
 
             if(enable){
                 numText.setTextColor(CSGameShopScreen.T_COLOR);
                 itemNameText.setTextColor(CSGameShopScreen.T_COLOR);
                 costText.setTextColor(CSGameShopScreen.T_COLOR);
-
-                backgroud.setStroke(1,RenderUtil.color(255,255,255));
-
-                if(!ClientData.getSlotData(this.type,this.index).canReturn()){
-                    returnGoodsLayout.setEnabled(true);
-                }
             }else{
                 numText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
                 itemNameText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
                 costText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
-
-                backgroud.setStroke(0,RenderUtil.color(255,255,255));
-                returnGoodsLayout.setEnabled(false);
             }
+
+            if(currentSlot.boughtCount() > 0){
+                backgroud.setStroke(1,RenderUtil.color(255,255,255));
+            }else{
+                backgroud.setStroke(0,RenderUtil.color(255,255,255));
+            }
+
+            returnGoodsLayout.setEnabled(currentSlot.canReturn());
         }
 
         public void updateButtonState() {

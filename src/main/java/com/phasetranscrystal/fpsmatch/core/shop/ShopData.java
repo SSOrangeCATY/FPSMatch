@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -103,14 +104,6 @@ public class ShopData {
         return data;
     }
 
-    public static ShopData getDefaultData() {
-        return new ShopData(getRawData());
-    }
-
-    public static ShopData getDefaultData(int money) {
-        return new ShopData(getRawData(),money);
-    }
-
     public void setMoney(int money) {
         this.money = Math.max(0,money);
     }
@@ -120,7 +113,7 @@ public class ShopData {
     }
 
     public void addMoney(int money){
-        this.money += Math.min(0,money);
+        this.money += Math.max(0,money);
     }
 
     public List<ShopSlot> getShopSlotsByType(ItemType type) {
@@ -153,13 +146,12 @@ public class ShopData {
         boolean check = this.broadcastCostCheckEvent(player,currentSlot);
         if(check || this.money >= currentSlot.getCost()){
             this.broadcastGroupChangeEvent(player,currentSlot,1);
-            int cost = currentSlot.getCost();
 
             if (!currentSlot.canBuy(this.money)) {
                 return;
             }
-            this.money -= cost;
-            player.getInventory().add(currentSlot.process());
+
+            this.money = currentSlot.buy(player,this.money);
         }
     }
 
@@ -170,6 +162,24 @@ public class ShopData {
             this.addMoney(currentSlot.getCost());
             currentSlot.returnItem(player);
         }
+    }
+
+    public void lockShopSlots(ServerPlayer player){
+        List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
+
+        data.forEach(((itemType, shopSlots) -> {
+            shopSlots.forEach(shopSlot -> {
+                items.forEach(list -> {
+                    list.forEach(itemStack -> {
+                        if (shopSlot.returningChecker.test(itemStack)) {
+                            shopSlot.lock();
+                        }else{
+                            shopSlot.unlock();
+                        }
+                    });
+                });
+            });
+        }));
     }
 
 
@@ -184,7 +194,7 @@ public class ShopData {
 
     }
     protected void broadcastGroupChangeEvent(ServerPlayer player ,ShopSlot currentSlot, int flag){
-        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
+        List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList() : new ArrayList<>();
 
         groupSlot.forEach(slot -> {
             ShopSlotChangeEvent event = new ShopSlotChangeEvent(slot, player,this.money,flag);
@@ -201,7 +211,7 @@ public class ShopData {
             data.forEach(((itemType, shopSlots) -> {
                 shopSlots.forEach(shopSlot -> {
                     ItemStack itemStack1 = shopSlot.process();
-                    if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1))){
+                    if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1)) && !itemStack1.isEmpty()){
                         flag.set(new Pair<>(itemType,shopSlot));
                     }
                 });
@@ -210,7 +220,7 @@ public class ShopData {
             data.forEach(((itemType, shopSlots) -> {
                 shopSlots.forEach(shopSlot -> {
                     ItemStack itemStack1 = shopSlot.process();
-                    if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString())){
+                    if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString()) && !itemStack1.isEmpty()){
                         flag.set(new Pair<>(itemType,shopSlot));
                     }
                 });
