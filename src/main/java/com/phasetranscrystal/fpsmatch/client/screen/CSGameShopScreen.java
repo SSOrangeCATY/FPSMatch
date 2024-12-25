@@ -129,7 +129,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
             ImageView titleBarBackground = new ImageView(getContext());
             titleBarBackground.setImageDrawable(imageDrawable);
-            titleBarBackground.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            titleBarBackground.setScaleType(ImageView.ScaleType.FIT_XY);
             headBar.addView(titleBarBackground);
             moneyText = new TextView(getContext());
             RelativeLayout.LayoutParams moneyParams = new RelativeLayout.LayoutParams(
