@@ -19,6 +19,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.server.commands.TitleCommand;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
@@ -51,13 +52,17 @@ public class CSGameOverlay implements IGuiOverlay {
         guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 9 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
         guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
         String roundTime;
+
         if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner){
             roundTime = "--:--";
             textRoundTimeColor = color(240,40,40);
         }else{
-            roundTime  = getCSGameTime();
+            roundTime = getCSGameTime();
         }
+
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
+        guiGraphics.pose().popPose();
+
         if(ClientData.dismantleBombProgress > 0){
             MutableComponent component = Component.empty();
             for (int i = 1; i < 8 ; i++){
@@ -67,7 +72,6 @@ public class CSGameOverlay implements IGuiOverlay {
             }
             player.displayClientMessage(component,true);
         }
-        guiGraphics.pose().popPose();
     }
 
     public static boolean getDemolitionProgressTextStyle(int index){

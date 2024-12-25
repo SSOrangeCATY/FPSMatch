@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
+import com.mojang.blaze3d.platform.Window;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
@@ -7,11 +8,9 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
-import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.Canvas;
@@ -30,8 +29,6 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -65,106 +62,82 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
     public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
         if (window == null) {
-            window = new RelativeLayout(getContext());
-            var content = new LinearLayout(getContext());
+            window = new WindowLayout(getContext());
+        }
+        return window;
+    }
+
+    public static class WindowLayout extends RelativeLayout {
+        private float width_ = 1920;
+        private float height_ = 1080;
+        private float scaleWidth = 1;
+        private float scaleHeight = 1;
+
+        // main
+        private ImageView background;
+        private RelativeLayout headBar;
+        private LinearLayout content;
+
+        // header bar start
+        public TextView moneyText;
+        public TextView cooldownText;
+        public TextView nextRoundMinMoneyText;
+        // end
+        // ----------------------------------------------------
+        // content start
+        public LinearLayout shopWindow;
+        public List<TypeBarLayout> typeBarLayouts = new ArrayList<>();
+        // end
+
+        public WindowLayout(Context context) {
+            super(context);
+            initializeLayout();
+        }
+
+        private void initializeLayout() {
+            content = new LinearLayout(getContext());
             content.setOrientation(LinearLayout.HORIZONTAL);
-            ImageView background = new ImageView(getContext());
+            background = new ImageView(getContext());
             ImageDrawable imageDrawable = new ImageDrawable(Image.create(FPSMatch.MODID, BACKGROUND));
             imageDrawable.setAlpha(60);
 
             background.setImageDrawable(imageDrawable);
             background.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            var shopWindow = new LinearLayout(this.getContext());
+
+            shopWindow = new LinearLayout(this.getContext());
             for (int i = 0; i < 5; i++) {
-                var shopTitleBackground = new ShapeDrawable();
-                shopTitleBackground.setShape(ShapeDrawable.RECTANGLE);
-                shopTitleBackground.setStroke(0, 0xFFFF0000);
-                var typeBar = new LinearLayout(getContext());
-                typeBar.setOrientation(LinearLayout.VERTICAL);
-                var titleBar = new LinearLayout(getContext());
-
-                int gunButtonWeight = switch (i) {
-                    case 2 -> 180;
-                    case 3 -> 200;
-                    default -> 140;
-                };
-                int textColor = RenderUtil.color(203, 203, 203);
-                TextView numTab = new TextView(getContext());
-                numTab.setTextColor(textColor);
-                numTab.setText(String.valueOf(i + 1));
-                numTab.setTextSize(15);
-                numTab.setPadding(15, 10, 0, 0);
-                numTab.setGravity(Gravity.LEFT);
-
-                TextView title = new TextView(getContext());
-                title.setTextColor(textColor);
-                title.setText(I18n.get(TOP_NAME_KEYS_TEST[i]));
-                title.setTextSize(21);
-                title.setGravity(Gravity.CENTER);
-
-                titleBar.addView(numTab, new LinearLayout.LayoutParams(numTab.dp(25), -1));
-                titleBar.addView(title, new LinearLayout.LayoutParams(title.dp(gunButtonWeight - 25), -1));
-                typeBar.addView(titleBar, new LinearLayout.LayoutParams(-1, titleBar.dp(44)));
-                List<GunButtonLayout> buttons = new ArrayList<>();
-                for (int j = 0; j < 5; j++) {
-                    var shopHolderBackground = new ShapeDrawable();
-                    shopHolderBackground.setShape(ShapeDrawable.RECTANGLE);
-                    shopHolderBackground.setCornerRadius(3);
-                    shopHolderBackground.setColor(RenderUtil.color(42, 42, 42));
-                    var shop = new LinearLayout(getContext());
-                    var gun = new LinearLayout(getContext());
-                    if (shopButtons.getOrDefault(ItemType.values()[i], new ArrayList<>()).isEmpty()) {
-                        buttons.add(new GunButtonLayout(getContext(), ItemType.values()[i], j));
-                    } else buttons.add(new GunButtonLayout(getContext(), ItemType.values()[i], j));
-                    gun.addView(buttons.get(j), new LinearLayout.LayoutParams(-1, -1));
-                    shop.setGravity(Gravity.CENTER);
-                    shop.addView(gun, new LinearLayout.LayoutParams(gun.dp(gunButtonWeight), gun.dp(90)));
-                    typeBar.addView(shop, new LinearLayout.LayoutParams(-1, shop.dp(98)));
-                }
-                shopButtons.put(ItemType.values()[i], buttons);
-                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(typeBar.dp(gunButtonWeight + 30), -1));
+                TypeBarLayout typeBar = new TypeBarLayout(this.getContext(),i);
+                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scaleWidth), -1));
+                typeBarLayouts.add(typeBar);
             }
-            content.addView(shopWindow, new LinearLayout.LayoutParams(shopWindow.dp(950), shopWindow.dp(550)));
+            content.addView(shopWindow, new LinearLayout.LayoutParams(dp(950 * scaleWidth), dp(550* scaleHeight)));
+
             RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
-                    RelativeLayout.LayoutParams.WRAP_CONTENT,
-                    RelativeLayout.LayoutParams.WRAP_CONTENT);
-            shopWindowParams.setMargins(content.dp(240), content.dp(170 + 40), 0, 0);
+                    dp(950 * scaleHeight),
+                    dp(550 * scaleWidth));
+            shopWindowParams.setMargins(dp(240 * scaleWidth), dp(210 * scaleHeight), 0, 0);
 
             RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
-                    background.dp(950),
-                    background.dp(550));
-            shopWindowBackGroundParams.setMargins(background.dp(240), background.dp(208), 0, 0);
+                    dp(950 * scaleHeight),
+                    dp(550 * scaleWidth));
+            shopWindowBackGroundParams.setMargins(dp(240 * scaleWidth), dp(208 * scaleHeight), 0, 0);
 
-            HeadBarLayout headBarLayout = new HeadBarLayout(getContext());
-            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(headBarLayout.dp(950), headBarLayout.dp(38));
-            titleBarParams.setMargins(headBarLayout.dp(240), headBarLayout.dp(170), 0, 0);
+            // HEAD BAR START
+            headBar = new RelativeLayout(getContext());
+            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scaleWidth*950), dp(scaleHeight*38));
+            titleBarParams.setMargins(dp(scaleWidth*240), dp(scaleHeight*170), 0, 0);
 
-            window.addView(headBarLayout, titleBarParams);
-            window.addView(background, shopWindowBackGroundParams);
-            window.addView(content, shopWindowParams);
-        }
-        return window;
-    }
-
-    public static class HeadBarLayout extends RelativeLayout {
-        public final TextView moneyText;
-        public final TextView cooldownText;
-        public final TextView nextRoundMinMoneyText;
-        public HeadBarLayout(Context context) {
-            super(context);
-            ImageView background = new ImageView(getContext());
-            ImageDrawable imageDrawable =new ImageDrawable(Image.create(FPSMatch.MODID, "ui/cs/background.png"));
-            imageDrawable.setAlpha(60);
-            background.setImageDrawable(imageDrawable);
-            background.setScaleType(ImageView.ScaleType.FIT_XY);
-            addView(background);
+            ImageView titleBarBackground = new ImageView(getContext());
+            titleBarBackground.setImageDrawable(imageDrawable);
+            titleBarBackground.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            headBar.addView(titleBarBackground);
             moneyText = new TextView(getContext());
             RelativeLayout.LayoutParams moneyParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             moneyParams.addRule(RelativeLayout.CENTER_IN_PARENT);
             moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            moneyParams.setMargins(25,0,0,0);
+            moneyParams.setMargins((int) (25*scaleWidth),0,0,0);
             moneyText.setLayoutParams(moneyParams);
             moneyText.setTextColor(T_COLOR);
             moneyText.setTextSize(18);
@@ -178,7 +151,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             cooldownText.setLayoutParams(cooldownParams);
             cooldownText.setTextSize(18);
 
-
             nextRoundMinMoneyText = new TextView(getContext());
             RelativeLayout.LayoutParams minmoneyText = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -186,27 +158,176 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
             minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", ClientData.getNextRoundMinMoney()));
-            minmoneyText.setMargins(0,0,20,0);
+            minmoneyText.setMargins(0,0, (int) (20*scaleWidth),0);
             nextRoundMinMoneyText.setLayoutParams(minmoneyText);
             nextRoundMinMoneyText.setTextSize(15);
-            addView(moneyText);
-            addView(cooldownText);
-            addView(nextRoundMinMoneyText);
+            headBar.addView(moneyText);
+            headBar.addView(cooldownText);
+            headBar.addView(nextRoundMinMoneyText);
+            //END
+
+            addView(headBar, titleBarParams);
+            addView(background, shopWindowBackGroundParams);
+            addView(content, shopWindowParams);
+        }
+
+        private void calculateScaleFactor(int w, int h) {
+            scaleWidth = (float) w / 1920;
+            scaleHeight = (float) h / 1080;
+            this.width_ = w;
+            this.height_ = h;
         }
 
         @Override
         public void draw(@NotNull Canvas canvas) {
             super.draw(canvas);
+            Window w = Minecraft.getInstance().getWindow();
+            if(this.width_ != w.getWidth() || this.height_ != w.getHeight()){
+                calculateScaleFactor(w.getWidth(), w.getHeight());
+                float scale = Math.min(scaleWidth,scaleHeight);
+
+                RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
+                        dp(950 * scale),
+                        dp(550 * scale));
+                shopWindowParams.setMargins(dp(240 * scale),dp(210 * scale), 0, 0);
+
+                RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
+                        dp(950 * scale),
+                        dp(550 * scale));
+                shopWindowBackGroundParams.setMargins(dp(240 * scale), dp(208 * scale), 0, 0);
+
+                this.content.setLayoutParams(shopWindowParams);
+                this.background.setLayoutParams(shopWindowBackGroundParams);
+
+                RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scale*950), dp(scale*38));
+                titleBarParams.setMargins(dp(scale * 240), dp(scale * 170), 0, 0);
+                this.headBar.setLayoutParams(titleBarParams);
+
+                RelativeLayout.LayoutParams minmoneyText = new RelativeLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.WRAP_CONTENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT);
+                minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
+                minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                minmoneyText.setMargins(0,0, (int) (20 * scale),0);
+                nextRoundMinMoneyText.setLayoutParams(minmoneyText);
+                nextRoundMinMoneyText.setTextSize(15 * scale);
+
+                RelativeLayout.LayoutParams moneyParams = new RelativeLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.WRAP_CONTENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT);
+                moneyParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+                moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                moneyParams.setMargins((int) (25 * scale),0,0,0);
+                moneyText.setLayoutParams(moneyParams);
+                moneyText.setTextSize(18 * scale);
+
+                shopWindow.setLayoutParams(new LinearLayout.LayoutParams(dp(950 * scale), dp(550* scale)));
+
+                cooldownText.setTextSize(18* scale);
+
+                typeBarLayouts.forEach(typeBarLayout -> {
+                    typeBarLayout.setScale(scale);
+                });
+
+                shopButtons.forEach((type,gunButtons)->{
+                    gunButtons.forEach(gunButtonLayout -> {
+                        gunButtonLayout.setScale(scale);
+                    });
+                });
+            }
             updateText();
         }
 
         public void updateText(){
             moneyText.setText("$ "+ClientData.getMoney());
         }
+
+    }
+
+    public static class TypeBarLayout extends LinearLayout {
+        int i;
+        LinearLayout titleBar;
+        TextView numTab;
+        TextView title;
+        List<LinearLayout> guns = new ArrayList<>();
+        List<LinearLayout> shops = new ArrayList<>();
+
+        public TypeBarLayout(Context context,int i) {
+            super(context);
+            this.i = i;
+            setOrientation(LinearLayout.VERTICAL);
+            titleBar = new LinearLayout(getContext());
+            int textColor = RenderUtil.color(203, 203, 203);
+            numTab = new TextView(getContext());
+            numTab.setTextColor(textColor);
+            numTab.setText(String.valueOf(i + 1));
+            numTab.setTextSize(15);
+            numTab.setPadding(15, 10, 0, 0);
+            numTab.setGravity(Gravity.LEFT);
+
+            title = new TextView(getContext());
+            title.setTextColor(textColor);
+            title.setText(I18n.get(TOP_NAME_KEYS_TEST[i]));
+            title.setTextSize(21);
+            title.setGravity(Gravity.CENTER);
+
+            titleBar.addView(numTab, new LinearLayout.LayoutParams(dp(25), -1));
+            titleBar.addView(title, new LinearLayout.LayoutParams(dp((getGunButtonWeight(i) - 25)), -1));
+            addView(titleBar, new LinearLayout.LayoutParams(-1, dp(44)));
+            List<GunButtonLayout> buttons = new ArrayList<>();
+            for (int j = 0; j < 5; j++) {
+                var shop = new LinearLayout(getContext());
+                var gun = new LinearLayout(getContext());
+                GunButtonLayout gunButtonLayout = new GunButtonLayout(getContext(), ItemType.values()[i], j);
+                buttons.add(gunButtonLayout);
+                gun.addView(gunButtonLayout, new LinearLayout.LayoutParams(-1, -1));
+                guns.add(gun);
+
+                shop.setGravity(Gravity.CENTER);
+                shop.addView(gun, new LinearLayout.LayoutParams(dp(getGunButtonWeight(i)), dp(90)));
+                shops.add(shop);
+
+                addView(shop, new LinearLayout.LayoutParams(-1, dp(98)));
+            }
+            // 添加按钮到全局管理 具体缩放逻辑由窗口直接代理
+            shopButtons.put(ItemType.values()[i], buttons);
+        }
+
+        public static int getGunButtonWeight(int i){
+            return switch (i) {
+                case 2 -> 180;
+                case 3 -> 200;
+                default -> 140;
+            };
+        }
+
+            private void setScale(float scale) {
+                numTab.setTextSize(15 * scale);
+                numTab.setPadding((int) (15 * scale), (int) (10 * scale), 0, 0);
+                numTab.setLayoutParams(new LinearLayout.LayoutParams(dp(25 * scale), -1));
+
+                title.setLayoutParams(new LinearLayout.LayoutParams(dp((getGunButtonWeight(i) - 25) * scale), -1));
+                title.setTextSize(21 * scale);
+
+                titleBar.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(44 * scale)));
+
+                guns.forEach((gun)->{
+                    gun.setLayoutParams(new LinearLayout.LayoutParams(dp(getGunButtonWeight(i) * scale), dp(90 * scale)));
+                });
+
+                shops.forEach((shop)->{
+                    shop.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(98 * scale)));
+                });
+
+                this.setLayoutParams(new LinearLayout.LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
+
+            }
+
     }
 
 
-    public static class GunButtonLayout extends RelativeLayout {
+
+        public static class GunButtonLayout extends RelativeLayout {
         public static final ColorStateList TINT_LIST = new ColorStateList(
                 new int[][]{
                         new int[]{-R.attr.state_enabled},
@@ -215,6 +336,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                         DISABLE_TEXTURE_COLOR,
                         T_COLOR
                 });
+
         public final ItemType type;
         public final int index;
         public final ImageView imageView;
@@ -275,7 +397,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            itemNameParams.setMargins(0,5,5,0);
+            itemNameParams.setMargins(0 , 5, 5,0);
             itemNameText.setLayoutParams(itemNameParams);
 
             returnGoodsText = new TextView(getContext());
@@ -402,6 +524,51 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             }
         }
 
+        private void setScale(float scale) {
+            var imageParam = new RelativeLayout.LayoutParams(dp(39*scale), dp(13*scale));
+            imageParam.addRule(RelativeLayout.CENTER_IN_PARENT);
+            this.imageView.setLayoutParams(imageParam);
+            imageView.setScaleX(3*scale);
+            imageView.setScaleY(3*scale);
+
+            RelativeLayout.LayoutParams numParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            numParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            numParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            numParams.setMargins((int) (5 * scale), (int) (5*scale),0,0);
+            numText.setLayoutParams(numParams);
+            numText.setTextSize(13*scale);
+
+            RelativeLayout.LayoutParams itemNameParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            itemNameParams.setMargins(0 ,(int) (5*scale),(int) (5 * scale),0);
+            itemNameText.setLayoutParams(itemNameParams);
+            itemNameText.setTextSize(13*scale);
+
+            RelativeLayout.LayoutParams returnGoodsParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            returnGoodsParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            returnGoodsParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            returnGoodsParams.setMargins((int) (5* scale), (int) (12*scale),0,0);
+            returnGoodsText.setLayoutParams(returnGoodsParams);
+            returnGoodsText.setTextSize(15*scale);
+
+            RelativeLayout.LayoutParams costParams = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT);
+            costParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            costParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            costParams.setMargins(0,0, (int) (5*scale), (int) (5*scale));
+            costText.setLayoutParams(costParams);
+            costText.setTextSize(12*scale);
+
+            this.setLayoutParams(new LinearLayout.LayoutParams(dp(TypeBarLayout.getGunButtonWeight(this.type.ordinal()) * scale), dp(90 * scale)));
+        }
         @Override
         public void draw(@NotNull Canvas canvas) {
             super.draw(canvas);

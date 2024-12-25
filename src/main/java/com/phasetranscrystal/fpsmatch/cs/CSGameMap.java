@@ -18,7 +18,11 @@ import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopStatesS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -253,6 +257,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private void roundVictory(String winnerTeamName, WinnerReason reason) {
         // 检查获胜队伍是否存在
         if(this.getMapTeams().checkTeam(winnerTeamName)){
+            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+                if(serverPlayer != null){
+                    serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+winnerTeamName+".message").withStyle(winnerTeamName.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
+                }
+            }));
             // 如果已经在等待胜利者，则直接返回
             if(isWaitingWinner) return;
             // 设置为等待胜利者状态

@@ -37,6 +37,9 @@
   "key.fpsm.custom.tab.off": "Custom Tab Off",
   "key.fpsm.custom.tab.desc": "Switch Custom Tab",
   "commands.fpsm.save.success": "Saved successfully.",
+  "fpsm.map.cs.winner.ct.message" : "CT ROUND WINNER",
+  "fpsm.map.cs.winner.t.message" : "T ROUND WINNER",
+
 
   "item.fpsmatch.c4" : "C4"
 

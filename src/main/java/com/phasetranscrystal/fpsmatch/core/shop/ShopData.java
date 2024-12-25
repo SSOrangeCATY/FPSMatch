@@ -122,6 +122,7 @@ public class ShopData {
         return this.data.get(type);
     }
 
+    //TODO 先不做这个 后面再做
     public void setGroupBuyLimit(int groupId, int count){
         this.groupBuyCountLimit.put(groupId,count);
     }
