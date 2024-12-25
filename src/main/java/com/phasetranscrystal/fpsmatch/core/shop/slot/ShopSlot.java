@@ -354,4 +354,11 @@ public class ShopSlot{
     public void removeListenerModule(String module) {
         this.listener.removeIf(listenerModule -> listenerModule.getName().equals(module));
     }
+
+    public ShopSlot copy() {
+        ShopSlot slot = new ShopSlot(this.itemSupplier,this.defaultCost,this.maxBuyCount,this.groupId,this.returningChecker);
+        slot.setIndex(this.index);
+        slot.listener.addAll(this.listener);
+        return slot;
+    }
 }

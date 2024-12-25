@@ -45,7 +45,13 @@ public class ShopData {
         // 创建一个不可变Map的构建器
         ImmutableMap.Builder<ItemType, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
         // 将传入的Map转换为不可变Map
-        shopData.forEach((k, v) -> builder.put(k, ImmutableList.copyOf(v)));
+        shopData.forEach((k, v) ->{
+            List<ShopSlot> shopSlots = new ArrayList<>();
+            v.forEach(shopSlot -> {
+                shopSlots.add(shopSlot.copy());
+            });
+            builder.put(k, ImmutableList.copyOf(shopSlots));
+        });
         // 赋值给data字段
         data = builder.build();
 
@@ -184,16 +190,18 @@ public class ShopData {
     public void lockShopSlots(ServerPlayer player){
         List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
 
+        Map<ShopSlot,Boolean> checkFlag = new HashMap<>();
         data.forEach(((itemType, shopSlots) -> {
-            shopSlots.forEach(shopSlot -> {
                 items.forEach(list -> {
                     list.forEach(itemStack -> {
-                        if (shopSlot.returningChecker.test(itemStack)) {
-                            shopSlot.lock();
-                        }else{
-                            shopSlot.unlock();
-                        }
-                    });
+                        for (ShopSlot shopSlot : shopSlots){
+                            if (shopSlot.returningChecker.test(itemStack)) {
+                                shopSlot.lock();
+                                checkFlag.put(shopSlot,false);
+                            }else if(checkFlag.getOrDefault(shopSlot,true)){
+                                shopSlot.unlock();
+                            }
+                    }
                 });
             });
         }));
@@ -245,10 +253,5 @@ public class ShopData {
         }
         return flag.get();
     }
-
-    public ShopData copy(){
-        return new ShopData(this.data,this.money);
-    }
-
 
 }

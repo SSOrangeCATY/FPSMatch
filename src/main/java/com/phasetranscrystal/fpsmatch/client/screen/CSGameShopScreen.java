@@ -455,7 +455,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             });
 
             setOnClickListener((v) -> {
-                if(!ClientData.getSlotData(this.type,this.index).itemStack().isEmpty()) FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
+                if(imageView.isEnabled()) FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
             });
         }
 
@@ -489,7 +489,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
         public void updateButtonState() {
             ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
-            boolean enable = ClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty();
+            boolean enable = ClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
             this.setElements(enable);
 
             if(!this.isHovered()) {

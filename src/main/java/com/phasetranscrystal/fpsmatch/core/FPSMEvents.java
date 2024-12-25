@@ -92,6 +92,14 @@ public class FPSMEvents {
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {
                     playerTeam.handleOffline(player);
+                    int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
+                    if (im > 0) {
+                        ItemEntity entity = player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false);
+                        if (entity != null) {
+                            entity.setGlowingTag(true);
+                        }
+                        player.getInventory().setChanged();
+                    }
                 }
             }
         }
@@ -142,6 +150,7 @@ public class FPSMEvents {
                 ShopSlot slot = pair.getSecond();
                 if(pair.getFirst() != ItemType.THROWABLE){
                     slot.unlock(itemStack.getCount());
+                    shop.syncShopData((ServerPlayer) event.getPlayer(),pair.getFirst(),slot);
                 }
             }
         }
@@ -161,6 +170,7 @@ public class FPSMEvents {
             if(pair != null){
                 ShopSlot slot = pair.getSecond();
                 slot.lock(event.getStack().getCount());
+                shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst(),slot);
             }
         }
     }

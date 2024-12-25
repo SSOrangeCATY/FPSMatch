@@ -17,7 +17,6 @@ import java.util.*;
 public class FPSMShop {
     public final String name;
     private final Map<ItemType, ArrayList<ShopSlot>> defaultShopData;
-
     private final int startMoney;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
 
@@ -130,11 +129,6 @@ public class FPSMShop {
         return data;
     }
 
-
-    public void resetPlayerShopData(UUID uuid){
-        this.playersData.put(uuid,this.getDefaultShopData());
-    }
-
     public void clearPlayerShopData(){
         this.playersData.clear();
     }
@@ -173,7 +167,8 @@ public class FPSMShop {
     }
 
     public ShopData getDefaultShopData() {
-        return new ShopData(this.defaultShopData,this.startMoney);
+        Map<ItemType, ArrayList<ShopSlot>> map = new HashMap<>(this.defaultShopData);
+        return new ShopData(map,this.startMoney);
     }
 
     public Map<ItemType, ArrayList<ShopSlot>> getDefaultShopDataMap() {

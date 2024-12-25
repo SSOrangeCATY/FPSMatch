@@ -163,17 +163,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
             if(i < 200){
                 if(i < 100){
-                    if(i <= 20) this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
-
+                    if(i <= 20) this.playSound();
                     if(i % 5 == 0){
-                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                        this.playSound();
                     }
                 }else if( i % 10 == 0){
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                    this.playSound();
                 }
             } else{
                 if(i % 20 == 0){
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                    this.playSound();
                 }
             }
         }
@@ -190,6 +189,10 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         }
     }
 
+
+    public void playSound(){
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1.0F);
+    }
     private void explode() {
         float explosionRadius = this.getExplosionRadius(); // 爆炸半径
         this.deleting = true;
