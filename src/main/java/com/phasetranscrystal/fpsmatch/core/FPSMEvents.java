@@ -140,10 +140,13 @@ public class FPSMEvents {
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+
+        //商店逻辑
         if (map instanceof ShopMap shopMap){
             FPSMShop shop = shopMap.getShop();
             if (shop == null) return;
             ItemStack itemStack = event.getEntity().getItem();
+
             ShopData shopData = shop.getPlayerShopData(event.getEntity().getUUID());
             Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
             if(pair != null){
