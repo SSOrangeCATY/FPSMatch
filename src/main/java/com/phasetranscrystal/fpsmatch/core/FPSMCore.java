@@ -79,9 +79,7 @@ public class FPSMCore {
 
     public List<String> getMapNames(){
         List<String> names = new ArrayList<>();
-        GAMES.forEach((type,mapList)-> mapList.forEach((map->{
-            names.add(map.getMapName());
-        })));
+        GAMES.forEach((type,mapList)-> mapList.forEach((map-> names.add(map.getMapName()))));
         return names;
     }
 

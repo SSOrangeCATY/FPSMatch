@@ -8,7 +8,6 @@ import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
-import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
@@ -21,7 +20,6 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,17 +27,16 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,7 +49,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
-    private final int waittingTime = 400;
+    private final int waitingTime = 400;
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
@@ -139,9 +136,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false,null);
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_NATURAL_REGENERATION).set(false,null);
         this.getServerLevel().getServer().setDifficulty(Difficulty.HARD,true);
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            this.setPlayerMoney(uuid,800);
-        }));
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid,800)));
         this.isStart = true;
         this.isWaiting = true;
         this.isWaitingWinner = false;
@@ -193,7 +188,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public boolean checkWaitingTime(){
-        if(this.isWaiting && currentPauseTime < waittingTime){
+        if(this.isWaiting && currentPauseTime < waitingTime){
             this.currentPauseTime++;
         }else {
             if(this.canRestTime()) currentPauseTime = 0;
@@ -318,13 +313,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-
     private void checkLoseStreaks(String winnerTeam) {
         // 遍历所有队伍，检查连败情况
         this.getMapTeams().getTeams().forEach(team -> {
             if (team.getName().equals(winnerTeam)) {
-                // 胜利，连败次数重置
-                team.setLoseStreak(0);
+                // 胜利，连败次数减1
+                team.setLoseStreak(Math.max(team.getLoseStreak() - 1,0));
             } else {
                 // 失败，连败次数加1
                 team.setLoseStreak(team.getLoseStreak() + 1);
@@ -369,12 +363,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
         resetGame();
     }
+
     @Override
     public boolean victoryGoal() {
         AtomicBoolean isVictory = new AtomicBoolean(false);
-        teamScores.values().forEach((integer -> {
-            isVictory.set(integer >= WINNER_ROUND);
-        }));
+        teamScores.values().forEach((integer -> isVictory.set(integer >= WINNER_ROUND)));
         return isVictory.get() && !this.isDebug();
     }
 
@@ -383,8 +376,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         super.cleanupMap();
         AreaData areaData = this.getMapArea();
         ServerLevel serverLevel = this.getServerLevel();
-        serverLevel.getEntities().getAll().forEach(entity -> {
-            if(entity instanceof ItemEntity itemEntity && areaData.isEntityInArea(itemEntity)){
+
+        serverLevel.getEntitiesOfClass(Entity.class,areaData.getAABB()).forEach(entity -> {
+            if(entity instanceof ItemEntity itemEntity){
                 itemEntity.discard();
             }
 
@@ -408,8 +402,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     this.clearPlayerInventory(player);
                     this.givePlayerKits(player);
                 }else{
-                    this.getShop().getPlayerShopData(uuid).lockShopSlots(player);
+                    this.resetGunAmmon();
                 }
+                this.getShop().getPlayerShopData(uuid).lockShopSlots(player);
                 this.teleportPlayerToReSpawnPoint(player);
             }
         }));
@@ -433,9 +428,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             // 随机选择一个玩家作为炸弹携带者
             if(team.getPlayers().isEmpty()) return;
 
-            team.getPlayers().forEach((uuid)->{
-                clearPlayerInventory(uuid,(itemStack) -> itemStack.getItem() instanceof CompositionC4);
-            });
+            team.getPlayers().forEach((uuid)-> clearPlayerInventory(uuid,(itemStack) -> itemStack.getItem() instanceof CompositionC4));
 
             UUID uuid = team.getPlayers().get(random.nextInt(team.getPlayers().size()));
             if(uuid!= null){
@@ -521,9 +514,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public List<ItemStack> getKits(BaseTeam team) {
         List<ItemStack> itemStacks = new ArrayList<>();
-        this.startKits.getOrDefault(team.getName(),new ArrayList<>()).forEach((itemStack) -> {
-            itemStacks.add(itemStack.copy());
-        });
+        this.startKits.getOrDefault(team.getName(),new ArrayList<>()).forEach((itemStack) -> itemStacks.add(itemStack.copy()));
         return itemStacks;
     }
 
@@ -534,13 +525,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     @Override
     public void setStartKits(Map<String, ArrayList<ItemStack>> kits) {
-        kits.forEach((s, list) -> {
-            list.forEach((itemStack) -> {
-                if(itemStack.getItem() instanceof IGun iGun){
-                   FPSMUtil.fixGunItem(itemStack, iGun);
-                }
-            });
-        });
+        kits.forEach((s, list) -> list.forEach((itemStack) -> {
+            if(itemStack.getItem() instanceof IGun iGun){
+               FPSMUtil.fixGunItem(itemStack, iGun);
+            }
+        }));
 
         this.startKits.clear();
         this.startKits.putAll(kits);
@@ -571,6 +560,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public boolean isExploded() {
         return isExploded;
     }
+
     public void syncToClient() {
         CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(this.teamScores.getOrDefault("ct",0),this.teamScores.getOrDefault("t",0), this.currentPauseTime,this.currentRoundTime,this.isDebug(),this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
@@ -580,6 +570,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
         }));
     }
+
+
+    public void resetGunAmmon(){
+        this.getMapTeams().getJoinedPlayers().forEach((uuid)->{
+            ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+            if(serverPlayer != null){
+                FPSMUtil.resetAllGunAmmo(serverPlayer);
+            }
+        });
+    }
+
 
     @SubscribeEvent
     public static void onPlayerKillOnMap(PlayerKillOnMapEvent event){

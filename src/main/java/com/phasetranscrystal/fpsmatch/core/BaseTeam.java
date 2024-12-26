@@ -1,18 +1,11 @@
 package com.phasetranscrystal.fpsmatch.core;
 
-import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
-import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.scores.PlayerTeam;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -90,17 +83,13 @@ public class BaseTeam {
 
     public List<TabData> getPlayersTabData(){
         List<TabData> tabDataList = new ArrayList<>();
-        this.players.values().forEach((data)->{
-            tabDataList.add(data.getTabData());
-        });
+        this.players.values().forEach((data)-> tabDataList.add(data.getTabData()));
         return tabDataList;
     }
 
     public List<TabData> getPlayersTabDataTemp(){
         List<TabData> tabDataList = new ArrayList<>();
-        this.players.values().forEach((data)->{
-            tabDataList.add(data.getTabDataTemp());
-        });
+        this.players.values().forEach((data)-> tabDataList.add(data.getTabDataTemp()));
         return tabDataList;
     }
 

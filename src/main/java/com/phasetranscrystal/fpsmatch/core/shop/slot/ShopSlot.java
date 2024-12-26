@@ -356,7 +356,11 @@ public class ShopSlot{
     }
 
     public ShopSlot copy() {
-        ShopSlot slot = new ShopSlot(this.itemSupplier,this.defaultCost,this.maxBuyCount,this.groupId,this.returningChecker);
+        ItemStack itemStack = this.itemSupplier.get();
+        if(itemStack.getItem() instanceof IGun iGun){
+            FPSMUtil.fixGunItem(itemStack, iGun);
+        }
+        ShopSlot slot = new ShopSlot(itemStack::copy,this.defaultCost,this.maxBuyCount,this.groupId,this.returningChecker);
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;

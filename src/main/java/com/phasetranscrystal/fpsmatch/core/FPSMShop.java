@@ -53,9 +53,7 @@ public class FPSMShop {
                     ShopData shopData = this.getPlayerShopData(uuid);
                     for (ItemType type : ItemType.values()) {
                         List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-                        slots.forEach((shopSlot -> {
-                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name));
-                        }));
+                        slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name))));
                     }
                 }
             }
@@ -104,9 +102,7 @@ public class FPSMShop {
         ShopData shopData = this.getPlayerShopData(player.getUUID());
         for (ItemType type : ItemType.values()) {
             List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-            slots.forEach((shopSlot -> {
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name));
-            }));
+            slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name))));
         }
 
     }

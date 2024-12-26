@@ -4,10 +4,12 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.commands.TeamCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Team;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -20,9 +22,7 @@ public class MapTeams {
     private final Map<String,BaseTeam> teams = new HashMap<>();
     public MapTeams(ServerLevel level,Map<String,Integer> team, BaseMap map){
         this.level = level;
-        team.forEach((name,limit)->{
-            this.addTeam(name,limit,map);
-        });
+        team.forEach((name,limit)-> this.addTeam(name,limit,map));
     }
 
     @Nullable
@@ -34,9 +34,7 @@ public class MapTeams {
 
     public Map<String,List<SpawnPointData>> getAllSpawnPoints(){
         Map<String,List<SpawnPointData>> data = new HashMap<>();
-        this.teams.forEach((n,t)->{
-            data.put(n,t.getSpawnPointsData());
-        });
+        this.teams.forEach((n,t)-> data.put(n,t.getSpawnPointsData()));
         return data;
     }
 
@@ -72,6 +70,7 @@ public class MapTeams {
     public void addTeam(String teamName,int limit,BaseMap map){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
+        playerteam.setNameTagVisibility(Team.Visibility.NEVER);
         this.teams.put(teamName, new BaseTeam(fixedName,limit,playerteam));
     }
 
@@ -222,9 +221,7 @@ public class MapTeams {
     @Nullable public UUID getDamageMvp() {
         Map<UUID, Float> damageMap = new HashMap<>();
 
-        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> attackerDamageMap.forEach((targetId, damage) -> {
-            damageMap.merge(attackerId, damage, Float::sum);
-        }));
+        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> attackerDamageMap.forEach((targetId, damage) -> damageMap.merge(attackerId, damage, Float::sum)));
 
         UUID mvpId = null;
         float highestDamage = 0;
@@ -311,9 +308,7 @@ public class MapTeams {
     }
     public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
         Map<UUID,Map<UUID,Float>> hurtData = new HashMap<>();
-        teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)->{
-            hurtData.put(data.getOwner(),data.getDamageData());
-        }));
+        teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)-> hurtData.put(data.getOwner(),data.getDamageData())));
         return hurtData;
     }
 

@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -269,7 +268,7 @@ public class FileHelper {
         @Nullable public List<AreaData> blastAreaDataList;
         @Nullable public Map<String,ArrayList<ItemStack>> startKits;
 
-        public RawMapData(@NotNull ResourceLocation mapRL, @NotNull Map<String, List<SpawnPointData>> teamsData, @NotNull ResourceKey<Level> levelResourceKey, AreaData areaData) {
+        public RawMapData(@NotNull ResourceLocation mapRL, @NotNull Map<String, List<SpawnPointData>> teamsData, @NotNull ResourceKey<Level> levelResourceKey, @NotNull AreaData areaData) {
             this.mapRL = mapRL;
             this.teamsData = teamsData;
             this.levelResourceKey = levelResourceKey;

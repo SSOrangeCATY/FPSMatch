@@ -225,15 +225,9 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
                 cooldownText.setTextSize(18* scale);
 
-                typeBarLayouts.forEach(typeBarLayout -> {
-                    typeBarLayout.setScale(scale);
-                });
+                typeBarLayouts.forEach(typeBarLayout -> typeBarLayout.setScale(scale));
 
-                shopButtons.forEach((type,gunButtons)->{
-                    gunButtons.forEach(gunButtonLayout -> {
-                        gunButtonLayout.setScale(scale);
-                    });
-                });
+                shopButtons.forEach((type,gunButtons)-> gunButtons.forEach(gunButtonLayout -> gunButtonLayout.setScale(scale)));
             }
             updateText();
         }
@@ -311,13 +305,9 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
                 titleBar.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(44 * scale)));
 
-                guns.forEach((gun)->{
-                    gun.setLayoutParams(new LinearLayout.LayoutParams(dp(getGunButtonWeight(i) * scale), dp(90 * scale)));
-                });
+                guns.forEach((gun)-> gun.setLayoutParams(new LayoutParams(dp(getGunButtonWeight(i) * scale), dp(90 * scale))));
 
-                shops.forEach((shop)->{
-                    shop.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(98 * scale)));
-                });
+                shops.forEach((shop)-> shop.setLayoutParams(new LayoutParams(-1, dp(98 * scale))));
 
                 this.setLayoutParams(new LinearLayout.LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
 

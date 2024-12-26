@@ -47,9 +47,7 @@ public class ShopData {
         // 将传入的Map转换为不可变Map
         shopData.forEach((k, v) ->{
             List<ShopSlot> shopSlots = new ArrayList<>();
-            v.forEach(shopSlot -> {
-                shopSlots.add(shopSlot.copy());
-            });
+            v.forEach(shopSlot -> shopSlots.add(shopSlot.copy()));
             builder.put(k, ImmutableList.copyOf(shopSlots));
         });
         // 赋值给data字段
@@ -191,29 +189,23 @@ public class ShopData {
         List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
 
         Map<ShopSlot,Boolean> checkFlag = new HashMap<>();
-        data.forEach(((itemType, shopSlots) -> {
-                items.forEach(list -> {
-                    list.forEach(itemStack -> {
-                        for (ShopSlot shopSlot : shopSlots){
-                            if (shopSlot.returningChecker.test(itemStack)) {
-                                shopSlot.lock();
-                                checkFlag.put(shopSlot,false);
-                            }else if(checkFlag.getOrDefault(shopSlot,true)){
-                                shopSlot.unlock();
-                            }
-                    }
-                });
-            });
-        }));
+        data.forEach(((itemType, shopSlots) -> items.forEach(list -> list.forEach(itemStack -> {
+            for (ShopSlot shopSlot : shopSlots){
+                if (shopSlot.returningChecker.test(itemStack)) {
+                    shopSlot.lock();
+                    checkFlag.put(shopSlot,false);
+                }else if(checkFlag.getOrDefault(shopSlot,true)){
+                    shopSlot.unlock();
+                }
+        }
+    }))));
     }
 
 
     protected boolean broadcastCostCheckEvent(ServerPlayer player ,ShopSlot currentSlot){
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
         CheckCostEvent event = new CheckCostEvent(player,currentSlot.getCost());
-        groupSlot.forEach(slot -> {
-            slot.handleCheckCostEvent(event);
-        });
+        groupSlot.forEach(slot -> slot.handleCheckCostEvent(event));
 
         return event.success();
 
@@ -233,23 +225,19 @@ public class ShopData {
         AtomicReference<Pair<ItemType, ShopSlot>> flag = new AtomicReference<>();
         if(itemStack.getItem() instanceof IGun iGun){
             ResourceLocation gunId = iGun.getGunId(itemStack);
-            data.forEach(((itemType, shopSlots) -> {
-                shopSlots.forEach(shopSlot -> {
-                    ItemStack itemStack1 = shopSlot.process();
-                    if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1)) && !itemStack1.isEmpty()){
-                        flag.set(new Pair<>(itemType,shopSlot));
-                    }
-                });
-            }));
+            data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
+                ItemStack itemStack1 = shopSlot.process();
+                if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1)) && !itemStack1.isEmpty()){
+                    flag.set(new Pair<>(itemType,shopSlot));
+                }
+            })));
         }else {
-            data.forEach(((itemType, shopSlots) -> {
-                shopSlots.forEach(shopSlot -> {
-                    ItemStack itemStack1 = shopSlot.process();
-                    if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString()) && !itemStack1.isEmpty()){
-                        flag.set(new Pair<>(itemType,shopSlot));
-                    }
-                });
-            }));
+            data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
+                ItemStack itemStack1 = shopSlot.process();
+                if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString()) && !itemStack1.isEmpty()){
+                    flag.set(new Pair<>(itemType,shopSlot));
+                }
+            })));
         }
         return flag.get();
     }
