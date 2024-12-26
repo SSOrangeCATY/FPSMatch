@@ -328,6 +328,7 @@ public class FPSMCommand {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.gun.failed"));
                 return 0;
             }
+
         }else {
             context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.gun.failed"));
             return 0;
