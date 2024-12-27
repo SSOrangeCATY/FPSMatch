@@ -69,6 +69,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public CSGameMap(ServerLevel serverLevel,String mapName,AreaData areaData) {
         super(serverLevel,mapName,areaData);
         this.shop = new FPSMShop(mapName);
+        this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
+        this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
     }
 
     public Map<String,Integer> getTeams(){
@@ -255,7 +257,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                 ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
                 if(serverPlayer != null){
-                    serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+winnerTeamName+".message").withStyle(winnerTeamName.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
+                    serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+winnerTeamName+".round.message").withStyle(winnerTeamName.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
                 }
             }));
             // 如果已经在等待胜利者，则直接返回
@@ -367,7 +369,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public boolean victoryGoal() {
         AtomicBoolean isVictory = new AtomicBoolean(false);
-        teamScores.values().forEach((integer -> isVictory.set(integer >= WINNER_ROUND)));
+        teamScores.forEach((team,integer)-> {
+            if(integer >= WINNER_ROUND){
+                isVictory.set(true);
+                this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                    ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                    if(serverPlayer != null){
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+team+".message").withStyle(team.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
+                    }
+                }));
+            }
+        });
         return isVictory.get() && !this.isDebug();
     }
 
@@ -467,12 +479,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void resetGame() {
+        this.cleanupMap();
         this.getShop().clearPlayerShopData();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 player.removeAllEffects();
                 this.getShop().syncShopData(player);
+                this.resetPlayerClientData(player);
             }
         }));
         this.teamScores.clear();
@@ -571,6 +585,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
     }
 
+    public void resetPlayerClientData(ServerPlayer serverPlayer){
+        FPSMatchStatsResetS2CPacket packet = new FPSMatchStatsResetS2CPacket();
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), packet);
+    }
 
     public void resetGunAmmon(){
         this.getMapTeams().getJoinedPlayers().forEach((uuid)->{

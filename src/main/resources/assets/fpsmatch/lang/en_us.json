@@ -39,7 +39,8 @@
   "commands.fpsm.save.success": "Saved successfully.",
   "fpsm.map.cs.winner.ct.message" : "CT ROUND WINNER",
   "fpsm.map.cs.winner.t.message" : "T ROUND WINNER",
-
+  "fpsm.map.cs.winner.ct.round.message" : "CT WINNER",
+  "fpsm.map.cs.winner.t.round.message" : "T WINNER",
 
   "item.fpsmatch.c4" : "C4"
 

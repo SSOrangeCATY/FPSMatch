@@ -21,6 +21,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
@@ -270,6 +271,9 @@ public class FPSMCommand {
         if (map != null) {
             if (context.getSource().getEntity() instanceof Player player && map instanceof ShopMap shopMap) {
                 ItemStack itemStack = player.getMainHandItem().copy();
+                if(itemStack.getItem() instanceof IGun iGun){
+                    FPSMUtil.fixGunItem(itemStack,iGun);
+                }
                 shopMap.getShop().setDefaultShopDataItemStack(itemType,slotNum,itemStack);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success",shopType,slotNum,itemStack.getDisplayName()), true);
                 return 1;
@@ -289,6 +293,9 @@ public class FPSMCommand {
         int slotNum = IntegerArgumentType.getInteger(context,"shopSlot") - 1;
         ItemType itemType = ItemType.valueOf(shopType);
         ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(1,false);
+        if(itemStack.getItem() instanceof IGun iGun){
+            FPSMUtil.fixGunItem(itemStack,iGun);
+        }
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
             if (map instanceof ShopMap shopMap) {
@@ -319,7 +326,7 @@ public class FPSMCommand {
                     iGun.useDummyAmmo(itemStack);
                     iGun.setMaxDummyAmmoAmount(itemStack,dummyAmmoAmount);
                     iGun.setDummyAmmoAmount(itemStack,dummyAmmoAmount);
-                    iGun.setCurrentAmmoCount(itemStack,gunData.getBulletData().getBulletAmount());
+                    iGun.setCurrentAmmoCount(itemStack,gunData.getAmmoAmount());
                 }
                 shopMap.getShop().setDefaultShopDataItemStack(itemType,slotNum,itemStack);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.gun.success",shopType,slotNum,itemStack.getDisplayName(),dummyAmmoAmount), true);

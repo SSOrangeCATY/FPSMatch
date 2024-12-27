@@ -83,10 +83,9 @@ public class ShopData {
         for (ItemType type : ItemType.values()) {
             // 获取该类型的商店槽位列表
             List<ShopSlot> slots = data.get(type);
-
             // 如果没有找到该类型的商店槽位列表，则抛出异常
             if (slots == null) throw new RuntimeException("No slots found for type " + type);
-                // 如果该类型的商店槽位列表数量不等于5，则抛出异常
+            // 如果该类型的商店槽位列表数量不等于5，则抛出异常
             else if (slots.size()!= 5)
                 throw new RuntimeException("Incorrect number of slots for type " + type + ". Expected 5 but found " + slots.size());
         }

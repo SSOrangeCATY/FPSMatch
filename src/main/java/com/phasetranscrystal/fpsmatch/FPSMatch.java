@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch;
 
 import com.mojang.logging.LogUtils;
+import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
@@ -17,11 +18,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -32,6 +35,8 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.tacz.guns.util.InputExtraCheck.isInGame;
 
@@ -60,61 +65,62 @@ public class FPSMatch {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        INSTANCE.messageBuilder(CSGameSettingsS2CPacket.class, 0)
+        AtomicInteger i = new AtomicInteger();
+        INSTANCE.messageBuilder(CSGameSettingsS2CPacket.class, i.getAndIncrement())
                 .encoder(CSGameSettingsS2CPacket::encode)
                 .decoder(CSGameSettingsS2CPacket::decode)
                 .consumerNetworkThread(CSGameSettingsS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopDataSlotS2CPacket.class, 1)
+        INSTANCE.messageBuilder(ShopDataSlotS2CPacket.class, i.getAndIncrement())
                 .encoder(ShopDataSlotS2CPacket::encode)
                 .decoder(ShopDataSlotS2CPacket::decode)
                 .consumerNetworkThread(ShopDataSlotS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopActionC2SPacket.class, 2)
+        INSTANCE.messageBuilder(ShopActionC2SPacket.class, i.getAndIncrement())
                 .encoder(ShopActionC2SPacket::encode)
                 .decoder(ShopActionC2SPacket::decode)
                 .consumerNetworkThread(ShopActionC2SPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(BombActionC2SPacket.class, 4)
+        INSTANCE.messageBuilder(BombActionC2SPacket.class, i.getAndIncrement())
                 .encoder(BombActionC2SPacket::encode)
                 .decoder(BombActionC2SPacket::decode)
                 .consumerNetworkThread(BombActionC2SPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(BombActionS2CPacket.class, 5)
+        INSTANCE.messageBuilder(BombActionS2CPacket.class, i.getAndIncrement())
                 .encoder(BombActionS2CPacket::encode)
                 .decoder(BombActionS2CPacket::decode)
                 .consumerNetworkThread(BombActionS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(BombDemolitionProgressS2CPacket.class, 6)
+        INSTANCE.messageBuilder(BombDemolitionProgressS2CPacket.class, i.getAndIncrement())
                 .encoder(BombDemolitionProgressS2CPacket::encode)
                 .decoder(BombDemolitionProgressS2CPacket::decode)
                 .consumerNetworkThread(BombDemolitionProgressS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopMoneyS2CPacket.class, 7)
+        INSTANCE.messageBuilder(ShopMoneyS2CPacket.class, i.getAndIncrement())
                 .encoder(ShopMoneyS2CPacket::encode)
                 .decoder(ShopMoneyS2CPacket::decode)
                 .consumerNetworkThread(ShopMoneyS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ShopStatesS2CPacket.class, 8)
+        INSTANCE.messageBuilder(ShopStatesS2CPacket.class, i.getAndIncrement())
                 .encoder(ShopStatesS2CPacket::encode)
                 .decoder(ShopStatesS2CPacket::decode)
                 .consumerNetworkThread(ShopStatesS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(CSGameTabStatsS2CPacket.class, 9)
+        INSTANCE.messageBuilder(CSGameTabStatsS2CPacket.class, i.getAndIncrement())
                 .encoder(CSGameTabStatsS2CPacket::encode)
                 .decoder(CSGameTabStatsS2CPacket::decode)
                 .consumerNetworkThread(CSGameTabStatsS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(FPSMatchStatsResetS2CPacket.class, 10)
+        INSTANCE.messageBuilder(FPSMatchStatsResetS2CPacket.class, i.getAndIncrement())
               .encoder(FPSMatchStatsResetS2CPacket::encode)
               .decoder(FPSMatchStatsResetS2CPacket::decode)
               .consumerNetworkThread(FPSMatchStatsResetS2CPacket::handle)
@@ -150,10 +156,19 @@ public class FPSMatch {
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
     public static class ClientEvents {
-
         @SubscribeEvent
-        public static void onEvent(PlayerEvent event) {
+        public static void onEvent(TickEvent.ClientTickEvent event) {
+            if(ClientData.isWaiting){
+                if (isInGame() && Minecraft.getInstance().player != null) {
+                    Minecraft.getInstance().options.keyUp.setDown(false);
+                    Minecraft.getInstance().options.keyLeft.setDown(false);
+                    Minecraft.getInstance().options.keyDown.setDown(false);
+                    Minecraft.getInstance().options.keyRight.setDown(false);
+                    Minecraft.getInstance().options.keyJump.setDown(false);
+                }
+            }
         }
+
     }
 
 

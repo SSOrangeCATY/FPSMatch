@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.commands.TeamCommand;
 import net.minecraft.server.level.ServerLevel;
@@ -71,7 +72,16 @@ public class MapTeams {
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
         playerteam.setNameTagVisibility(Team.Visibility.NEVER);
+        playerteam.setAllowFriendlyFire(false);
+        playerteam.setSeeFriendlyInvisibles(false);
+        playerteam.setDeathMessageVisibility(Team.Visibility.NEVER);
         this.teams.put(teamName, new BaseTeam(fixedName,limit,playerteam));
+    }
+
+    public void setTeamNameColor(BaseMap map, String teamName, ChatFormatting color){
+        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
+        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
+        playerteam.setColor(color);
     }
 
     public void delTeam(PlayerTeam team){

@@ -37,5 +37,9 @@
   "key.fpsm.custom.tab.off": "自定义Tab 关闭",
   "key.fpsm.custom.tab.desc": "切换自定义Tab",
   "commands.fpsm.save.success": "保存成功。",
+  "fpsm.map.cs.winner.ct.message" : "CT 阵营胜利",
+  "fpsm.map.cs.winner.t.message" : "T 阵营胜利",
+  "fpsm.map.cs.winner.ct.round.message" : "CT 回合胜利",
+  "fpsm.map.cs.winner.t.round.message" : "T 回合胜利",
   "item.fpsmatch.c4": "C4"
 }

@@ -22,7 +22,7 @@ public class FPSMUtil {
     public static void fixGunItem( @NotNull ItemStack itemStack, @NotNull IGun iGun) {
         Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(gunIndexOptional.isPresent()){
-            int maxAmmon = gunIndexOptional.get().getBulletData().getBulletAmount();
+            int maxAmmon = gunIndexOptional.get().getGunData().getAmmoAmount();
             iGun.setCurrentAmmoCount(itemStack,maxAmmon);
         }
         int maxAmmo = iGun.getMaxDummyAmmoAmount(itemStack);
@@ -39,7 +39,7 @@ public class FPSMUtil {
         Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(commonGunIndexOptional.isPresent()){
             CommonGunIndex gunIndex = commonGunIndexOptional.get();
-            int maxAmmon = gunIndex.getBulletData().getBulletAmount();
+            int maxAmmon = gunIndex.getGunData().getAmmoAmount();
             iGun.setCurrentAmmoCount(itemStack,maxAmmon);
             iGun.useDummyAmmo(itemStack);
             iGun.setDummyAmmoAmount(itemStack,iGun.getMaxDummyAmmoAmount(itemStack));
