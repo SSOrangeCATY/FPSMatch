@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -24,6 +25,8 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
+
+import static com.tacz.guns.util.InputExtraCheck.isInGame;
 
 
 public class CompositionC4 extends Item {
@@ -74,29 +77,16 @@ public class CompositionC4 extends Item {
 
     @Override
     public void onUseTick(@NotNull Level pLevel, @NotNull LivingEntity pLivingEntity, @NotNull ItemStack pStack, int pRemainingUseDuration) {
-        if(pLevel.isClientSide){
-            pLivingEntity.setDeltaMovement(0, -0.04D, 0);
-        }else{
-            if (pLivingEntity instanceof ServerPlayer player) {
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map instanceof BlastModeMap<?> blastModeMap) {
-                    boolean isInBombArea = blastModeMap.checkPlayerIsInBombArea(player);
-                    if (!isInBombArea) {
-                        player.displayClientMessage(Component.literal("You are not in the designated area!"), true);
-                        pLivingEntity.stopUsingItem();
-                    }
-
-                    if(!pLivingEntity.onGround() || pLivingEntity.isFallFlying()){
-                        pLivingEntity.stopUsingItem();
-                        player.displayClientMessage(Component.literal("You are not in the ground!"), true);
-                    }
-
-                }else{
-                    pLivingEntity.stopUsingItem();
-                }
-            }
+        if (pLevel.isClientSide && Minecraft.getInstance().player != null && pLivingEntity.getUUID().equals(Minecraft.getInstance().player.getUUID())) {
+            Minecraft.getInstance().options.keyUp.setDown(false);
+            Minecraft.getInstance().options.keyLeft.setDown(false);
+            Minecraft.getInstance().options.keyDown.setDown(false);
+            Minecraft.getInstance().options.keyRight.setDown(false);
+            Minecraft.getInstance().options.keyJump.setDown(false);
         }
     }
+
+
     public @NotNull ItemStack finishUsingItem(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull LivingEntity pLivingEntity) {
         if (pLivingEntity instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);

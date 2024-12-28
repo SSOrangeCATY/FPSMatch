@@ -112,4 +112,5 @@ public abstract class BaseMap {
     public AreaData getMapArea() {
         return mapArea;
     }
+
 }

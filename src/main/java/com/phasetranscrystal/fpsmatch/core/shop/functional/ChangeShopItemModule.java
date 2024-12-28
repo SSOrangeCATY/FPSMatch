@@ -51,4 +51,9 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
         return "changeItem_"+ name;
     }
 
+    @Override
+    public int getPriority() {
+        return 1;
+    }
+
 }

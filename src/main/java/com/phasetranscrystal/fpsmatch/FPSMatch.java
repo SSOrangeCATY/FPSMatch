@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
+import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
@@ -27,7 +28,9 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -62,6 +65,7 @@ public class FPSMatch {
         MinecraftForge.EVENT_BUS.register(this);
         FPSMItemRegister.ITEMS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
+        context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -125,6 +129,12 @@ public class FPSMatch {
               .decoder(FPSMatchStatsResetS2CPacket::decode)
               .consumerNetworkThread(FPSMatchStatsResetS2CPacket::handle)
               .add();
+
+        INSTANCE.messageBuilder(DeathMessageS2CPacket.class, i.getAndIncrement())
+                .encoder(DeathMessageS2CPacket::encode)
+                .decoder(DeathMessageS2CPacket::decode)
+                .consumerNetworkThread(DeathMessageS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
@@ -144,6 +154,7 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
             event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
+            event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
         }
 
 
@@ -158,7 +169,7 @@ public class FPSMatch {
     public static class ClientEvents {
         @SubscribeEvent
         public static void onEvent(TickEvent.ClientTickEvent event) {
-            if(ClientData.isWaiting){
+            if(ClientData.isWaiting && !ClientData.currentMap.equals("fpsm_none")){
                 if (isInGame() && Minecraft.getInstance().player != null) {
                     Minecraft.getInstance().options.keyUp.setDown(false);
                     Minecraft.getInstance().options.keyLeft.setDown(false);

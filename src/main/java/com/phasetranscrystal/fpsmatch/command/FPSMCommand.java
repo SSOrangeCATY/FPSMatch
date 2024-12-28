@@ -48,6 +48,7 @@ public class FPSMCommand {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
                 .then(Commands.literal("save").executes(this::handleSave))
+                .then(Commands.literal("sync").executes(this::handleSync))
                 .then(Commands.literal("reload").executes(this::handleReLoad))
                 .then(Commands.literal("listenerModule")
                        .then(Commands.literal("add")
@@ -130,6 +131,19 @@ public class FPSMCommand {
                                                                                 .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
                                                                                 .executes(this::handleTeamAction)))))))));
         dispatcher.register(literal);
+    }
+
+    private int handleSync(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        // TODO /fpsm sync shop <gameType> <gameName> <Player>
+        FPSMCore.getInstance().getAllMaps().forEach((gameName,gameList)->{
+            gameList.forEach(game->{
+                if(game instanceof ShopMap shopMap){
+                    shopMap.syncShopData();
+                }
+            });
+        });
+        commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.sync.success"), true);
+        return 1;
     }
 
     private int handleModifyShopGroupID(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {

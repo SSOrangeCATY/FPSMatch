@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
@@ -21,12 +22,18 @@ import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
+import com.tacz.guns.GunMod;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.init.ModDamageTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -124,11 +131,25 @@ public class FPSMEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             ServerPlayer from = null;
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map!= null && map.checkGameHasPlayer(player)) {
+            if (map != null && map.checkGameHasPlayer(player)) {
                 if(event.getSource().getEntity() instanceof ServerPlayer fromPlayer){
                     BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
                     if (fromMap != null && fromMap.equals(map)) {
                         from = fromPlayer;
+                            if(event.getSource().is(ModDamageTypes.BULLET) || event.getSource().is(ModDamageTypes.BULLET_IGNORE_ARMOR)){
+                                if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
+                                    Component killerName = fromPlayer.getDisplayName();
+                                    Component deadName = event.getEntity().getDisplayName();
+                                    DeathMessage deathMessage = new DeathMessage(killerName, deadName, fromPlayer.getMainHandItem(), false);
+                                    DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
+                                    fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                                        ServerPlayer serverPlayer = (ServerPlayer) fromMap.getServerLevel().getPlayerByUUID(uuid);
+                                        if(serverPlayer != null){
+                                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
+                                        }
+                                    }));
+                                }
+                            }
                     }
                 }
                 handlePlayerDeath(map,player,from);

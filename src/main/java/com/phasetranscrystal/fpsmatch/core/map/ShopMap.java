@@ -25,5 +25,10 @@ public interface ShopMap {
         this.getShop().syncShopMoneyData(uuid);
     }
 
+    default void syncShopData(){
+        this.getShop().clearPlayerShopData();
+        this.getShop().syncShopData();
+    }
+
 
 }

@@ -23,7 +23,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
     void setStartKits(Map<String,ArrayList<ItemStack>> kits);
     void setAllTeamKits(ItemStack itemStack);
     default void clearTeamKits(BaseTeam team){
-        this.setTeamKits(team,new ArrayList<>());
+        this.getKits(team).clear();
     }
     default boolean removeItem(BaseTeam team, ItemStack itemStack){
         AtomicBoolean flag = new AtomicBoolean(false);

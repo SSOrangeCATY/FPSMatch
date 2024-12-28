@@ -159,7 +159,7 @@ public class FPSMShop {
     }
 
     public void setDefaultShopDataCost(ItemType type, int index, int cost){
-        this.defaultShopData.get(type).get(index).setCost(cost);
+        this.defaultShopData.get(type).get(index).setDefaultCost(cost);
     }
 
     public ShopData getDefaultShopData() {

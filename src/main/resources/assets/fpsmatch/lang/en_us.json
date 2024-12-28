@@ -41,6 +41,20 @@
   "fpsm.map.cs.winner.t.message" : "T ROUND WINNER",
   "fpsm.map.cs.winner.ct.round.message" : "CT WINNER",
   "fpsm.map.cs.winner.t.round.message" : "T WINNER",
+  "fpsm.death.message": "%1$s killed %2$s with %3$s",
+  "fpsm.death.message.headshot": "%1$s headshot %2$s with %3$s",
+  "fpsm.kill.message.teammate" : "kill teammate reduce %1$s money",
+  "fpsm.kill.message.enemy" : "kill enemy add %1$s money",
+  "commands.fpsm.sync.success": "Sync operation completed successfully.",
+  "commands.fpsm.shop.slot.modify.group.success": "Successfully modified group ID for shop type %1$s, slot %2$d to %3$d.",
+  "commands.fpsm.shop.slot.modify.group.fail": "Failed to modify group ID for map %1$s.",
+  "commands.fpsm.shop.slot.listener.remove.success": "Successfully removed listener module %1$s.",
+  "commands.fpsm.shop.slot.listener.remove.fail": "Failed to remove listener module %1$s.",
+  "commands.fpsm.listener.add.success": "Successfully added listener module %1$s.",
+  "commands.fpsm.listener.add.fail": "Failed to add listener module %1$s.",
+  "commands.fpsm.reload.success": "Reload operation completed successfully.",
+  "commands.fpsm.shop.modify.gun.success": "Successfully modified the %1$s shop slot %2$d to include '%3$s' with %4$d dummy ammo.",
+  "commands.fpsm.shop.modify.gun.failed": "Failed to modify the gun in the shop. Please check the shop data",
 
   "item.fpsmatch.c4" : "C4"
 

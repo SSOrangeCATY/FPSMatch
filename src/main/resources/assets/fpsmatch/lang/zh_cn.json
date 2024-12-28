@@ -41,5 +41,10 @@
   "fpsm.map.cs.winner.t.message" : "T 阵营胜利",
   "fpsm.map.cs.winner.ct.round.message" : "CT 回合胜利",
   "fpsm.map.cs.winner.t.round.message" : "T 回合胜利",
+  "fpsm.death.message": "%1$s 使用 %3$s 击杀 %2$s",
+  "fpsm.death.message.headshot": "%1$s 使用 %3$s 爆头击杀 %2$s",
+  "fpsm.kill.message.teammate" : "击杀队友减少 %1$s 货币",
+  "fpsm.kill.message.enemy" : "击杀敌人奖励 %1$s 货币",
+
   "item.fpsmatch.c4": "C4"
 }

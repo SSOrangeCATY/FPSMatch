@@ -49,7 +49,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public static final int PAUSE_TIME = 2400;
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
-    private final int waitingTime = 400;
+    private final int waitingTime = 200;
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
@@ -68,9 +68,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public CSGameMap(ServerLevel serverLevel,String mapName,AreaData areaData) {
         super(serverLevel,mapName,areaData);
-        this.shop = new FPSMShop(mapName);
-        this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
-        this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
+        this.shop = new FPSMShop(mapName,800);
     }
 
     public Map<String,Integer> getTeams(){
@@ -119,6 +117,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void startGame(){
+        this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
+        this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
         AtomicBoolean checkFlag = new AtomicBoolean(true);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
@@ -163,6 +163,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.giveAllPlayersKits();
         this.giveBlastTeamBomb();
         super.cleanupMap();
+        this.getShop().clearPlayerShopData();
         this.getShop().syncShopData();
     }
 
@@ -232,6 +233,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(isWaitingWinner) return;
         if(this.isExploded()) {
             this.roundVictory("t",WinnerReason.DETONATE_BOMB);
+        }else {
+            Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+            if(teamsLiving.size() == 1){
+                String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
+                boolean flag = this.checkCanPlacingBombs(winnerTeam);
+                if(flag){
+                    this.roundVictory(winnerTeam,WinnerReason.ACED);
+                }
+            }else if(teamsLiving.isEmpty()){
+                this.roundVictory("t",WinnerReason.ACED);
+            }
         }
     }
     public boolean isRoundTimeEnd(){
@@ -245,6 +257,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return this.currentRoundTime >= this.roundTimeLimit;
     }
 
+    public void showWinnerMessage(String winnerTeamName){
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+            if(serverPlayer != null){
+                serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+winnerTeamName+".round.message").withStyle(winnerTeamName.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
+            }
+        }));
+    }
+
     /**
      * 处理回合胜利的逻辑
      *
@@ -254,14 +275,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private void roundVictory(String winnerTeamName, WinnerReason reason) {
         // 检查获胜队伍是否存在
         if(this.getMapTeams().checkTeam(winnerTeamName)){
-            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
-                if(serverPlayer != null){
-                    serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+winnerTeamName+".round.message").withStyle(winnerTeamName.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
-                }
-            }));
             // 如果已经在等待胜利者，则直接返回
             if(isWaitingWinner) return;
+            this.showWinnerMessage(winnerTeamName);
             // 设置为等待胜利者状态
             this.isWaitingWinner = true;
 
@@ -538,6 +554,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
+    public void clearTeamKits(BaseTeam team){
+        if(this.startKits.containsKey(team.getName())){
+            this.startKits.get(team.getName()).clear();
+        }
+    }
+
+    @Override
     public void setStartKits(Map<String, ArrayList<ItemStack>> kits) {
         kits.forEach((s, list) -> list.forEach((itemStack) -> {
             if(itemStack.getItem() instanceof IGun iGun){
@@ -609,9 +632,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if (killerTeam.getName().equals(deadTeam.getName())){
                 csGameMap.removePlayerMoney(event.getKiller().getUUID(),200);
                 csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
+                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.teammate",200),false);
             }else{
                 csGameMap.addPlayerMoney(event.getKiller().getUUID(),200);
                 csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
+                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.enemy.",200),false);
             }
         }
     }

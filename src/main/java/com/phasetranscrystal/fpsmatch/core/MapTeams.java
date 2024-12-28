@@ -71,7 +71,7 @@ public class MapTeams {
     public void addTeam(String teamName,int limit,BaseMap map){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        playerteam.setNameTagVisibility(Team.Visibility.NEVER);
+        playerteam.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
         playerteam.setAllowFriendlyFire(false);
         playerteam.setSeeFriendlyInvisibles(false);
         playerteam.setDeathMessageVisibility(Team.Visibility.NEVER);

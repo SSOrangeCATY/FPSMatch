@@ -53,6 +53,7 @@ public class BaseTeam {
         player.heal(player.getMaxHealth());
         player.setGameMode(GameType.SPECTATOR);
     }
+
     public void resetLiving(){
         this.players.values().forEach((data)->{
             if(!data.isOffline()){

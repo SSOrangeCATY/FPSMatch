@@ -44,7 +44,7 @@ public record BombActionC2SPacket(int action, UUID uuid) {
         }
 
         ctx.get().enqueueWork(() -> {
-            if (map instanceof BlastModeMap blastModeMap && !blastModeMap.checkCanPlacingBombs(team.getName())) {
+            if (map instanceof BlastModeMap<?> blastModeMap && !blastModeMap.checkCanPlacingBombs(team.getName())) {
                 Entity entity = sender.serverLevel().getEntity(this.uuid);
                 if(entity instanceof CompositionC4Entity c4){
                     Player player = c4.getDemolisher();

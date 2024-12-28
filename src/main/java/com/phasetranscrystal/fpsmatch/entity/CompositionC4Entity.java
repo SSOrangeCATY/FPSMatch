@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.entity;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import net.minecraft.core.particles.ParticleTypes;
@@ -184,11 +185,17 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
     public void syncDemolitionProgress(float progress){
         BaseMap map = (BaseMap) this.map;
-        if(map != null){
+        if(map != null && this.demolisher != null){
             map.getMapTeams().getJoinedPlayers().forEach((pUUID)->{
                 ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
                 if(receiver != null){
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                    BaseTeam team = map.getMapTeams().getTeamByPlayer(receiver);
+                    if(team != null){
+                        boolean flag = this.map.checkCanPlacingBombs(team.getName());
+                        if(!flag){
+                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                        }
+                    }
                 }
             });
         }

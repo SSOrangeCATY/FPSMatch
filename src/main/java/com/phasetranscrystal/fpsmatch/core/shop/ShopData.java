@@ -190,14 +190,21 @@ public class ShopData {
         Map<ShopSlot,Boolean> checkFlag = new HashMap<>();
         data.forEach(((itemType, shopSlots) -> items.forEach(list -> list.forEach(itemStack -> {
             for (ShopSlot shopSlot : shopSlots){
+                if(itemStack.isEmpty()) continue;
                 if (shopSlot.returningChecker.test(itemStack)) {
                     shopSlot.lock();
                     checkFlag.put(shopSlot,false);
                 }else if(checkFlag.getOrDefault(shopSlot,true)){
                     shopSlot.unlock();
+                    checkFlag.put(shopSlot,true);
                 }
         }
     }))));
+        checkFlag.forEach(((shopSlot, aBoolean) -> {
+            if(aBoolean && shopSlot.getBoughtCount() > 0){
+                shopSlot.reset();
+            }
+        }));
     }
 
 
