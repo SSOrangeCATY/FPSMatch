@@ -55,7 +55,8 @@
   "commands.fpsm.reload.success": "Reload operation completed successfully.",
   "commands.fpsm.shop.modify.gun.success": "Successfully modified the %1$s shop slot %2$d to include '%3$s' with %4$d dummy ammo.",
   "commands.fpsm.shop.modify.gun.failed": "Failed to modify the gun in the shop. Please check the shop data",
-
+  "fpsm.screen.scale.warm": "Before using the FPSMatch mod, please check : Settings -> Video Settings -> Interface Scale to ensure it is between 1 and 4, not set to automatic.",
+  "fpsm.screen.scale.warm.tips": "If the store still displays abnormally after opening, try adjusting the size of your Minecraft window and reopening the store. You can then revert to fullscreen or another size afterward.",
   "item.fpsmatch.c4" : "C4"
 
 }

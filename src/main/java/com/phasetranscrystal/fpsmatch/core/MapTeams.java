@@ -5,7 +5,6 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.commands.TeamCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -14,13 +13,13 @@ import net.minecraft.world.scores.Team;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MapTeams {
     protected final ServerLevel level;
     private final Map<String,BaseTeam> teams = new HashMap<>();
+    private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public MapTeams(ServerLevel level,Map<String,Integer> team, BaseMap map){
         this.level = level;
         team.forEach((name,limit)-> this.addTeam(name,limit,map));
@@ -37,6 +36,65 @@ public class MapTeams {
         Map<String,List<SpawnPointData>> data = new HashMap<>();
         this.teams.forEach((n,t)-> data.put(n,t.getSpawnPointsData()));
         return data;
+    }
+
+    public void switchAttackAndDefend(ServerLevel serverLevel, String attackTeamName, String defendTeamName) {
+        BaseTeam attackTeam = this.getTeamByName(attackTeamName);
+        BaseTeam defendTeam = this.getTeamByName(defendTeamName);
+        if(attackTeam == null || defendTeam == null) return;
+
+        // 交换重生点
+        List<SpawnPointData> tempSpawnPoints = new ArrayList<>(attackTeam.getSpawnPointsData());
+        attackTeam.setAllSpawnPointData(defendTeam.getSpawnPointsData());
+        defendTeam.setAllSpawnPointData(tempSpawnPoints);
+
+        // 交换得分
+        int tempScore = attackTeam.getScores();
+        attackTeam.setScores(defendTeam.getScores());
+        defendTeam.setScores(tempScore);
+
+        // 交换连败计数器
+        int tempLoseStreak = attackTeam.getLoseStreak();
+        int tempCompensationFactor = attackTeam.getCompensationFactor();
+        attackTeam.setLoseStreak(defendTeam.getLoseStreak());
+        attackTeam.setCompensationFactor(defendTeam.getCompensationFactor());
+        defendTeam.setCompensationFactor(tempCompensationFactor);
+        defendTeam.setLoseStreak(tempLoseStreak);
+
+        // 交换玩家
+        Map<UUID,PlayerData> tempPlayers = attackTeam.getPlayers();
+        attackTeam.resetAllPlayers(defendTeam.getPlayers());
+        defendTeam.resetAllPlayers(tempPlayers);
+
+
+        List<UUID> aTeamUnableToSwitch = new ArrayList<>();
+        List<UUID> dTeamUnableToSwitch = new ArrayList<>();
+        attackTeam.getPlayers().keySet().forEach(uuid -> {
+           ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
+           if(serverPlayer != null){
+               serverPlayer.getScoreboard().removePlayerFromTeam(serverPlayer.getScoreboardName());
+               serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), attackTeam.getPlayerTeam());
+           }else{
+               aTeamUnableToSwitch.add(uuid);
+           }
+        });
+        defendTeam.getPlayers().keySet().forEach(uuid -> {
+            ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
+            if(serverPlayer != null){
+                serverPlayer.getScoreboard().removePlayerFromTeam(serverPlayer.getScoreboardName());
+                serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), defendTeam.getPlayerTeam());
+            }else{
+                dTeamUnableToSwitch.add(uuid);
+            }
+        });
+
+        unableToSwitch.put(attackTeamName,aTeamUnableToSwitch);
+        unableToSwitch.put(defendTeamName,dTeamUnableToSwitch);
+    }
+
+
+    public Map<String, List<UUID>> getUnableToSwitch() {
+        return unableToSwitch;
     }
 
     public void putAllSpawnPoints(Map<String,List<SpawnPointData>> data){
@@ -91,16 +149,18 @@ public class MapTeams {
     }
 
     @Nullable public BaseTeam getTeamByPlayer(Player player){
-        PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
-        if(currentTeam != null && this.checkTeam(currentTeam.getName().split("_")[2])){
-            return this.teams.getOrDefault(currentTeam.getName().split("_")[2],null);
-        }
-        return null;
+        AtomicReference<BaseTeam> baseTeamAtomicReference = new AtomicReference<>();
+        this.teams.forEach(((s, team) -> {
+            if(team.hasPlayer(player.getUUID())){
+                baseTeamAtomicReference.set(team);
+            };
+        }));
+        return baseTeamAtomicReference.get();
     }
 
     public List<UUID> getJoinedPlayers(){
         List<UUID> uuids = new ArrayList<>();
-        this.teams.values().forEach((t)-> uuids.addAll(t.getPlayers()));
+        this.teams.values().forEach((t)-> uuids.addAll(t.getPlayerList()));
         return uuids;
     }
 
@@ -135,7 +195,7 @@ public class MapTeams {
     public boolean testTeamIsFull(String teamName){
         BaseTeam team = teams.get(teamName);
         if (team == null) return false;
-        return team.getPlayerLimit() < team.getPlayers().size();
+        return team.getPlayerLimit() < team.getPlayerList().size();
     }
 
 
@@ -163,9 +223,13 @@ public class MapTeams {
     }
 
     public void reset(){
-        this.setDonePlayerStatsTemp();
         this.resetAllHurtData();
         this.resetLivingPlayers();
+        this.teams.forEach((name,team)->{
+            team.setScores(0);
+            team.getPlayers().clear();
+        });
+        this.unableToSwitch.clear();
     }
 
     public void leaveTeam(ServerPlayer player){
@@ -211,7 +275,7 @@ public class MapTeams {
         List<UUID> uuids = new ArrayList<>();
         if(team != null){
             if (team.hasPlayer(player.getUUID())){
-                uuids.addAll(team.getPlayers());
+                uuids.addAll(team.getPlayerList());
             }
         }
         return uuids;

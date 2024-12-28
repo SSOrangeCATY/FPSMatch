@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -104,7 +106,6 @@ public class FPSMShop {
             List<ShopSlot> slots = shopData.getShopSlotsByType(type);
             slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name))));
         }
-
     }
 
     public void syncShopData(ServerPlayer player,ItemType type, ShopSlot slot){
@@ -130,7 +131,15 @@ public class FPSMShop {
     }
 
     public void clearPlayerShopData(UUID uuid){
-        this.playersData.put(uuid,this.getDefaultShopData());
+        if(this.playersData.containsKey(uuid)){
+            this.playersData.get(uuid).setDoneData(this.defaultShopData);
+        }else{
+            this.playersData.put(uuid,this.getDefaultShopData());
+        }
+    }
+
+    public Map<UUID, ShopData> getPlayersData() {
+        return playersData;
     }
 
     public void setDefaultShopData(Map<ItemType, ArrayList<ShopSlot>> data){

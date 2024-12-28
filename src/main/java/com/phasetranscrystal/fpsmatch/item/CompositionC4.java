@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.item;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -14,19 +13,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Objects;
-
-import static com.tacz.guns.util.InputExtraCheck.isInGame;
 
 
 public class CompositionC4 extends Item {
@@ -98,7 +91,7 @@ public class CompositionC4 extends Item {
                 }else{
                     BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
                     if(team != null && map instanceof ShopMap shopMap){
-                        team.getPlayers().forEach((uuid -> {
+                        team.getPlayerList().forEach((uuid -> {
                             shopMap.addPlayerMoney(uuid,300);
                         }));
                     }

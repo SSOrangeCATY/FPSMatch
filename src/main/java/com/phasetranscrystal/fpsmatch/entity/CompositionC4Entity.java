@@ -201,7 +201,6 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         }
     }
 
-
     @Nullable
     public LivingEntity getOwner() {
         return this.owner;

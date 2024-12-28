@@ -29,13 +29,13 @@ public abstract class MixinItemEntity {
                 if (map == null) {
                     ci.cancel();
                     return;
-                };
+                }
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
                     if(!blastModeMap.checkCanPlacingBombs(team.getName())){
                         ci.cancel();
                         return;
-                    };
+                    }
                 }else{
                     ci.cancel();
                 }

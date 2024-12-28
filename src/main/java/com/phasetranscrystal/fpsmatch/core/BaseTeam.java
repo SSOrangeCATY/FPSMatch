@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
@@ -94,7 +95,7 @@ public class BaseTeam {
         return tabDataList;
     }
 
-    public List<UUID> getPlayers(){
+    public List<UUID> getPlayerList(){
         return this.players.keySet().stream().toList();
     }
 
@@ -135,10 +136,18 @@ public class BaseTeam {
         }
 
         List<UUID> playerUUIDs = new ArrayList<>(this.players.keySet());
-
+        List<SpawnPointData> list = new ArrayList<>(this.spawnPointsData);
         for (UUID playerUUID : playerUUIDs) {
-            int randomIndex = random.nextInt(this.spawnPointsData.size());
-            SpawnPointData spawnPoint = this.spawnPointsData.get(randomIndex);
+            if(list.isEmpty()){
+                // 出生点不够多就会这样
+                list.addAll(this.spawnPointsData);
+            }
+            if(this.spawnPointsData.isEmpty()){
+                return;
+            }
+            int randomIndex = random.nextInt(list.size());
+            SpawnPointData spawnPoint = list.get(randomIndex);
+            list.remove(randomIndex);
             this.players.get(playerUUID).setSpawnPointsData(spawnPoint);
         }
     }
@@ -178,6 +187,7 @@ public class BaseTeam {
         this.scores = scores;
     }
 
+
     public String getName() {
         return name;
     }
@@ -200,6 +210,20 @@ public class BaseTeam {
     // 设置战败补偿因数
     public void setCompensationFactor(int compensationFactor) {
         this.compensationFactor = Math.max(0, Math.min(compensationFactor, 4));
+    }
+
+    public void setAllSpawnPointData(List<SpawnPointData> spawnPointsData) {
+        this.spawnPointsData.clear();
+        this.spawnPointsData.addAll(spawnPointsData);
+    }
+
+    public Map<UUID, PlayerData> getPlayers(){
+        return this.players;
+    }
+
+    public void resetAllPlayers(Map<UUID, PlayerData> players){
+        this.players.clear();
+        this.players.putAll(players);
     }
 
 }

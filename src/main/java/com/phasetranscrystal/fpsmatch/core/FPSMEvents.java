@@ -24,7 +24,6 @@ import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
-import com.tacz.guns.GunMod;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.network.chat.Component;
@@ -33,7 +32,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -71,6 +69,8 @@ public class FPSMEvents {
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchStatsResetS2CPacket());
+            player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm"),false);
+            player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm.tips"),false);
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
@@ -302,7 +302,7 @@ public class FPSMEvents {
                         if (assistPlayerTeam != null) {
                             PlayerData assistData = assistPlayerTeam.getPlayerData(assistId);
                             // 如果是击杀者就不添加助攻
-                            if (assistData == null || from != null && from.getUUID().equals(assistId)) continue;;
+                            if (assistData == null || from != null && from.getUUID().equals(assistId)) continue;
                             assistData.getTabData().addAssist();
                             FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(assistData.getOwner(), assistData.getTabData()));
                         }
