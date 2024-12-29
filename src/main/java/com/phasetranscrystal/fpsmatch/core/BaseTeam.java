@@ -42,8 +42,7 @@ public class BaseTeam {
     public void leave(ServerPlayer player){
         if(this.hasPlayer(player.getUUID())){
             this.players.remove(player.getUUID());
-            PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
-            if (currentTeam != null)  player.getScoreboard().removePlayerFromTeam(player.getScoreboardName(), currentTeam);
+            player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
         }
     }
 

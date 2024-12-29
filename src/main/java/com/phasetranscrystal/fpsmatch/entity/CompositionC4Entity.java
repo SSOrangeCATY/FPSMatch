@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -15,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
@@ -95,6 +97,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void tick() {
+
         if(this.getDeleteTime() >= 140){
             this.discard();
         }
@@ -117,6 +120,13 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 this.setDemolitionProgress(0);
             }else{
                 this.setDemolitionProgress(this.getDemolitionProgress() + 1);
+                if (demolisher instanceof ServerPlayer serverPlayer){
+                    if(serverPlayer.gameMode.getGameModeForPlayer() == GameType.SPECTATOR){
+                        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombActionS2CPacket(0,this.uuid));
+                        this.syncDemolitionProgress(0);
+                        this.demolisher = null;
+                    }
+                }
             }
 
             int j = 200;

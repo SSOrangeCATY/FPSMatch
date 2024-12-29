@@ -131,6 +131,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         BaseTeam baseTeam = this.getMapTeams().getTeamByName(team);
                         if(baseTeam == null) return;
                         serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), baseTeam.getPlayerTeam());
+                        this.clearPlayerInventory(serverPlayer);
+                        this.givePlayerKits(serverPlayer);
+                        this.getShop().clearPlayerShopData(serverPlayer.getUUID());
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.team.switch").withStyle(ChatFormatting.GREEN)));
+                        uuidList.remove(uuid);
                     }
                 });
             });
@@ -138,7 +143,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void startGame(){
-        this.getMapTeams().getTeams().get(0).setScores(11);
         this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
         this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
         AtomicBoolean checkFlag = new AtomicBoolean(true);
