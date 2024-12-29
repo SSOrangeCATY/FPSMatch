@@ -1,8 +1,12 @@
 package com.phasetranscrystal.fpsmatch.client.data;
 
+import com.phasetranscrystal.fpsmatch.Config;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,6 +70,17 @@ public class ClientData {
              count.addAndGet(slot.boughtCount());
         });
         return count.get();
+    }
+
+    public static void handleLoginMessage(){
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player != null) {
+            if(Config.client.showLogin.get()){
+                player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm"), false);
+                player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm.tips"), false);
+                player.displayClientMessage(Component.translatable("fpsm.login.message.closeable"), false);
+            }
+        }
     }
 
     public static void reset() {

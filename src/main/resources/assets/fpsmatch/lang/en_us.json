@@ -55,8 +55,16 @@
   "commands.fpsm.reload.success": "Reload operation completed successfully.",
   "commands.fpsm.shop.modify.gun.success": "Successfully modified the %1$s shop slot %2$d to include '%3$s' with %4$d dummy ammo.",
   "commands.fpsm.shop.modify.gun.failed": "Failed to modify the gun in the shop. Please check the shop data",
-  "fpsm.screen.scale.warm": "Before using the FPSMatch mod, please check : Settings -> Video Settings -> Interface Scale to ensure it is between 1 and 4, not set to automatic.",
-  "fpsm.screen.scale.warm.tips": "If the store still displays abnormally after opening, try adjusting the size of your Minecraft window and reopening the store. You can then revert to fullscreen or another size afterward.",
+  "fpsm.screen.scale.warm": "Before using the FPSMatch mod, please check : \n Settings -> Video Settings -> Interface Scale to ensure it is between 1 and 4, not set to automatic.",
+  "fpsm.screen.scale.warm.tips": "If the store still displays abnormally after opening,\n try adjusting the size of your Minecraft window and reopening the store. You can then revert to fullscreen or another size afterward.",
+  "fpsm.map.cs.team.switch" : "Offensive Defensive Conversion !",
+  "fpsm.item.c4.use.fail.notInArea": "You are not in the designated bombing area!",
+  "fpsm.item.c4.use.fail": "You cannot place bombs!",
+  "fpsm.item.c4.use.fail.noArea": "Bombing area not defined!",
+  "fpsm.item.c4.use.fail.noMap": "You can't place bombs because you haven't joined a blast mode map!",
+  "fpsm.item.c4.use.fail.map.notStart": "You can't place bombs because the game hasn't started yet!",
+  "fpsm.item.c4.use.fail.team.notInTeam": "You can't place bombs because you haven't joined a team!",
+  "fpsm.login.message.closeable" : "This information can be disabled in config",
   "item.fpsmatch.c4" : "C4"
 
 }

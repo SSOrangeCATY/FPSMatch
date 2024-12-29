@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -13,16 +14,21 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 public class BaseTeam {
-    private final String name;
+    public final String name;
+    public final String gameType;
+    public final String mapName;
     private final int playerLimit;
     private final PlayerTeam playerTeam;
     private int scores = 0;
     private final Map<UUID, PlayerData> players = new HashMap<>();
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
+    public final List<UUID> teamUnableToSwitch = new ArrayList<>();
     private int loseStreak;
     private int compensationFactor;
 
-    public BaseTeam(String name, int playerLimit, PlayerTeam playerTeam) {
+    public BaseTeam(String gameType,String mapName,String name, int playerLimit, PlayerTeam playerTeam) {
+        this.gameType = gameType;
+        this.mapName = mapName;
         this.name = name;
         this.playerLimit = playerLimit;
         this.playerTeam = playerTeam;
@@ -188,8 +194,8 @@ public class BaseTeam {
     }
 
 
-    public String getName() {
-        return name;
+    public String getFixedName() {
+        return this.gameType+"_"+this.mapName+"_"+this.name;
     }
 
     // 获取连败次数
@@ -221,9 +227,18 @@ public class BaseTeam {
         return this.players;
     }
 
-    public void resetAllPlayers(Map<UUID, PlayerData> players){
+    public void resetAllPlayers(ServerLevel serverLevel, Map<UUID, PlayerData> players){
         this.players.clear();
         this.players.putAll(players);
+
+        players.keySet().forEach(uuid -> {
+            ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
+            if(serverPlayer != null){
+                serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), this.getPlayerTeam());
+            }else{
+                teamUnableToSwitch.add(uuid);
+            }
+        });
     }
 
 }

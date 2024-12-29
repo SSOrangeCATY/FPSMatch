@@ -420,7 +420,7 @@ public class FPSMCommand {
                                     if(map instanceof ShopMap shopMap){
                                         shopMap.getShop().syncShopData(player);
                                     }
-                                    context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getName()), true);
+                                    context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
                                 }
                             } else {
                                 // 翻译文本

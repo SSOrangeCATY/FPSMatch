@@ -35,16 +35,16 @@ public class CompositionC4 extends Item {
         BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);
         if(baseMap instanceof BlastModeMap<?> map) {
             if(!baseMap.isStart) {
-                player.displayClientMessage(Component.literal("You can't place bombs because the game hasn't started yet "), true);
+                player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.map.notStart"), true);
                 return InteractionResultHolder.pass(itemstack);
             }
             BaseTeam team = baseMap.getMapTeams().getTeamByPlayer(player);
             if(team == null) {
-                player.displayClientMessage(Component.literal("You can't place bombs because you haven't joined the team "), true);
+                player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.team.notInTeam"), true);
                 return InteractionResultHolder.pass(itemstack);
             }
             // 检查玩家是否在指定区域内, 检查地图是否在爆炸状态中, 检查玩家是否在地上
-            boolean canPlace = map.checkCanPlacingBombs(team.getName()) && map.isBlasting() == 0 && player.onGround();
+            boolean canPlace = map.checkCanPlacingBombs(team.getFixedName()) && map.isBlasting() == 0 && player.onGround();
             boolean isInBombArea = map.checkPlayerIsInBombArea(player);
             if(canPlace && isInBombArea){
                 player.startUsingItem(hand);
@@ -52,18 +52,18 @@ public class CompositionC4 extends Item {
                 return InteractionResultHolder.consume(itemstack);
             }else{
                 if(!canPlace) {
-                    player.displayClientMessage(Component.literal("You cannot place bombs!"), true);
+                    player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail"), true);
                 }else{
                     if(map.getBombAreaData().isEmpty()) {
-                        player.displayClientMessage(Component.literal("You are not define the designated area!"), true);
+                        player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.noArea"), true);
                     }else{
-                        player.displayClientMessage(Component.literal("You are not in the designated area!"), true);
+                        player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.notInArea"), true);
                     }
                 }
                 return InteractionResultHolder.pass(itemstack);
             }
         }else{
-            player.displayClientMessage(Component.literal("You can't place bombs because you haven't joined blast mode map "), true);
+            player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.noMap"), true);
             return InteractionResultHolder.pass(itemstack);
         }
     }
@@ -86,7 +86,7 @@ public class CompositionC4 extends Item {
             if (map instanceof BlastModeMap<?> blastModeMap){
                 boolean isInBombArea = blastModeMap.checkPlayerIsInBombArea(player);
                 if(!isInBombArea) {
-                    player.displayClientMessage(Component.literal("You are not in the designated area!"), true);
+                    player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.notInArea"), true);
                     return pStack;
                 }else{
                     BaseTeam team = map.getMapTeams().getTeamByPlayer(player);

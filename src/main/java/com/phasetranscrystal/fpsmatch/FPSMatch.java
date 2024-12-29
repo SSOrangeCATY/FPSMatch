@@ -15,7 +15,9 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.InputEvent;
@@ -35,6 +37,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -135,6 +138,12 @@ public class FPSMatch {
                 .decoder(DeathMessageS2CPacket::decode)
                 .consumerNetworkThread(DeathMessageS2CPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(FPSMatchLoginMessageS2CPacket.class, i.getAndIncrement())
+                .encoder(FPSMatchLoginMessageS2CPacket::encode)
+                .decoder(FPSMatchLoginMessageS2CPacket::decode)
+                .consumerNetworkThread(FPSMatchLoginMessageS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
@@ -169,8 +178,8 @@ public class FPSMatch {
     public static class ClientEvents {
         @SubscribeEvent
         public static void onEvent(TickEvent.ClientTickEvent event) {
-            if(ClientData.isWaiting && !ClientData.currentMap.equals("fpsm_none")){
-                if (isInGame() && Minecraft.getInstance().player != null) {
+            if(ClientData.isWaiting || ClientData.isPause && !ClientData.currentMap.equals("fpsm_none")){
+                if (Minecraft.getInstance().player != null) {
                     Minecraft.getInstance().options.keyUp.setDown(false);
                     Minecraft.getInstance().options.keyLeft.setDown(false);
                     Minecraft.getInstance().options.keyDown.setDown(false);
@@ -179,7 +188,6 @@ public class FPSMatch {
                 }
             }
         }
-
     }
 
 

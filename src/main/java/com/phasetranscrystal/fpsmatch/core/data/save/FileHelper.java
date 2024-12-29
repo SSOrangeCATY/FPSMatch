@@ -126,7 +126,7 @@ public class FileHelper {
                         if(map instanceof GiveStartKitsMap<?> giveStartKitsMap){
                             Map<String,List<ItemStack>> teamKits = new HashMap<>();
                             for(BaseTeam team : map.getMapTeams().getTeams()){
-                                teamKits.put(team.getName(),giveStartKitsMap.getKits(team));
+                                teamKits.put(team.getFixedName(),giveStartKitsMap.getKits(team));
                             }
                             JsonElement json = FPSMCodec.encodeTeamKitsToJson(teamKits);
                             String jsonStr = gson.toJson(json);

@@ -43,10 +43,10 @@ public class MapTeams {
         BaseTeam defendTeam = this.getTeamByName(defendTeamName);
         if(attackTeam == null || defendTeam == null) return;
 
-        // 交换重生点
-        List<SpawnPointData> tempSpawnPoints = new ArrayList<>(attackTeam.getSpawnPointsData());
-        attackTeam.setAllSpawnPointData(defendTeam.getSpawnPointsData());
-        defendTeam.setAllSpawnPointData(tempSpawnPoints);
+        //交换玩家
+        Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
+        attackTeam.resetAllPlayers(serverLevel, defendTeam.getPlayers());
+        defendTeam.resetAllPlayers(serverLevel, tempPlayers);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
@@ -60,36 +60,6 @@ public class MapTeams {
         attackTeam.setCompensationFactor(defendTeam.getCompensationFactor());
         defendTeam.setCompensationFactor(tempCompensationFactor);
         defendTeam.setLoseStreak(tempLoseStreak);
-
-        // 交换玩家
-        Map<UUID,PlayerData> tempPlayers = attackTeam.getPlayers();
-        attackTeam.resetAllPlayers(defendTeam.getPlayers());
-        defendTeam.resetAllPlayers(tempPlayers);
-
-
-        List<UUID> aTeamUnableToSwitch = new ArrayList<>();
-        List<UUID> dTeamUnableToSwitch = new ArrayList<>();
-        attackTeam.getPlayers().keySet().forEach(uuid -> {
-           ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
-           if(serverPlayer != null){
-               serverPlayer.getScoreboard().removePlayerFromTeam(serverPlayer.getScoreboardName());
-               serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), attackTeam.getPlayerTeam());
-           }else{
-               aTeamUnableToSwitch.add(uuid);
-           }
-        });
-        defendTeam.getPlayers().keySet().forEach(uuid -> {
-            ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
-            if(serverPlayer != null){
-                serverPlayer.getScoreboard().removePlayerFromTeam(serverPlayer.getScoreboardName());
-                serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), defendTeam.getPlayerTeam());
-            }else{
-                dTeamUnableToSwitch.add(uuid);
-            }
-        });
-
-        unableToSwitch.put(attackTeamName,aTeamUnableToSwitch);
-        unableToSwitch.put(defendTeamName,dTeamUnableToSwitch);
     }
 
 
@@ -133,7 +103,7 @@ public class MapTeams {
         playerteam.setAllowFriendlyFire(false);
         playerteam.setSeeFriendlyInvisibles(false);
         playerteam.setDeathMessageVisibility(Team.Visibility.NEVER);
-        this.teams.put(teamName, new BaseTeam(fixedName,limit,playerteam));
+        this.teams.put(teamName, new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam));
     }
 
     public void setTeamNameColor(BaseMap map, String teamName, ChatFormatting color){
@@ -215,7 +185,7 @@ public class MapTeams {
     @Nullable public BaseTeam getTeamByComplexName(String teamName){
         AtomicReference<BaseTeam> team = new AtomicReference<>();
         teams.forEach((s,t)-> {
-            if (t.getName().equals(teamName)){
+            if (t.getFixedName().equals(teamName)){
                 team.set(t);
             }
         });
@@ -228,6 +198,8 @@ public class MapTeams {
         this.teams.forEach((name,team)->{
             team.setScores(0);
             team.getPlayers().clear();
+            team.setLoseStreak(0);
+            team.setCompensationFactor(0);
         });
         this.unableToSwitch.clear();
     }

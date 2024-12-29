@@ -23,6 +23,7 @@ import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchLoginMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
@@ -69,8 +70,7 @@ public class FPSMEvents {
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchStatsResetS2CPacket());
-            player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm"),false);
-            player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm.tips"),false);
+            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchLoginMessageS2CPacket());
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();

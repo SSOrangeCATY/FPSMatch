@@ -191,7 +191,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 if(receiver != null){
                     BaseTeam team = map.getMapTeams().getTeamByPlayer(receiver);
                     if(team != null){
-                        boolean flag = this.map.checkCanPlacingBombs(team.getName());
+                        boolean flag = this.map.checkCanPlacingBombs(team.getFixedName());
                         if(!flag){
                             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
                         }
