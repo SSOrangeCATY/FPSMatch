@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
+import com.phasetranscrystal.fpsmatch.client.renderer.SmokeShellRenderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
@@ -170,6 +171,7 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(EntityRegister.C4.get(), new C4Renderer());
+            event.registerEntityRenderer(EntityRegister.SMOKE_SHELL.get(), new SmokeShellRenderer());
         }
 
     }
