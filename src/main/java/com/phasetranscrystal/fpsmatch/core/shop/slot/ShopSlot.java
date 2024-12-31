@@ -1,11 +1,11 @@
 package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
@@ -14,7 +14,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -43,7 +46,7 @@ public class ShopSlot{
     // 返回检查器，用于检查物品栈是否可以返回
     public final Predicate<ItemStack> returningChecker;
     // 默认价格
-    public final int defaultCost;
+    public int defaultCost;
     // 当前价格
     private int cost;
     // 组ID
@@ -68,6 +71,10 @@ public class ShopSlot{
 
     public void setCost(int count){
         this.cost = count;
+    }
+
+    public void setDefaultCost(int count){
+        this.defaultCost = count;
     }
 
     public int getDefaultCost() {
@@ -281,6 +288,11 @@ public class ShopSlot{
         cost = defaultCost;
         boughtCount = 0;
         locked = false;
+        this.listener.forEach((listenerModule -> {
+            if(listenerModule instanceof ChangeShopItemModule changeShopItemModule){
+                this.itemSupplier = changeShopItemModule.defaultItem()::copy;
+            }
+        }));
     }
 
     /**
@@ -302,6 +314,7 @@ public class ShopSlot{
 
     public void addListener(ListenerModule listener) {
         this.listener.add(listener);
+        this.listener.sort(Comparator.comparingInt(ListenerModule::getPriority).reversed());
     }
     public List<String> getListenerNames(){
         List<String> names = new ArrayList<>();
@@ -353,5 +366,16 @@ public class ShopSlot{
 
     public void removeListenerModule(String module) {
         this.listener.removeIf(listenerModule -> listenerModule.getName().equals(module));
+    }
+
+    public ShopSlot copy() {
+        ItemStack itemStack = this.itemSupplier.get();
+        if(itemStack.getItem() instanceof IGun iGun){
+            FPSMUtil.fixGunItem(itemStack, iGun);
+        }
+        ShopSlot slot = new ShopSlot(itemStack::copy,this.defaultCost,this.maxBuyCount,this.groupId,this.returningChecker);
+        slot.setIndex(this.index);
+        slot.listener.addAll(this.listener);
+        return slot;
     }
 }

@@ -15,6 +15,7 @@ import javax.annotation.Nonnull;
 
 
 public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
+
     public boolean isPlayerInArea(Player player) {
         return isInArea(new Vec3(player.getX(), player.getY(), player.getZ()));
     }
@@ -38,6 +39,18 @@ public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
         );
         return area.contains(pos);
     }
+
+    public AABB getAABB(){
+        return new AABB(
+                Math.min(pos1.getX(), pos2.getX()),
+                Math.min(pos1.getY(), pos2.getY()),
+                Math.min(pos1.getZ(), pos2.getZ()),
+                Math.max(pos1.getX(), pos2.getX()),
+                Math.max(pos1.getY(), pos2.getY()),
+                Math.max(pos1.getZ(), pos2.getZ())
+        );
+    }
+
     //TODO
     public void renderArea(MultiBufferSource multiBufferSource, PoseStack poseStack) {
         VertexConsumer vertexconsumer = multiBufferSource.getBuffer(RenderType.lines());

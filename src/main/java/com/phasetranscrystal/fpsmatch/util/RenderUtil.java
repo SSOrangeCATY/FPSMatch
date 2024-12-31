@@ -5,22 +5,15 @@ import com.tacz.guns.client.resource.texture.FilePackTexture;
 import com.tacz.guns.client.resource.texture.ZipPackTexture;
 import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Image;
-import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
-import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.scores.PlayerTeam;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -37,7 +30,8 @@ public class RenderUtil {
     public static Image getGunTextureByRL(ResourceLocation resourceLocation){
         Path texturePath;
         Image image = null;
-        if(Minecraft.getInstance().textureManager.getTexture(resourceLocation) instanceof FilePackTexture pack){
+        AbstractTexture abstractTexture = Minecraft.getInstance().textureManager.getTexture(resourceLocation);
+        if(abstractTexture instanceof FilePackTexture pack){
             texturePath = ClientTaczTextureData.getPathByGunTexture(pack);
             if(texturePath != null ){
                 File textureFile = texturePath.toFile();
@@ -50,7 +44,7 @@ public class RenderUtil {
             }
         }
 
-        if(Minecraft.getInstance().textureManager.getTexture(resourceLocation) instanceof ZipPackTexture pack) {
+        if(abstractTexture instanceof ZipPackTexture pack) {
             texturePath = ClientTaczTextureData.getPathByGunTexture(pack);
             if (texturePath != null) {
                 try (ZipFile zipFile = new ZipFile(texturePath.toFile())) {

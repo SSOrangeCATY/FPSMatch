@@ -3,42 +3,26 @@ package com.phasetranscrystal.fpsmatch.entity;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
-import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
-import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.stats.Stats;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.item.PrimedTnt;
-import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.UUID;
 
 public class CompositionC4Entity extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
@@ -113,6 +97,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void tick() {
+
         if(this.getDeleteTime() >= 140){
             this.discard();
         }
@@ -135,6 +120,13 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 this.setDemolitionProgress(0);
             }else{
                 this.setDemolitionProgress(this.getDemolitionProgress() + 1);
+                if (demolisher instanceof ServerPlayer serverPlayer){
+                    if(serverPlayer.gameMode.getGameModeForPlayer() == GameType.SPECTATOR){
+                        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombActionS2CPacket(0,this.uuid));
+                        this.syncDemolitionProgress(0);
+                        this.demolisher = null;
+                    }
+                }
             }
 
             int j = 200;
@@ -163,17 +155,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
             if(i < 200){
                 if(i < 100){
-                    if(i <= 20) this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
-
+                    if(i <= 20) this.playSound();
                     if(i % 5 == 0){
-                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                        this.playSound();
                     }
                 }else if( i % 10 == 0){
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                    this.playSound();
                 }
             } else{
                 if(i % 20 == 0){
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                    this.playSound();
                 }
             }
         }
@@ -190,6 +181,10 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         }
     }
 
+
+    public void playSound(){
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1.0F);
+    }
     private void explode() {
         float explosionRadius = this.getExplosionRadius(); // 爆炸半径
         this.deleting = true;
@@ -200,16 +195,21 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
     public void syncDemolitionProgress(float progress){
         BaseMap map = (BaseMap) this.map;
-        if(map != null){
+        if(map != null && this.demolisher != null){
             map.getMapTeams().getJoinedPlayers().forEach((pUUID)->{
                 ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
                 if(receiver != null){
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                    BaseTeam team = map.getMapTeams().getTeamByPlayer(receiver);
+                    if(team != null){
+                        boolean flag = this.map.checkCanPlacingBombs(team.getFixedName());
+                        if(!flag){
+                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                        }
+                    }
                 }
             });
         }
     }
-
 
     @Nullable
     public LivingEntity getOwner() {

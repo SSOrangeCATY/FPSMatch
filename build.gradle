@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 buildscript {
     repositories {
         maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
@@ -19,8 +21,8 @@ plugins {
 apply plugin: 'org.spongepowered.mixin'
 
 group = mod_group_id
-mod_version = mod_version + "-" + new Date().format("yyyyMMdd")
-version = mod_version
+file_version = file_version + "-" + new SimpleDateFormat("yyyy-MM-dd").format(new Date(System.currentTimeMillis()))
+version = file_version
 
 base {
     archivesName = mod_id

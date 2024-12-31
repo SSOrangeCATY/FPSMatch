@@ -5,12 +5,9 @@ import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,13 +26,12 @@ public abstract class MixinItemEntity {
                 if (map == null) {
                     ci.cancel();
                     return;
-                };
+                }
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
-                    if(!blastModeMap.checkCanPlacingBombs(team.getName())){
+                    if(!blastModeMap.checkCanPlacingBombs(team.getFixedName())){
                         ci.cancel();
-                        return;
-                    };
+                    }
                 }else{
                     ci.cancel();
                 }

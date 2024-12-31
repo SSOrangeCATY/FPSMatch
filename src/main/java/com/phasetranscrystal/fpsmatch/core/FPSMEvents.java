@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
@@ -21,7 +22,12 @@ import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchLoginMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.init.ModDamageTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -64,6 +70,7 @@ public class FPSMEvents {
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchStatsResetS2CPacket());
+            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchLoginMessageS2CPacket());
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map != null && map.isStart){
                 MapTeams teams = map.getMapTeams();
@@ -92,6 +99,14 @@ public class FPSMEvents {
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {
                     playerTeam.handleOffline(player);
+                    int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
+                    if (im > 0) {
+                        ItemEntity entity = player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false);
+                        if (entity != null) {
+                            entity.setGlowingTag(true);
+                        }
+                        player.getInventory().setChanged();
+                    }
                 }
             }
         }
@@ -116,11 +131,25 @@ public class FPSMEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             ServerPlayer from = null;
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map!= null && map.checkGameHasPlayer(player)) {
+            if (map != null && map.checkGameHasPlayer(player)) {
                 if(event.getSource().getEntity() instanceof ServerPlayer fromPlayer){
                     BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
                     if (fromMap != null && fromMap.equals(map)) {
                         from = fromPlayer;
+                            if(event.getSource().is(ModDamageTypes.BULLET) || event.getSource().is(ModDamageTypes.BULLET_IGNORE_ARMOR)){
+                                if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
+                                    Component killerName = fromPlayer.getDisplayName();
+                                    Component deadName = event.getEntity().getDisplayName();
+                                    DeathMessage deathMessage = new DeathMessage(killerName, deadName, fromPlayer.getMainHandItem(), false);
+                                    DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
+                                    fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                                        ServerPlayer serverPlayer = (ServerPlayer) fromMap.getServerLevel().getPlayerByUUID(uuid);
+                                        if(serverPlayer != null){
+                                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
+                                        }
+                                    }));
+                                }
+                            }
                     }
                 }
                 handlePlayerDeath(map,player,from);
@@ -132,16 +161,20 @@ public class FPSMEvents {
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+
+        //商店逻辑
         if (map instanceof ShopMap shopMap){
             FPSMShop shop = shopMap.getShop();
             if (shop == null) return;
             ItemStack itemStack = event.getEntity().getItem();
+
             ShopData shopData = shop.getPlayerShopData(event.getEntity().getUUID());
             Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
             if(pair != null){
                 ShopSlot slot = pair.getSecond();
                 if(pair.getFirst() != ItemType.THROWABLE){
                     slot.unlock(itemStack.getCount());
+                    shop.syncShopData((ServerPlayer) event.getPlayer(),pair.getFirst(),slot);
                 }
             }
         }
@@ -161,6 +194,7 @@ public class FPSMEvents {
             if(pair != null){
                 ShopSlot slot = pair.getSecond();
                 slot.lock(event.getStack().getCount());
+                shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst(),slot);
             }
         }
     }
@@ -268,7 +302,7 @@ public class FPSMEvents {
                         if (assistPlayerTeam != null) {
                             PlayerData assistData = assistPlayerTeam.getPlayerData(assistId);
                             // 如果是击杀者就不添加助攻
-                            if (assistData == null || from != null && from.getUUID().equals(assistId)) continue;;
+                            if (assistData == null || from != null && from.getUUID().equals(assistId)) continue;
                             assistData.getTabData().addAssist();
                             FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(assistData.getOwner(), assistData.getTabData()));
                         }

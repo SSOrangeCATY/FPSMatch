@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -17,7 +19,6 @@ import java.util.*;
 public class FPSMShop {
     public final String name;
     private final Map<ItemType, ArrayList<ShopSlot>> defaultShopData;
-
     private final int startMoney;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
 
@@ -54,9 +55,7 @@ public class FPSMShop {
                     ShopData shopData = this.getPlayerShopData(uuid);
                     for (ItemType type : ItemType.values()) {
                         List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-                        slots.forEach((shopSlot -> {
-                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name));
-                        }));
+                        slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name))));
                     }
                 }
             }
@@ -105,11 +104,8 @@ public class FPSMShop {
         ShopData shopData = this.getPlayerShopData(player.getUUID());
         for (ItemType type : ItemType.values()) {
             List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-            slots.forEach((shopSlot -> {
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name));
-            }));
+            slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot, name))));
         }
-
     }
 
     public void syncShopData(ServerPlayer player,ItemType type, ShopSlot slot){
@@ -130,17 +126,20 @@ public class FPSMShop {
         return data;
     }
 
-
-    public void resetPlayerShopData(UUID uuid){
-        this.playersData.put(uuid,this.getDefaultShopData());
-    }
-
     public void clearPlayerShopData(){
         this.playersData.clear();
     }
 
     public void clearPlayerShopData(UUID uuid){
-        this.playersData.put(uuid,this.getDefaultShopData());
+        if(this.playersData.containsKey(uuid)){
+            this.playersData.get(uuid).setDoneData(this.defaultShopData);
+        }else{
+            this.playersData.put(uuid,this.getDefaultShopData());
+        }
+    }
+
+    public Map<UUID, ShopData> getPlayersData() {
+        return playersData;
     }
 
     public void setDefaultShopData(Map<ItemType, ArrayList<ShopSlot>> data){
@@ -169,11 +168,12 @@ public class FPSMShop {
     }
 
     public void setDefaultShopDataCost(ItemType type, int index, int cost){
-        this.defaultShopData.get(type).get(index).setCost(cost);
+        this.defaultShopData.get(type).get(index).setDefaultCost(cost);
     }
 
     public ShopData getDefaultShopData() {
-        return new ShopData(this.defaultShopData,this.startMoney);
+        Map<ItemType, ArrayList<ShopSlot>> map = new HashMap<>(this.defaultShopData);
+        return new ShopData(map,this.startMoney);
     }
 
     public Map<ItemType, ArrayList<ShopSlot>> getDefaultShopDataMap() {

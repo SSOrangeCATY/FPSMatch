@@ -1,20 +1,9 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.phasetranscrystal.fpsmatch.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.resource.index.ClientGunIndex;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-
-import net.minecraft.client.gui.components.PlayerTabOverlay;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.screens.Overlay;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -28,7 +17,7 @@ public class CSGameOverlay implements IGuiOverlay {
     public static final int PAUSE_TIME = 120;
     public static final int WINNER_WAITING_TIME = 8;
     public static final int WARM_UP_TIME = 60;
-    public static final int WAITING_TIME = 20;
+    public static final int WAITING_TIME = 10;
     public static final int ROUND_TIME_LIMIT = 115;
     public static int textCTWinnerRoundsColor = color(7,128,215);
     public static int textTWinnerRoundsColor = color(253,217,141);
@@ -51,13 +40,17 @@ public class CSGameOverlay implements IGuiOverlay {
         guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 9 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
         guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
         String roundTime;
+
         if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner){
             roundTime = "--:--";
             textRoundTimeColor = color(240,40,40);
         }else{
-            roundTime  = getCSGameTime();
+            roundTime = getCSGameTime();
         }
+
         guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
+        guiGraphics.pose().popPose();
+
         if(ClientData.dismantleBombProgress > 0){
             MutableComponent component = Component.empty();
             for (int i = 1; i < 8 ; i++){
@@ -67,7 +60,6 @@ public class CSGameOverlay implements IGuiOverlay {
             }
             player.displayClientMessage(component,true);
         }
-        guiGraphics.pose().popPose();
     }
 
     public static boolean getDemolitionProgressTextStyle(int index){

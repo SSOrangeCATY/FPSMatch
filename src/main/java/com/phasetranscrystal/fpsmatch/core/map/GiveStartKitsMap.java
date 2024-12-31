@@ -23,7 +23,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
     void setStartKits(Map<String,ArrayList<ItemStack>> kits);
     void setAllTeamKits(ItemStack itemStack);
     default void clearTeamKits(BaseTeam team){
-        this.setTeamKits(team,new ArrayList<>());
+        this.getKits(team).clear();
     }
     default boolean removeItem(BaseTeam team, ItemStack itemStack){
         AtomicBoolean flag = new AtomicBoolean(false);
@@ -60,7 +60,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
     }
     default void giveTeamKits(@NotNull BaseTeam team){
         BaseMap map = this.getMap();
-        for(UUID uuid : team.getPlayers()){
+        for(UUID uuid : team.getPlayerList()){
             Player player = map.getServerLevel().getPlayerByUUID(uuid);
             if (player != null){
                 List<ItemStack> items = this.getKits(team);
@@ -71,7 +71,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             }
-        };
+        }
     }
 
     default void giveAllPlayersKits(){
@@ -94,7 +94,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
             }else{
                 System.out.println("givePlayerKits: player not found ->" + uuid);
             }
-        };
+        }
     }
 
     Map<String,List<ItemStack>> getStartKits();

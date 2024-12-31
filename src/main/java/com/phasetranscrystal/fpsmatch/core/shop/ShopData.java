@@ -27,11 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ShopData {
 //    public static final ShopData defaultData = new ShopData();//TODO
     private int money = 800;
-    private int willBeAddMoney = 0;
+    private final int willBeAddMoney = 0;
     // 存储数据
-    private final Map<ItemType, ImmutableList<ShopSlot>> data;
+    private final Map<ItemType, ImmutableList<ShopSlot>> data = new HashMap<>();
     // 分组数据
-    public final Multimap<Integer, ShopSlot> grouped;
+    private Multimap<Integer, ShopSlot> grouped;
 
     /**
      * 构造函数，初始化商店数据
@@ -40,13 +40,22 @@ public class ShopData {
     public <T extends List<ShopSlot>> ShopData(Map<ItemType, T> shopData) {
         // 检查数据是否合法
         checkData(shopData);
+        this.setDoneData(shopData);
+    }
+
+    public <T extends List<ShopSlot>> void setDoneData(Map<ItemType, T> shopData){
 
         // 创建一个不可变Map的构建器
         ImmutableMap.Builder<ItemType, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
         // 将传入的Map转换为不可变Map
-        shopData.forEach((k, v) -> builder.put(k, ImmutableList.copyOf(v)));
+        shopData.forEach((k, v) ->{
+            List<ShopSlot> shopSlots = new ArrayList<>();
+            v.forEach(shopSlot -> shopSlots.add(shopSlot.copy()));
+            builder.put(k, ImmutableList.copyOf(shopSlots));
+        });
         // 赋值给data字段
-        data = builder.build();
+        data.clear();
+        data.putAll(builder.build());
 
         // 遍历data中的每个值，即每个类型的商店槽位列表
         data.values().forEach(shopSlots -> {
@@ -78,10 +87,9 @@ public class ShopData {
         for (ItemType type : ItemType.values()) {
             // 获取该类型的商店槽位列表
             List<ShopSlot> slots = data.get(type);
-
             // 如果没有找到该类型的商店槽位列表，则抛出异常
             if (slots == null) throw new RuntimeException("No slots found for type " + type);
-                // 如果该类型的商店槽位列表数量不等于5，则抛出异常
+            // 如果该类型的商店槽位列表数量不等于5，则抛出异常
             else if (slots.size()!= 5)
                 throw new RuntimeException("Incorrect number of slots for type " + type + ". Expected 5 but found " + slots.size());
         }
@@ -106,7 +114,7 @@ public class ShopData {
     }
 
     public void setMoney(int money) {
-        this.money = Math.max(0,money);
+        this.money = Math.max(0,Math.min(16000,money));
     }
 
     public void reduceMoney(int money){
@@ -115,14 +123,11 @@ public class ShopData {
 
     public void addMoney(int money){
         this.money += Math.max(0,money);
+        this.money = Math.min(16000,this.money);
     }
 
     public List<ShopSlot> getShopSlotsByType(ItemType type) {
         return this.data.get(type);
-    }
-
-    public void reset() {
-
     }
 
     public int getMoney() {
@@ -178,18 +183,23 @@ public class ShopData {
     public void lockShopSlots(ServerPlayer player){
         List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
 
-        data.forEach(((itemType, shopSlots) -> {
-            shopSlots.forEach(shopSlot -> {
-                items.forEach(list -> {
-                    list.forEach(itemStack -> {
-                        if (shopSlot.returningChecker.test(itemStack)) {
-                            shopSlot.lock();
-                        }else{
-                            shopSlot.unlock();
-                        }
-                    });
-                });
-            });
+        Map<ShopSlot,Boolean> checkFlag = new HashMap<>();
+        data.forEach(((itemType, shopSlots) -> items.forEach(list -> list.forEach(itemStack -> {
+            for (ShopSlot shopSlot : shopSlots){
+                if(itemStack.isEmpty()) continue;
+                if (shopSlot.returningChecker.test(itemStack)) {
+                    shopSlot.lock();
+                    checkFlag.put(shopSlot,false);
+                }else if(checkFlag.getOrDefault(shopSlot,true)){
+                    shopSlot.unlock();
+                    checkFlag.put(shopSlot,true);
+                }
+        }
+    }))));
+        checkFlag.forEach(((shopSlot, aBoolean) -> {
+            if(aBoolean && shopSlot.getBoughtCount() > 0){
+                shopSlot.reset();
+            }
         }));
     }
 
@@ -197,9 +207,7 @@ public class ShopData {
     protected boolean broadcastCostCheckEvent(ServerPlayer player ,ShopSlot currentSlot){
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? new ArrayList<>() : this.grouped.get(currentSlot.getGroupId()).stream().filter((slot)-> slot != currentSlot).toList();
         CheckCostEvent event = new CheckCostEvent(player,currentSlot.getCost());
-        groupSlot.forEach(slot -> {
-            slot.handleCheckCostEvent(event);
-        });
+        groupSlot.forEach(slot -> slot.handleCheckCostEvent(event));
 
         return event.success();
 
@@ -219,30 +227,21 @@ public class ShopData {
         AtomicReference<Pair<ItemType, ShopSlot>> flag = new AtomicReference<>();
         if(itemStack.getItem() instanceof IGun iGun){
             ResourceLocation gunId = iGun.getGunId(itemStack);
-            data.forEach(((itemType, shopSlots) -> {
-                shopSlots.forEach(shopSlot -> {
-                    ItemStack itemStack1 = shopSlot.process();
-                    if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1)) && !itemStack1.isEmpty()){
-                        flag.set(new Pair<>(itemType,shopSlot));
-                    }
-                });
-            }));
+            data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
+                ItemStack itemStack1 = shopSlot.process();
+                if(itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1)) && !itemStack1.isEmpty()){
+                    flag.set(new Pair<>(itemType,shopSlot));
+                }
+            })));
         }else {
-            data.forEach(((itemType, shopSlots) -> {
-                shopSlots.forEach(shopSlot -> {
-                    ItemStack itemStack1 = shopSlot.process();
-                    if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString()) && !itemStack1.isEmpty()){
-                        flag.set(new Pair<>(itemType,shopSlot));
-                    }
-                });
-            }));
+            data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
+                ItemStack itemStack1 = shopSlot.process();
+                if(itemStack.getDisplayName().getString().equals(itemStack1.getDisplayName().getString()) && !itemStack1.isEmpty()){
+                    flag.set(new Pair<>(itemType,shopSlot));
+                }
+            })));
         }
         return flag.get();
     }
-
-    public ShopData copy(){
-        return new ShopData(this.data,this.money);
-    }
-
 
 }

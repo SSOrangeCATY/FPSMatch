@@ -24,7 +24,7 @@ public class FPSMCore {
     private static FPSMCore INSTANCE;
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
-    private final Map<String, Function3<ServerLevel,String, AreaData,BaseMap>> REGISTRY = new HashMap<>();
+    private final Map<String, Function3<ServerLevel,String,AreaData,BaseMap>> REGISTRY = new HashMap<>();
     private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
     public FPSMCore(String archiveName) {
         this.archiveName = archiveName;
@@ -79,9 +79,7 @@ public class FPSMCore {
 
     public List<String> getMapNames(){
         List<String> names = new ArrayList<>();
-        GAMES.forEach((type,mapList)-> mapList.forEach((map->{
-            names.add(map.getMapName());
-        })));
+        GAMES.forEach((type,mapList)-> mapList.forEach((map-> names.add(map.getMapName()))));
         return names;
     }
 

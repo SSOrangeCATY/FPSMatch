@@ -1,14 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
-import com.google.gson.JsonElement;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.JsonOps;
-import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,9 +27,7 @@ public class LMManager {
     }
 
     public void save(){
-        registry.forEach((name,listenerModule)->{
-            FileHelper.saveChangeItemListenerModule(listenerModule);
-        });
+        registry.forEach((name,listenerModule)-> FileHelper.saveChangeItemListenerModule(listenerModule));
     }
 
     @Nullable

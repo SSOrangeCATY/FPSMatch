@@ -3,29 +3,32 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.scores.PlayerTeam;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
 public class BaseTeam {
-    private final String name;
+    public final String name;
+    public final String gameType;
+    public final String mapName;
     private final int playerLimit;
     private final PlayerTeam playerTeam;
     private int scores = 0;
     private final Map<UUID, PlayerData> players = new HashMap<>();
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
+    public final List<UUID> teamUnableToSwitch = new ArrayList<>();
     private int loseStreak;
     private int compensationFactor;
 
-    public BaseTeam(String name, int playerLimit, PlayerTeam playerTeam) {
+    public BaseTeam(String gameType,String mapName,String name, int playerLimit, PlayerTeam playerTeam) {
+        this.gameType = gameType;
+        this.mapName = mapName;
         this.name = name;
         this.playerLimit = playerLimit;
         this.playerTeam = playerTeam;
@@ -39,8 +42,7 @@ public class BaseTeam {
     public void leave(ServerPlayer player){
         if(this.hasPlayer(player.getUUID())){
             this.players.remove(player.getUUID());
-            PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
-            if (currentTeam != null)  player.getScoreboard().removePlayerFromTeam(player.getScoreboardName(), currentTeam);
+            player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
         }
     }
 
@@ -57,6 +59,7 @@ public class BaseTeam {
         player.heal(player.getMaxHealth());
         player.setGameMode(GameType.SPECTATOR);
     }
+
     public void resetLiving(){
         this.players.values().forEach((data)->{
             if(!data.isOffline()){
@@ -87,21 +90,17 @@ public class BaseTeam {
 
     public List<TabData> getPlayersTabData(){
         List<TabData> tabDataList = new ArrayList<>();
-        this.players.values().forEach((data)->{
-            tabDataList.add(data.getTabData());
-        });
+        this.players.values().forEach((data)-> tabDataList.add(data.getTabData()));
         return tabDataList;
     }
 
     public List<TabData> getPlayersTabDataTemp(){
         List<TabData> tabDataList = new ArrayList<>();
-        this.players.values().forEach((data)->{
-            tabDataList.add(data.getTabDataTemp());
-        });
+        this.players.values().forEach((data)-> tabDataList.add(data.getTabDataTemp()));
         return tabDataList;
     }
 
-    public List<UUID> getPlayers(){
+    public List<UUID> getPlayerList(){
         return this.players.keySet().stream().toList();
     }
 
@@ -142,10 +141,18 @@ public class BaseTeam {
         }
 
         List<UUID> playerUUIDs = new ArrayList<>(this.players.keySet());
-
+        List<SpawnPointData> list = new ArrayList<>(this.spawnPointsData);
         for (UUID playerUUID : playerUUIDs) {
-            int randomIndex = random.nextInt(this.spawnPointsData.size());
-            SpawnPointData spawnPoint = this.spawnPointsData.get(randomIndex);
+            if(list.isEmpty()){
+                // 出生点不够多就会这样
+                list.addAll(this.spawnPointsData);
+            }
+            if(this.spawnPointsData.isEmpty()){
+                return;
+            }
+            int randomIndex = random.nextInt(list.size());
+            SpawnPointData spawnPoint = list.get(randomIndex);
+            list.remove(randomIndex);
             this.players.get(playerUUID).setSpawnPointsData(spawnPoint);
         }
     }
@@ -185,8 +192,9 @@ public class BaseTeam {
         this.scores = scores;
     }
 
-    public String getName() {
-        return name;
+
+    public String getFixedName() {
+        return this.gameType+"_"+this.mapName+"_"+this.name;
     }
 
     // 获取连败次数
@@ -207,6 +215,29 @@ public class BaseTeam {
     // 设置战败补偿因数
     public void setCompensationFactor(int compensationFactor) {
         this.compensationFactor = Math.max(0, Math.min(compensationFactor, 4));
+    }
+
+    public void setAllSpawnPointData(List<SpawnPointData> spawnPointsData) {
+        this.spawnPointsData.clear();
+        this.spawnPointsData.addAll(spawnPointsData);
+    }
+
+    public Map<UUID, PlayerData> getPlayers(){
+        return this.players;
+    }
+
+    public void resetAllPlayers(ServerLevel serverLevel, Map<UUID, PlayerData> players){
+        this.players.clear();
+        this.players.putAll(players);
+
+        players.keySet().forEach(uuid -> {
+            ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
+            if(serverPlayer != null){
+                serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), this.getPlayerTeam());
+            }else{
+                teamUnableToSwitch.add(uuid);
+            }
+        });
     }
 
 }

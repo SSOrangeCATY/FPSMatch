@@ -3,26 +3,26 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Team;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MapTeams {
     protected final ServerLevel level;
     private final Map<String,BaseTeam> teams = new HashMap<>();
+    private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public MapTeams(ServerLevel level,Map<String,Integer> team, BaseMap map){
         this.level = level;
-        team.forEach((name,limit)->{
-            this.addTeam(name,limit,map);
-        });
+        team.forEach((name,limit)-> this.addTeam(name,limit,map));
     }
 
     @Nullable
@@ -34,10 +34,37 @@ public class MapTeams {
 
     public Map<String,List<SpawnPointData>> getAllSpawnPoints(){
         Map<String,List<SpawnPointData>> data = new HashMap<>();
-        this.teams.forEach((n,t)->{
-            data.put(n,t.getSpawnPointsData());
-        });
+        this.teams.forEach((n,t)-> data.put(n,t.getSpawnPointsData()));
         return data;
+    }
+
+    public void switchAttackAndDefend(ServerLevel serverLevel, String attackTeamName, String defendTeamName) {
+        BaseTeam attackTeam = this.getTeamByName(attackTeamName);
+        BaseTeam defendTeam = this.getTeamByName(defendTeamName);
+        if(attackTeam == null || defendTeam == null) return;
+
+        //交换玩家
+        Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
+        attackTeam.resetAllPlayers(serverLevel, defendTeam.getPlayers());
+        defendTeam.resetAllPlayers(serverLevel, tempPlayers);
+
+        // 交换得分
+        int tempScore = attackTeam.getScores();
+        attackTeam.setScores(defendTeam.getScores());
+        defendTeam.setScores(tempScore);
+
+        // 交换连败计数器
+        int tempLoseStreak = attackTeam.getLoseStreak();
+        int tempCompensationFactor = attackTeam.getCompensationFactor();
+        attackTeam.setLoseStreak(defendTeam.getLoseStreak());
+        attackTeam.setCompensationFactor(defendTeam.getCompensationFactor());
+        defendTeam.setCompensationFactor(tempCompensationFactor);
+        defendTeam.setLoseStreak(tempLoseStreak);
+    }
+
+
+    public Map<String, List<UUID>> getUnableToSwitch() {
+        return unableToSwitch;
     }
 
     public void putAllSpawnPoints(Map<String,List<SpawnPointData>> data){
@@ -72,7 +99,17 @@ public class MapTeams {
     public void addTeam(String teamName,int limit,BaseMap map){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        this.teams.put(teamName, new BaseTeam(fixedName,limit,playerteam));
+        playerteam.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
+        playerteam.setAllowFriendlyFire(false);
+        playerteam.setSeeFriendlyInvisibles(false);
+        playerteam.setDeathMessageVisibility(Team.Visibility.NEVER);
+        this.teams.put(teamName, new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam));
+    }
+
+    public void setTeamNameColor(BaseMap map, String teamName, ChatFormatting color){
+        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
+        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
+        playerteam.setColor(color);
     }
 
     public void delTeam(PlayerTeam team){
@@ -82,16 +119,18 @@ public class MapTeams {
     }
 
     @Nullable public BaseTeam getTeamByPlayer(Player player){
-        PlayerTeam currentTeam = player.getScoreboard().getPlayersTeam(player.getScoreboardName());
-        if(currentTeam != null && this.checkTeam(currentTeam.getName().split("_")[2])){
-            return this.teams.getOrDefault(currentTeam.getName().split("_")[2],null);
-        }
-        return null;
+        AtomicReference<BaseTeam> baseTeamAtomicReference = new AtomicReference<>();
+        this.teams.forEach(((s, team) -> {
+            if(team.hasPlayer(player.getUUID())){
+                baseTeamAtomicReference.set(team);
+            };
+        }));
+        return baseTeamAtomicReference.get();
     }
 
     public List<UUID> getJoinedPlayers(){
         List<UUID> uuids = new ArrayList<>();
-        this.teams.values().forEach((t)-> uuids.addAll(t.getPlayers()));
+        this.teams.values().forEach((t)-> uuids.addAll(t.getPlayerList()));
         return uuids;
     }
 
@@ -126,7 +165,7 @@ public class MapTeams {
     public boolean testTeamIsFull(String teamName){
         BaseTeam team = teams.get(teamName);
         if (team == null) return false;
-        return team.getPlayerLimit() < team.getPlayers().size();
+        return team.getPlayerLimit() < team.getPlayerList().size();
     }
 
 
@@ -146,7 +185,7 @@ public class MapTeams {
     @Nullable public BaseTeam getTeamByComplexName(String teamName){
         AtomicReference<BaseTeam> team = new AtomicReference<>();
         teams.forEach((s,t)-> {
-            if (t.getName().equals(teamName)){
+            if (t.getFixedName().equals(teamName)){
                 team.set(t);
             }
         });
@@ -154,9 +193,15 @@ public class MapTeams {
     }
 
     public void reset(){
-        this.setDonePlayerStatsTemp();
         this.resetAllHurtData();
         this.resetLivingPlayers();
+        this.teams.forEach((name,team)->{
+            team.setScores(0);
+            team.getPlayers().clear();
+            team.setLoseStreak(0);
+            team.setCompensationFactor(0);
+        });
+        this.unableToSwitch.clear();
     }
 
     public void leaveTeam(ServerPlayer player){
@@ -202,7 +247,7 @@ public class MapTeams {
         List<UUID> uuids = new ArrayList<>();
         if(team != null){
             if (team.hasPlayer(player.getUUID())){
-                uuids.addAll(team.getPlayers());
+                uuids.addAll(team.getPlayerList());
             }
         }
         return uuids;
@@ -222,9 +267,7 @@ public class MapTeams {
     @Nullable public UUID getDamageMvp() {
         Map<UUID, Float> damageMap = new HashMap<>();
 
-        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> attackerDamageMap.forEach((targetId, damage) -> {
-            damageMap.merge(attackerId, damage, Float::sum);
-        }));
+        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> attackerDamageMap.forEach((targetId, damage) -> damageMap.merge(attackerId, damage, Float::sum)));
 
         UUID mvpId = null;
         float highestDamage = 0;
@@ -311,9 +354,7 @@ public class MapTeams {
     }
     public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
         Map<UUID,Map<UUID,Float>> hurtData = new HashMap<>();
-        teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)->{
-            hurtData.put(data.getOwner(),data.getDamageData());
-        }));
+        teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)-> hurtData.put(data.getOwner(),data.getDamageData())));
         return hurtData;
     }
 

@@ -47,12 +47,16 @@ public class DismantleBombKey {
 
     @SubscribeEvent
     public static void onInspectPress(InputEvent.Key event) {
-        if (isInGame() && event.getAction() == GLFW.GLFW_REPEAT && DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode())) {
-            check();
-        }else if (isInGame() && event.getAction() == GLFW.GLFW_RELEASE && !DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode())) {
-            if(ClientData.bombUUID != null) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(0,ClientData.bombUUID));
-        }else if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode())) {
-            check();
+        boolean isInGame = isInGame();
+        boolean check_ = DISMANTLE_BOMB_KEY.matches(event.getKey(), event.getScanCode());
+        if(isInGame){
+            if (event.getAction() == GLFW.GLFW_REPEAT && check_) {
+                check();
+            }else if ((event.getAction() == GLFW.GLFW_RELEASE && !check_) || (event.getAction() == GLFW.GLFW_PRESS && !check_) || (event.getAction() == GLFW.GLFW_REPEAT && !check_)) {
+                if(ClientData.bombUUID != null) FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(0,ClientData.bombUUID));
+            }else if (event.getAction() == GLFW.GLFW_PRESS && check_) {
+                check();
+            }
         }
     }
 

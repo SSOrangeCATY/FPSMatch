@@ -17,4 +17,9 @@ public class ReturnGoodsModule implements ListenerModule {
         return "returnGoods";
     }
 
+    @Override
+    public int getPriority() {
+        return 5;
+    }
+
 }
