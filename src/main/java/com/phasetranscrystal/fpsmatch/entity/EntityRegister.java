@@ -12,4 +12,7 @@ public class EntityRegister {
     public static final RegistryObject<EntityType<CompositionC4Entity>> C4 =
             ENTITY_TYPES.register("c4", () -> EntityType.Builder.<CompositionC4Entity>of(CompositionC4Entity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).build("c4"));
+    public static final RegistryObject<EntityType<SmokeShellEntity>> SMOKE_SHELL =
+            ENTITY_TYPES.register("c4", () -> EntityType.Builder.<SmokeShellEntity>of(SmokeShellEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).build("smoke_shell"));
 }
