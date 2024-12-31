@@ -69,8 +69,20 @@ public class FileHelper {
         return listenerModules;
     }
 
+    public static String fixName(String fileName) {
+        // 定义不能包含的特殊字符
+        String[] specialChars = new String[]{"\\", "/", ":", "*", "?", "\"", "<", ">", "|"};
+        // 遍历特殊字符数组
+        for (String charToReplace : specialChars) {
+            // 替换特殊字符为空字符串
+            fileName = fileName.replace(charToReplace, "");
+        }
+        // 打印或返回处理后的文件名
+        return fileName;
+    }
 
     public static void saveMaps(String levelName){
+        levelName = fixName(levelName);
         Map<String, List<BaseMap>> maps = FPSMCore.getInstance().getAllMaps();
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         if(checkOrCreateFile(FPS_MATCH_DIR)) {
@@ -154,6 +166,7 @@ public class FileHelper {
     }
 
     public static List<RawMapData> loadMaps(String levelName) {
+        levelName = fixName(levelName);
         List<RawMapData> loadedMaps = new ArrayList<>();
         File worldsDir = new File(FPS_MATCH_DIR, "world");
         File dataDir = new File(worldsDir, levelName);

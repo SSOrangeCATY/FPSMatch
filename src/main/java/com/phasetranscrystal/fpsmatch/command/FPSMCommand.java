@@ -117,6 +117,9 @@ public class FPSMCommand {
                                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                                         .suggests(CommandSuggests.SKITS_SUGGESTION)
                                                                         .executes(this::handleKitsWithoutItemAction)
+                                                                        .then(Commands.literal("dummyAmmoAmount")
+                                                                                .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
+                                                                                        .executes(this::handleKitsGunModifyGunAmmoAmount)))
                                                                         .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
                                                                                 .executes((c) -> this.handleKitsWithItemAction(c,1))
                                                                                 .then(Commands.argument("amount", IntegerArgumentType.integer(1))
@@ -325,6 +328,56 @@ public class FPSMCommand {
             return 0;
         }
     }
+
+    private int handleKitsGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String team = StringArgumentType.getString(context, "teamName");
+        String action = StringArgumentType.getString(context, "action");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        int dummyAmmoAmount = IntegerArgumentType.getInteger(context, "dummyAmmoAmount");
+
+        if (map instanceof GiveStartKitsMap<?> startKitMap && context.getSource().getEntity() instanceof Player player) {
+            switch (action) {
+                case "add":
+                    if (map.getMapTeams().checkTeam(team)) {
+                                ItemStack itemStack = player.getMainHandItem().copy();
+                                if (itemStack.getItem() instanceof IGun iGun && TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).isPresent()) {
+                                    GunData gunData = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).get().getGunData();
+                                    iGun.useDummyAmmo(itemStack);
+                                    iGun.setMaxDummyAmmoAmount(itemStack, dummyAmmoAmount);
+                                    iGun.setDummyAmmoAmount(itemStack, dummyAmmoAmount);
+                                    iGun.setCurrentAmmoCount(itemStack, gunData.getAmmoAmount());
+                                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
+                                }else{
+                                    context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.dummyAmmoAmount.fail", itemStack.getDisplayName(), team));
+                                }
+                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+                    }
+                    break;
+                case "clear":
+                    if (map.getMapTeams().checkTeam(team)) {
+                        startKitMap.clearTeamKits(map.getMapTeams().getTeamByName(team));
+                        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
+                    }
+                    break;
+                case "list":
+                    handleKitsListAction(context, team, map, startKitMap);
+                    break;
+                default:
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.invalidAction"));
+                    return 0;
+            }
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
+            return 0;
+        }
+        return 1;
+    }
+
     private int handleGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
