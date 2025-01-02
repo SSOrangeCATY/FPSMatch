@@ -65,6 +65,12 @@
   "fpsm.item.c4.use.fail.map.notStart": "You can't place bombs because the game hasn't started yet!",
   "fpsm.item.c4.use.fail.team.notInTeam": "You can't place bombs because you haven't joined a team!",
   "fpsm.login.message.closeable" : "This information can be disabled in config",
-  "item.fpsmatch.c4" : "C4"
-
+  "item.fpsmatch.c4" : "C4",
+  "item.fpsmatch.smoke_shell" : "Smoke Shell",
+  "fpsm.map.cs.wip.fail" : "This feature has not been implemented yet, please wait for future version updates!",
+  "fpsm.map.cs.pause.fail" : "The game has not started yet or has already exhausted the number of pauses or is it already in a paused state",
+  "fpsm.map.cs.pause.nextRound.success" : "The pause status will take effect in the next round!",
+  "fpsm.map.cs.pause.success" : "The current game is set to pause state",
+  "fpsm.item.c4.dismantled" : "The bomb has been dismantled",
+  "fpsm.item.c4.planted" : "The bomb has been planted"
 }

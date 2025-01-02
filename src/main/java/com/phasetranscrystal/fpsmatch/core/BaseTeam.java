@@ -3,7 +3,6 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -25,6 +24,8 @@ public class BaseTeam {
     public final List<UUID> teamUnableToSwitch = new ArrayList<>();
     private int loseStreak;
     private int compensationFactor;
+    private int pauseTime = 0;
+    private boolean needPause = false;
 
     public BaseTeam(String gameType,String mapName,String name, int playerLimit, PlayerTeam playerTeam) {
         this.gameType = gameType;
@@ -123,7 +124,6 @@ public class BaseTeam {
         });
         return uuids;
     }
-
 
     public boolean hasPlayer(UUID uuid){
         return this.players.containsKey(uuid);
@@ -238,6 +238,40 @@ public class BaseTeam {
                 teamUnableToSwitch.add(uuid);
             }
         });
+    }
+
+    public void addPause(){
+        if(pauseTime < 2 && !needPause){
+            needPause = true;
+            pauseTime++;
+        }
+    }
+
+    public boolean canPause(){
+        return pauseTime < 2 && !needPause;
+    }
+
+    public void setPauseTime(int t){
+        this.pauseTime = t;
+    }
+
+    public void resetPauseIfNeed(){
+        if(this.needPause){
+            this.needPause = false;
+            this.pauseTime--;
+        }
+    }
+
+    public void setNeedPause(boolean needPause){
+        this.needPause = needPause;
+    }
+
+    public boolean needPause(){
+        return needPause;
+    }
+
+    public int getPauseTime(){
+        return pauseTime;
     }
 
 }

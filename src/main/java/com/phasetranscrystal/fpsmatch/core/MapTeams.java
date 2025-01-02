@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -60,6 +61,14 @@ public class MapTeams {
         attackTeam.setCompensationFactor(defendTeam.getCompensationFactor());
         defendTeam.setCompensationFactor(tempCompensationFactor);
         defendTeam.setLoseStreak(tempLoseStreak);
+
+        // 交换暂停次数
+        int tempP = attackTeam.getPauseTime();
+        boolean tempN = attackTeam.needPause();
+        attackTeam.setPauseTime(defendTeam.getPauseTime());
+        attackTeam.setNeedPause(defendTeam.needPause());
+        defendTeam.setPauseTime(tempP);
+        defendTeam.setNeedPause(tempN);
     }
 
 
@@ -200,6 +209,7 @@ public class MapTeams {
             team.getPlayers().clear();
             team.setLoseStreak(0);
             team.setCompensationFactor(0);
+            team.setPauseTime(0);
         });
         this.unableToSwitch.clear();
     }

@@ -53,13 +53,7 @@ public abstract class BaseMap {
     public abstract void startGame();
 
     public boolean checkGameHasPlayer(Player player){
-        boolean flag = false;
-        if(!this.getMapTeams().getJoinedPlayers().contains(player.getUUID()) || getMapTeams().getTeamByPlayer(player) != null){
-            flag = true;
-        }else if(this.getMapTeams().getJoinedPlayers().contains(player.getUUID())){
-            flag = true;
-        }
-        return flag;
+        return this.getMapTeams().getJoinedPlayers().contains(player.getUUID());
     }
     public  void startNewRound(){}
     public abstract void victory();

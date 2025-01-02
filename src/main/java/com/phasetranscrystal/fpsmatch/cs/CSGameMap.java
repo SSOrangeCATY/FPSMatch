@@ -21,7 +21,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.server.commands.TeleportCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -29,8 +28,6 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -38,6 +35,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -46,13 +44,15 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap , GiveStartKitsMap<CSGameMap> {
-    public static final int WINNER_ROUND = 13;
-    public static final int PAUSE_TIME = 2400;
+    private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
+    public static final int WINNER_ROUND = 13; // 13回合
+    public static final int PAUSE_TIME = 1200; // 60秒
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
     private final int waitingTime = 200;
@@ -71,6 +71,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private String blastTeam;
     private final FPSMShop shop;
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
+
+    public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){
+        Map<String, BiConsumer<CSGameMap,ServerPlayer>> commands = new HashMap<>();
+        commands.put("p", CSGameMap::setPauseState);
+        commands.put("pause", CSGameMap::setPauseState);
+        commands.put("unpause", CSGameMap::setUnPauseState);
+        commands.put("agree",CSGameMap::handleAgreeCommand);
+        return commands;
+    }
 
     public CSGameMap(ServerLevel serverLevel,String mapName,AreaData areaData) {
         super(serverLevel,mapName,areaData);
@@ -92,8 +101,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     @Override
     public void tick() {
-        if(isStart){
-            if (!checkPauseTime() & !checkWarmUpTime() & !checkWaitingTime()) {
+        if(isStart && !checkPauseTime()){
+            // 暂停 / 热身 / 回合开始前的等待时间
+            if (!checkWarmUpTime() & !checkWaitingTime()) {
                 if(!isRoundTimeEnd()){
                     if(!this.isDebug()){
                         boolean flag = this.getMapTeams().getJoinedPlayers().size() != 1;
@@ -103,6 +113,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                             default : if(flag) this.checkRoundVictory(); break;
                         }
 
+                        // 回合结束等待时间
                         if(this.isWaitingWinner){
                             checkWinnerTime();
 
@@ -119,7 +130,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }
                 }
             }
-           this.checkErrorPlayerTeam();
+        }
+
+        if(this.isStart){
+            this.checkErrorPlayerTeam();
         }
     }
 
@@ -202,7 +216,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(this.isPause && currentPauseTime < PAUSE_TIME){
             this.currentPauseTime++;
         }else{
-            if(this.canRestTime()) currentPauseTime = 0;
+            if(this.isPause) currentPauseTime = 0;
             isPause = false;
         }
         return this.isPause;
@@ -221,6 +235,27 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public boolean checkWaitingTime(){
         if(this.isWaiting && currentPauseTime < waitingTime){
             this.currentPauseTime++;
+            boolean b = false;
+            Iterator<BaseTeam> teams = this.getMapTeams().getTeams().iterator();
+            while (teams.hasNext()){
+                BaseTeam baseTeam = teams.next();
+                if(!b){
+                    b = baseTeam.needPause();
+                    if(b){
+                        baseTeam.setNeedPause(false);
+                    }
+                }else{
+                    baseTeam.resetPauseIfNeed();
+                }
+                teams.remove();
+            }
+
+            if(b){
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.now"),false);
+                this.isPause = true;
+                this.currentPauseTime = 0;
+                this.isWaiting = true;
+            }
         }else {
             if(this.canRestTime()) currentPauseTime = 0;
             isWaiting = false;
@@ -433,7 +468,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(entity instanceof ItemEntity itemEntity){
                 itemEntity.discard();
             }
-
             if(entity instanceof CompositionC4Entity c4){
                 c4.discard();
             }
@@ -548,12 +582,44 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return this.startKits;
     }
 
+    public void setPauseState(ServerPlayer player){
+        BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
+        if(team != null && team.canPause() && this.isStart && !this.isPause){
+            team.addPause();
+            if(!this.isWaiting){
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.nextRound.success").withStyle(ChatFormatting.GOLD),false);
+            }else{
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.success").withStyle(ChatFormatting.GOLD),false);
+            }
+        }else{
+            player.displayClientMessage(Component.translatable("fpsm.map.cs.pause.fail").withStyle(ChatFormatting.RED),false);
+        }
+    }
+
+    public void setUnPauseState(ServerPlayer player){
+        player.displayClientMessage(Component.translatable("fpsm.map.cs.wip.fail").withStyle(ChatFormatting.RED),false);
+    }
+
+    public void handleAgreeCommand(ServerPlayer player){
+        player.displayClientMessage(Component.translatable("fpsm.map.cs.wip.fail").withStyle(ChatFormatting.RED),false);
+    }
+
+    public void sendAllPlayerMessage(Component message,boolean actionBar){
+        this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
+            ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+            if(serverPlayer != null){
+                serverPlayer.displayClientMessage(message,actionBar);
+            }
+        });
+    }
+
     public void resetGame() {
         this.cleanupMap();
         this.getShop().clearPlayerShopData();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
+                this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
                 player.removeAllEffects();
                 this.getShop().syncShopData(player);
                 this.resetPlayerClientData(player);
@@ -687,15 +753,32 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseTeam deadTeam = csGameMap.getMapTeams().getTeamByPlayer(event.getDead());
             if(killerTeam == null || deadTeam == null) return;
             if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
-                csGameMap.removePlayerMoney(event.getKiller().getUUID(),200);
+                csGameMap.removePlayerMoney(event.getKiller().getUUID(),300);
                 csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
-                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.teammate",200),false);
+                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.teammate",300),false);
             }else{
-                csGameMap.addPlayerMoney(event.getKiller().getUUID(),200);
+                csGameMap.addPlayerMoney(event.getKiller().getUUID(),300);
                 csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
-                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.enemy",200),false);
+                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.enemy",300),false);
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onChat(ServerChatEvent event){
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        if(map instanceof CSGameMap csGameMap && event.getRawText().startsWith(".")){
+            csGameMap.handleChatCommand(event);
+        }
+    }
+
+    public void handleChatCommand(ServerChatEvent event){
+        COMMANDS.forEach((k,v)->{
+            String rawText = event.getRawText();
+            if (rawText.contains(k) && rawText.length() - 1 == k.length()){
+                v.accept(this,event.getPlayer());
+            }
+        });
     }
 
     public enum WinnerReason{

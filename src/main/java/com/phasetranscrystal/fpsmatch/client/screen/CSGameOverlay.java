@@ -14,7 +14,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public class CSGameOverlay implements IGuiOverlay {
-    public static final int PAUSE_TIME = 120;
+    public static final int PAUSE_TIME = 60;
     public static final int WINNER_WAITING_TIME = 8;
     public static final int WARM_UP_TIME = 60;
     public static final int WAITING_TIME = 10;
@@ -24,7 +24,6 @@ public class CSGameOverlay implements IGuiOverlay {
     public static int noColor = color(0,0,0,0);
     public static int textRoundTimeColor = color(255,255,255);
     public static final String code = "7355608";
-    public static final String defaultCode = "[§k-------]";
     // 60*24 30*50
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -69,16 +68,20 @@ public class CSGameOverlay implements IGuiOverlay {
 
     public static String getCSGameTime(){
         String time;
-        if(ClientData.isWaiting){
-            time = formatTime(WAITING_TIME,ClientData.pauseTime / 20);
-        }else if (ClientData.isWarmTime) {
-            time = formatTime(WARM_UP_TIME,ClientData.pauseTime / 20);
-        }else if (ClientData.isWaitingWinner){
-            time = formatTime(WINNER_WAITING_TIME,ClientData.pauseTime / 20);
-        }else if(ClientData.isStart){
-            time = formatTime(ROUND_TIME_LIMIT,ClientData.roundTime / 20);
+        if(ClientData.isPause){
+            time = formatTime(PAUSE_TIME,ClientData.pauseTime / 20);
         }else{
-            time = "00:00";
+            if(ClientData.isWaiting){
+                time = formatTime(WAITING_TIME,ClientData.pauseTime / 20);
+            }else if (ClientData.isWarmTime) {
+                time = formatTime(WARM_UP_TIME,ClientData.pauseTime / 20);
+            }else if (ClientData.isWaitingWinner){
+                time = formatTime(WINNER_WAITING_TIME,ClientData.pauseTime / 20);
+            } else if(ClientData.isStart){
+                time = formatTime(ROUND_TIME_LIMIT,ClientData.roundTime / 20);
+            }else{
+                time = "00:00";
+            }
         }
         return time;
     }

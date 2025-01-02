@@ -1,9 +1,11 @@
 package com.phasetranscrystal.fpsmatch.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.phasetranscrystal.fpsmatch.entity.SmokeShellEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.EnderDragonRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemEntityRenderer;
@@ -13,6 +15,10 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 
 public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEntity> {
 
@@ -21,6 +27,7 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
         return new EntityRenderer<>(pContext) {
             ItemEntity item = null;
             ItemEntityRenderer itemRender = null;
+
             @Override
             public @NotNull ResourceLocation getTextureLocation(SmokeShellEntity pEntity) {
                 return TextureAtlas.LOCATION_BLOCKS;
@@ -31,10 +38,10 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
                 pPoseStack.pushPose();
                 pPoseStack.translate(0.0F, -0.25F, 0.0F);
                 if(item == null){
-                    item = new ItemEntity(pEntity.level(),pEntity.getX(),pEntity.getY(),pEntity.getZ(),new ItemStack(Items.TNT));
+                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(Items.STONE));
                     itemRender = new ItemEntityRenderer(pContext);
                 }
-                itemRender.render(item,pEntityYaw,0,pPoseStack,pBuffer,pPackedLight);
+                itemRender.render(item, pEntityYaw, 0, pPoseStack, pBuffer, pPackedLight);
                 pPoseStack.popPose();
                 super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
             }

@@ -33,48 +33,8 @@ public class MatchDropEntity extends Entity {
 
     @Override
     public void tick() {
-        if (this.getItem().isEmpty()) {
+        if (this.getItem() != null && this.getItem().isEmpty()) {
             this.discard();
-        } else {
-            super.baseTick();
-            this.xo = this.getX();
-            this.yo = this.getY();
-            this.zo = this.getZ();
-            if (!this.isNoGravity()) {
-                this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.04D, 0.0D));
-            }
-
-            if (this.level().isClientSide) {
-                this.noPhysics = false;
-            } else {
-                this.noPhysics = !this.level().noCollision(this, this.getBoundingBox().deflate(1.0E-7D));
-                if (this.noPhysics) {
-                    this.moveTowardsClosestSpace(this.getX(), (this.getBoundingBox().minY + this.getBoundingBox().maxY) / 2.0D, this.getZ());
-                }
-            }
-
-            if (!this.onGround() || this.getDeltaMovement().horizontalDistanceSqr() > (double)1.0E-5F || (this.tickCount + this.getId()) % 4 == 0) {
-                this.move(MoverType.SELF, this.getDeltaMovement());
-                float f1 = 0.98F;
-                if (this.onGround()) {
-                    BlockPos groundPos = getBlockPosBelowThatAffectsMyMovement();
-                    f1 = this.level().getBlockState(groundPos).getFriction(level(), groundPos, this) * 0.98F;
-                }
-
-                this.setDeltaMovement(this.getDeltaMovement().multiply(f1, 0.98D, f1));
-                if (this.onGround()) {
-                    Vec3 vec31 = this.getDeltaMovement();
-                    if (vec31.y < 0.0D) {
-                        this.setDeltaMovement(vec31.multiply(1.0D, -0.5D, 1.0D));
-                    }
-                }
-            }
-
-            ItemStack item = this.getItem();
-            if (item.isEmpty() && !this.isRemoved()) {
-                this.discard();
-            }
-
         }
     }
 

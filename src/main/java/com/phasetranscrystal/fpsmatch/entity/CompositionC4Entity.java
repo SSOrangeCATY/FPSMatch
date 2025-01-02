@@ -6,8 +6,10 @@ import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -144,6 +146,12 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
             if(this.getDemolitionProgress() >= j){
                 this.deleting = true;
                 map.setBlasting(2);
+                map.getMap().getMapTeams().getJoinedPlayers().forEach(uuid -> {
+                    ServerPlayer serverPlayer = (ServerPlayer) this.level().getPlayerByUUID(uuid);
+                    if(serverPlayer != null){
+                        serverPlayer.displayClientMessage(Component.translatable("fpsm.item.c4.dismantled").withStyle(ChatFormatting.GREEN),true);
+                    }
+                });
                 return;
             }
 

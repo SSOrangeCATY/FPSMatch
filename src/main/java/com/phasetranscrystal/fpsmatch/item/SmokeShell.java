@@ -24,7 +24,7 @@ public class SmokeShell extends Item {
         if (!pLevel.isClientSide) {
             SmokeShellEntity shell = new SmokeShellEntity(pPlayer, pLevel);
             shell.setItem(itemstack);
-            shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5F, 1.0F);
+            shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 0.75F, 0.75F);
             pLevel.addFreshEntity(shell);
         }
 
