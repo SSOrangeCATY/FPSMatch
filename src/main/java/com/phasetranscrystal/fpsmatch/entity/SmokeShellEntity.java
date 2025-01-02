@@ -169,10 +169,7 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             this.setDeltaMovement(result.getDirection().getAxis() == Direction.Axis.X ? new Vec3(-delta.x, delta.y, delta.z) : new Vec3(delta.x, delta.y, -delta.z));
         } else if (result.getDirection() == Direction.DOWN || this.getDeltaMovement().y > -0.2) {
             Vec3 delta = getDeltaMovement();
-            delta = new Vec3(delta.x, -delta.y, delta.z);
-            // 衰减一半的动能
-            delta = delta.multiply(0.85, 1, 0.85);
-            this.setDeltaMovement(delta);
+            this.setDeltaMovement(new Vec3(delta.x, -delta.y, delta.z));
         } else {
             this.setDeltaMovement(0, 0, 0);
             this.setNoGravity(true);
