@@ -226,7 +226,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(this.isWarmTime && currentPauseTime < WARM_UP_TIME){
             this.currentPauseTime++;
         }else {
-            if(this.canRestTime()) currentPauseTime = 0;
+            if(this.canRestTime()) {
+                currentPauseTime = 0;
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.done").withStyle(ChatFormatting.GOLD),false);
+            }
             isWarmTime = false;
         }
         return this.isWarmTime;

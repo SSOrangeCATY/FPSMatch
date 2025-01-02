@@ -72,6 +72,7 @@
   "fpsm.map.cs.pause.nextRound.success" : "暂停将于下一回合生效！",
   "fpsm.map.cs.pause.success" : "当前游戏被设置为暂停状态。",
   "fpsm.map.cs.pause.now" : "当前游戏已被暂停",
+  "fpsm.map.cs.pause.done" : "暂停时间已经耗尽。",
   "fpsm.item.c4.dismantled" : "炸弹已经被拆除。",
   "fpsm.item.c4.planted" : "炸弹已安放。"
 
