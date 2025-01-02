@@ -71,6 +71,7 @@
   "fpsm.map.cs.pause.fail" : "The game has not started yet or has already exhausted the number of pauses or is it already in a paused state",
   "fpsm.map.cs.pause.nextRound.success" : "The pause status will take effect in the next round!",
   "fpsm.map.cs.pause.success" : "The current game is set to pause state",
+  "fpsm.map.cs.pause.now" : "The current game is pause state",
   "fpsm.item.c4.dismantled" : "The bomb has been dismantled",
   "fpsm.item.c4.planted" : "The bomb has been planted"
 }

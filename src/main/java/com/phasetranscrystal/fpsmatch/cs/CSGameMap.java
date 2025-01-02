@@ -251,7 +251,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
 
             if(b){
-                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.now"),false);
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.now").withStyle(ChatFormatting.GOLD),false);
                 this.isPause = true;
                 this.currentPauseTime = 0;
                 this.isWaiting = true;
