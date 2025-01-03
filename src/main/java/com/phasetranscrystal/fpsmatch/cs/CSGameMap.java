@@ -216,7 +216,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(this.isPause && currentPauseTime < PAUSE_TIME){
             this.currentPauseTime++;
         }else{
-            if(this.isPause) currentPauseTime = 0;
+            if(this.isPause) {
+                currentPauseTime = 0;
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.done").withStyle(ChatFormatting.GOLD),false);
+            }
             isPause = false;
         }
         return this.isPause;
@@ -228,7 +231,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }else {
             if(this.canRestTime()) {
                 currentPauseTime = 0;
-                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.pause.done").withStyle(ChatFormatting.GOLD),false);
             }
             isWarmTime = false;
         }

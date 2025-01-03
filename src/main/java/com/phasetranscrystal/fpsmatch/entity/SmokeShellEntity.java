@@ -121,7 +121,7 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             }
         } else if (this.getState() == 2 && this.level().isClientSide) {
             Random random = new Random();
-            for(int i = 0 ; i < 4 ; i++){
+            for(int i = 0 ; i < 3 ; i++){
                 this.spawnRoundSmokeParticles(random);
             }
             this.level().addParticle(ParticleTypes.ASH, this.getX(), this.getY(), this.getZ(), random.nextFloat(-0.2F, 0.2F), random.nextFloat(0.3F), random.nextFloat(-0.2F, 0.2F));
@@ -132,12 +132,14 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
     public void spawnRoundSmokeParticles(Random random) {
         DustParticleOptions dust = new DustParticleOptions(new Vector3f(1, 1, 1), 10F);
         boolean flag = this.level().getBlockState(this.blockPosition().below().below()).isAir();
-        int y_ = flag ? -1 : 1;
+        int yd_ = flag ? -1 : 1;
         int r = getR();
-        for(float j = r ;j > 0 ; j -= 0.5f){
-            if(!flag){
-                j+=0.25f;
-            }
+        int hf = r / 2;
+        float v = 0.05f;
+        double x = this.getX();
+        double y = this.getY();
+        double z = this.getZ();
+        for(float j = r ;j > 1F ; j -= v){
             int theta = random.nextInt(360);
             int phi = random.nextInt(180);
             double k = Math.toRadians(theta);
@@ -145,11 +147,13 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             double a = Math.sin(k);
             double b = Math.cos(n);
             double c = Math.cos(k);
-            double x = this.getX() + j * a * b;
-            double y = this.getY() + j * Math.sin(n) * (random.nextBoolean() ? 1 : y_);
-            double z = this.getZ() + j * b * c;
-            this.level().addAlwaysVisibleParticle(dust, true, x, y, z, 0.0D, 0.0D, 0.0D);
+            double x_ = x+ j * a * b;
+            double y_ = y + j * Math.sin(n) * (random.nextBoolean() ? 1 : yd_);
+            double z_ = z + j * b * c;
+            this.level().addAlwaysVisibleParticle(dust, true, x_, y_, z_, 0.0D, 0.1D, 0.0D);
+            v += 0.05F;
         }
+        this.level().addAlwaysVisibleParticle(dust, true, x + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), y + random.nextFloat(hf) * (random.nextBoolean() ? 1 : yd_), z + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), 0.0D, 0.0D, 0.0D);
     }
 
     @Override
