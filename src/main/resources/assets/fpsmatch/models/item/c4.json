@@ -1,3 +1,3 @@
 {
-  "parent": "minecraft:block/tnt"
+  "parent": "fpsmatch:block/c4"
 }

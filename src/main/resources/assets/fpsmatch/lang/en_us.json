@@ -10,6 +10,8 @@
   "commands.fpsm.team.invalidAction": "Specified an invalid team action.",
   "commands.fpsm.team.notFound": "Team not found.",
   "commands.fpsm.map.notFound": "Map not found.",
+  "commands.fpsm.modify.bombarea.success": "Bomb area added success",
+  "commands.fpsm.modify.bombarea.failed": "Bomb area added failed",
   "commands.fpsm.modify.spawn.add.success": "Spawn point added for team %1$s.",
   "commands.fpsm.modify.spawn.clear.success": "Spawn points cleared for team %1$s.",
   "commands.fpsm.modify.spawn.clearall.success": "All spawn points cleared.",
