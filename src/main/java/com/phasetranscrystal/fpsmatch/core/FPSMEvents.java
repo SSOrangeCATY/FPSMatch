@@ -19,6 +19,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
@@ -235,6 +236,10 @@ public class FPSMEvents {
 
                             if(map instanceof GiveStartKitsMap<?> startKitsMap && rawMapData.startKits != null){
                                 startKitsMap.setStartKits(rawMapData.startKits);
+                            }
+
+                            if(map instanceof CSGameMap csGameMap && rawMapData.matchEndTeleportPoint != null){
+                                csGameMap.setMatchEndTeleportPoint(rawMapData.matchEndTeleportPoint);
                             }
 
                         }

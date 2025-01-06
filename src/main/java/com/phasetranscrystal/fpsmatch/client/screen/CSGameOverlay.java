@@ -17,7 +17,7 @@ public class CSGameOverlay implements IGuiOverlay {
     public static final int PAUSE_TIME = 60;
     public static final int WINNER_WAITING_TIME = 8;
     public static final int WARM_UP_TIME = 60;
-    public static final int WAITING_TIME = 10;
+    public static final int WAITING_TIME = 15;
     public static final int ROUND_TIME_LIMIT = 115;
     public static int textCTWinnerRoundsColor = color(7,128,215);
     public static int textTWinnerRoundsColor = color(253,217,141);

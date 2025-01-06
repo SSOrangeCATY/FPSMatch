@@ -35,6 +35,8 @@
   "commands.fpsm.modify.kits.clear.failed": "清除队伍 '%1$s' 的起始装备失败。",
   "commands.fpsm.modify.kits.invalidAction": "无效的操作。",
   "commands.fpsm.modify.kits.list.success": "队伍 '%1$s' 的起始装备列表：%2$d 件。",
+  "commands.fpsm.modify.matchEndTeleportPoint.success" : "成功设置了游戏结束传送点 '%1$s'",
+  "commands.fpsm.modify.matchEndTeleportPoint.failed" : "设置游戏结束传送点失败",
   "key.fpsm.custom.tab.on": "自定义Tab 开启",
   "key.fpsm.custom.tab.off": "自定义Tab 关闭",
   "key.fpsm.custom.tab.desc": "切换自定义Tab",
@@ -76,6 +78,17 @@
   "fpsm.map.cs.pause.now" : "当前游戏已被暂停",
   "fpsm.map.cs.pause.done" : "暂停时间已经耗尽。",
   "fpsm.item.c4.dismantled" : "炸弹已经被拆除。",
-  "fpsm.item.c4.planted" : "炸弹已安放。"
-
+  "fpsm.item.c4.planted" : "炸弹已安放。",
+  "fpsm.map.vote.timer" : "投票剩余时间 : %1$s",
+  "fpsm.map.vote.agree" : "%1$s 同意。",
+  "fpsm.map.vote.disagree" : "%1$s 不同意。",
+  "fpsm.map.vote.message" : "%1$s 发起了 %2$s 投票。",
+  "fpsm.map.vote.success" : "%1$s 投票的结果成功检定，当前地图将执行相关逻辑。",
+  "fpsm.map.vote.fail" : "%1$s 投票的结果检定失败，当前地图什么都没有发生。",
+  "fpsm.cs.overtime" : "加时赛",
+  "fpsm.cs.unpause" : "取消暂停",
+  "fpsm.cs.reset" : "重置游戏",
+  "fpsm.cs.start": "开始游戏",
+  "fpsm.map.vote.fail.alreadyHasVote" : "这张地图正在进行%1$s投票",
+  "fpsm.map.vote.help" : "可以在聊天框输入.a或者.da来同意或者拒绝该投票。"
 }

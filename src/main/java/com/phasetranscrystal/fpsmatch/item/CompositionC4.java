@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -101,7 +102,7 @@ public class CompositionC4 extends Item {
                     map.getMapTeams().getJoinedPlayers().forEach(uuid -> {
                         ServerPlayer serverPlayer = (ServerPlayer) pLevel.getPlayerByUUID(uuid);
                         if(serverPlayer != null){
-                            serverPlayer.displayClientMessage(Component.translatable("fpsm.item.c4.planted").withStyle(ChatFormatting.RED),true);
+                            serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.item.c4.planted").withStyle(ChatFormatting.RED)));
                         }
                     });
                     return ItemStack.EMPTY;
@@ -110,7 +111,7 @@ public class CompositionC4 extends Item {
                 return pStack;
             }
         }
-        return ItemStack.EMPTY;
+        return pStack;
     }
 
     @Override

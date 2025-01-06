@@ -183,10 +183,6 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
         this.move(MoverType.SELF, this.getDeltaMovement());
         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D)); // 空气阻力
-
-        if (this.level().isClientSide && this.getDeleteTime() <= 0) {
-            this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
-        }
     }
 
 
@@ -265,6 +261,9 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
+        if(player != null){
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.WOODEN_DOOR_CLOSE, SoundSource.VOICE, 3.0F, 2.0F);
+        }
         this.demolisher = player;
     }
 

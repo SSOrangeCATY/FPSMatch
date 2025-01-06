@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
+import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,7 @@ public class PlayerData{
     private TabData tabDataTemp;
     private boolean isOffline = false;
     private SpawnPointData spawnPointsData;
+    private boolean vote = false;
 
     public PlayerData() {
     }
@@ -65,5 +67,13 @@ public class PlayerData{
 
     public boolean isOffline() {
         return isOffline;
+    }
+
+    public boolean isVote() {
+        return vote;
+    }
+
+    public void setVote(boolean vote) {
+        this.vote = vote;
     }
 }

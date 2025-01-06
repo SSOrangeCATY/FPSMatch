@@ -21,6 +21,7 @@ public class MapTeams {
     protected final ServerLevel level;
     private final Map<String,BaseTeam> teams = new HashMap<>();
     private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
+    public final Map<UUID,Component> playerName = new HashMap<>();
     public MapTeams(ServerLevel level,Map<String,Integer> team, BaseMap map){
         this.level = level;
         team.forEach((name,limit)-> this.addTeam(name,limit,map));
@@ -71,7 +72,6 @@ public class MapTeams {
         defendTeam.setNeedPause(tempN);
     }
 
-
     public Map<String, List<UUID>> getUnableToSwitch() {
         return unableToSwitch;
     }
@@ -83,7 +83,6 @@ public class MapTeams {
             }
         });
     }
-
 
     public void setTeamsSpawnPoints(){
             this.teams.forEach(((s, t) -> t.randomSpawnPoints()));
@@ -157,6 +156,7 @@ public class MapTeams {
         leaveTeam(player);
         if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
             this.playerJoin(player,teamName);
+            this.playerName.put(player.getUUID(),player.getDisplayName());
         } else {
             player.sendSystemMessage(Component.literal("[FPSM] 队伍已满或未找到目标队伍，当前队伍已离队!"));
         }
@@ -212,10 +212,12 @@ public class MapTeams {
             team.setPauseTime(0);
         });
         this.unableToSwitch.clear();
+        this.playerName.clear();
     }
 
     public void leaveTeam(ServerPlayer player){
         this.teams.values().forEach((t)-> t.leave(player));
+        this.playerName.remove(player.getUUID());
     }
 
     public Map<String, List<UUID>> getTeamsLiving() {

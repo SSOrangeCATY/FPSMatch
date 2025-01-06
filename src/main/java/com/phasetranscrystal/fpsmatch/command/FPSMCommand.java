@@ -21,6 +21,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
@@ -101,6 +102,9 @@ public class FPSMCommand {
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_SUGGESTION)
+                                        .then(Commands.literal("matchEndTeleportPoint")
+                                                .then(Commands.argument("point", BlockPosArgument.blockPos())
+                                                        .executes(this::handleModifyMatchEndTeleportPoint)))
                                         .then(Commands.literal("bombArea").requires((permission)-> permission.hasPermission(2))
                                                 .then(Commands.literal("add")
                                                         .then(Commands.argument("from", BlockPosArgument.blockPos())
@@ -135,6 +139,22 @@ public class FPSMCommand {
                                                                                 .executes(this::handleTeamAction)))))))));
         dispatcher.register(literal);
     }
+
+    private int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
+        BlockPos point = BlockPosArgument.getBlockPos(context,"point").above();
+        String mapName = StringArgumentType.getString(context, "mapName");
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
+        if(baseMap instanceof CSGameMap csGameMap){
+            SpawnPointData pointData = new SpawnPointData(context.getSource().getLevel().dimension(), point, 0f, 0f);
+            csGameMap.setMatchEndTeleportPoint(pointData);
+            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.matchEndTeleportPoint.success",pointData.toString()),true);
+            return 1;
+        }else{
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.matchEndTeleportPoint.failed"));
+            return 0;
+        }
+    }
+
 
     private int handleSync(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         // TODO /fpsm sync shop <gameType> <gameName> <Player>

@@ -40,22 +40,25 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap , GiveStartKitsMap<CSGameMap> {
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
+    private static final Map<String, Consumer<CSGameMap>> VOTE_ACTION = registerVoteAction();
     public static final int WINNER_ROUND = 13; // 13回合
     public static final int PAUSE_TIME = 1200; // 60秒
     public static final int WINNER_WAITING_TIME = 160;
     public static final int WARM_UP_TIME = 1200;
-    private final int waitingTime = 200;
+    private int waitingTime = 300;
     private int currentPauseTime = 0;
     private final int roundTimeLimit = 115 * 20;
     private int currentRoundTime = 0;
@@ -71,13 +74,50 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private String blastTeam;
     private final FPSMShop shop;
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
+    private boolean isOvertime = false;
+    private int overtimeRounds = 6;
+    private int overtimeWins = 4;
+    private VoteObj voteObj = null;
+    private SpawnPointData matchEndTeleportPoint = null;
 
     public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){
         Map<String, BiConsumer<CSGameMap,ServerPlayer>> commands = new HashMap<>();
         commands.put("p", CSGameMap::setPauseState);
         commands.put("pause", CSGameMap::setPauseState);
-        commands.put("unpause", CSGameMap::setUnPauseState);
+        commands.put("unpause", CSGameMap::startUnpauseVote);
+        commands.put("up", CSGameMap::startUnpauseVote);
         commands.put("agree",CSGameMap::handleAgreeCommand);
+        commands.put("a",CSGameMap::handleAgreeCommand);
+        commands.put("disagree",CSGameMap::handleDisagreeCommand);
+        commands.put("da",CSGameMap::handleDisagreeCommand);
+        commands.put("start",CSGameMap::handleStartCommand);
+        commands.put("reset",CSGameMap::handleResetCommand);
+        return commands;
+    }
+
+    private void handleResetCommand(ServerPlayer serverPlayer) {
+        if(this.voteObj == null && this.isStart){
+            this.startVote("reset",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("fpsm.cs.reset")),20,1f);
+            this.voteObj.addAgree(serverPlayer);
+        } else if (this.voteObj != null) {
+            Component translation = Component.translatable("fpsm.cs." + this.voteObj.getVoteTitle());
+            serverPlayer.displayClientMessage(Component.translatable("fpsm.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
+        }
+    }
+
+    private void handleStartCommand(ServerPlayer serverPlayer) {
+        if((!this.isStart && this.voteObj == null) || (!this.isStart && !this.voteObj.getVoteTitle().equals("start"))){
+            this.startVote("start",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("fpsm.cs.start")),20,1f);
+            this.voteObj.addAgree(serverPlayer);
+        }
+    }
+
+    public static Map<String, Consumer<CSGameMap>> registerVoteAction(){
+        Map<String, Consumer<CSGameMap>> commands = new HashMap<>();
+        commands.put("overtime",CSGameMap::startOvertime);
+        commands.put("unpause", CSGameMap::setUnPauseState);
+        commands.put("reset", CSGameMap::resetGame);
+        commands.put("start",CSGameMap::startGame);
         return commands;
     }
 
@@ -92,6 +132,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         teams.put("t",16);
         this.setBlastTeam("t");
         return teams;
+    }
+
+
+    public void startVote(String title,Component message,int second,float playerPercent){
+        if(this.voteObj == null){
+            this.voteObj = new VoteObj(title,message,second,playerPercent);
+            this.sendAllPlayerMessage(message,false);
+            this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.help").withStyle(ChatFormatting.GREEN),false);
+        }
     }
 
     @Override
@@ -132,8 +181,41 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
         }
 
+        this.voteLogic();
         if(this.isStart){
             this.checkErrorPlayerTeam();
+        }
+    }
+
+    private void voteLogic() {
+        if(this.voteObj != null){
+            this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.timer",(this.voteObj.getEndVoteTimer() - System.currentTimeMillis()) / 1000).withStyle(ChatFormatting.DARK_AQUA),true);
+            int joinedPlayer = this.getMapTeams().getJoinedPlayers().size();
+            AtomicInteger count = new AtomicInteger();
+            this.voteObj.voteResult.values().forEach(aBoolean -> {
+                if (aBoolean){
+                    count.addAndGet(1);
+                }
+            });
+            boolean accept = (float) count.get() / joinedPlayer >= this.voteObj.getPlayerPercent();
+            if(this.voteObj.checkVoteIsOverTime() || this.voteObj.voteResult.keySet().size() == joinedPlayer || accept){
+                Component translation = Component.translatable("fpsm.cs." + this.voteObj.getVoteTitle());
+                if(accept){
+                    if(VOTE_ACTION.containsKey(this.voteObj.getVoteTitle())){
+                        this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.success",translation).withStyle(ChatFormatting.GREEN),false);
+                        VOTE_ACTION.get(this.voteObj.getVoteTitle()).accept(this);
+                    }
+                }else{
+                    this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.fail",translation).withStyle(ChatFormatting.RED),false);
+                    List<UUID> players = this.getMapTeams().getJoinedPlayers();
+                    this.voteObj.voteResult.keySet().forEach(players::remove);
+                    players.forEach(uuid -> {
+                        Component name = this.getMapTeams().playerName.getOrDefault(uuid,Component.literal(uuid.toString()));
+                        this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.disagree",name).withStyle(ChatFormatting.RED),false);
+                    });
+                }
+                this.voteObj = null;
+            }
         }
     }
 
@@ -151,6 +233,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         this.getShop().clearPlayerShopData(serverPlayer.getUUID());
                         serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.team.switch").withStyle(ChatFormatting.GREEN)));
                         uuidList.remove(uuid);
+                        if(uuidList.isEmpty()){
+                            this.getMapTeams().getUnableToSwitch().remove(team);
+                        }
                     }
                 });
             });
@@ -358,6 +443,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 winnerTeam.setScores(currentScore + 1);
             }
 
+
+            /*
+            *
+            *         if (!isVictory.get() && !this.isDebug() && !isOvertime) {
+            int ctScore = this.getMapTeams().getTeamByName("ct").getScores();
+            int tScore = this.getMapTeams().getTeamByName("t").getScores();
+            if (ctScore == 12 && tScore == 12) {
+                this.startOvertimeVote();
+                return false;
+            }
+        }
+            * */
             // 获取胜利队伍和失败队伍列表
             List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
             lostTeams.remove(winnerTeam);
@@ -427,6 +524,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
                 serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
+                this.teleportPlayerToReSpawnPoint(serverPlayer);
             }
         }));
         this.giveBlastTeamBomb();
@@ -448,18 +546,32 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public boolean victoryGoal() {
         AtomicBoolean isVictory = new AtomicBoolean(false);
-        this.getMapTeams().getTeams().forEach((team)-> {
-            if(team.getScores() >= WINNER_ROUND){
+        this.getMapTeams().getTeams().forEach((team) -> {
+            if (team.getScores() >= (isOvertime ? 999 : WINNER_ROUND)) {
                 isVictory.set(true);
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                    if(serverPlayer != null){
-                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+team.name+".message").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
+                    if (serverPlayer != null) {
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner." + team.name + ".message").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
                     }
                 }));
             }
         });
         return isVictory.get() && !this.isDebug();
+    }
+
+    public void startOvertimeVote() {
+        this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.overtime.vote").withStyle(ChatFormatting.GOLD), false);
+        Component translation = Component.translatable("fpsm.cs.overtime");
+        this.voteObj = new VoteObj("overtime", Component.translatable("fpsm.map.vote.message","system",translation), 20, 0.5f);
+    }
+
+    public void startOvertime() {
+        this.isOvertime = true;
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            this.setPlayerMoney(uuid, 10000);
+        }));
+        this.startNewRound();
     }
 
     // TODO 重要方法
@@ -513,7 +625,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }
                     this.getShop().getPlayerShopData(uuid).lockShopSlots(player);
                 }
-                this.teleportPlayerToReSpawnPoint(player);
             }
         }));
         this.getShop().syncShopData();
@@ -523,6 +634,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
         if (team == null) return;
         SpawnPointData data = Objects.requireNonNull(team.getPlayerData(player.getUUID())).getSpawnPointsData();
+        TeleportToPoint(player, data);
+    }
+
+    public void teleportPlayerToMatchEndPoint(ServerPlayer player){
+        if (this.matchEndTeleportPoint == null ) return;
+        SpawnPointData data = this.matchEndTeleportPoint;
+        TeleportToPoint(player, data);
+    }
+
+    private void TeleportToPoint(ServerPlayer player, SpawnPointData data) {
         BlockPos pos = data.getPosition();
         float f = Mth.wrapDegrees(data.getYaw());
         float f1 = Mth.wrapDegrees(data.getPitch());
@@ -601,13 +722,36 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-    public void setUnPauseState(ServerPlayer player){
-        player.displayClientMessage(Component.translatable("fpsm.map.cs.wip.fail").withStyle(ChatFormatting.RED),false);
+    public void setUnPauseState(){
+        this.isPause = false;
+        this.currentPauseTime = 0;
     }
 
-    public void handleAgreeCommand(ServerPlayer player){
-        player.displayClientMessage(Component.translatable("fpsm.map.cs.wip.fail").withStyle(ChatFormatting.RED),false);
+    private void startUnpauseVote(ServerPlayer serverPlayer) {
+        if(this.voteObj == null){
+            Component translation = Component.translatable("fpsm.cs.unpause");
+            this.startVote("unpause",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),translation),15,1f);
+            this.voteObj.addAgree(serverPlayer);
+        }else{
+            Component translation = Component.translatable("fpsm.cs." + this.voteObj.getVoteTitle());
+            serverPlayer.displayClientMessage(Component.translatable("fpsm.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
+        }
     }
+
+    public void handleAgreeCommand(ServerPlayer serverPlayer){
+        if(this.voteObj != null && !this.voteObj.voteResult.containsKey(serverPlayer.getUUID())){
+            this.voteObj.addAgree(serverPlayer);
+            this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.agree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.GREEN),false);
+        }
+    }
+
+    private void handleDisagreeCommand(ServerPlayer serverPlayer) {
+        if(this.voteObj != null && !this.voteObj.voteResult.containsKey(serverPlayer.getUUID())){
+            this.voteObj.addDisagree(serverPlayer);
+            this.sendAllPlayerMessage(Component.translatable("fpsm.map.vote.disagree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.RED),false);
+        }
+    }
+
 
     public void sendAllPlayerMessage(Component message,boolean actionBar){
         this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
@@ -628,6 +772,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 player.removeAllEffects();
                 this.getShop().syncShopData(player);
                 this.resetPlayerClientData(player);
+                this.teleportPlayerToMatchEndPoint(player);
             }
         }));
         this.isShopLocked = false;
@@ -750,6 +895,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         });
     }
 
+    @Nullable
+    public SpawnPointData getMatchEndTeleportPoint() {
+        return matchEndTeleportPoint;
+    }
+
+    public void setMatchEndTeleportPoint(SpawnPointData matchEndTeleportPoint) {
+        this.matchEndTeleportPoint = matchEndTeleportPoint;
+    }
 
     @SubscribeEvent
     public static void onPlayerKillOnMap(PlayerKillOnMapEvent event){
@@ -784,6 +937,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 v.accept(this,event.getPlayer());
             }
         });
+    }
+
+    public int getOvertimeRounds() {
+        return overtimeRounds;
+    }
+
+    public void setOvertimeRounds(int overtimeRounds) {
+        this.overtimeRounds = overtimeRounds;
     }
 
     public enum WinnerReason{

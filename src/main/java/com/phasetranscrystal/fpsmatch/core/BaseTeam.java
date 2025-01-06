@@ -27,6 +27,7 @@ public class BaseTeam {
     private int pauseTime = 0;
     private boolean needPause = false;
 
+
     public BaseTeam(String gameType,String mapName,String name, int playerLimit, PlayerTeam playerTeam) {
         this.gameType = gameType;
         this.mapName = mapName;

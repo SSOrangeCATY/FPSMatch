@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -17,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -150,6 +152,17 @@ public class FileHelper {
                             }
                         }
 
+                        if(map instanceof CSGameMap csGameMap && csGameMap.getMatchEndTeleportPoint() != null){
+                            JsonElement json = FPSMCodec.SPAWN_POINT_DATA_CODEC.encodeStart(JsonOps.INSTANCE, csGameMap.getMatchEndTeleportPoint()).getOrThrow(false, e -> { throw new RuntimeException(e); });
+                            String jsonStr = gson.toJson(json);
+                            File file = new File(mapDir,"matchEndTeleportPoint.json");
+                            try (FileWriter writer = new FileWriter(file)) {
+                                writer.write(jsonStr);
+                            } catch (IOException e) {
+                                throw  new RuntimeException(e);
+                            }
+                        }
+
                         File mapData = new File(mapDir,"teams.json");
                         Map<String, List<SpawnPointData>> d = map.getMapTeams().getAllSpawnPoints();
                         JsonElement json = FPSMCodec.encodeMapSpawnPointDataToJson(d);
@@ -252,6 +265,17 @@ public class FileHelper {
                                     }
                                 }
 
+                                File teleportPoint = new File(mapDir, "matchEndTeleportPoint.json");
+                                if (teleportPoint.exists() && teleportPoint.isFile()) {
+                                    try (FileReader teleportPointReader = new FileReader(teleportPoint)) {
+                                        JsonElement teleportPointJson = new Gson().fromJson(teleportPointReader, JsonElement.class);
+                                        SpawnPointData rawData =  FPSMCodec.SPAWN_POINT_DATA_CODEC.decode(JsonOps.INSTANCE, teleportPointJson).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+                                        rawMapData.setMatchEndTeleportPoint(rawData);
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+
                                 loadedMaps.add(rawMapData);
                             }
                         } catch (IOException e) {
@@ -280,6 +304,7 @@ public class FileHelper {
         @Nullable public Map<ItemType, ArrayList<ShopSlot>> shop;
         @Nullable public List<AreaData> blastAreaDataList;
         @Nullable public Map<String,ArrayList<ItemStack>> startKits;
+        @Nullable public SpawnPointData matchEndTeleportPoint;
 
         public RawMapData(@NotNull ResourceLocation mapRL, @NotNull Map<String, List<SpawnPointData>> teamsData, @NotNull ResourceKey<Level> levelResourceKey, @NotNull AreaData areaData) {
             this.mapRL = mapRL;
@@ -298,6 +323,10 @@ public class FileHelper {
 
         public void setShop(@Nullable Map<ItemType, ArrayList<ShopSlot>> shop) {
             this.shop = shop;
+        }
+
+        public void setMatchEndTeleportPoint(@Nullable SpawnPointData matchEndTeleportPoint) {
+            this.matchEndTeleportPoint = matchEndTeleportPoint;
         }
 
     }
