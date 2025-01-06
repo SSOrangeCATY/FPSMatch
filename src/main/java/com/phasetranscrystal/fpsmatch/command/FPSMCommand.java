@@ -416,8 +416,10 @@ public class FPSMCommand {
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
         if (baseMap instanceof BlastModeMap<?> map) {
             map.addBombArea(new AreaData(pos1,pos2));
+            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.bombarea.success"),true);
             return 1;
         }
+        context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.bombarea.failed"));
         return 0;
     }
 

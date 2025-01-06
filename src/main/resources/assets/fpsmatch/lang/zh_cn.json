@@ -10,6 +10,8 @@
   "commands.fpsm.team.invalidAction": "指定了无效的队伍操作。",
   "commands.fpsm.team.notFound": "队伍未找到。",
   "commands.fpsm.map.notFound": "地图未找到。",
+  "commands.fpsm.modify.bombarea.success": "添加爆破区域成功",
+  "commands.fpsm.modify.bombarea.failed": "添加爆破区域失败",
   "commands.fpsm.modify.spawn.add.success": "为 %1$s 队伍添加了出生点。",
   "commands.fpsm.modify.spawn.clear.success": "清除了 %1$s 队伍的所有出生点。",
   "commands.fpsm.modify.spawn.clearall.success": "清除了所有出生点。",
