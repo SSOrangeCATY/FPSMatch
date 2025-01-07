@@ -491,6 +491,13 @@ public class FPSMCommand {
                     case "join":
                             if (team != null && team.getRemainingLimit() - players.size() >= 0) {
                                 for(ServerPlayer player : players) {
+                                    BaseMap map1 = FPSMCore.getInstance().getMapByPlayer(player);
+                                    if(map1 != null){
+                                        BaseTeam team1 = map1.getMapTeams().getTeamByPlayer(player);
+                                        if(team1 != null){
+                                            team1.leave(player);
+                                        }
+                                    }
                                     map.getMapTeams().joinTeam(teamName, player);
                                     if(map instanceof ShopMap shopMap){
                                         shopMap.getShop().syncShopData(player);
@@ -501,7 +508,6 @@ public class FPSMCommand {
                                 // 翻译文本
                                 context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
                             }
-
                         break;
                     case "leave":
                         if (team != null) {
