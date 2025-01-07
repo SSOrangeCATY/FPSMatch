@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.phasetranscrystal.fpsmatch.entity.SmokeShellEntity;
+import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EnderDragonRenderer;
@@ -38,7 +39,7 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
                 pPoseStack.pushPose();
                 pPoseStack.translate(0.0F, -0.25F, 0.0F);
                 if(item == null){
-                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(Items.STONE));
+                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(FPSMItemRegister.SMOKE_SHELL.get()));
                     itemRender = new ItemEntityRenderer(pContext);
                 }
                 itemRender.render(item, pEntityYaw, 0, pPoseStack, pBuffer, pPackedLight);
