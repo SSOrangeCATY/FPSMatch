@@ -249,6 +249,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void startGame(){
+        /* DEBUG
+        this.getMapTeams().getTeams().get(0).setScores(12);
+        this.getMapTeams().getTeams().get(1).setScores(11);*/
         this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
         this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
         AtomicBoolean checkFlag = new AtomicBoolean(true);
@@ -600,19 +603,21 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 this.currentRoundTime = 0;
                 this.isPause = true;
                 this.currentPauseTime = PAUSE_TIME - 500;
-            }
+                return;
+            }else{
+                this.getMapTeams().getTeams().forEach((team)->{
+                    atomicInteger.addAndGet(team.getScores());
+                });
 
-            this.getMapTeams().getTeams().forEach((team)->{
-                atomicInteger.addAndGet(team.getScores());
-            });
-
-            if(atomicInteger.get() == 12){
-                switchFlag = true;
-                this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
-                this.getShop().clearPlayerShopData();
-                this.getShop().syncShopMoneyData();
-            } else {
-                switchFlag = false;
+                if(atomicInteger.get() == 12){
+                    switchFlag = true;
+                    this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
+                    this.getShop().clearPlayerShopData();
+                    this.getShop().syncShopMoneyData();
+                } else {
+                    switchFlag = false;
+                }
+                this.currentPauseTime = 0;
             }
         }else{
             // 加时赛换边判断 打满3局换边
@@ -630,13 +635,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             } else {
                 switchFlag = false;
             }
-
+            this.currentPauseTime = 0;
         }
 
         this.setBlasting(0);
         this.setExploded(false);
         this.currentRoundTime = 0;
-        this.currentPauseTime = 0;
         this.isShopLocked = false;
         this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
