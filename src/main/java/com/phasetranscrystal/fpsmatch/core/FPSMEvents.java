@@ -25,6 +25,8 @@ import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
+import net.minecraft.client.renderer.entity.SlimeRenderer;
+import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.resources.ResourceKey;
@@ -248,7 +250,6 @@ public class FPSMEvents {
 
     public static void handlePlayerDeath(BaseMap map, ServerPlayer player, @Nullable ServerPlayer from){
         if(map.isStart) {
-
             if(map instanceof ShopMap shopMap){
                 shopMap.getShop().clearPlayerShopData(player.getUUID());
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopStatesS2CPacket(false));
@@ -269,6 +270,7 @@ public class FPSMEvents {
                     if (entity != null) {
                         entity.setGlowingTag(true);
                     }
+                    player.getInventory().clearContent();
                     player.getInventory().setChanged();
                 }
 

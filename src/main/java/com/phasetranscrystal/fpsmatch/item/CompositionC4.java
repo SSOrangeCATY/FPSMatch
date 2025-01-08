@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -153,7 +154,7 @@ public class CompositionC4 extends Item {
 						ServerPlayer serverPlayer = (ServerPlayer) pLevel.getPlayerByUUID(uuid);
 						if (serverPlayer != null) {
 							pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), FPSMSoundRegister.planted.get(), SoundSource.PLAYERS, 3.0F, 0.9F);
-							serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.item.c4.planted").withStyle(ChatFormatting.RED)));
+							serverPlayer.displayClientMessage(Component.translatable("fpsm.item.c4.planted").withStyle(ChatFormatting.RED),true);
 						}
 					});
 					return ItemStack.EMPTY;

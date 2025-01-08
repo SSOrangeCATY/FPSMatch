@@ -498,7 +498,7 @@ public class FPSMCommand {
                                             team1.leave(player);
                                         }
                                     }
-                                    map.getMapTeams().joinTeam(teamName, player);
+                                    map.joinTeam(teamName, player);
                                     if(map instanceof ShopMap shopMap){
                                         shopMap.getShop().syncShopData(player);
                                     }

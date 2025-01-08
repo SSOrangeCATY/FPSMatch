@@ -95,5 +95,10 @@
   "fpsm.shop.title.pistol" : "Pistol",
   "fpsm.shop.title.mid_rank" : "Mid Rank",
   "fpsm.shop.title.rifle" : "Rifle",
-  "fpsm.shop.title.throwable": "Throwable"
+  "fpsm.shop.title.throwable": "Throwable",
+  "fpsm.map.cs.auto.start.message" : "This game will start in %1$s seconds",
+  "fpsm.map.cs.auto.start.title" : "%1$s seconds",
+  "fpsm.map.cs.auto.start.subtitle" : "Game will start in",
+  "fpsm.map.cs.auto.start.actionbar" : "Game will start in %1$s seconds",
+  "fpsm.map.cs.auto.started" : "Game started!"
 }

@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.cs;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
@@ -20,7 +21,9 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.server.commands.TitleCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -52,6 +55,7 @@ import java.util.function.Predicate;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap , GiveStartKitsMap<CSGameMap> {
+    private static final int AUTO_START_TIME = 1200;
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
     private static final Map<String, Consumer<CSGameMap>> VOTE_ACTION = registerVoteAction();
     public static final int WINNER_ROUND = 13; // 13回合
@@ -79,6 +83,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private boolean isWaitingOverTimeVote = false;
     private VoteObj voteObj = null;
     private SpawnPointData matchEndTeleportPoint = null;
+    private int autoStartTimer = 0;
+    private boolean autoStartFirstMessageFlag = false;
 
     public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){
         Map<String, BiConsumer<CSGameMap,ServerPlayer>> commands = new HashMap<>();
@@ -182,8 +188,88 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
 
         this.voteLogic();
+        this.autoStartLogic();
         if(this.isStart){
             this.checkErrorPlayerTeam();
+        }
+    }
+
+
+    private void autoStartLogic(){
+        if(isStart) {
+            autoStartTimer = 0;
+            autoStartFirstMessageFlag = false;
+            return;
+        }
+
+        List<BaseTeam> teams = this.getMapTeams().getTeams();
+        if(!teams.get(0).getPlayerList().isEmpty() && !teams.get(1).getPlayerList().isEmpty()){
+            autoStartTimer++;
+            if(!autoStartFirstMessageFlag){
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.message",AUTO_START_TIME / 20).withStyle(ChatFormatting.YELLOW),false);
+                autoStartFirstMessageFlag = true;
+            }
+        }else{
+            autoStartTimer = 0;
+        }
+
+        if(this.autoStartTimer != 0){
+            if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || autoStartTimer >= 1000 && autoStartTimer < 1180) {
+                this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                    ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                    if (serverPlayer != null) {
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.title", (AUTO_START_TIME - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
+                        serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
+                    }
+                }));
+            }else{
+                if(autoStartTimer % 20 == 0){
+                    if(this.voteObj == null) this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.actionbar",(AUTO_START_TIME - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW),true);
+                }
+
+                if(autoStartTimer == 1200){
+                    this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                        ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                        if (serverPlayer != null) {
+                            serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
+                            serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
+                        }
+                    }));
+                }
+            }
+        }
+
+        if(autoStartTimer >= AUTO_START_TIME){
+            this.startGame();
+        }
+    }
+
+    @Override
+    public void joinTeam(String teamName, ServerPlayer player) {
+        MapTeams mapTeams = this.getMapTeams();
+        mapTeams.joinTeam(teamName,player);
+        if(this.isStart){
+            player.setGameMode(GameType.SPECTATOR);
+            BaseTeam team = mapTeams.getTeamByName(teamName);
+            if(team != null){
+               PlayerData data = team.getPlayerData(player.getUUID());
+               if(data != null){
+                   data.setLiving(false);
+               }
+            }
+
+            List<UUID> uuids = mapTeams.getSameTeamPlayerUUIDs(player);
+            uuids.remove(player.getUUID());
+            Entity entity = null;
+            if (uuids.size() > 1) {
+                Random random = new Random();
+                entity = this.getServerLevel().getEntity(uuids.get(random.nextInt(0, uuids.size())));
+            } else if (!uuids.isEmpty()) {
+                entity = this.getServerLevel().getEntity(uuids.get(0));
+            }
+            if (entity != null) {
+                player.setCamera(entity);
+            }
         }
     }
 

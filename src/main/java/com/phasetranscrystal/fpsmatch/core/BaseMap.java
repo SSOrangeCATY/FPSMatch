@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.*;
@@ -64,6 +65,10 @@ public abstract class BaseMap {
 
     public MapTeams getMapTeams() {
         return mapTeams;
+    }
+
+    public void joinTeam(String teamName, ServerPlayer player) {
+        this.getMapTeams().joinTeam(teamName,player);
     }
 
     public ServerLevel getServerLevel() {

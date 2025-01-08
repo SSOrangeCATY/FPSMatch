@@ -198,7 +198,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
     public void playBeepSound(){
 //        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1.0F);
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), FPSMSoundRegister.beep.get(), SoundSource.VOICE, 3.0F, 1.0F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), FPSMSoundRegister.beep.get(), SoundSource.VOICE, 3.0F, 0.8F);
     }
     public void playDefusingSound(){
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.WOODEN_DOOR_CLOSE, SoundSource.VOICE, 3.0F, 1.0F);

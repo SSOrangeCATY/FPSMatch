@@ -95,5 +95,11 @@
   "fpsm.shop.title.pistol" : "手枪",
   "fpsm.shop.title.mid_rank" : "中级",
   "fpsm.shop.title.rifle" : "步枪",
-  "fpsm.shop.title.throwable": "投掷物"
+  "fpsm.shop.title.throwable": "投掷物",
+  "fpsm.map.cs.auto.start.message" : "游戏将于 %1$s 秒后自动开始。",
+  "fpsm.map.cs.auto.start.title" : "%1$s 秒",
+  "fpsm.map.cs.auto.start.subtitle" : "开始倒计时",
+  "fpsm.map.cs.auto.start.actionbar" : "游戏将于 %1$s 秒后自动开始。",
+  "fpsm.map.cs.auto.started" : "游戏开始！"
+
 }
