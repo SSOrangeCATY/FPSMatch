@@ -43,7 +43,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
     private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
-    private static final String[] TOP_NAME_KEYS_TEST = new String[]{"装备","手枪","中级","步枪","投掷物"};
     public static boolean refreshFlag = false;
     public static boolean debug;
     private static CSGameShopScreen INSTANCE;
@@ -261,7 +260,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
             title = new TextView(getContext());
             title.setTextColor(textColor);
-            title.setText(I18n.get(TOP_NAME_KEYS_TEST[i]));
+            title.setText(I18n.get(TOP_NAME_KEYS[i]));
             title.setTextSize(21);
             title.setGravity(Gravity.CENTER);
 

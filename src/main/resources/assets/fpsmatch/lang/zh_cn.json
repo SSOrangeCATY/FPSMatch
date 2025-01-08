@@ -90,5 +90,10 @@
   "fpsm.cs.reset" : "重置游戏",
   "fpsm.cs.start": "开始游戏",
   "fpsm.map.vote.fail.alreadyHasVote" : "这张地图正在进行%1$s投票",
-  "fpsm.map.vote.help" : "可以在聊天框输入.a或者.da来同意或者拒绝该投票。"
+  "fpsm.map.vote.help" : "可以在聊天框输入.a或者.da来同意或者拒绝该投票。",
+  "fpsm.shop.title.equipment" : "装备",
+  "fpsm.shop.title.pistol" : "手枪",
+  "fpsm.shop.title.mid_rank" : "中级",
+  "fpsm.shop.title.rifle" : "步枪",
+  "fpsm.shop.title.throwable": "投掷物"
 }

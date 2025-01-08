@@ -686,24 +686,26 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
         if (team == null) return;
         SpawnPointData data = Objects.requireNonNull(team.getPlayerData(player.getUUID())).getSpawnPointsData();
-        TeleportToPoint(player, data);
+        teleportToPoint(player, data);
     }
 
     public void teleportPlayerToMatchEndPoint(ServerPlayer player){
         if (this.matchEndTeleportPoint == null ) return;
         SpawnPointData data = this.matchEndTeleportPoint;
-        TeleportToPoint(player, data);
+        teleportToPoint(player, data);
     }
 
-    private void TeleportToPoint(ServerPlayer player, SpawnPointData data) {
+    private void teleportToPoint(ServerPlayer player, SpawnPointData data) {
         BlockPos pos = data.getPosition();
+        /*
         float f = Mth.wrapDegrees(data.getYaw());
         float f1 = Mth.wrapDegrees(data.getPitch());
+         */
         if(!Level.isInSpawnableBounds(pos)) return;
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
         set.add(RelativeMovement.X_ROT);
         set.add(RelativeMovement.Y_ROT);
-        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), pos.getX(),pos.getY(),pos.getZ(), set, f, f1)) {
+        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), pos.getX(),pos.getY(),pos.getZ(), set, 0, 0)) {
             label23: {
                 if (player.isFallFlying()) {
                     break label23;

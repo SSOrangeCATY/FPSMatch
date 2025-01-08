@@ -26,7 +26,9 @@ import com.phasetranscrystal.fpsmatch.net.*;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.commands.SpectateCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -49,10 +51,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -276,6 +275,7 @@ public class FPSMEvents {
                 player.heal(player.getMaxHealth());
                 player.setGameMode(GameType.SPECTATOR);
                 List<UUID> uuids = teams.getSameTeamPlayerUUIDs(player);
+                uuids.remove(player.getUUID());
                 Entity entity = null;
                 if (uuids.size() > 1) {
                     Random random = new Random();
@@ -283,7 +283,9 @@ public class FPSMEvents {
                 } else if (!uuids.isEmpty()) {
                     entity = map.getServerLevel().getEntity(uuids.get(0));
                 }
-                if (entity != null) player.setCamera(entity);
+                if (entity != null) {
+                    player.setCamera(entity);
+                }
                 player.setRespawnPosition(player.level().dimension(), player.getOnPos().above(), 0f, true, false);
                 FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData()));
             }
