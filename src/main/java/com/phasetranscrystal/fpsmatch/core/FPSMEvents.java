@@ -22,10 +22,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.DeathMessageS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchLoginMessageS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.*;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.network.chat.Component;
@@ -255,6 +252,7 @@ public class FPSMEvents {
 
             if(map instanceof ShopMap shopMap){
                 shopMap.getShop().clearPlayerShopData(player.getUUID());
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopStatesS2CPacket(false));
             }
 
             MapTeams teams = map.getMapTeams();

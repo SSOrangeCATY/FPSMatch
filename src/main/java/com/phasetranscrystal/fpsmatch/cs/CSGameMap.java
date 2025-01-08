@@ -76,6 +76,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
     private boolean isOvertime = false;
     private int overCount = 0;
+    private boolean isWaitingOverTimeVote = false;
     private VoteObj voteObj = null;
     private SpawnPointData matchEndTeleportPoint = null;
 
@@ -249,9 +250,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void startGame(){
-        /* DEBUG
-        this.getMapTeams().getTeams().get(0).setScores(12);
-        this.getMapTeams().getTeams().get(1).setScores(11);*/
         this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
         this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
         AtomicBoolean checkFlag = new AtomicBoolean(true);
@@ -273,7 +271,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false,null);
         this.getServerLevel().getGameRules().getRule(GameRules.RULE_NATURAL_REGENERATION).set(false,null);
         this.getServerLevel().getServer().setDifficulty(Difficulty.HARD,true);
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid,800)));
+        this.isOvertime = false;
+        this.overCount = 0;
+        this.isWaitingOverTimeVote = false;
         this.isStart = true;
         this.isWaiting = true;
         this.isWaitingWinner = false;
@@ -298,8 +298,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
         this.giveAllPlayersKits();
         this.giveBlastTeamBomb();
-        super.cleanupMap();
         this.getShop().clearPlayerShopData();
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid,800)));
         this.getShop().syncShopData();
     }
 
@@ -452,7 +452,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseTeam winnerTeam = this.getMapTeams().getTeamByName(winnerTeamName);
             if(winnerTeam != null){
                 int currentScore = winnerTeam.getScores();
-                winnerTeam.setScores(currentScore + 1);
+                int target = currentScore + 1;
+                List<BaseTeam> baseTeams =this.getMapTeams().getTeams();
+                if(target == 12 && baseTeams.remove(winnerTeam) && baseTeams.get(0).getScores() == 12 && !this.isOvertime){
+                    this.isWaitingOverTimeVote = true;
+                }
+                winnerTeam.setScores(target);
             }
 
             // 获取胜利队伍和失败队伍列表
@@ -546,8 +551,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public boolean victoryGoal() {
         AtomicBoolean isVictory = new AtomicBoolean(false);
+        if(this.isWaitingOverTimeVote){
+            return false;
+        }
         this.getMapTeams().getTeams().forEach((team) -> {
-            if (team.getScores() >= (isOvertime ? WINNER_ROUND - 1 + this.overCount * 6 + 4 : WINNER_ROUND)) {
+            if (team.getScores() >= (isOvertime ? WINNER_ROUND - 1 + (this.overCount * 3) + 4 : WINNER_ROUND)) {
                 isVictory.set(true);
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
@@ -567,11 +575,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public void startOvertime() {
         this.isOvertime = true;
+        this.isWaitingOverTimeVote = false;
         this.isPause = false;
         this.currentPauseTime = 0;
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            this.setPlayerMoney(uuid, 10000);
-        }));
+        this.getShop().clearPlayerShopData();
+        this.syncShopData();
+        this.getMapTeams().getTeams().forEach(team->{
+            team.getPlayers().forEach((uuid, playerData)->{
+                playerData.setLiving(false);
+                this.setPlayerMoney(uuid, 10000);
+            });
+        });
         this.startNewRound();
     }
 
@@ -621,15 +635,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
         }else{
             // 加时赛换边判断 打满3局换边
-            int check = ctScore + tScore - 24 - 6 * this.overCount;
-            if(check % 3 == 0 && check != 0){
+            int total = ctScore + tScore;
+            int check = total - 24 - 6 * this.overCount;
+            if(check % 3 == 0 && check > 0){
                 switchFlag = true;
                 this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
                 this.getShop().clearPlayerShopData();
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     this.setPlayerMoney(uuid, 10000);
                 }));
-                if (check == 6 && ctScore != WINNER_ROUND - 1 + this.overCount * 6 + 4 && tScore != WINNER_ROUND - 1 + this.overCount * 6 + 4) {
+                if (check == 6 && ctScore < 12 + 3 * this.overCount + 4 && tScore < 12 + 3 * this.overCount + 4 ) {
                     this.overCount++;
                 }
             } else {
@@ -804,6 +819,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             baseTeam.setScores(0);
         });
         this.isOvertime = false;
+        this.isWaitingOverTimeVote = false;
         this.overCount = 0;
         this.isShopLocked = false;
         this.cleanupMap();
