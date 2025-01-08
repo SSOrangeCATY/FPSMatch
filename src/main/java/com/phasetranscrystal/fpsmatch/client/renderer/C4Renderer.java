@@ -29,8 +29,8 @@ public class C4Renderer implements EntityRendererProvider<CompositionC4Entity> {
             @Override
             public void render(CompositionC4Entity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
                 pPoseStack.pushPose();
+                pPoseStack.translate(0.0, -0.1, 0.0);
                 if(item == null){
-//                    item = new ItemEntity(pEntity.level(),pEntity.getX(),pEntity.getY(),pEntity.getZ(),new ItemStack(Items.TNT));
                     Item c4 = FPSMItemRegister.C4.get();  // 获取 C4 物品对象
                     item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(c4));
                     itemRender = new ItemEntityRenderer(pContext);

@@ -4,12 +4,14 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -41,6 +43,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     private Player demolisher;
     private BlastModeMap<?> map;
     private boolean deleting = false;
+    private int soundPlayCount = 0;  // 用于记录播放次数
 
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -104,6 +107,12 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
             this.discard();
         }
 
+        if (soundPlayCount > 0 && soundPlayCount < 3) {
+            // 如果音效播放次数小于3次
+            this.playDefusingSound();
+            soundPlayCount++;  // 增加播放次数
+        }
+
         if(!this.level().isClientSide){
             if(this.deleting){
                 int d = this.getDeleteTime() + 1;
@@ -149,7 +158,8 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 map.getMap().getMapTeams().getJoinedPlayers().forEach(uuid -> {
                     ServerPlayer serverPlayer = (ServerPlayer) this.level().getPlayerByUUID(uuid);
                     if(serverPlayer != null){
-                        serverPlayer.displayClientMessage(Component.translatable("fpsm.item.c4.dismantled").withStyle(ChatFormatting.GREEN),true);
+                        this.playDefusedSound();
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.item.c4.dismantled").withStyle(ChatFormatting.GREEN)));
                     }
                 });
                 return;
@@ -163,16 +173,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
             if(i < 200){
                 if(i < 100){
-                    if(i <= 20) this.playSound();
+                    if(i <= 20) this.playBeepSound();
                     if(i % 5 == 0){
-                        this.playSound();
+                        this.playBeepSound();
                     }
                 }else if( i % 10 == 0){
-                    this.playSound();
+                    this.playBeepSound();
                 }
             } else{
                 if(i % 20 == 0){
-                    this.playSound();
+                    this.playBeepSound();
                 }
             }
         }
@@ -186,8 +196,15 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
 
-    public void playSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1.0F);
+    public void playBeepSound(){
+//        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1.0F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), FPSMSoundRegister.beep.get(), SoundSource.VOICE, 3.0F, 1.0F);
+    }
+    public void playDefusingSound(){
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.WOODEN_DOOR_CLOSE, SoundSource.VOICE, 3.0F, 1.0F);
+    }
+    public void playDefusedSound(){
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), FPSMSoundRegister.defused.get(), SoundSource.VOICE, 3.0F, 0.9F);
     }
     private void explode() {
         float explosionRadius = this.getExplosionRadius(); // 爆炸半径
@@ -261,8 +278,9 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
-        if(player != null){
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.WOODEN_DOOR_CLOSE, SoundSource.VOICE, 3.0F, 2.0F);
+        if(player != null && soundPlayCount == 0){
+            this.playDefusingSound();
+            this.soundPlayCount = 1;
         }
         this.demolisher = player;
     }

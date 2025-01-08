@@ -1,0 +1,35 @@
+{
+  "beep": {
+    "subtitle": "sounds.fpsmatch.c4.beep",
+    "sounds": [
+      "fpsmatch:c4_beep"
+    ]
+  },
+  "planting": {
+    "subtitle": "sounds.fpsmatch.c4.plating",
+    "sounds": [
+      "fpsmatch:c4_planting"
+    ]
+  },
+  "planted": {
+    "subtitle": "sounds.fpsmatch.c4.planted",
+    "sounds": [
+      "fpsmatch:c4_planted"
+    ]
+  },
+  "defused": {
+    "subtitle": "sounds.fpsmatch.c4.defused",
+    "sounds": [
+      "fpsmatch:c4_defused"
+    ]
+  },
+  "buttons_click": {
+    "subtitle": "sounds.fpsmatch.buttons.click",
+    "sounds": [
+      "fpsmatch:click1",
+      "fpsmatch:click2",
+      "fpsmatch:click3",
+      "fpsmatch:click4"
+    ]
+  }
+}

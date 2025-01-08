@@ -2,11 +2,11 @@
 	"credit": "Made with Blockbench",
 	"render_type": "translucent",
 	"textures": {
-		"0": "#c4",
-		"1": "#timer",
-		"2": "homyatos_explosives:block/c4_buttons",
-		"3": "homyatos_explosives:block/copper",
-		"particle": "homyatos_explosives:block/c4_particles"
+		"0": "fpsmatch:block/c4",
+		"1": "fpsmatch:block/c4_timer_empty",
+		"2": "fpsmatch:block/c4_buttons",
+		"3": "fpsmatch:block/copper",
+		"particle": "fpsmatch:block/c4_particles"
 	},
 	"elements": [
 		{
@@ -1603,7 +1603,7 @@
 	"display": {
 		"thirdperson_righthand": {
 			"rotation": [-87.25, 0, 180],
-			"translation": [-3.5, -0.25, 8],
+			"translation": [-3.5, 1.25, 8],
 			"scale": [0.9, 0.9, 0.9]
 		},
 		"thirdperson_lefthand": {
@@ -1612,8 +1612,8 @@
 			"scale": [0.9, 0.9, 0.9]
 		},
 		"firstperson_righthand": {
-			"rotation": [71, 169, -24],
-			"translation": [0.5, 3.75, 4.25],
+			"rotation": [74, 169, -24],
+			"translation": [0.5, 4, 4.25],
 			"scale": [1.1, 1.1, 1.1]
 		},
 		"firstperson_lefthand": {

@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
+import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.core.Registry;
@@ -73,6 +74,7 @@ public class FPSMatch {
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
         FPSMItemRegister.ITEMS.register(modEventBus);
+        FPSMSoundRegister.SOUNDS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
     }
