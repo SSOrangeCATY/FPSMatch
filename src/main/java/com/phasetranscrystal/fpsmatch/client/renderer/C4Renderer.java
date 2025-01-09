@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -29,7 +30,6 @@ public class C4Renderer implements EntityRendererProvider<CompositionC4Entity> {
             @Override
             public void render(CompositionC4Entity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
                 pPoseStack.pushPose();
-                pPoseStack.translate(0.0, -0.1, 0.0);
                 if(item == null){
                     Item c4 = FPSMItemRegister.C4.get();  // 获取 C4 物品对象
                     item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(c4));

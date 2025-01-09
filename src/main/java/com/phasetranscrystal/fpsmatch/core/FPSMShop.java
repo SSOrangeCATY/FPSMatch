@@ -1,8 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -13,6 +11,7 @@ import com.phasetranscrystal.fpsmatch.net.ShopMoneyS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -49,7 +48,7 @@ public class FPSMShop {
     public void syncShopData() {
         BaseMap map = FPSMCore.getInstance().getMapByName(name);
         if(map != null){
-            for (UUID uuid : map.getMapTeams().getJoinedPlayers()) {
+            for (UUID uuid : playersData.keySet()) {
                 ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
                 if (player != null){
                     ShopData shopData = this.getPlayerShopData(uuid);
@@ -65,7 +64,7 @@ public class FPSMShop {
     public void syncShopMoneyData() {
         BaseMap map = FPSMCore.getInstance().getMapByName(name);
         if(map != null){
-            for (UUID uuid : map.getMapTeams().getJoinedPlayers()) {
+            for (UUID uuid : playersData.keySet()) {
                 ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
                 if (player != null){
                     ShopData shopData = this.getPlayerShopData(uuid);
@@ -77,7 +76,7 @@ public class FPSMShop {
 
     public void syncShopMoneyData(UUID uuid) {
         BaseMap map = FPSMCore.getInstance().getMapByName(name);
-        if(map != null){
+        if(map != null && playersData.containsKey(uuid)){
             ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
             if (player != null){
                 ShopData shopData = this.getPlayerShopData(uuid);
@@ -86,13 +85,11 @@ public class FPSMShop {
         }
     }
 
-    public void syncShopMoneyData(ServerPlayer player) {
+    public void syncShopMoneyData(@NotNull ServerPlayer player) {
         BaseMap map = FPSMCore.getInstance().getMapByName(name);
-        if(map != null){
-            if (player != null){
-                ShopData shopData = this.getPlayerShopData(player.getUUID());
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(player.getUUID(), shopData.getMoney()));
-            }
+        if(map != null && playersData.containsKey(player.getUUID())){
+            ShopData shopData = this.getPlayerShopData(player.getUUID());
+            FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(player.getUUID(), shopData.getMoney()));
         }
     }
 

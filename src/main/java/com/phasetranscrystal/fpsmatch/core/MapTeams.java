@@ -135,6 +135,15 @@ public class MapTeams {
         }));
         return baseTeamAtomicReference.get();
     }
+    @Nullable public BaseTeam getTeamByPlayer(UUID player){
+        AtomicReference<BaseTeam> baseTeamAtomicReference = new AtomicReference<>();
+        this.teams.forEach(((s, team) -> {
+            if(team.hasPlayer(player)){
+                baseTeamAtomicReference.set(team);
+            };
+        }));
+        return baseTeamAtomicReference.get();
+    }
 
     public List<UUID> getJoinedPlayers(){
         List<UUID> uuids = new ArrayList<>();

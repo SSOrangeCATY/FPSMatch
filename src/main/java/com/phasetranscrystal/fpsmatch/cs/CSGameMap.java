@@ -12,10 +12,7 @@ import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.CSGameSettingsS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.ShopStatesS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
@@ -23,10 +20,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.server.commands.TitleCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -54,7 +49,7 @@ import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap , GiveStartKitsMap<CSGameMap> {
+public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap> {
     private static final int AUTO_START_TIME = 1200;
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
     private static final Map<String, Consumer<CSGameMap>> VOTE_ACTION = registerVoteAction();
@@ -76,7 +71,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private boolean isExploded = false; // 炸弹是否爆炸
     private final List<AreaData> bombAreaData = new ArrayList<>();
     private String blastTeam;
-    private final FPSMShop shop;
+    private final Map<String,FPSMShop> shop;
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
     private boolean isOvertime = false;
     private int overCount = 0;
@@ -129,7 +124,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public CSGameMap(ServerLevel serverLevel,String mapName,AreaData areaData) {
         super(serverLevel,mapName,areaData);
-        this.shop = new FPSMShop(mapName,800);
+        this.shop = new HashMap<>();
+        this.shop.put("ct",new FPSMShop(mapName,800));
+        this.shop.put("t",new FPSMShop(mapName,800));
     }
 
     public Map<String,Integer> getTeams(){
@@ -140,7 +137,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return teams;
     }
 
-
     public void startVote(String title,Component message,int second,float playerPercent){
         if(this.voteObj == null){
             this.voteObj = new VoteObj(title,message,second,playerPercent);
@@ -150,8 +146,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
-    public FPSMShop getShop() {
-        return shop;
+    public FPSMShop getShop(String shopName) {
+        return shop.getOrDefault(shopName,null);
+    }
+
+    @Override
+    public List<FPSMShop> getShops() {
+        return this.shop.values().stream().toList();
+    }
+
+    @Override
+    public List<String> getShopNames() {
+        return this.shop.keySet().stream().toList();
     }
 
     @Override
@@ -189,9 +195,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
         this.voteLogic();
         this.autoStartLogic();
-        if(this.isStart){
+        // TODO
+       /* if(this.isStart){
             this.checkErrorPlayerTeam();
-        }
+        }*/
     }
 
 
@@ -323,7 +330,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), baseTeam.getPlayerTeam());
                         this.clearPlayerInventory(serverPlayer);
                         this.givePlayerKits(serverPlayer);
-                        this.getShop().clearPlayerShopData(serverPlayer.getUUID());
+                        this.getShop(baseTeam.name).clearPlayerShopData(serverPlayer.getUUID());
                         serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.team.switch").withStyle(ChatFormatting.GREEN)));
                         uuidList.remove(uuid);
                         if(uuidList.isEmpty()){
@@ -373,9 +380,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
-                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
+                syncNormalMessage(serverPlayer);
                 serverPlayer.heal(serverPlayer.getMaxHealth());
                 serverPlayer.setGameMode(GameType.ADVENTURE);
                 this.clearPlayerInventory(serverPlayer);
@@ -384,9 +389,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
         this.giveAllPlayersKits();
         this.giveBlastTeamBomb();
-        this.getShop().clearPlayerShopData();
+        this.syncShopData();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid,800)));
-        this.getShop().syncShopData();
     }
 
     public boolean canRestTime(){
@@ -578,7 +582,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             // 检查连败情况
             this.checkLoseStreaks(winnerTeamName);
             // 同步商店金钱数据
-            this.getShop().syncShopMoneyData();
+            this.getShops().forEach(FPSMShop::syncShopMoneyData);
         }
     }
 
@@ -612,14 +616,23 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
-                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
+                syncNormalMessage(serverPlayer);
                 this.teleportPlayerToReSpawnPoint(serverPlayer);
             }
         }));
         this.giveBlastTeamBomb();
-        this.getShop().syncShopData();
+        this.getShops().forEach(FPSMShop::syncShopData);
+    }
+
+    private void syncNormalMessage(ServerPlayer serverPlayer) {
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
+        serverPlayer.removeAllEffects();
+        serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
+        BaseTeam baseTeam = this.getMapTeams().getTeamByPlayer(serverPlayer);
+        if(baseTeam != null){
+            FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(serverPlayer.getUUID(), Objects.requireNonNull(baseTeam.getPlayerData(serverPlayer.getUUID())).getTabData(),baseTeam.name));
+        }
     }
 
     @Override
@@ -664,7 +677,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isWaitingOverTimeVote = false;
         this.isPause = false;
         this.currentPauseTime = 0;
-        this.getShop().clearPlayerShopData();
         this.syncShopData();
         this.getMapTeams().getTeams().forEach(team->{
             team.getPlayers().forEach((uuid, playerData)->{
@@ -712,8 +724,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 if(atomicInteger.get() == 12){
                     switchFlag = true;
                     this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
-                    this.getShop().clearPlayerShopData();
-                    this.getShop().syncShopMoneyData();
+                    this.syncShopData();
                 } else {
                     switchFlag = false;
                 }
@@ -726,7 +737,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(check % 3 == 0 && check > 0){
                 switchFlag = true;
                 this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
-                this.getShop().clearPlayerShopData();
+                this.syncShopData();
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     this.setPlayerMoney(uuid, 10000);
                 }));
@@ -761,11 +772,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }else{
                         this.resetGunAmmon();
                     }
-                    this.getShop().getPlayerShopData(uuid).lockShopSlots(player);
+                    this.getShop(Objects.requireNonNull(this.getMapTeams().getTeamByPlayer(uuid)).name).getPlayerShopData(uuid).lockShopSlots(player);
                 }
             }
         }));
-        this.getShop().syncShopData();
+        this.getShops().forEach(FPSMShop::syncShopData);
     }
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
@@ -911,13 +922,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.overCount = 0;
         this.isShopLocked = false;
         this.cleanupMap();
-        this.getShop().clearPlayerShopData();
+        this.syncShopData();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
                 player.removeAllEffects();
-                this.getShop().syncShopData(player);
                 this.resetPlayerClientData(player);
                 this.teleportPlayerToMatchEndPoint(player);
             }
@@ -1059,11 +1069,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(killerTeam == null || deadTeam == null) return;
             if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
                 csGameMap.removePlayerMoney(event.getKiller().getUUID(),300);
-                csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
+                csGameMap.getShop(killerTeam.name).syncShopMoneyData(event.getKiller().getUUID());
                 event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.teammate",300),false);
             }else{
                 csGameMap.addPlayerMoney(event.getKiller().getUUID(),300);
-                csGameMap.getShop().syncShopMoneyData(event.getKiller().getUUID());
+                csGameMap.getShop(killerTeam.name).syncShopMoneyData(event.getKiller().getUUID());
                 event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.enemy",300),false);
             }
         }

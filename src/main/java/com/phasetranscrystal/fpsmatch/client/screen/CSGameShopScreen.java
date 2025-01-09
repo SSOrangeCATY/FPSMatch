@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import com.tacz.guns.api.item.IGun;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
@@ -17,6 +18,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.mc.MinecraftSurfaceView;
 import icyllis.modernui.mc.ScreenCallback;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
@@ -27,8 +29,10 @@ import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -36,10 +40,9 @@ import java.util.*;
 
 public class CSGameShopScreen extends Fragment implements ScreenCallback{
     public static final String BROKEN_ICON = "gun/hud/broken.png";
+    public static final String ITEM_ICON = "gun/hud/item.png";
     public static final Map<ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
     public static final String BACKGROUND = "ui/cs/background.png";
-    public static final int CT_COLOR = RenderUtil.color(150,200,250);
-    public static final int T_COLOR = RenderUtil.color(234, 192, 85);
     public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
     private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
@@ -138,7 +141,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             moneyParams.setMargins((int) (25*scaleWidth),0,0,0);
             moneyText.setLayoutParams(moneyParams);
-            moneyText.setTextColor(T_COLOR);
+            moneyText.setTextColor(ClientData.currentTeam.equals("ct") ? RenderUtil.color(150,200,250) : RenderUtil.color(234, 192, 85));
             moneyText.setTextSize(18);
 
             cooldownText = new TextView(getContext());
@@ -146,7 +149,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             cooldownParams.addRule(RelativeLayout.CENTER_IN_PARENT);
-            cooldownText.setText(I18n.get("fpsm.shop.title.cooldown",0));
+            cooldownText.setText(I18n.get("fpsm.shop.title.cooldown","?"));
             cooldownText.setLayoutParams(cooldownParams);
             cooldownText.setTextSize(18);
 
@@ -156,7 +159,8 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
             minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", ClientData.getNextRoundMinMoney()));
+            //ClientData.getNextRoundMinMoney()
+            nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", "?"));
             minmoneyText.setMargins(0,0, (int) (20*scaleWidth),0);
             nextRoundMinMoneyText.setLayoutParams(minmoneyText);
             nextRoundMinMoneyText.setTextSize(15);
@@ -233,6 +237,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
         public void updateText(){
             moneyText.setText("$ "+ClientData.getMoney());
+            moneyText.setTextColor(ClientData.currentTeam.equals("ct") ? RenderUtil.color(150,200,250) : RenderUtil.color(234, 192, 85));
         }
 
     }
@@ -317,14 +322,24 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
 
         public static class GunButtonLayout extends RelativeLayout {
-        public static final ColorStateList TINT_LIST = new ColorStateList(
+        public static final ColorStateList CT_TINT_LIST = new ColorStateList(
                 new int[][]{
                         new int[]{-R.attr.state_enabled},
                         StateSet.get(StateSet.VIEW_STATE_ENABLED)},
                 new int[]{
                         DISABLE_TEXTURE_COLOR,
-                        T_COLOR
+                        RenderUtil.color(150,200,250)
                 });
+
+            public static final ColorStateList T_TINT_LIST = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED)},
+                    new int[]{
+                            DISABLE_TEXTURE_COLOR,
+                            RenderUtil.color(234, 192, 85)
+                    });
+
 
         public final ItemType type;
         public final int index;
@@ -338,6 +353,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public final TextView costText;
         public final TextView returnGoodsText;
         public Image icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
+        public MinecraftSurfaceView minecraftSurfaceView;
 
         public GunButtonLayout(Context context, ItemType type, int index) {
             super(context);
@@ -363,9 +379,41 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             imageView.setScaleX(3);
             imageView.setScaleY(3);
             imageView.setImageDrawable(imageDrawable);
-            imageView.setImageTintList(TINT_LIST);
+            imageView.setImageTintList(CT_TINT_LIST);
             imageView.setForegroundGravity(Gravity.CENTER);
             addView(imageView);
+
+            minecraftSurfaceView = new MinecraftSurfaceView(getContext());
+            var msvp = new RelativeLayout.LayoutParams(32, 32);
+            msvp.addRule(RelativeLayout.CENTER_IN_PARENT);
+            minecraftSurfaceView.setLayoutParams(msvp);
+            minecraftSurfaceView.setScaleX(1);
+            minecraftSurfaceView.setScaleY(1);
+            minecraftSurfaceView.setRenderer(new MinecraftSurfaceView.Renderer() {
+                @Override
+                public void onSurfaceChanged(int width, int height) {
+
+                }
+
+                @Override
+                public void onDraw(@NotNull GuiGraphics gr, int mouseX, int mouseY, float deltaTick, double guiScale, float alpha) {
+                    ClientShopSlot currentSlot = ClientData.getSlotData(GunButtonLayout.this.type,GunButtonLayout.this.index);
+                    ItemStack itemStack = currentSlot.itemStack();
+                    boolean isGun = itemStack.getItem() instanceof IGun;
+                    if(!isGun){
+                        boolean enable = ClientData.getMoney() >= currentSlot.cost() && !itemStack.isEmpty() && !currentSlot.isLocked();
+                        gr.pose().pushPose();
+                        if(!enable){
+                            gr.setColor(125 / 255F,125 / 255F,125 / 255F,1);
+                        }else{
+                            gr.setColor(1,1,1,1);
+                        }
+                        gr.renderItem(itemStack, 0, 0);
+                        gr.pose().popPose();
+                    }
+                }
+            });
+            addView(minecraftSurfaceView);
 
             numText = new TextView(getContext());
             numText.setTextSize(13);
@@ -456,11 +504,11 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public void setElements(boolean enable){
             ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
             imageView.setEnabled(enable);
-
             if(enable){
-                numText.setTextColor(CSGameShopScreen.T_COLOR);
-                itemNameText.setTextColor(CSGameShopScreen.T_COLOR);
-                costText.setTextColor(CSGameShopScreen.T_COLOR);
+                int color = ClientData.currentTeam.equals("ct") ? RenderUtil.color(150,200,250) : RenderUtil.color(234, 192, 85);
+                numText.setTextColor(color);
+                itemNameText.setTextColor(color);
+                costText.setTextColor(color);
             }else{
                 numText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
                 itemNameText.setTextColor(CSGameShopScreen.DISABLE_TEXT_COLOR);
@@ -490,20 +538,25 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             if(refreshFlag){
                 ClientShopSlot data = ClientData.getSlotData(this.type,this.index);
                 setStats(data.canReturn());
-                this.itemNameText.setText(data.itemStack().isEmpty() ? I18n.get("fpsm.shop.slot.empty") : data.name());
+                ItemStack itemStack = data.itemStack();
+                boolean empty = itemStack.isEmpty();
+                boolean isGun = itemStack.getItem() instanceof IGun;
+                this.itemNameText.setText(empty ? I18n.get("fpsm.shop.slot.empty") : data.name());
                 this.costText.setText("$ "+ data.cost());
                 ResourceLocation texture = data.texture();
                 if(texture != null){
                     this.icon = RenderUtil.getGunTextureByRL(texture);
+                }else{
+                    if(!empty && !isGun){
+                        this.icon = Image.create(FPSMatch.MODID, ITEM_ICON);
+                    }else{
+                        this.icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
+                    }
                 }
 
-                //TODO ITEM TEXTURE RENDER
-                if (this.icon == null){
-                    this.icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
-                }
 
                 this.imageView.setImageDrawable(new ImageDrawable(this.icon));
-
+                imageView.setImageTintList(ClientData.currentTeam.equals("ct") ? CT_TINT_LIST : T_TINT_LIST);
                 this.invalidate();
 
                 //END
@@ -512,6 +565,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 }
             }
         }
+
 
         private void setScale(float scale) {
             var imageParam = new RelativeLayout.LayoutParams(dp(39*scale), dp(13*scale));

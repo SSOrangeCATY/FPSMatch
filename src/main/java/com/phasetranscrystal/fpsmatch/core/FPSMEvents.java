@@ -25,6 +25,7 @@ import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.entity.SlimeRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.network.chat.Component;
@@ -44,6 +45,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -161,10 +163,14 @@ public class FPSMEvents {
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
-
+        if(event.getEntity().getItem().getItem() instanceof CompositionC4){
+            event.getEntity().setGlowingTag(true);
+        }
         //商店逻辑
-        if (map instanceof ShopMap shopMap){
-            FPSMShop shop = shopMap.getShop();
+        if (map instanceof ShopMap<?> shopMap){
+            BaseTeam team = map.getMapTeams().getTeamByPlayer(event.getPlayer());
+            if(team == null) return;
+            FPSMShop shop = shopMap.getShop(team.name);
             if (shop == null) return;
             ItemStack itemStack = event.getEntity().getItem();
 
@@ -185,8 +191,10 @@ public class FPSMEvents {
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
-        if (map instanceof ShopMap shopMap) {
-            FPSMShop shop = shopMap.getShop();
+        if (map instanceof ShopMap<?> shopMap) {
+            BaseTeam team = map.getMapTeams().getTeamByPlayer(event.getEntity());
+            if(team == null) return;
+            FPSMShop shop = shopMap.getShop(team.name);
             if (shop == null) return;
 
             ShopData shopData = shop.getPlayerShopData(event.getEntity().getUUID());
@@ -223,8 +231,11 @@ public class FPSMEvents {
                             map.setGameType(mapType);
                             map.getMapTeams().putAllSpawnPoints(data);
 
-                            if(map instanceof ShopMap shopMap && rawMapData.shop != null){
-                                shopMap.getShop().setDefaultShopData(rawMapData.shop);
+                            if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null){
+                                rawMapData.shop.forEach((k,v)->{
+                                    // TODO ERROR BUG????
+                                    shopMap.getShop(k).setDefaultShopData(v);
+                                });
                             }
 
                             if(map instanceof BlastModeMap<?> blastModeMap){
@@ -250,14 +261,13 @@ public class FPSMEvents {
 
     public static void handlePlayerDeath(BaseMap map, ServerPlayer player, @Nullable ServerPlayer from){
         if(map.isStart) {
-            if(map instanceof ShopMap shopMap){
-                shopMap.getShop().clearPlayerShopData(player.getUUID());
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopStatesS2CPacket(false));
-            }
-
             MapTeams teams = map.getMapTeams();
             BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
             if (deadPlayerTeam != null) {
+                if(map instanceof ShopMap<?> shopMap){
+                    shopMap.getShop(deadPlayerTeam.name).clearPlayerShopData(player.getUUID());
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> player), new ShopStatesS2CPacket(false));
+                }
                 PlayerData data = deadPlayerTeam.getPlayerData(player.getUUID());
                 if (data == null) return;
                 data.getTabData().addDeaths();
@@ -289,7 +299,7 @@ public class FPSMEvents {
                     player.setCamera(entity);
                 }
                 player.setRespawnPosition(player.level().dimension(), player.getOnPos().above(), 0f, true, false);
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData()));
+                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData(),deadPlayerTeam.name));
             }
 
 
@@ -312,7 +322,7 @@ public class FPSMEvents {
                             // 如果是击杀者就不添加助攻
                             if (assistData == null || from != null && from.getUUID().equals(assistId)) continue;
                             assistData.getTabData().addAssist();
-                            FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(assistData.getOwner(), assistData.getTabData()));
+                            FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(assistData.getOwner(), assistData.getTabData(),assistPlayerTeam.name));
                         }
                     }
                 }
@@ -325,7 +335,7 @@ public class FPSMEvents {
                 if (data == null) return;
                 data.getTabData().addKills();
                 MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(map, player, from));
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(from.getUUID(), data.getTabData()));
+                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(from.getUUID(), data.getTabData(),killerPlayerTeam.name));
             }
         }
     }

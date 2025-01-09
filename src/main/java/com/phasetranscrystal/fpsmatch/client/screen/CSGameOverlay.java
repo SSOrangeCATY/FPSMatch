@@ -36,10 +36,20 @@ public class CSGameOverlay implements IGuiOverlay {
         guiGraphics.fillGradient((screenWidth / 2) - 16, 2, (screenWidth / 2) + 16, 15, -1072689136, -804253680);
         guiGraphics.fillGradient(((screenWidth / 2) - 16), 16, (screenWidth / 2) - 1, 35, -1072689136, noColor);
         guiGraphics.fillGradient((screenWidth / 2) + 1, 16, ((screenWidth / 2) + 16), 35, -1072689136, noColor);
-        guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 9 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
-        guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
-        String roundTime;
 
+        Component ctLiving = Component.translatable("fpsm.cs.ct.living",ClientData.getLivingWithTeam("ct"));
+        int ct_t_w = (screenWidth / 2) - 48 - (font.width(ctLiving) / 2);
+        guiGraphics.fillGradient(ct_t_w - 2, 2, (screenWidth / 2) - 48 + font.width(ctLiving) / 2 + 3, 15, -1072689136, -1072689136);
+        guiGraphics.drawString(font, ctLiving, ct_t_w, 4, textCTWinnerRoundsColor,false);
+        guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 8 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
+
+        Component tLiving = Component.translatable("fpsm.cs.t.living",ClientData.getLivingWithTeam("t"));
+        int t_t_w = (screenWidth / 2) + 48 - (font.width(tLiving) / 2);
+        guiGraphics.fillGradient(t_t_w - 2, 2, (screenWidth / 2) + 48 + font.width(tLiving) / 2 + 3, 15, -1072689136, -1072689136);
+        guiGraphics.drawString(font,tLiving, (screenWidth / 2) + 48 - (font.width(tLiving) / 2), 4, textTWinnerRoundsColor,false);
+        guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
+
+        String roundTime;
         if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner){
             roundTime = "--:--";
             textRoundTimeColor = color(240,40,40);

@@ -115,15 +115,19 @@ public class FileHelper {
                             throw  new RuntimeException(e);
                         }
 
-                        if(map instanceof ShopMap shopMap){
-                            JsonElement json = FPSMCodec.encodeShopDataMapToJson(shopMap.getShop().getDefaultShopData().getData());
-                            String jsonStr = gson.toJson(json);
-                            File file = new File(mapDir, "shop.json");
-                            try (FileWriter writer = new FileWriter(file)) {
-                                writer.write(jsonStr);
-                            } catch (IOException e) {
-                                throw  new RuntimeException(e);
-                            }
+                        if(map instanceof ShopMap<?> shopMap){
+                            File shopDir = new File(mapDir, "shop");
+                            if(!checkOrCreateFile(shopDir)) return;
+                            shopMap.getShopNames().forEach(shopName -> {
+                                File shopFile = new File(shopDir, shopName+".json");
+                                try (FileWriter writer = new FileWriter(shopFile)) {
+                                    JsonElement json = FPSMCodec.encodeShopDataMapToJson(shopMap.getShop(shopName).getDefaultShopData().getData());
+                                    String jsonStr = gson.toJson(json);
+                                    writer.write(jsonStr);
+                                } catch (IOException e) {
+                                    throw  new RuntimeException(e);
+                                }
+                            });
                         }
 
                         if (map instanceof BlastModeMap<?> blastModeMap){
@@ -223,15 +227,21 @@ public class FileHelper {
 
                             if(levelResourceKey != null && areaData!= null){
                                 RawMapData rawMapData = new RawMapData(mapRL, teamsData,levelResourceKey,areaData);
-                                File shopFile = new File(mapDir, "shop.json");
-                                if (shopFile.exists() && shopFile.isFile()) {
-                                    try (FileReader shopReader = new FileReader(shopFile)) {
-                                        JsonElement shopJson = new Gson().fromJson(shopReader, JsonElement.class);
-                                        shop = FPSMCodec.decodeShopDataMapFromJson(shopJson);
-                                        rawMapData.setShop(shop);
-                                    } catch (IOException e) {
-                                        throw new RuntimeException(e);
+                                File shopFile = new File(mapDir, "shop");
+                                if (shopFile.exists() && shopFile.isDirectory()) {
+                                    Map<String,Map<ItemType, ArrayList<ShopSlot>> > shopMap = new HashMap<>();
+                                    for (File shopDataFile : Objects.requireNonNull(shopFile.listFiles())) {
+                                        if (shopDataFile.isFile()) {
+                                            try (FileReader shopReader = new FileReader(shopDataFile)) {
+                                                JsonElement shopJson = new Gson().fromJson(shopReader, JsonElement.class);
+                                                Map<ItemType, ArrayList<ShopSlot>> rawData = FPSMCodec.decodeShopDataMapFromJson(shopJson);
+                                                shopMap.put(shopDataFile.getName().replace(".json",""),rawData);
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
                                     }
+                                    rawMapData.setShop(shopMap);
                                 }
 
                                 File blastFile = new File(mapDir, "blast.json");
@@ -301,7 +311,7 @@ public class FileHelper {
         @NotNull public final ResourceKey<Level> levelResourceKey;
         @NotNull public final AreaData areaData;
         @NotNull public final Map<String,List<SpawnPointData>> teamsData;
-        @Nullable public Map<ItemType, ArrayList<ShopSlot>> shop;
+        @Nullable public Map<String,Map<ItemType, ArrayList<ShopSlot>>> shop;
         @Nullable public List<AreaData> blastAreaDataList;
         @Nullable public Map<String,ArrayList<ItemStack>> startKits;
         @Nullable public SpawnPointData matchEndTeleportPoint;
@@ -321,7 +331,7 @@ public class FileHelper {
             this.blastAreaDataList = blastAreaDataList;
         }
 
-        public void setShop(@Nullable Map<ItemType, ArrayList<ShopSlot>> shop) {
+        public void setShop(@Nullable Map<String,Map<ItemType, ArrayList<ShopSlot>>> shop) {
             this.shop = shop;
         }
 

@@ -100,5 +100,7 @@
   "fpsm.map.cs.auto.start.title" : "%1$s seconds",
   "fpsm.map.cs.auto.start.subtitle" : "Game will start in",
   "fpsm.map.cs.auto.start.actionbar" : "Game will start in %1$s seconds",
-  "fpsm.map.cs.auto.started" : "Game started!"
+  "fpsm.map.cs.auto.started" : "Game started!",
+  "fpsm.cs.ct.living" : "CT Living: %1$s",
+  "fpsm.cs.t.living" : "T Living: %1$s"
 }

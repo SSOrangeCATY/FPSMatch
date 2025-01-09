@@ -1,24 +1,30 @@
 package com.phasetranscrystal.fpsmatch.client.data;
 
+import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.Config;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ClientData {
     public static String currentMap = "fpsm_none";
     public static String currentGameType = "error";
+    public static String currentTeam = "ct";
     public static boolean currentMapSupportShop = true;
     public static final Map<ItemType, List<ClientShopSlot>> clientShopData = getDefaultShopSlotData();
     public static int money = 0;
     public static int nextRoundMoney = 0;
-    public static final Map<UUID, TabData> tabData = new HashMap<>();
+    public static final Map<UUID, Pair<String,TabData>> tabData = new HashMap<>();
     public static final Map<UUID,Integer> playerMoney = new HashMap<>();
     public static int cTWinnerRounds = 0;
     public static int tWinnerRounds = 0;
@@ -76,9 +82,9 @@ public class ClientData {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
             if(Config.client.showLogin.get()){
-                player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm"), false);
-                player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm.tips"), false);
-                player.displayClientMessage(Component.translatable("fpsm.login.message.closeable"), false);
+                player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm").withStyle(ChatFormatting.GRAY), false);
+                player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm.tips").withStyle(ChatFormatting.GRAY), false);
+                player.displayClientMessage(Component.translatable("fpsm.login.message.closeable").withStyle(ChatFormatting.GRAY), false);
             }
         }
     }
@@ -115,5 +121,31 @@ public class ClientData {
 
     public static void setMoney(int count) {
         money = count;
+    }
+
+    @Nullable
+    public static TabData getTabDataByUUID(UUID uuid){
+        if(ClientData.tabData.containsKey(uuid)){
+            return ClientData.tabData.get(uuid).getSecond();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static String getTeamByUUID(UUID uuid){
+        if(ClientData.tabData.containsKey(uuid)){
+            return ClientData.tabData.get(uuid).getFirst();
+        }
+        return null;
+    }
+
+    public static int getLivingWithTeam(String team){
+        AtomicReference<Integer> living = new AtomicReference<>(0);
+        ClientData.tabData.values().forEach((pair)->{
+            if(pair.getFirst().equals(team) && pair.getSecond().isLiving()){
+                living.getAndSet(living.get() + 1);
+            }
+        });
+        return living.get();
     }
 }

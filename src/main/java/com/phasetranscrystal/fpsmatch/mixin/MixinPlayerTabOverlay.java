@@ -56,7 +56,7 @@ public class MixinPlayerTabOverlay{
         for (PlayerInfo playerInfo : playerInfoList) {
             int nameWidth = this.minecraft.font.width(this.getNameForDisplay(playerInfo));
             maxNameWidth = Math.max(maxNameWidth, nameWidth);
-            int scoreWidth = this.minecraft.font.width(" " + ClientData.tabData.getOrDefault(playerInfo.getProfile().getId(),new TabData(playerInfo.getProfile().getId())).getTabString());
+            int scoreWidth = this.minecraft.font.width(Objects.requireNonNullElse(ClientData.getTabDataByUUID(playerInfo.getProfile().getId()),new TabData(playerInfo.getProfile().getId())).getTabString());
             maxScoreWidth = Math.max(maxScoreWidth, scoreWidth);
         }
 
@@ -140,7 +140,7 @@ public class MixinPlayerTabOverlay{
                 guiGraphics.drawString(this.minecraft.font, this.getNameForDisplay(playerInfo), nameAndScoreStartX, y, playerInfo.getGameMode() == GameType.SPECTATOR ? -1862270977 : -1);
 
                 // 计算tab分数的绘制起始位置
-                int scoreTextStart = nameAndScoreStartX + maxNameWidth + 10; // 玩家名字之后的10像素加上名字宽度
+                int scoreTextStart = nameAndScoreStartX + maxNameWidth + 2; // 玩家名字之后的10像素加上名字宽度
                 int scoreTextEnd = scoreTextStart + scoreTextWidth;
 
                 // 绘制tab分数，居中显示在剩余空间中
@@ -199,7 +199,7 @@ public class MixinPlayerTabOverlay{
 
     @Unique
     private void fPSMatch$renderTablistScore(int pY, int start, int end, UUID pPlayerUuid, GuiGraphics pGuiGraphics) {
-        String s = ClientData.tabData.getOrDefault(pPlayerUuid,new TabData(pPlayerUuid)).getTabString();
+        String s = Objects.requireNonNullElse(ClientData.getTabDataByUUID(pPlayerUuid),new TabData(pPlayerUuid)).getTabString();
         pGuiGraphics.drawString(this.minecraft.font, s, start + (end - start) / 2 - this.minecraft.font.width(s), pY, 16777215);
     }
 
