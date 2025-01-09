@@ -396,6 +396,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public boolean canRestTime(){
         return !this.isPause && !this.isWarmTime && !this.isWaiting && !this.isWaitingWinner;
     }
+
     public boolean checkPauseTime(){
         if(this.isPause && currentPauseTime < PAUSE_TIME){
             this.currentPauseTime++;

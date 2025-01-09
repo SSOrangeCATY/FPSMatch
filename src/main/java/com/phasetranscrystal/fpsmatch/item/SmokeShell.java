@@ -9,9 +9,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.world.entity.projectile.ThrownEnderpearl;
+import net.minecraft.world.item.EnderpearlItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.event.entity.EntityTeleportEvent;
 
 public class SmokeShell extends Item {
     public SmokeShell(Properties pProperties) {
@@ -24,7 +27,7 @@ public class SmokeShell extends Item {
         if (!pLevel.isClientSide) {
             SmokeShellEntity shell = new SmokeShellEntity(pPlayer, pLevel);
             shell.setItem(itemstack);
-            shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 0.75F, 0.75F);
+            shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5F, 1.0F);
             pLevel.addFreshEntity(shell);
         }
 

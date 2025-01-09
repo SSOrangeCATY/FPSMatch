@@ -102,5 +102,6 @@
   "fpsm.map.cs.auto.start.actionbar" : "Game will start in %1$s seconds",
   "fpsm.map.cs.auto.started" : "Game started!",
   "fpsm.cs.ct.living" : "CT Living: %1$s",
-  "fpsm.cs.t.living" : "T Living: %1$s"
+  "fpsm.cs.t.living" : "T Living: %1$s",
+  "item.fpsmatch.bomb_disposal_kit" : "Bomb Disposal Kit"
 }

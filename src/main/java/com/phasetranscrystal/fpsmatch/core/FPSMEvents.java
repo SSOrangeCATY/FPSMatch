@@ -20,6 +20,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
@@ -280,10 +281,20 @@ public class FPSMEvents {
                     if (entity != null) {
                         entity.setGlowingTag(true);
                     }
-                    player.getInventory().clearContent();
                     player.getInventory().setChanged();
                 }
 
+                // 清除拆弹工具,并掉落拆弹工具
+                int ik = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, player.inventoryMenu.getCraftSlots());
+                if (ik > 0) {
+                    ItemEntity entity = player.drop(new ItemStack(FPSMItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false);
+                    if (entity != null) {
+                        entity.setGlowingTag(true);
+                    }
+                    player.getInventory().setChanged();
+                }
+
+                player.getInventory().clearContent();
                 player.heal(player.getMaxHealth());
                 player.setGameMode(GameType.SPECTATOR);
                 List<UUID> uuids = teams.getSameTeamPlayerUUIDs(player);

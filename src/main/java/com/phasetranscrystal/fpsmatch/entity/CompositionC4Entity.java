@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
@@ -35,7 +36,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_DEMOLITION_PROGRESS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DELETE_TIME = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_INTERACTION = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
-    private static final int DEFAULT_FUSE_TIME = 900; // 45秒
+    private static final int DEFAULT_FUSE_TIME = 800; // 40秒
     private static final int DEFAULT_EXPLOSION_RADIUS = 60;
     @Nullable
     private Player owner;
@@ -141,8 +142,12 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
             }
 
             int j = 200;
-            if(this.demolitionStates() == 2){
+            if(demolisher != null && this.demolisher.getInventory().countItem(FPSMItemRegister.BOMB_DISPOSAL_KIT.get()) >= 1){
                 j = 100;
+            }
+
+            if(this.getDemolitionProgress() > j){
+                this.setDemolitionProgress(0);
             }
 
             float k = (float) this.getDemolitionProgress() / j;

@@ -12,5 +12,6 @@ public class FPSMItemRegister {
     public static final RegistryObject<Item> TEST_ITEM = ITEMS.register("test_item", () -> new TestItem(new Item.Properties()));
     public static final RegistryObject<Item> C4 = ITEMS.register("c4", () -> new CompositionC4(new Item.Properties()));
     public static final RegistryObject<SmokeShell> SMOKE_SHELL = ITEMS.register("smoke_shell", () -> new SmokeShell(new Item.Properties()));
+    public static final RegistryObject<BombDisposalKit> BOMB_DISPOSAL_KIT = ITEMS.register("bomb_disposal_kit", () -> new BombDisposalKit(new Item.Properties()));
 
 }

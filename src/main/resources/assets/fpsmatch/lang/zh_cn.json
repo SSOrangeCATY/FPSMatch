@@ -102,5 +102,7 @@
   "fpsm.map.cs.auto.start.actionbar" : "游戏将于 %1$s 秒后自动开始",
   "fpsm.map.cs.auto.started" : "游戏开始！",
   "fpsm.cs.ct.living" : "警存活: %1$s",
-  "fpsm.cs.t.living" : "匪存活: %1$s"
+  "fpsm.cs.t.living" : "匪存活: %1$s",
+  "item.fpsmatch.bomb_disposal_kit" : "拆弹器"
+
 }
