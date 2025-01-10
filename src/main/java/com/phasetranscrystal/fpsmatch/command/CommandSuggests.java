@@ -51,7 +51,7 @@ public class CommandSuggests {
         String mapName = StringArgumentType.getString(c, "mapName");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         List<String> names = new ArrayList<>();
-        if (map instanceof ShopMap shopMap) {
+        if (map instanceof ShopMap<?> shopMap) {
             return CommandSuggests.getSuggestions(b,shopMap.getShopNames());
         }
         return CommandSuggests.getSuggestions(b,names);
@@ -65,12 +65,13 @@ public class CommandSuggests {
         ItemType shopType = ItemType.valueOf(StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT));
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
-        if (map instanceof ShopMap shopMap) {
+        if (map instanceof ShopMap<?> shopMap) {
             List<String> stringList = FPSMatch.listenerModuleManager.getListenerModules();
             stringList.removeAll(shopMap.getShop(shopName).getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames());
             return CommandSuggests.getSuggestions(b, stringList);
         }
-        return CommandSuggests.getSuggestions(b, new ArrayList<>());});
+        return CommandSuggests.getSuggestions(b, new ArrayList<>());
+    });
 
     public static final FPSMSuggestionProvider SHOP_SLOT_REMOVE_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
     {
@@ -79,7 +80,7 @@ public class CommandSuggests {
         ItemType shopType = ItemType.valueOf(StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT));
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
-        if (map instanceof ShopMap shopMap) {
+        if (map instanceof ShopMap<?> shopMap) {
             List<String> stringList = shopMap.getShop(shopName).getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames();
             return CommandSuggests.getSuggestions(b, stringList);
         }

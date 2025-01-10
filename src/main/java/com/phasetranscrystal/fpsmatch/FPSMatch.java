@@ -152,6 +152,12 @@ public class FPSMatch {
                 .decoder(FPSMatchLoginMessageS2CPacket::decode)
                 .consumerNetworkThread(FPSMatchLoginMessageS2CPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(SmokeShellThrowC2SPacket.class, i.getAndIncrement())
+                .encoder(SmokeShellThrowC2SPacket::encode)
+                .decoder(SmokeShellThrowC2SPacket::decode)
+                .consumerNetworkThread(SmokeShellThrowC2SPacket::handle)
+                .add();
     }
 
     @SubscribeEvent

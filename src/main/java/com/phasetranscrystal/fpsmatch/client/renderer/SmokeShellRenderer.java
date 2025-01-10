@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.entity.ItemEntityRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 
 public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEntity> {
 
@@ -33,7 +35,6 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
             public @NotNull ResourceLocation getTextureLocation(SmokeShellEntity pEntity) {
                 return TextureAtlas.LOCATION_BLOCKS;
             }
-
             @Override
             public void render(SmokeShellEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
                 pPoseStack.pushPose();
@@ -42,6 +43,8 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
                     item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(FPSMItemRegister.SMOKE_SHELL.get()));
                     itemRender = new ItemEntityRenderer(pContext);
                 }
+                item.setXRot(pEntity.getXRot());
+                item.setYRot(pEntity.getYRot());
                 itemRender.render(item, pEntityYaw, 0, pPoseStack, pBuffer, pPackedLight);
                 pPoseStack.popPose();
                 super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);

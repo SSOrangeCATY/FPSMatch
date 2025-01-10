@@ -166,6 +166,7 @@ public class MapTeams {
         if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
             this.playerJoin(player,teamName);
             this.playerName.put(player.getUUID(),player.getDisplayName());
+            player.displayClientMessage(Component.translatable("fpsm.map.cs.join.team",teamName).withStyle(ChatFormatting.GREEN),false);
         } else {
             player.sendSystemMessage(Component.literal("[FPSM] 队伍已满或未找到目标队伍，当前队伍已离队!"));
         }

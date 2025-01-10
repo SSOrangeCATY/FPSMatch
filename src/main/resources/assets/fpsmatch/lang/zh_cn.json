@@ -103,6 +103,9 @@
   "fpsm.map.cs.auto.started" : "游戏开始！",
   "fpsm.cs.ct.living" : "警存活: %1$s",
   "fpsm.cs.t.living" : "匪存活: %1$s",
-  "item.fpsmatch.bomb_disposal_kit" : "拆弹器"
+  "item.fpsmatch.bomb_disposal_kit" : "拆弹器",
+  "fpsm.map.cs.match.point" : "赛点",
+  "fpsm.map.cs.join.team" : "成功加入 %1$s",
+  "fpsm.item.bomb_disposal_kit.drop.message" : "你不能丢弃这个物品"
 
 }

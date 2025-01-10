@@ -52,6 +52,8 @@ public abstract class MixinItemEntity {
                         if(i > 0){
                             ci.cancel();
                         }
+                    }else{
+                        ci.cancel();
                     }
                 }else{
                     ci.cancel();

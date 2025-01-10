@@ -103,5 +103,8 @@
   "fpsm.map.cs.auto.started" : "Game started!",
   "fpsm.cs.ct.living" : "CT Living: %1$s",
   "fpsm.cs.t.living" : "T Living: %1$s",
-  "item.fpsmatch.bomb_disposal_kit" : "Bomb Disposal Kit"
+  "item.fpsmatch.bomb_disposal_kit" : "Bomb Disposal Kit",
+  "fpsm.map.cs.match.point" : "Match Point",
+  "fpsm.map.cs.join.team" : "Successfully joined team %1$s",
+  "fpsm.item.bomb_disposal_kit.drop.message" : "you can't drop this item"
 }

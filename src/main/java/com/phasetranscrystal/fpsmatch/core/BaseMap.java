@@ -1,9 +1,13 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
 
@@ -68,6 +72,11 @@ public abstract class BaseMap {
     }
 
     public void joinTeam(String teamName, ServerPlayer player) {
+        FPSMCore.checkAndLeaveTeam(player);
+        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
+        if(this instanceof ShopMap<?> shopMap){
+            shopMap.getShop(teamName).syncShopData(player);
+        }
         this.getMapTeams().joinTeam(teamName,player);
     }
 

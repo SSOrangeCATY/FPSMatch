@@ -119,6 +119,10 @@ public class FPSMCommand {
                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                         .suggests(CommandSuggests.MAP_DEBUG_SUGGESTION)
                                                         .executes(this::handleDebugAction)))
+                                        .then(Commands.literal("join")
+                                                .executes(this::handleJoinMapWithoutTarget)
+                                                .then(Commands.argument("targets", EntityArgument.players())
+                                                                .executes(this::handleJoinMapWithTarget)))
                                         .then(Commands.literal("team")
                                                 .then(Commands.argument("teamName", StringArgumentType.string())
                                                 .suggests(CommandSuggests.TEAM_NAMES_SUGGESTION)
@@ -143,6 +147,27 @@ public class FPSMCommand {
                                                                                 .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
                                                                                 .executes(this::handleTeamAction)))))))));
         dispatcher.register(literal);
+    }
+
+    private int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
+        if(baseMap instanceof CSGameMap csGameMap){
+            csGameMap.joinTeam(context.getSource().getPlayerOrException());
+        }
+        return 1;
+    }
+
+    private int handleJoinMapWithTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
+        if(baseMap instanceof CSGameMap csGameMap){
+            for (ServerPlayer player : players){
+                csGameMap.joinTeam(player);
+            }
+        }
+        return 1;
     }
 
     private int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
@@ -501,18 +526,7 @@ public class FPSMCommand {
                     case "join":
                             if (team != null && team.getRemainingLimit() - players.size() >= 0) {
                                 for(ServerPlayer player : players) {
-                                    BaseMap map1 = FPSMCore.getInstance().getMapByPlayer(player);
-                                    if(map1 != null){
-                                        BaseTeam team1 = map1.getMapTeams().getTeamByPlayer(player);
-                                        if(team1 != null){
-                                            team1.leave(player);
-                                        }
-                                    }
                                     map.joinTeam(teamName, player);
-                                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(map.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
-                                    if(map instanceof ShopMap<?> shopMap){
-                                        shopMap.getShop(teamName).syncShopData(player);
-                                    }
                                     context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
                                 }
                             } else {

@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -130,6 +131,17 @@ public class FPSMCore {
         GAMES.clear();
         GAMES_SHOP.clear();
     }
+
+    public static void checkAndLeaveTeam(ServerPlayer player){
+        BaseMap map1 = FPSMCore.getInstance().getMapByPlayer(player);
+        if(map1 != null){
+            BaseTeam team1 = map1.getMapTeams().getTeamByPlayer(player);
+            if(team1 != null){
+                team1.leave(player);
+            }
+        }
+    }
+
 
     @SubscribeEvent
     public static void onServerStartingEvent(ServerStartingEvent event) {

@@ -75,7 +75,7 @@ public class MixinPlayerTabOverlay{
             ++columnCount;
         }
         boolean isLocalServerOrEncrypted = true;
-        int scoreTextWidth = maxScoreWidth + 200;
+        int scoreTextWidth = maxScoreWidth + 20;
 
         int itemWidth = Math.min(columnCount * (isLocalServerOrEncrypted ? 9 : 0) + maxNameWidth + scoreTextWidth + 13, windowWidth - 50) / columnCount;
         int xStart = windowWidth / 2 - (itemWidth * columnCount + (columnCount - 1) * 5) / 2;

@@ -131,8 +131,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public Map<String,Integer> getTeams(){
         Map<String,Integer> teams = new HashMap<>();
-        teams.put("ct",16);
-        teams.put("t",16);
+        teams.put("ct",5);
+        teams.put("t",5);
         this.setBlastTeam("t");
         return teams;
     }
@@ -251,10 +251,47 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
+    public void joinTeam(ServerPlayer player) {
+        FPSMCore.checkAndLeaveTeam(player);
+        MapTeams mapTeams = this.getMapTeams();
+        List<BaseTeam> baseTeams = mapTeams.getTeams();
+        if(baseTeams.isEmpty()) return;
+        BaseTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
+        mapTeams.joinTeam(team.name, player);
+        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(team.name)).getPlayerData(player.getUUID())).getTabData(),team.name));
+        this.getShop(team.name).syncShopData(player);
+        if(this.isStart){
+            player.setGameMode(GameType.SPECTATOR);
+            PlayerData data = team.getPlayerData(player.getUUID());
+            if(data != null){
+                data.setLiving(false);
+            }
+            setBystander(player, mapTeams);
+        }
+    }
+
+    private void setBystander(ServerPlayer player, MapTeams mapTeams) {
+        List<UUID> uuids = mapTeams.getSameTeamPlayerUUIDs(player);
+        uuids.remove(player.getUUID());
+        Entity entity = null;
+        if (uuids.size() > 1) {
+            Random random = new Random();
+            entity = this.getServerLevel().getEntity(uuids.get(random.nextInt(0, uuids.size())));
+        } else if (!uuids.isEmpty()) {
+            entity = this.getServerLevel().getEntity(uuids.get(0));
+        }
+        if (entity != null) {
+            player.setCamera(entity);
+        }
+    }
+
     @Override
     public void joinTeam(String teamName, ServerPlayer player) {
+        FPSMCore.checkAndLeaveTeam(player);
         MapTeams mapTeams = this.getMapTeams();
         mapTeams.joinTeam(teamName,player);
+        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
+        this.getShop(teamName).syncShopData(player);
         if(this.isStart){
             player.setGameMode(GameType.SPECTATOR);
             BaseTeam team = mapTeams.getTeamByName(teamName);
@@ -265,18 +302,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                }
             }
 
-            List<UUID> uuids = mapTeams.getSameTeamPlayerUUIDs(player);
-            uuids.remove(player.getUUID());
-            Entity entity = null;
-            if (uuids.size() > 1) {
-                Random random = new Random();
-                entity = this.getServerLevel().getEntity(uuids.get(random.nextInt(0, uuids.size())));
-            } else if (!uuids.isEmpty()) {
-                entity = this.getServerLevel().getEntity(uuids.get(0));
-            }
-            if (entity != null) {
-                player.setCamera(entity);
-            }
+            setBystander(player, mapTeams);
         }
     }
 
@@ -525,6 +551,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
     }
 
+    public void sendAllPlayerTitle(Component title,@Nullable Component subtitle){
+        ServerLevel level = this.getServerLevel();
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = level.getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                serverPlayer.connection.send(new ClientboundSetTitleTextPacket(title));
+                if(subtitle != null){
+                    serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
+                }
+            }
+        }));
+    }
 
     /**
      * 处理回合胜利的逻辑
@@ -623,6 +661,23 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }));
         this.giveBlastTeamBomb();
         this.getShops().forEach(FPSMShop::syncShopData);
+        this.checkMatchPoint();
+    }
+
+    public void checkMatchPoint(){
+        int ctScore = Objects.requireNonNull(this.getMapTeams().getTeamByName("ct")).getScores();
+        int tScore = Objects.requireNonNull(this.getMapTeams().getTeamByName("t")).getScores();
+        if(this.isOvertime){
+            int check = WINNER_ROUND - 1 - 6 * this.overCount + 4;
+
+            if(ctScore - check == 1 || tScore - check == 1){
+                this.sendAllPlayerTitle(Component.translatable("fpsm.map.cs.match.point").withStyle(ChatFormatting.RED),null);
+            }
+        }else{
+            if(ctScore == WINNER_ROUND - 1 || tScore == WINNER_ROUND - 1){
+                this.sendAllPlayerTitle(Component.translatable("fpsm.map.cs.match.point").withStyle(ChatFormatting.RED),null);
+            }
+        }
     }
 
     private void syncNormalMessage(ServerPlayer serverPlayer) {

@@ -227,6 +227,10 @@ public class BaseTeam {
         return this.players;
     }
 
+    public int getPlayerCount(){
+        return this.players.size();
+    }
+
     public void resetAllPlayers(ServerLevel serverLevel, Map<UUID, PlayerData> players){
         this.players.clear();
         this.players.putAll(players);

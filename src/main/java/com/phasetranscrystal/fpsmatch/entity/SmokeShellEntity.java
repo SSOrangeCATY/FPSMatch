@@ -12,8 +12,11 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
@@ -57,9 +60,9 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(LIFE_TICK, 300);
-        this.entityData.define(R, 4);
-        this.entityData.define(LIFE_LEFT, 300);
+        this.entityData.define(LIFE_TICK, 400);
+        this.entityData.define(R, 5);
+        this.entityData.define(LIFE_LEFT, 400);
         this.entityData.define(STATE, 0);
     }
     public int getR(){
@@ -100,6 +103,10 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
 
     @Override
     public void tick() {
+        if(this.isNoGravity()){
+            this.setDeltaMovement(0, 0, 0);
+        }
+
         if(!this.level().isClientSide){
             if (this.getLifeLeft() <= 0) {
                 this.discard();
@@ -119,17 +126,17 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             } else {
                 this.setParticleTicker(this.getParticleTicker() + 1);
             }
-        } else if (this.getState() == 2 && this.level().isClientSide) {
+        } else if (this.getState() == 2 && !this.level().isClientSide) {
             Random random = new Random();
-            for(int i = 0 ; i < 3 ; i++){
-                this.spawnRoundSmokeParticles(random);
+            for(int i = 0 ; i < 4 ; i++){
+                this.spawnRoundSmokeParticles(random, (ServerLevel) this.level());
             }
-            this.level().addParticle(ParticleTypes.ASH, this.getX(), this.getY(), this.getZ(), random.nextFloat(-0.2F, 0.2F), random.nextFloat(0.3F), random.nextFloat(-0.2F, 0.2F));
         }
 
         super.tick();
     }
-    public void spawnRoundSmokeParticles(Random random) {
+
+    public void spawnRoundSmokeParticles(Random random, ServerLevel serverLevel) {
         DustParticleOptions dust = new DustParticleOptions(new Vector3f(1, 1, 1), 10F);
         boolean flag = this.level().getBlockState(this.blockPosition().below().below()).isAir();
         int yd_ = flag ? -1 : 1;
@@ -150,10 +157,14 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             double x_ = x+ j * a * b;
             double y_ = y + j * Math.sin(n) * (random.nextBoolean() ? 1 : yd_);
             double z_ = z + j * b * c;
-            this.level().addAlwaysVisibleParticle(dust, true, x_, y_, z_, 0.0D, 0.1D, 0.0D);
+            for (ServerPlayer player : serverLevel.players()){
+                serverLevel.sendParticles(player,dust,true,x_, y_, z_,1,0,0,0,0);
+            }
             v += 0.05F;
         }
-        this.level().addAlwaysVisibleParticle(dust, true, x + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), y + random.nextFloat(hf) * (random.nextBoolean() ? 1 : yd_), z + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), 0.0D, 0.0D, 0.0D);
+        for (ServerPlayer player : serverLevel.players()){
+            serverLevel.sendParticles(player,dust,true,x + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), y + random.nextFloat(hf) * (random.nextBoolean() ? 1 : yd_), z + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1),1,0,0,0,0);
+        }
     }
 
     @Override
@@ -161,23 +172,25 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
         return FPSMItemRegister.SMOKE_SHELL.get();
     }
 
-    @Override
-    protected void onHit(HitResult r) {
-        if (this.getState() == 2) return;
-        super.onHit(r);
-        if (!(r instanceof BlockHitResult result)) return;
-        if (this.getState() == 0) this.setState(1);
+@Override
+protected void onHit(HitResult r) {
+    if (this.getState() == 2) return;
+    super.onHit(r);
+    if (!(r instanceof BlockHitResult result)) return;
+    if (this.getState() == 0) this.setState(1);
 
-        if (result.getDirection().getAxis().isHorizontal()) {
-            Vec3 delta = getDeltaMovement();
-            this.setDeltaMovement(result.getDirection().getAxis() == Direction.Axis.X ? new Vec3(-delta.x, delta.y, delta.z) : new Vec3(delta.x, delta.y, -delta.z));
-        } else if (result.getDirection() == Direction.DOWN || this.getDeltaMovement().y > -0.2) {
-            Vec3 delta = getDeltaMovement();
-            this.setDeltaMovement(new Vec3(delta.x, -delta.y, delta.z));
-        } else {
-            this.setDeltaMovement(0, 0, 0);
-            this.setNoGravity(true);
-            this.setState(2);
-        }
+    Vec3 delta = getDeltaMovement();
+    double reductionFactor = 0.25;
+
+    if (result.getDirection().getAxis().isHorizontal()) {
+        this.setDeltaMovement(result.getDirection().getAxis() == Direction.Axis.X ? new Vec3(-delta.x * reductionFactor, delta.y * reductionFactor, delta.z * reductionFactor) : new Vec3(delta.x * reductionFactor, delta.y * reductionFactor, -delta.z * reductionFactor));
+    } else if (result.getDirection() == Direction.DOWN || this.getDeltaMovement().y < -0.2) {
+        this.setDeltaMovement(new Vec3(delta.x, -(delta.y * reductionFactor), delta.z));
+    } else {
+        this.setDeltaMovement(0, 0, 0);
+        this.setNoGravity(true);
+        this.setState(2);
     }
+}
+
 }

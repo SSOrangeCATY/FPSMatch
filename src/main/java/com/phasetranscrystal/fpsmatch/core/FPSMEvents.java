@@ -29,15 +29,18 @@ import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.entity.SlimeRenderer;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.commands.ParticleCommand;
 import net.minecraft.server.commands.SpectateCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -55,6 +58,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.*;
 
@@ -65,6 +69,18 @@ public class FPSMEvents {
     public static void onServerTickEvent(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
             FPSMCore.getInstance().onServerTick();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTickEvent(TickEvent.PlayerTickEvent event){
+        if(event.phase == TickEvent.Phase.END){
+            if(event.player.level() instanceof ServerLevel serverLevel){
+                int i = event.player.getInventory().countItem(FPSMItemRegister.C4.get());
+                if (i > 0) {
+                    serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),event.player.getX(),event.player.getY() + 2,event.player.getZ(),1,0,0,0,1);
+                }
+            }
         }
     }
 
@@ -167,6 +183,13 @@ public class FPSMEvents {
         if(event.getEntity().getItem().getItem() instanceof CompositionC4){
             event.getEntity().setGlowingTag(true);
         }
+
+        if(event.getEntity().getItem().getItem() instanceof BombDisposalKit){
+            event.setCanceled(true);
+            event.getPlayer().displayClientMessage(Component.translatable("fpsm.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
+            event.getPlayer().getInventory().add(new ItemStack(FPSMItemRegister.BOMB_DISPOSAL_KIT.get(),1));
+        }
+
         //商店逻辑
         if (map instanceof ShopMap<?> shopMap){
             BaseTeam team = map.getMapTeams().getTeamByPlayer(event.getPlayer());
@@ -185,6 +208,9 @@ public class FPSMEvents {
                 }
             }
         }
+
+
+
     }
 
 
