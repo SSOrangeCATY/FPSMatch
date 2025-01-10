@@ -1,5 +1,9 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
+import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
@@ -40,12 +44,13 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Integer> STATE = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> LIFE_TICK = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> R = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
-
+    Vector3f t = new Vector3f(1, 0.75f, 0.25f);
+    Vector3f ct = new Vector3f(0.25f, 0.55f, 1);
     private int particleTicker = 0;
     public SmokeShellEntity(LivingEntity pShooter, Level pLevel, int lifeTick, int state, int r) {
         super(EntityRegister.SMOKE_SHELL.get(), pShooter, pLevel);
         this.setLifeTick(lifeTick);
-        this.setLifeLeft(lifeTick);;
+        this.setLifeLeft(lifeTick);
         this.setState(state);
         this.setR(r);
     }
@@ -118,7 +123,6 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
         }
         //TODO particles generate
 
-
         if (this.getState() == 1) {
             if (this.getParticleTicker() == 5) {
                 this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY(), this.getZ(), 0.0D, 0.0D, 0.0D);
@@ -137,7 +141,16 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
     }
 
     public void spawnRoundSmokeParticles(Random random, ServerLevel serverLevel) {
-        DustParticleOptions dust = new DustParticleOptions(new Vector3f(1, 1, 1), 10F);
+        DustParticleOptions dust = new DustParticleOptions(new Vector3f(1, 1, 1), 5F);
+        if(this.getOwner() instanceof Player player){
+            BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);
+            if(baseMap instanceof CSGameMap csGameMap){
+                BaseTeam baseTeam = csGameMap.getMapTeams().getTeamByPlayer(player);
+                if(baseTeam != null){
+                    dust = new DustParticleOptions(baseTeam.name.equals("ct") ? ct : t, 5F);
+                }
+            }
+        }
         boolean flag = this.level().getBlockState(this.blockPosition().below().below()).isAir();
         int yd_ = flag ? -1 : 1;
         int r = getR();

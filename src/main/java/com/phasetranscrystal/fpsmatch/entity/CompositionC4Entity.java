@@ -103,7 +103,6 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void tick() {
-
         if(this.getDeleteTime() >= 140){
             this.discard();
         }
@@ -193,11 +192,10 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         }
 
         if (!this.isNoGravity()) {
+            this.setDeltaMovement(0,0,0);
             this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.04D, 0.0D)); // 重力
         }
-
         this.move(MoverType.SELF, this.getDeltaMovement());
-        this.setDeltaMovement(this.getDeltaMovement().scale(0.98D)); // 空气阻力
     }
 
 
