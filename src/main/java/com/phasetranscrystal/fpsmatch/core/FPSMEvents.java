@@ -65,22 +65,12 @@ import java.util.*;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class FPSMEvents {
+
+    //TODO 需要拆分到各个类中。
     @SubscribeEvent
     public static void onServerTickEvent(TickEvent.ServerTickEvent event){
         if(event.phase == TickEvent.Phase.END){
             FPSMCore.getInstance().onServerTick();
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerTickEvent(TickEvent.PlayerTickEvent event){
-        if(event.phase == TickEvent.Phase.END){
-            if(event.player.level() instanceof ServerLevel serverLevel){
-                int i = event.player.getInventory().countItem(FPSMItemRegister.C4.get());
-                if (i > 0) {
-                    serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),event.player.getX(),event.player.getY() + 2,event.player.getZ(),1,0,0,0,1);
-                }
-            }
         }
     }
 

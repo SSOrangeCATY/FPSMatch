@@ -8,22 +8,22 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class SmokeShellThrowC2SPacket {
+public class ThrowSmokeShellC2SPacket {
     float velocity;
     float inaccuracy;
 
-    public SmokeShellThrowC2SPacket(float velocity, float inaccuracy) {
+    public ThrowSmokeShellC2SPacket(float velocity, float inaccuracy) {
         this.velocity = velocity;
         this.inaccuracy = inaccuracy;
     }
-    public static void encode(SmokeShellThrowC2SPacket packet, FriendlyByteBuf buf) {
+    public static void encode(ThrowSmokeShellC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeFloat(packet.velocity);
         buf.writeFloat(packet.inaccuracy);
 
     }
 
-    public static SmokeShellThrowC2SPacket decode(FriendlyByteBuf buf) {
-        return new SmokeShellThrowC2SPacket(
+    public static ThrowSmokeShellC2SPacket decode(FriendlyByteBuf buf) {
+        return new ThrowSmokeShellC2SPacket(
                 buf.readFloat(),
                 buf.readFloat());
     }

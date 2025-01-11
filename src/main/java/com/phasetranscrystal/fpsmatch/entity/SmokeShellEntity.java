@@ -47,6 +47,7 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
     Vector3f t = new Vector3f(1, 0.75f, 0.25f);
     Vector3f ct = new Vector3f(0.25f, 0.55f, 1);
     private int particleTicker = 0;
+    private boolean canGenerateParticles = true;
     public SmokeShellEntity(LivingEntity pShooter, Level pLevel, int lifeTick, int state, int r) {
         super(EntityRegister.SMOKE_SHELL.get(), pShooter, pLevel);
         this.setLifeTick(lifeTick);
@@ -120,6 +121,15 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
                 this.setState(1);
             }
             this.setLifeLeft(getLifeLeft() - 1);
+
+            if(!this.canGenerateParticles){
+                this.particleTicker++;
+            }
+
+            if(particleTicker >= 40){
+                this.canGenerateParticles = true;
+                this.particleTicker = 0;
+            }
         }
         //TODO particles generate
 
@@ -130,9 +140,9 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             } else {
                 this.setParticleTicker(this.getParticleTicker() + 1);
             }
-        } else if (this.getState() == 2 && !this.level().isClientSide) {
+        } else if (this.getState() == 2 && !this.level().isClientSide && this.canGenerateParticles) {
             Random random = new Random();
-            for(int i = 0 ; i < 4 ; i++){
+            for(int i = 0 ; i <= 2 ; i++){
                 this.spawnRoundSmokeParticles(random, (ServerLevel) this.level());
             }
         }
@@ -171,13 +181,21 @@ public class SmokeShellEntity extends ThrowableItemProjectile {
             double y_ = y + j * Math.sin(n) * (random.nextBoolean() ? 1 : yd_);
             double z_ = z + j * b * c;
             for (ServerPlayer player : serverLevel.players()){
-                serverLevel.sendParticles(player,dust,true,x_, y_, z_,1,0,0,0,0);
+                serverLevel.sendParticles(player,dust,true,x_, y_, z_,1,0,0,0,1);
             }
             v += 0.05F;
         }
         for (ServerPlayer player : serverLevel.players()){
-            serverLevel.sendParticles(player,dust,true,x + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), y + random.nextFloat(hf) * (random.nextBoolean() ? 1 : yd_), z + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1),1,0,0,0,0);
+            serverLevel.sendParticles(player,dust,true,x + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1), y + random.nextFloat(hf) * (random.nextBoolean() ? 1 : yd_), z + random.nextFloat(hf) * (random.nextBoolean() ? 1 : -1),1,0,0,0,1);
         }
+    }
+
+    public void setCanGenerateParticles(boolean canGenerateParticles) {
+        this.canGenerateParticles = canGenerateParticles;
+    }
+
+    public boolean isCanGenerateParticles() {
+        return canGenerateParticles;
     }
 
     @Override

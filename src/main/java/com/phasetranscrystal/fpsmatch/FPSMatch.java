@@ -3,55 +3,40 @@ package com.phasetranscrystal.fpsmatch;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.C4Renderer;
+import com.phasetranscrystal.fpsmatch.client.renderer.GrenadeRenderer;
+import com.phasetranscrystal.fpsmatch.client.renderer.IncendiaryGrenadeRenderer;
 import com.phasetranscrystal.fpsmatch.client.renderer.SmokeShellRenderer;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
+import com.phasetranscrystal.fpsmatch.client.screen.FlashBombHud;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
+import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
-import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import net.minecraft.core.Registry;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.tacz.guns.util.InputExtraCheck.isInGame;
 
 @Mod(FPSMatch.MODID)
 public class FPSMatch {
@@ -76,6 +61,7 @@ public class FPSMatch {
         FPSMItemRegister.ITEMS.register(modEventBus);
         FPSMSoundRegister.SOUNDS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
+        FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
     }
 
@@ -153,10 +139,22 @@ public class FPSMatch {
                 .consumerNetworkThread(FPSMatchLoginMessageS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(SmokeShellThrowC2SPacket.class, i.getAndIncrement())
-                .encoder(SmokeShellThrowC2SPacket::encode)
-                .decoder(SmokeShellThrowC2SPacket::decode)
-                .consumerNetworkThread(SmokeShellThrowC2SPacket::handle)
+        INSTANCE.messageBuilder(ThrowSmokeShellC2SPacket.class, i.getAndIncrement())
+                .encoder(ThrowSmokeShellC2SPacket::encode)
+                .decoder(ThrowSmokeShellC2SPacket::decode)
+                .consumerNetworkThread(ThrowSmokeShellC2SPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(ThrowIncendiaryGrenadeC2SPacket.class, i.getAndIncrement())
+                .encoder(ThrowIncendiaryGrenadeC2SPacket::encode)
+                .decoder(ThrowIncendiaryGrenadeC2SPacket::decode)
+                .consumerNetworkThread(ThrowIncendiaryGrenadeC2SPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(ThrowGrenade2CSPacket.class, i.getAndIncrement())
+                .encoder(ThrowGrenade2CSPacket::encode)
+                .decoder(ThrowGrenade2CSPacket::decode)
+                .consumerNetworkThread(ThrowGrenade2CSPacket::handle)
                 .add();
     }
 
@@ -178,6 +176,7 @@ public class FPSMatch {
         public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
             event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
             event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
+            event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
         }
 
 
@@ -185,6 +184,8 @@ public class FPSMatch {
         public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(EntityRegister.C4.get(), new C4Renderer());
             event.registerEntityRenderer(EntityRegister.SMOKE_SHELL.get(), new SmokeShellRenderer());
+            event.registerEntityRenderer(EntityRegister.INCENDIARY_GRENADE.get(), new IncendiaryGrenadeRenderer());
+            event.registerEntityRenderer(EntityRegister.GRENADE.get(), new GrenadeRenderer());
         }
 
     }

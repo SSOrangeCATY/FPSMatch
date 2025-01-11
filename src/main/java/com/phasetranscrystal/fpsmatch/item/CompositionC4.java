@@ -16,6 +16,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -83,8 +84,11 @@ public class CompositionC4 extends Item {
 	}
 
 	public void inventoryTick(ItemStack pStack, Level pLevel, Entity pEntity, int pSlotId, boolean pIsSelected) {
-		if(pLevel.isClientSide){
-			pLevel.addParticle(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),pEntity.getX(),pEntity.getY() + 2,pEntity.getZ(),0,0,0);
+		if(pLevel instanceof ServerLevel serverLevel && pEntity instanceof ServerPlayer player) {
+			int i = player.getInventory().countItem(FPSMItemRegister.C4.get());
+			if (i > 0) {
+				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX(),player.getY() + 2,player.getZ(),1,0,0,0,1);
+			}
 		}
 	}
 
@@ -155,7 +159,7 @@ public class CompositionC4 extends Item {
 					return pStack;
 				} else {
 					BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
-					if (team != null && map instanceof ShopMap shopMap) {
+					if (team != null && map instanceof ShopMap<?> shopMap) {
 						team.getPlayerList().forEach((uuid -> {
 							shopMap.addPlayerMoney(uuid, 300);
 						}));

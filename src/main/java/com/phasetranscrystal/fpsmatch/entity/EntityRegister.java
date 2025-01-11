@@ -15,4 +15,14 @@ public class EntityRegister {
     public static final RegistryObject<EntityType<SmokeShellEntity>> SMOKE_SHELL =
             ENTITY_TYPES.register("smoke_shell", () -> EntityType.Builder.<SmokeShellEntity>of(SmokeShellEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).build("smoke_shell"));
+
+    public static final RegistryObject<EntityType<IncendiaryGrenadeEntity>> INCENDIARY_GRENADE =
+            ENTITY_TYPES.register("incendiary_grenade", () -> EntityType.Builder.<IncendiaryGrenadeEntity>of(IncendiaryGrenadeEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).build("incendiary_grenade"));
+    public static final RegistryObject<EntityType<GrenadeEntity>> GRENADE =
+            ENTITY_TYPES.register("grenade", () -> EntityType.Builder.<GrenadeEntity>of(GrenadeEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).build("grenade"));
+    public static final RegistryObject<EntityType<FlashBombEntity>> FLASH_BOMB =
+            ENTITY_TYPES.register("flash_bomb", () -> EntityType.Builder.<FlashBombEntity>of(FlashBombEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).build("flash_bomb"));
 }

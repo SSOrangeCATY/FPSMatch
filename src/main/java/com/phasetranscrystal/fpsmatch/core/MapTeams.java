@@ -55,13 +55,10 @@ public class MapTeams {
         attackTeam.setScores(defendTeam.getScores());
         defendTeam.setScores(tempScore);
 
-        // 交换连败计数器
-        int tempLoseStreak = attackTeam.getLoseStreak();
-        int tempCompensationFactor = attackTeam.getCompensationFactor();
-        attackTeam.setLoseStreak(defendTeam.getLoseStreak());
-        attackTeam.setCompensationFactor(defendTeam.getCompensationFactor());
-        defendTeam.setCompensationFactor(tempCompensationFactor);
-        defendTeam.setLoseStreak(tempLoseStreak);
+        attackTeam.setLoseStreak(0);
+        attackTeam.setCompensationFactor(0);
+        defendTeam.setCompensationFactor(0);
+        defendTeam.setLoseStreak(0);
 
         // 交换暂停次数
         int tempP = attackTeam.getPauseTime();
