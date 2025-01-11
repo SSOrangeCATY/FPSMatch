@@ -1,27 +1,21 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.Config;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.effect.FlashBlindnessMobEffect;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import net.minecraftforge.network.PacketDistributor;
 
 public class FlashBombHud implements IGuiOverlay {
 
@@ -37,8 +31,19 @@ public class FlashBombHud implements IGuiOverlay {
         LocalPlayer player = minecraft.player;
         if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
             MobEffectInstance effectInstance = player.getEffect(FPSMEffectRegister.FLASH_BLINDNESS.get());
-            if(effectInstance != null && effectInstance.getEffect() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect){
-                flashBlindnessMobEffect.render(gui, guiGraphics, partialTick, screenWidth, screenHeight);
+            if (effectInstance != null && effectInstance.getEffect() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect) {
+                float fullBlindnessTime = flashBlindnessMobEffect.getFullBlindnessTime();
+                if(fullBlindnessTime > 0){
+                    int colorWithAlpha = RenderUtil.color(255, 255, 255, 255);
+                    guiGraphics.fill(0, 0, screenWidth, screenHeight, colorWithAlpha);
+                }else{
+                    float ticker = flashBlindnessMobEffect.getTicker();
+                    if (ticker > 0) {
+                        int alpha = (int) (ticker / flashBlindnessMobEffect.getTotalBlindnessTime() * 255);
+                        int colorWithAlpha = RenderUtil.color(255, 255, 255, alpha);
+                        guiGraphics.fill(0, 0, screenWidth, screenHeight, colorWithAlpha);
+                    }
+                }
             };
         }
     }

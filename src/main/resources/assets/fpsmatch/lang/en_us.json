@@ -106,5 +106,10 @@
   "item.fpsmatch.bomb_disposal_kit" : "Bomb Disposal Kit",
   "fpsm.map.cs.match.point" : "Match Point",
   "fpsm.map.cs.join.team" : "Successfully joined team %1$s",
-  "fpsm.item.bomb_disposal_kit.drop.message" : "you can't drop this item"
+  "fpsm.item.bomb_disposal_kit.drop.message" : "you can't drop this item",
+  "item.fpsmatch.flash_bomb" : "Flash Bomb",
+  "item.fpsmatch.grenade" : "Grenade",
+  "item.fpsmatch.ct_incendiary_grenade" : "Incendiary Grenade",
+  "item.fpsmatch.t_incendiary_grenade" : "Incendiary Grenade"
+
 }

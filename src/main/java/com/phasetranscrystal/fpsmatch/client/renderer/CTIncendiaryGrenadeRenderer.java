@@ -1,7 +1,8 @@
 package com.phasetranscrystal.fpsmatch.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.CTIncendiaryGrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.TIncendiaryGrenadeEntity;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -13,26 +14,26 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class GrenadeRenderer implements EntityRendererProvider<GrenadeEntity> {
+public class CTIncendiaryGrenadeRenderer implements EntityRendererProvider<CTIncendiaryGrenadeEntity> {
 
     @Override
-    public @NotNull EntityRenderer<GrenadeEntity> create(Context pContext) {
+    public @NotNull EntityRenderer<CTIncendiaryGrenadeEntity> create(Context pContext) {
         return new EntityRenderer<>(pContext) {
             ItemEntity item = null;
             ItemEntityRenderer itemRender = null;
 
             @Override
-            public @NotNull ResourceLocation getTextureLocation(GrenadeEntity pEntity) {
+            public @NotNull ResourceLocation getTextureLocation(CTIncendiaryGrenadeEntity pEntity) {
                 return TextureAtlas.LOCATION_BLOCKS;
             }
             @Override
-            public void render(GrenadeEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
+            public void render(CTIncendiaryGrenadeEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
                 super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
                 if(pEntity.getState() == 2) return;
                 pPoseStack.pushPose();
                 pPoseStack.translate(0.0F, -0.25F, 0.0F);
                 if(item == null){
-                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(FPSMItemRegister.GRENADE.get()));
+                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(FPSMItemRegister.CT_INCENDIARY_GRENADE.get()));
                     itemRender = new ItemEntityRenderer(pContext);
                 }
                 item.setXRot(pEntity.getXRot());

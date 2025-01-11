@@ -20,6 +20,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.server.commands.ExecuteCommand;
+import net.minecraft.server.commands.KickCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -131,8 +133,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public Map<String,Integer> getTeams(){
         Map<String,Integer> teams = new HashMap<>();
-        teams.put("ct",5);
-        teams.put("t",5);
+        teams.put("ct",16);
+        teams.put("t",16);
         this.setBlastTeam("t");
         return teams;
     }

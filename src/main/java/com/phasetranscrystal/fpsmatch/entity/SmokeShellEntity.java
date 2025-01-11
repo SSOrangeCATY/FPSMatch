@@ -18,6 +18,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -215,9 +217,12 @@ protected void onHit(HitResult r) {
 
     if (result.getDirection().getAxis().isHorizontal()) {
         this.setDeltaMovement(result.getDirection().getAxis() == Direction.Axis.X ? new Vec3(-delta.x * reductionFactor, delta.y * reductionFactor, delta.z * reductionFactor) : new Vec3(delta.x * reductionFactor, delta.y * reductionFactor, -delta.z * reductionFactor));
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.CALCITE_PLACE, SoundSource.VOICE, 1.5F, 1.6F);
     } else if (result.getDirection() == Direction.DOWN || this.getDeltaMovement().y < -0.2) {
         this.setDeltaMovement(new Vec3(delta.x, -(delta.y * reductionFactor), delta.z));
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.CALCITE_PLACE, SoundSource.VOICE, 1.5F, 1.6F);
     } else {
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.CALCITE_PLACE, SoundSource.VOICE, 1.5F, 1.6F);
         this.setDeltaMovement(0, 0, 0);
         this.setNoGravity(true);
         this.setState(2);

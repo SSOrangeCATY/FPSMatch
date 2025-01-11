@@ -1,7 +1,9 @@
 package com.phasetranscrystal.fpsmatch.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.entity.FlashBombEntity;
 import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
+import com.phasetranscrystal.fpsmatch.net.ThrowFlashBombC2SPacket;
 import com.phasetranscrystal.fpsmatch.net.ThrowGrenade2CSPacket;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -27,7 +29,7 @@ public class FlashBomb extends Item {
     @SubscribeEvent
     public static void onPlayerInteract(PlayerInteractEvent.LeftClickEmpty event) {
         if (event.getEntity().getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof FlashBomb grenade && !event.getEntity().getCooldowns().isOnCooldown(grenade)) {
-            FPSMatch.INSTANCE.send(PacketDistributor.SERVER.noArg(), new ThrowGrenade2CSPacket(1.5F, 1.0F));
+            FPSMatch.INSTANCE.send(PacketDistributor.SERVER.noArg(), new ThrowFlashBombC2SPacket(1.5F, 1.0F));
         }
     }
 
@@ -35,12 +37,12 @@ public class FlashBomb extends Item {
     public static void onPlayerInteract(PlayerInteractEvent.LeftClickBlock event) {
         if(event.getLevel().isClientSide) return;
         if (event.getEntity().getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof FlashBomb grenade) {
-            grenade.throwGrenade(event.getEntity(), event.getLevel(), InteractionHand.MAIN_HAND, 1.5F, 1.0F);
+            grenade.throwFlashBomb(event.getEntity(), event.getLevel(), InteractionHand.MAIN_HAND, 1.5F, 1.0F);
         }
     }
 
 
-    public ItemStack throwGrenade(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy) {
+    public ItemStack throwFlashBomb(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy) {
         ItemStack itemstack = pPlayer.getItemInHand(pHand);
         if(pPlayer.getCooldowns().isOnCooldown(this)){
             return itemstack;
@@ -48,7 +50,7 @@ public class FlashBomb extends Item {
         pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
         pPlayer.getCooldowns().addCooldown(this, 20);
         if (!pLevel.isClientSide) {
-            GrenadeEntity shell = new GrenadeEntity(pPlayer, pLevel);
+            FlashBombEntity shell = new FlashBombEntity(pPlayer, pLevel);
             shell.setItem(itemstack);
             shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, velocity, inaccuracy);
             pLevel.addFreshEntity(shell);
@@ -62,6 +64,6 @@ public class FlashBomb extends Item {
     }
 
     public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, @NotNull InteractionHand pHand) {
-        return InteractionResultHolder.sidedSuccess(this.throwGrenade(pPlayer, pLevel, pHand, 0.25F, 0.35F), pLevel.isClientSide());
+        return InteractionResultHolder.sidedSuccess(this.throwFlashBomb(pPlayer, pLevel, pHand, 0.25F, 0.35F), pLevel.isClientSide());
     }
 }

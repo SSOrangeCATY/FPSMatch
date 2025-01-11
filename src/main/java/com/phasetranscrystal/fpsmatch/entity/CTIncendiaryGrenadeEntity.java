@@ -3,7 +3,6 @@ package com.phasetranscrystal.fpsmatch.entity;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustColorTransitionOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -14,12 +13,9 @@ import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.ClipBlockStateContext;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -31,32 +27,33 @@ import org.joml.Vector3f;
 import java.util.List;
 import java.util.Random;
 
-public class GrenadeEntity extends ThrowableItemProjectile {
-    private static final EntityDataAccessor<Integer> LIFE_LEFT = SynchedEntityData.defineId(GrenadeEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> STATE = SynchedEntityData.defineId(GrenadeEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> LIFE_TICK = SynchedEntityData.defineId(GrenadeEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> R = SynchedEntityData.defineId(GrenadeEntity.class, EntityDataSerializers.INT);
+public class CTIncendiaryGrenadeEntity extends ThrowableItemProjectile {
+    private static final EntityDataAccessor<Integer> LIFE_LEFT = SynchedEntityData.defineId(CTIncendiaryGrenadeEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> STATE = SynchedEntityData.defineId(CTIncendiaryGrenadeEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> LIFE_TICK = SynchedEntityData.defineId(CTIncendiaryGrenadeEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> R = SynchedEntityData.defineId(CTIncendiaryGrenadeEntity.class, EntityDataSerializers.INT);
     private int particleTicker = 0;
-    public GrenadeEntity(LivingEntity pShooter, Level pLevel, int lifeTick, int state, int r) {
-        super(EntityRegister.GRENADE.get(), pShooter, pLevel);
+    private AreaEffectCloud damageCloud;
+    public CTIncendiaryGrenadeEntity(LivingEntity pShooter, Level pLevel, int lifeTick, int state, int r) {
+        super(EntityRegister.CT_INCENDIARY_GRENADE.get(), pShooter, pLevel);
         this.setLifeTick(lifeTick);
         this.setLifeLeft(lifeTick);
         this.setState(state);
         this.setR(r);
     }
 
-    public GrenadeEntity(LivingEntity pShooter, Level pLevel){
-        super(EntityRegister.GRENADE.get(), pShooter, pLevel);
+    public CTIncendiaryGrenadeEntity(LivingEntity pShooter, Level pLevel){
+        super(EntityRegister.CT_INCENDIARY_GRENADE.get(), pShooter, pLevel);
     }
 
-    public GrenadeEntity(EntityType<GrenadeEntity> pEntityType, Level pLevel) {
+    public CTIncendiaryGrenadeEntity(EntityType<CTIncendiaryGrenadeEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
     @Override
     protected void defineSynchedData() {
         this.entityData.define(LIFE_TICK, 140);
-        this.entityData.define(R, 5);
+        this.entityData.define(R, 3);
         this.entityData.define(LIFE_LEFT, 140);
         this.entityData.define(STATE, 0);
     }
@@ -89,6 +86,12 @@ public class GrenadeEntity extends ThrowableItemProjectile {
     public void setLifeLeft(int lifeLeft){
         this.entityData.set(LIFE_LEFT,lifeLeft);
     }
+    public int getParticleTicker(){
+        return particleTicker;
+    }
+    public void setParticleTicker(int particleTicker){
+        this.particleTicker = particleTicker;
+    }
 
     @Override
     public void tick() {
@@ -97,17 +100,53 @@ public class GrenadeEntity extends ThrowableItemProjectile {
         }
 
         if(!this.level().isClientSide){
+            if(this.getState() == 2 && this.damageCloud == null){
+                this.damageCloud = new AreaEffectCloud(this.level(),this.getX(),this.getY(),this.getZ());
+                this.damageCloud.setRadius(this.getR());
+                this.damageCloud.setDuration(140);
+                this.damageCloud.setWaitTime(140);
+                if(this.getOwner() instanceof LivingEntity livingEntity){
+                    this.damageCloud.setOwner(livingEntity);
+                }
+                this.level().addFreshEntity(this.damageCloud);
+            }
 
-            this.particleTicker++;
+            if(this.damageCloud != null && this.getLifeLeft() % 10 == 0){
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.FIRE_AMBIENT, SoundSource.VOICE, 1.5F, 1F);
+                AABB aabb = this.damageCloud.getBoundingBox();
+                List<Entity> list1 = this.level().getEntitiesOfClass(Entity.class, aabb);
+                for(Entity entity : list1) {
+                    if (entity instanceof Player player) {
+                        player.setSecondsOnFire(1);
+                        player.hurt(this.level().damageSources().onFire(), 3.0F);
+                    }
+
+                    if(entity instanceof SmokeShellEntity smokeShell && smokeShell.getState() == 2){
+                        this.discard();
+                        if(this.damageCloud != null){
+                            this.damageCloud.discard();
+                        }
+                    }
+                }
+            }
+
+            if(this.getState() != 2){
+                this.particleTicker++;
+            }
 
             if(this.particleTicker >= 30){
-                AABB aabb = new AABB(this.getX() - this.getR(), this.getY() - this.getR(), this.getZ() - this.getR(), this.getX() + this.getR(), this.getY() + this.getR(), this.getZ() + this.getR());
-                this.damageEntity(aabb);
                 this.discard();
+                this.spawnParticle(new AABB(this.getX() - 2, this.getY() - 2, this.getZ() - 2, this.getX() + 2, this.getY() + 2, this.getZ() + 2),new Random(),(ServerLevel) this.level(),5);
+                if(this.damageCloud != null){
+                    this.damageCloud.discard();
+                }
             }
 
             if (this.getLifeLeft() <= 0) {
                 this.discard();
+                if(this.damageCloud != null){
+                    this.damageCloud.discard();
+                }
                 return;
 
             } else if (this.getLifeLeft() < this.getLifeTick() / 2 && this.getState() == 0) {
@@ -120,43 +159,35 @@ public class GrenadeEntity extends ThrowableItemProjectile {
         }
 
         if (this.getState() == 2 && !this.level().isClientSide) {
-            AABB aabb = new AABB(this.getX() - this.getR(), this.getY() - this.getR(), this.getZ() - this.getR(), this.getX() + this.getR(), this.getY() + this.getR(), this.getZ() + this.getR());
-            this.damageEntity(aabb);
-            this.discard();
+            Random random = new Random();
+            this.spawnRoundSmokeParticles(random, (ServerLevel) this.level());
         }
 
         super.tick();
     }
 
-    public void damageEntity(AABB aabb){
-        ((ServerLevel)this.level()).sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), 3,0,0, 0, 1D);
-        DustColorTransitionOptions particle = new DustColorTransitionOptions(new Vector3f(1, 0.25f, 0.25f),new Vector3f(1, 1f, 0.1F),3);
-        ((ServerLevel)this.level()).sendParticles(particle, this.getX(), this.getY(), this.getZ(), 50,1.5,1, 1.5f, 1D);
-
-        List<Entity> entities = this.level().getEntitiesOfClass(Entity.class,aabb);
-        for(Entity entity : entities){
-            if(entity instanceof LivingEntity livingEntity){
-                double distance = this.distanceTo(livingEntity);
-                // 发送射线给玩家检测是否被方块阻挡
-                boolean isBlocked = this.level().isBlockInLine(new ClipBlockStateContext(this.position(), livingEntity.position(),  (block)-> !block.isAir())).isInside();
-                //根据距离计算应用的伤害
-                double modify = (this.getR() - distance) / this.getR();
-                float damage = (float) (20 * modify);
-                if(damage > 0 && damage <= 0.5){
-                    damage = 1;
-                }
-                livingEntity.hurt(this.level().damageSources().outOfBorder(),!isBlocked ? damage : 1);
-            } else if (entity instanceof SmokeShellEntity smoke_shell) {
-                if (smoke_shell.getState() == 2) {
-                    smoke_shell.setCanGenerateParticles(false);
-                }
-            }
+    public void spawnRoundSmokeParticles(Random random, ServerLevel serverLevel) {
+        if(this.damageCloud != null){
+            AABB aabb = this.damageCloud.getBoundingBox();
+            this.spawnParticle(aabb,random,serverLevel,20);
         }
     }
 
+    public void spawnParticle(AABB aabb , Random random, ServerLevel serverLevel,int time){
+        for (int i = 0;i<time;i++){
+            double x = random.nextDouble(aabb.minX,aabb.maxX);
+            double y = random.nextDouble(aabb.minY,aabb.maxY);
+            double z = random.nextDouble(aabb.minZ,aabb.maxZ);
+            DustColorTransitionOptions particle = new DustColorTransitionOptions(new Vector3f(1, 0.25f, 0.25f),new Vector3f(1, 1f, 0.1F), random.nextFloat(3f));
+            serverLevel.sendParticles(particle,x,y,z,2,0,0.2,0,1);
+        }
+    }
+
+
+
     @Override
     protected @NotNull Item getDefaultItem() {
-        return FPSMItemRegister.GRENADE.get();
+        return FPSMItemRegister.CT_INCENDIARY_GRENADE.get();
     }
 
     @Override

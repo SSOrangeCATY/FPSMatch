@@ -14,7 +14,7 @@ import java.util.List;
 public class FPSMEffectRegister {
     public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, FPSMatch.MODID);
     public static final RegistryObject<MobEffect> FLASH_BLINDNESS = MOB_EFFECTS.register("flash_blindness",
-            () -> new FlashBlindnessMobEffect(MobEffectCategory.HARMFUL, 1.88F,4.87F));
+            () -> new FlashBlindnessMobEffect(MobEffectCategory.HARMFUL));
 
 
 }

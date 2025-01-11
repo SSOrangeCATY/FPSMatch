@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.net;
 
-import com.phasetranscrystal.fpsmatch.item.IncendiaryGrenade;
+import com.phasetranscrystal.fpsmatch.item.CTIncendiaryGrenade;
+import com.phasetranscrystal.fpsmatch.item.TIncendiaryGrenade;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -35,9 +36,14 @@ public class ThrowIncendiaryGrenadeC2SPacket {
                 ctx.get().setPacketHandled(true);
                 return;
             }
-            if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof IncendiaryGrenade grenade) {
-                grenade.throwIncendiaryGrenade(player, player.level(), InteractionHand.MAIN_HAND, 1.5F, 1.0F);
+            if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof TIncendiaryGrenade grenade) {
+                grenade.throwIncendiaryGrenade(player, player.level(), InteractionHand.MAIN_HAND, velocity, inaccuracy);
             }
+
+            if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof CTIncendiaryGrenade grenade) {
+                grenade.throwIncendiaryGrenade(player, player.level(), InteractionHand.MAIN_HAND, velocity, inaccuracy);
+            }
+
         });
         ctx.get().setPacketHandled(true);
     }

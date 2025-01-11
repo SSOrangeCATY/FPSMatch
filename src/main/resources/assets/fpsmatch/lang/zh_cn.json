@@ -106,6 +106,9 @@
   "item.fpsmatch.bomb_disposal_kit" : "拆弹器",
   "fpsm.map.cs.match.point" : "赛点",
   "fpsm.map.cs.join.team" : "成功加入 %1$s",
-  "fpsm.item.bomb_disposal_kit.drop.message" : "你不能丢弃这个物品"
-
+  "fpsm.item.bomb_disposal_kit.drop.message" : "你不能丢弃这个物品",
+  "item.fpsmatch.flash_bomb" : "闪光弹",
+  "item.fpsmatch.grenade" : "手榴弹",
+  "item.fpsmatch.ct_incendiary_grenade" : "燃烧弹",
+  "item.fpsmatch.t_incendiary_grenade" : "燃烧弹"
 }
