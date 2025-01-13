@@ -204,7 +204,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), FPSMSoundRegister.beep.get(), SoundSource.VOICE, 3.0F, 0.8F);
     }
     public void playDefusingSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.WOODEN_DOOR_CLOSE, SoundSource.VOICE, 3.0F, 1.0F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 2.0F);
     }
     public void playDefusedSound(){
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), FPSMSoundRegister.defused.get(), SoundSource.VOICE, 3.0F, 0.9F);
@@ -281,9 +281,8 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
-        if(player != null && soundPlayCount == 0){
+        if(player != null){
             this.playDefusingSound();
-            this.soundPlayCount = 1;
         }
         this.demolisher = player;
     }

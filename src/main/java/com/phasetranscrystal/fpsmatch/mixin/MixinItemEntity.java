@@ -47,7 +47,7 @@ public abstract class MixinItemEntity {
                 }
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
-                    if(blastModeMap.checkCanPlacingBombs(team.getFixedName())){
+                    if(!blastModeMap.checkCanPlacingBombs(team.getFixedName())){
                         int i = player.getInventory().countItem(FPSMItemRegister.BOMB_DISPOSAL_KIT.get());
                         if(i > 0){
                             ci.cancel();

@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
 import com.phasetranscrystal.fpsmatch.client.screen.FlashBombHud;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.command.VoteCommand;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
@@ -167,11 +168,18 @@ public class FPSMatch {
                 .decoder(ThrowFlashBombC2SPacket::decode)
                 .consumerNetworkThread(ThrowFlashBombC2SPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(FPSMatchTabRemovalS2CPacket.class, i.getAndIncrement())
+                .encoder(FPSMatchTabRemovalS2CPacket::encode)
+                .decoder(FPSMatchTabRemovalS2CPacket::decode)
+                .consumerNetworkThread(FPSMatchTabRemovalS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         new FPSMCommand().onRegisterCommands(event);
+        VoteCommand.onRegisterCommands(event);
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

@@ -197,61 +197,56 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
         this.voteLogic();
         this.autoStartLogic();
-        // TODO
-       /* if(this.isStart){
-            this.checkErrorPlayerTeam();
-        }*/
+        this.checkErrorPlayerTeam();
     }
 
 
-    private void autoStartLogic(){
-        if(isStart) {
-            autoStartTimer = 0;
-            autoStartFirstMessageFlag = false;
-            return;
-        }
+private void autoStartLogic(){
+    if(isStart) {
+        autoStartTimer = 0;
+        autoStartFirstMessageFlag = false;
+        return;
+    }
 
-        List<BaseTeam> teams = this.getMapTeams().getTeams();
-        if(!teams.get(0).getPlayerList().isEmpty() && !teams.get(1).getPlayerList().isEmpty()){
-            autoStartTimer++;
-            if(!autoStartFirstMessageFlag){
-                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.message",AUTO_START_TIME / 20).withStyle(ChatFormatting.YELLOW),false);
-                autoStartFirstMessageFlag = true;
+    List<BaseTeam> teams = this.getMapTeams().getTeams();
+    if(!teams.get(0).getPlayerList().isEmpty() && !teams.get(1).getPlayerList().isEmpty()){
+        autoStartTimer++;
+        if(!autoStartFirstMessageFlag){
+            this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.message",AUTO_START_TIME / 20).withStyle(ChatFormatting.YELLOW),false);
+            autoStartFirstMessageFlag = true;
+        }
+    } else {
+        autoStartTimer = 0;
+    }
+
+    if(this.autoStartTimer > 0){
+        if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer < 1180 && autoStartTimer % 20 == 0)) {
+            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                if (serverPlayer != null) {
+                    serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.title", (AUTO_START_TIME - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
+                    serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
+                }
+            }));
+        } else {
+            if(autoStartTimer % 20 == 0){
+                if(this.voteObj == null) this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.actionbar",(AUTO_START_TIME - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW),true);
             }
-        }else{
-            autoStartTimer = 0;
-        }
 
-        if(this.autoStartTimer != 0){
-            if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || autoStartTimer >= 1000 && autoStartTimer < 1180) {
+            if(autoStartTimer >= 1200){
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
                     if (serverPlayer != null) {
-                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.title", (AUTO_START_TIME - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
-                        serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
+                        serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
                     }
                 }));
-            }else{
-                if(autoStartTimer % 20 == 0){
-                    if(this.voteObj == null) this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.actionbar",(AUTO_START_TIME - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW),true);
-                }
-
-                if(autoStartTimer == 1200){
-                    this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                        ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                        if (serverPlayer != null) {
-                            serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
-                            serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
-                        }
-                    }));
-                }
+                this.autoStartTimer = 0;
+                this.startGame();
             }
         }
-
-        if(autoStartTimer >= AUTO_START_TIME){
-            this.startGame();
-        }
     }
+}
 
     public void joinTeam(ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
@@ -348,26 +343,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     private void checkErrorPlayerTeam() {
-        if(!this.getMapTeams().getUnableToSwitch().isEmpty()){
-            this.getMapTeams().getUnableToSwitch().forEach((team,uuidList)->{
-                uuidList.forEach(uuid -> {
-                    ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
-                    if(serverPlayer != null){
-                        BaseTeam baseTeam = this.getMapTeams().getTeamByName(team);
-                        if(baseTeam == null) return;
-                        serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), baseTeam.getPlayerTeam());
-                        this.clearPlayerInventory(serverPlayer);
-                        this.givePlayerKits(serverPlayer);
-                        this.getShop(baseTeam.name).clearPlayerShopData(serverPlayer.getUUID());
-                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.team.switch").withStyle(ChatFormatting.GREEN)));
-                        uuidList.remove(uuid);
-                        if(uuidList.isEmpty()){
-                            this.getMapTeams().getUnableToSwitch().remove(team);
-                        }
-                    }
-                });
+        this.getMapTeams().getTeams().forEach(team->{
+            team.getPlayerList().forEach(uuid->{
+                if(this.getServerLevel().getPlayerByUUID(uuid) == null){
+                    team.delPlayer(uuid);
+                    this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(uuid));
+                };
             });
-        }
+        });
     }
 
     public void startGame(){
@@ -837,6 +820,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getShops().forEach(FPSMShop::syncShopData);
     }
 
+
+    public <MSG> void sendPacketToAllPlayer(MSG packet){
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->serverPlayer), packet);
+            }
+        }));
+    }
+
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
         BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
         if (team == null) return;
@@ -984,10 +977,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
-                this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
-                player.removeAllEffects();
-                this.resetPlayerClientData(player);
+                player.setGameMode(GameType.ADVENTURE);
                 this.teleportPlayerToMatchEndPoint(player);
+                this.resetPlayerClientData(player);
+                this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+                player.getInventory().clearContent();
+                player.removeAllEffects();
             }
         }));
         this.isShopLocked = false;

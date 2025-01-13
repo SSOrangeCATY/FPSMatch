@@ -48,6 +48,10 @@ public class BaseTeam {
         }
     }
 
+    public void delPlayer(UUID uuid){
+        this.players.remove(uuid);
+    }
+
     public void createPlayerData(ServerPlayer player){
         this.players.put(player.getUUID(),new PlayerData(player.getUUID()));
     }

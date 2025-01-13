@@ -114,7 +114,8 @@ public class CTIncendiaryGrenadeEntity extends ThrowableItemProjectile {
             if(this.damageCloud != null && this.getLifeLeft() % 10 == 0){
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.FIRE_AMBIENT, SoundSource.VOICE, 1.5F, 1F);
                 AABB aabb = this.damageCloud.getBoundingBox();
-                List<Entity> list1 = this.level().getEntitiesOfClass(Entity.class, aabb);
+                AABB apply = new AABB(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY + 1F, aabb.maxZ);
+                List<Entity> list1 = this.level().getEntitiesOfClass(Entity.class, apply);
                 for(Entity entity : list1) {
                     if (entity instanceof Player player) {
                         player.setSecondsOnFire(1);

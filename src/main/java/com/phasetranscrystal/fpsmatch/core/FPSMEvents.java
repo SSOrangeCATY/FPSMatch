@@ -116,6 +116,9 @@ public class FPSMEvents {
                     }
                     player.getInventory().clearContent();
                     playerTeam.leave(player);
+                    if(map instanceof CSGameMap csGameMap){
+                        csGameMap.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
+                    }
                 }
             }
         }

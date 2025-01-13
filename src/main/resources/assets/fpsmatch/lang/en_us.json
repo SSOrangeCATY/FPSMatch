@@ -90,7 +90,7 @@
   "fpsm.cs.reset" : "Reset Game",
   "fpsm.cs.start": "Start Game",
   "fpsm.map.vote.fail.alreadyHasVote" : "This map already has %1$s vote",
-  "fpsm.map.vote.help" : "You can type .a or .da in the chat box to agree or disagree with the vote.",
+  "fpsm.map.vote.help" : "You can type [ .a or .da ] OR [/cs a or /cs da] in the chat box to agree or disagree with the vote.",
   "fpsm.shop.title.equipment" : "Equipment",
   "fpsm.shop.title.pistol" : "Pistol",
   "fpsm.shop.title.mid_rank" : "Mid Rank",

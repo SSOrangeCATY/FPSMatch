@@ -55,7 +55,7 @@ public class FlashBombEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(LIFE_TICK, 140);
-        this.entityData.define(R, 30);
+        this.entityData.define(R, 40);
         this.entityData.define(LIFE_LEFT, 140);
         this.entityData.define(STATE, 0);
     }

@@ -89,6 +89,10 @@ public class ClientData {
         }
     }
 
+    public static void removePlayerFromTab(UUID uuid){
+        tabData.remove(uuid);
+    }
+
     public static void reset() {
         currentMap = "fpsm_none";
         currentGameType = "error";
