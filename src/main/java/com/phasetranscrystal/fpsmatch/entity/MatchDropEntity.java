@@ -261,22 +261,11 @@ public class MatchDropEntity extends Entity {
            return i == 0;
         })),
         SECONDARY_WEAPON((player -> {
-            int i = player.getInventory().clearOrCountMatchingItems(itemStack -> {
-                boolean checker = false;
-                if(itemStack.getItem() instanceof IGun gun){
-                    for (ItemStack itemStack1 : AbstractGunItem.fillItemCategory(GunTabType.PISTOL)){
-                        if (itemStack1.getItem() instanceof IGun iGun && iGun.getGunId(itemStack1).equals(gun.getGunId(itemStack))){
-                            checker = true;
-                            break;
-                        }
-                    };
-                };
-                return checker;
-            }, 0, player.inventoryMenu.getCraftSlots());
+            int i = player.getInventory().clearOrCountMatchingItems(SECONDARY_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
             return i == 0;
         })),
         THROW((player -> {
-            int i = player.getInventory().clearOrCountMatchingItems(itemStack -> throwable.contains(itemStack.getItem()), 0, player.inventoryMenu.getCraftSlots());
+            int i = player.getInventory().clearOrCountMatchingItems(THROW_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
             return i < 4;
         })),
         MISC((player -> true));
