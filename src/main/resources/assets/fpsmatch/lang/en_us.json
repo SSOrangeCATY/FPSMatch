@@ -110,6 +110,8 @@
   "item.fpsmatch.flash_bomb" : "Flash Bomb",
   "item.fpsmatch.grenade" : "Grenade",
   "item.fpsmatch.ct_incendiary_grenade" : "Incendiary Grenade",
-  "item.fpsmatch.t_incendiary_grenade" : "Incendiary Grenade"
+  "item.fpsmatch.t_incendiary_grenade" : "Incendiary Grenade",
+  "command.cs.noMap": "You have not joined any maps.",
+  "command.cs.onlyPlayer": "This command only player execute."
 
 }

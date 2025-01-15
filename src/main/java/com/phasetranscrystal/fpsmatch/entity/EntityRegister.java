@@ -27,4 +27,8 @@ public class EntityRegister {
     public static final RegistryObject<EntityType<FlashBombEntity>> FLASH_BOMB =
             ENTITY_TYPES.register("flash_bomb", () -> EntityType.Builder.<FlashBombEntity>of(FlashBombEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).build("flash_bomb"));
+    public static final RegistryObject<EntityType<MatchDropEntity>> MATCH_DROP_ITEM =
+            ENTITY_TYPES.register("match_drop", () -> EntityType.Builder.<MatchDropEntity>of(MatchDropEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).build("match_drop"));
+
 }

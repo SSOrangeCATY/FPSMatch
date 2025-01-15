@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
+import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
@@ -220,7 +221,7 @@ private void autoStartLogic(){
     }
 
     if(this.autoStartTimer > 0){
-        if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer < 1180 && autoStartTimer % 20 == 0)) {
+        if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer <= 1180 && autoStartTimer % 20 == 0)) {
             this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                 ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
                 if (serverPlayer != null) {
@@ -741,6 +742,10 @@ private void autoStartLogic(){
             }
             if(entity instanceof CompositionC4Entity c4){
                 c4.discard();
+            }
+
+            if(entity instanceof MatchDropEntity matchDropEntity){
+                matchDropEntity.discard();
             }
         });
         AtomicInteger atomicInteger = new AtomicInteger(0);

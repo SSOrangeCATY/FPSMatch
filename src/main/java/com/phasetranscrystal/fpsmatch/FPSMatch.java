@@ -207,6 +207,7 @@ public class FPSMatch {
             event.registerEntityRenderer(EntityRegister.CT_INCENDIARY_GRENADE.get(), new CTIncendiaryGrenadeRenderer());
             event.registerEntityRenderer(EntityRegister.GRENADE.get(), new GrenadeRenderer());
             event.registerEntityRenderer(EntityRegister.FLASH_BOMB.get(),new FlashBombRenderer());
+            event.registerEntityRenderer(EntityRegister.MATCH_DROP_ITEM.get(),new MatchDropRenderer());
         }
     }
 

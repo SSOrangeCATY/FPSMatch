@@ -4,10 +4,17 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
+import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
+import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -18,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
@@ -148,5 +156,58 @@ public class FPSMCore {
          FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
          FPSMCore.getInstance().clearData();
          MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
+    }
+
+    public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
+        RandomSource random = player.getRandom();
+        MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
+        MatchDropEntity dropEntity = new MatchDropEntity(player.level(),itemStack,type);
+        double d0 = player.getEyeY() - (double)0.3F;
+        Vec3 pos = new Vec3(player.getX(), d0, player.getZ());
+        dropEntity.setPos(pos);
+        float f8 = Mth.sin(player.getXRot() * ((float)Math.PI / 180F));
+        float f2 = Mth.cos(player.getXRot() * ((float)Math.PI / 180F));
+        float f3 = Mth.sin(player.getYRot() * ((float)Math.PI / 180F));
+        float f4 = Mth.cos(player.getYRot() * ((float)Math.PI / 180F));
+        float f5 = random.nextFloat() * ((float)Math.PI * 2F);
+        float f6 = 0.02F * random.nextFloat();
+        dropEntity.setDeltaMovement((double)(-f3 * f2 * 0.3F) + Math.cos(f5) * (double)f6, -f8 * 0.3F + 0.1F + (random.nextFloat() - random.nextFloat()) * 0.1F, (double)(f4 * f2 * 0.3F) + Math.sin(f5) * (double)f6);
+        player.level().addFreshEntity(dropEntity);
+    }
+
+    public static void playerDeadDropWeapon(ServerPlayer serverPlayer){
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
+        if(map != null){
+            BaseTeam team = map.getMapTeams().getTeamByPlayer(serverPlayer);
+            if(team != null){
+                ItemStack itemStack = ItemStack.EMPTY;
+                for(MatchDropEntity.DropType type : MatchDropEntity.DropType.values()){
+                    if(type == MatchDropEntity.DropType.MISC){
+                        break;
+                    }
+                    if(!itemStack.isEmpty()){
+                        break;
+                    }
+                    Predicate<ItemStack> predicate = MatchDropEntity.getPredicateByDropType(type);
+                    Inventory inventory = serverPlayer.getInventory();
+                    List<List<ItemStack>> itemStackList = new ArrayList<>();
+                    itemStackList.add(inventory.items);
+                    itemStackList.add(inventory.armor);
+                    itemStackList.add(inventory.offhand);
+                    for(List<ItemStack> itemStacks : itemStackList){
+                        for(ItemStack stack : itemStacks){
+                            if (predicate.test(stack)){
+                                itemStack = stack;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if(!itemStack.isEmpty()){
+                    playerDropMatchItem(serverPlayer,itemStack);
+                }
+            }
+        }
     }
 }

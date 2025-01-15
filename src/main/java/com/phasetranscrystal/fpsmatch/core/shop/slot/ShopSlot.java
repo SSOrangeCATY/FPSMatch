@@ -3,21 +3,22 @@ package com.phasetranscrystal.fpsmatch.core.shop.slot;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -332,9 +333,15 @@ public class ShopSlot{
      */
     public int buy(Player player, int money) {
         boughtCount++;
-        player.getInventory().add(process());
-        player.getInventory().setChanged();
-        player.inventoryMenu.broadcastChanges();
+        ItemStack itemStack = process();
+        MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
+        if(type.playerPredicate.test(player)){
+            player.getInventory().add(itemStack);
+            player.getInventory().setChanged();
+            player.inventoryMenu.broadcastChanges();
+        }else {
+            FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack);
+        }
         return money - cost;
     }
 

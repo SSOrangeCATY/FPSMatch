@@ -19,7 +19,6 @@ public class ThrowSmokeShellC2SPacket {
     public static void encode(ThrowSmokeShellC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeFloat(packet.velocity);
         buf.writeFloat(packet.inaccuracy);
-
     }
 
     public static ThrowSmokeShellC2SPacket decode(FriendlyByteBuf buf) {

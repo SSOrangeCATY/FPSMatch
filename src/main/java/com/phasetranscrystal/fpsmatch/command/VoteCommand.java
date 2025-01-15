@@ -14,7 +14,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 public class VoteCommand {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
-        LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("cs").then(Commands.argument("action",StringArgumentType.string()).executes(context -> {
+        LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("cs2").then(Commands.argument("action",StringArgumentType.string()).executes(context -> {
             String action = StringArgumentType.getString(context,"action");
             if(context.getSource().getEntity() instanceof ServerPlayer player){
                 if(FPSMCore.getInstance().getMapByPlayer(player) instanceof CSGameMap csGameMap){

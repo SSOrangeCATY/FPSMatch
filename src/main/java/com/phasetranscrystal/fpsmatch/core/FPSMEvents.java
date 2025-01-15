@@ -20,27 +20,22 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
+import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.renderer.entity.SlimeRenderer;
-import net.minecraft.client.renderer.entity.ZombieRenderer;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.commands.ParticleCommand;
-import net.minecraft.server.commands.SpectateCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -49,16 +44,15 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
 import java.util.*;
 
@@ -139,6 +133,34 @@ public class FPSMEvents {
     }
 
     @SubscribeEvent
+    public static void onPlayerKilledByGun(EntityKillByGunEvent event){
+        if(event.getLogicalSide() == LogicalSide.SERVER){
+            if (event.getKilledEntity() instanceof ServerPlayer player) {
+                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+                if (map != null && map.checkGameHasPlayer(player)) {
+                    if(event.getAttacker() instanceof ServerPlayer fromPlayer){
+                        BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
+                        if (fromMap != null && fromMap.equals(map)) {
+                                if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
+                                    Component killerName = fromPlayer.getDisplayName();
+                                    Component deadName = player.getDisplayName();
+                                    DeathMessage deathMessage = new DeathMessage(killerName, deadName, fromPlayer.getMainHandItem(), event.isHeadShot());
+                                    DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
+                                    fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                                        ServerPlayer serverPlayer = (ServerPlayer) fromMap.getServerLevel().getPlayerByUUID(uuid);
+                                        if(serverPlayer != null){
+                                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
+                                        }
+                                    }));
+                                }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             ServerPlayer from = null;
@@ -148,20 +170,6 @@ public class FPSMEvents {
                     BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
                     if (fromMap != null && fromMap.equals(map)) {
                         from = fromPlayer;
-                            if(event.getSource().is(ModDamageTypes.BULLET) || event.getSource().is(ModDamageTypes.BULLET_IGNORE_ARMOR)){
-                                if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
-                                    Component killerName = fromPlayer.getDisplayName();
-                                    Component deadName = event.getEntity().getDisplayName();
-                                    DeathMessage deathMessage = new DeathMessage(killerName, deadName, fromPlayer.getMainHandItem(), false);
-                                    DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
-                                    fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                                        ServerPlayer serverPlayer = (ServerPlayer) fromMap.getServerLevel().getPlayerByUUID(uuid);
-                                        if(serverPlayer != null){
-                                            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
-                                        }
-                                    }));
-                                }
-                            }
                     }
                 }
                 handlePlayerDeath(map,player,from);
@@ -172,12 +180,13 @@ public class FPSMEvents {
     @SubscribeEvent
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
+        ItemStack itemStack = event.getEntity().getItem();
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
-        if(event.getEntity().getItem().getItem() instanceof CompositionC4){
+        if(itemStack.getItem() instanceof CompositionC4){
             event.getEntity().setGlowingTag(true);
         }
 
-        if(event.getEntity().getItem().getItem() instanceof BombDisposalKit){
+        if(itemStack.getItem() instanceof BombDisposalKit){
             event.setCanceled(true);
             event.getPlayer().displayClientMessage(Component.translatable("fpsm.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
             event.getPlayer().getInventory().add(new ItemStack(FPSMItemRegister.BOMB_DISPOSAL_KIT.get(),1));
@@ -189,7 +198,6 @@ public class FPSMEvents {
             if(team == null) return;
             FPSMShop shop = shopMap.getShop(team.name);
             if (shop == null) return;
-            ItemStack itemStack = event.getEntity().getItem();
 
             ShopData shopData = shop.getPlayerShopData(event.getEntity().getUUID());
             Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
@@ -202,7 +210,11 @@ public class FPSMEvents {
             }
         }
 
-
+        MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
+        if(map instanceof CSGameMap && !event.isCanceled() && type != MatchDropEntity.DropType.MISC){
+            FPSMCore.playerDropMatchItem((ServerPlayer) event.getPlayer(),itemStack);
+            event.setCanceled(true);
+        }
 
     }
 
@@ -312,7 +324,7 @@ public class FPSMEvents {
                     }
                     player.getInventory().setChanged();
                 }
-
+                FPSMCore.playerDeadDropWeapon(player);
                 player.getInventory().clearContent();
                 player.heal(player.getMaxHealth());
                 player.setGameMode(GameType.SPECTATOR);
