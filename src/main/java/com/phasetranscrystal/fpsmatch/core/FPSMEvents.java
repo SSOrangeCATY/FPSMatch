@@ -173,6 +173,7 @@ public class FPSMEvents {
                     }
                 }
                 handlePlayerDeath(map,player,from);
+                event.setCanceled(true);
             }
         }
     }
@@ -340,7 +341,6 @@ public class FPSMEvents {
                 if (entity != null) {
                     player.setCamera(entity);
                 }
-                player.setRespawnPosition(player.level().dimension(), player.getOnPos().above(), 0f, true, false);
                 FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData(),deadPlayerTeam.name));
             }
 
