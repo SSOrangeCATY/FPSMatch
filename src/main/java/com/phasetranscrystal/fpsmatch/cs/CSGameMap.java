@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
@@ -19,6 +20,7 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.server.commands.ExecuteCommand;
@@ -96,6 +98,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         commands.put("da",CSGameMap::handleDisagreeCommand);
         commands.put("start",CSGameMap::handleStartCommand);
         commands.put("reset",CSGameMap::handleResetCommand);
+        commands.put("log",CSGameMap::handleLogCommand);
         return commands;
     }
 
@@ -107,6 +110,82 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             Component translation = Component.translatable("fpsm.cs." + this.voteObj.getVoteTitle());
             serverPlayer.displayClientMessage(Component.translatable("fpsm.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
         }
+    }
+
+    private void handleLogCommand(ServerPlayer serverPlayer) {
+        serverPlayer.displayClientMessage(Component.literal("-----------------INFO----------------").withStyle(ChatFormatting.GREEN), false);
+
+        serverPlayer.displayClientMessage(Component.literal("| type ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.getGameType() + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+        serverPlayer.displayClientMessage(Component.literal("| name ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.getMapName() + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+
+        serverPlayer.displayClientMessage(Component.literal("| isStart ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isStart)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isPause ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isPause)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isWaiting ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isWaiting)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isWaitingWinner ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isWaitingWinner)), false);
+
+        serverPlayer.displayClientMessage(Component.literal("| isBlasting ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.isBlasting + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isExploded ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isExploded)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isOvertime ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isOvertime)), false);
+        serverPlayer.displayClientMessage(Component.literal("| overCount ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.overCount + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+
+        serverPlayer.displayClientMessage(Component.literal("| isWaitingOverTimeVote ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isWaitingOverTimeVote)), false);
+        serverPlayer.displayClientMessage(Component.literal("| currentPauseTime ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.currentPauseTime + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+        serverPlayer.displayClientMessage(Component.literal("| autoStartTimer ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.autoStartTimer + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+
+        serverPlayer.displayClientMessage(Component.literal("| autoStartFirstMessageFlag ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.autoStartFirstMessageFlag)), false);
+        serverPlayer.displayClientMessage(Component.literal("| waitingTime ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.waitingTime + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+        serverPlayer.displayClientMessage(Component.literal("| currentRoundTime ").withStyle(ChatFormatting.GRAY).append(
+                Component.literal("[" + this.currentRoundTime + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+
+        serverPlayer.displayClientMessage(Component.literal("| isShopLocked ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isShopLocked)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isWarmTime ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isWarmTime)), false);
+        serverPlayer.displayClientMessage(Component.literal("| isError ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.isError)), false);
+
+        for (BaseTeam team : this.getMapTeams().getTeams()) {
+            serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
+            serverPlayer.displayClientMessage(Component.literal("info: team-").withStyle(ChatFormatting.GRAY).append(
+                    Component.literal("[" + team.name + "]").withStyle(ChatFormatting.DARK_AQUA)).append(
+                    Component.literal(" | player Count : ").withStyle(ChatFormatting.GRAY)).append(
+                    Component.literal("[" + team.getPlayers().size() + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
+            for (PlayerData tabData : team.getPlayers().values()) {
+                MutableComponent playerNameComponent = Component.literal("Player: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal(this.getMapTeams().playerName.get(tabData.getOwner()).getString()).withStyle(ChatFormatting.DARK_GREEN));
+
+                MutableComponent tabDataComponent = Component.literal(" | Tab Data: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal("[" + tabData.getTabData().getTabString() + "]").withStyle(ChatFormatting.DARK_AQUA));
+
+                MutableComponent damagesComponent = Component.literal(" | damages : ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal("[" + String.valueOf(tabData.getTabData().getDamage()) + "]").withStyle(ChatFormatting.DARK_AQUA));
+
+                MutableComponent isLivingComponent = Component.literal(" | isLiving :").withStyle(ChatFormatting.GRAY)
+                        .append(formatBoolean(tabData.getTabData().isLiving()));
+
+                serverPlayer.displayClientMessage(playerNameComponent.append(tabDataComponent).append(damagesComponent).append(isLivingComponent), false);
+            }
+            serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
+        }
+    }
+
+    private Component formatBoolean(boolean value){
+        return Component.literal(String.valueOf(value)).withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
     }
 
     private void handleStartCommand(ServerPlayer serverPlayer) {
