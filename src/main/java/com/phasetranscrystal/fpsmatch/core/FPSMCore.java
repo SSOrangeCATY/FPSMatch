@@ -64,8 +64,6 @@ public class FPSMCore {
 
     public BaseMap registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
-            new ResourceLocation(type,map.mapName);
-
             if(getMapNames(type).contains(map.getMapName())){
                 FPSMatch.LOGGER.error("error : has same map name -> " + map.getMapName());
                 return null;

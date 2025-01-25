@@ -20,7 +20,7 @@ public interface ISavedData<T> {
      * @apiNote  在数据类中实现该方法无效。<p> 需要在 {@link SaveHolder} 中提供处理数据逻辑。
      * @return 一个 Consumer，用于处理解码后的数据。
      */
-    default Consumer<T> readerHandler() {
+    default Consumer<T> readHandler() {
         return (T) -> {};
     }
     default T decodeFromJson(JsonElement json) {
@@ -40,7 +40,7 @@ public interface ISavedData<T> {
                             FileReader reader = new FileReader(file);
                             JsonElement element = new Gson().fromJson(reader,JsonElement.class);
                             T data = this.decodeFromJson(element);
-                            this.readerHandler().accept(data);
+                            this.readHandler().accept(data);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

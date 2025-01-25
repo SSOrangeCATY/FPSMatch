@@ -26,7 +26,6 @@ public class MapRegister {
                 manager.saveData(baseMap,baseMap.getMapName());
             }));
         }));
-
     }
 
 

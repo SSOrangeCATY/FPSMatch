@@ -1,19 +1,31 @@
 package com.phasetranscrystal.fpsmatch.core;
 
-import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
-import com.phasetranscrystal.fpsmatch.core.map.IMap;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.item.CompositionC4;
+import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchLoginMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchTabRemovalS2CPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
-
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class BaseMap{
     public final String mapName;
     public String gameType = "error";
@@ -122,6 +134,55 @@ public abstract class BaseMap{
 
     public AreaData getMapArea() {
         return mapArea;
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
+        if(event.getEntity() instanceof ServerPlayer player){
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+            if(map != null && map.isStart){
+                MapTeams teams = map.getMapTeams();
+                BaseTeam playerTeam = teams.getTeamByPlayer(player);
+                if(playerTeam != null) {
+                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
+                    if(data == null) return;
+                    data.setOffline(false);
+                    //TODO
+                }
+            }else{
+                if(!player.isCreative()){
+                    player.heal(player.getMaxHealth());
+                    player.setGameMode(GameType.ADVENTURE);
+                }
+            }
+        }
+    }
+    @SubscribeEvent
+    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
+        if(event.getEntity() instanceof ServerPlayer player){
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+            if(map != null && map.isStart){
+                MapTeams teams = map.getMapTeams();
+                BaseTeam playerTeam = teams.getTeamByPlayer(player);
+                if(playerTeam != null) {
+                    playerTeam.leave(player);
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingHurtEvent(LivingHurtEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            DamageSource damageSource = event.getSource();
+            if(damageSource.getEntity() instanceof ServerPlayer from){
+                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+                if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
+                    float damage = event.getAmount();
+                    map.getMapTeams().addHurtData(player,from.getUUID(),damage);
+                }
+            }
+        }
     }
 
 }

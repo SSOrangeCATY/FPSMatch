@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
+import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
@@ -11,6 +12,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -300,6 +302,15 @@ public class ShopSlot{
      * 当组内物品槽位发生变化时调用
      */
     public final void onGroupSlotChanged(ShopSlotChangeEvent event) {
+        if(!event.isCancelLogic() && this.isLocked() && this.getBoughtCount() >= 1){
+            int i = event.player.getInventory().clearOrCountMatchingItems(this.returningChecker,1,event.player.inventoryMenu.getCraftSlots());
+            if(i > 0){
+                this.boughtCount--;
+                this.unlock();
+                FPSMCore.playerDropMatchItem(event.player,this.process().copy());
+                event.setCancelLogic(true);
+            }
+        }
         if(!this.listener.isEmpty()){
             listener.forEach(listenerModule -> {
                 listenerModule.handle(event);
@@ -335,13 +346,24 @@ public class ShopSlot{
         boughtCount++;
         ItemStack itemStack = process();
         MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
-        if(type.playerPredicate.test(player)){
-            player.getInventory().add(itemStack);
-            player.getInventory().setChanged();
-            player.inventoryMenu.broadcastChanges();
-        }else {
-            FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack);
+        if(!type.playerPredicate.test(player)){
+            if(type != MatchDropEntity.DropType.MISC){
+                Predicate<ItemStack> test = MatchDropEntity.getPredicateByDropType(type);
+                List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
+                for(List<ItemStack> itemStackList : items ){
+                    for(ItemStack itemStack1 : itemStackList){
+                        if(test.test(itemStack1)){
+                            FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack1.copy());
+                            itemStack1.shrink(1);
+                            break;
+                        }
+                    }
+                }
+            }
         }
+        player.getInventory().add(itemStack);
+        player.getInventory().setChanged();
+        player.inventoryMenu.broadcastChanges();
         return money - cost;
     }
 
@@ -351,8 +373,8 @@ public class ShopSlot{
      * @param player 玩家
      * @return 返回后剩余物品数量
      */
-    public int returnItem(Player player) {
-        return returnItem(player, 1);
+    public void returnItem(Player player) {
+        returnItem(player, 1);
     }
 
     /**

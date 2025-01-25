@@ -32,10 +32,11 @@ public class FPSMDataManager {
         this.REGISTRY.values().forEach(pair -> pair.getSecond().getReader().accept(new File(levelData,pair.getFirst())));
     }
 
+
     public <T extends ISavedData<T>> void registerData(Class<T> clazz, String folderName, SaveHolder<T> iSavedData) {
         folderName = fixName(folderName);
         this.REGISTRY.put(clazz,Pair.of(folderName,iSavedData));
-        this.DATA.add(iSavedData.writerHandler());
+        this.DATA.add(iSavedData.writeHandler());
         File mapData = new File(levelData,folderName);
         if(!mapData.exists()){
             if(!mapData.mkdirs()) throw new RuntimeException("error : can't create "+folderName+" data folder.");

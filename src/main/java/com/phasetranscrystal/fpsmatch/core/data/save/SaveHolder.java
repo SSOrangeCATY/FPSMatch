@@ -12,5 +12,5 @@ import java.util.function.Consumer;
  * @param <T> 数据类
  * @see RegisterFPSMSaveDataEvent
  */
-public record SaveHolder<T>(Codec<T> codec, Consumer<T> readerHandler,Consumer<FPSMDataManager> writerHandler) implements ISavedData<T> {
+public record SaveHolder<T>(Codec<T> codec, Consumer<T> readHandler, Consumer<FPSMDataManager> writeHandler) implements ISavedData<T> {
 }
