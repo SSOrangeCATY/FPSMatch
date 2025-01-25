@@ -36,7 +36,6 @@ public class DeathMessageHud implements IGuiOverlay {
         }
     }
 
-
     private void renderKillTips(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         long currentTime = System.currentTimeMillis();
         int yOffset = getHudPositionYOffset();

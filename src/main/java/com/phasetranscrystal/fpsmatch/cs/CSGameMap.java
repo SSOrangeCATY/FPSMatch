@@ -1,11 +1,15 @@
 package com.phasetranscrystal.fpsmatch.cs;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.*;
+import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
@@ -19,12 +23,13 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.server.commands.ExecuteCommand;
-import net.minecraft.server.commands.KickCommand;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -42,7 +47,6 @@ import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -54,7 +58,7 @@ import java.util.function.Predicate;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap> {
+public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap> , ISavedData<CSGameMap> {
     private static final int AUTO_START_TIME = 1200;
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
     private static final Map<String, Consumer<CSGameMap>> VOTE_ACTION = registerVoteAction();
@@ -277,7 +281,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
         this.voteLogic();
         this.autoStartLogic();
-        this.checkErrorPlayerTeam();
     }
 
 
@@ -423,6 +426,7 @@ private void autoStartLogic(){
     }
 
     private void checkErrorPlayerTeam() {
+        /*
         this.getMapTeams().getTeams().forEach(team->{
             team.getPlayerList().forEach(uuid->{
                 if(this.getServerLevel().getPlayerByUUID(uuid) == null){
@@ -430,7 +434,7 @@ private void autoStartLogic(){
                     this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(uuid));
                 };
             });
-        });
+        });*/
     }
 
     public void startGame(){
@@ -765,6 +769,7 @@ private void autoStartLogic(){
                 serverPlayer.removeAllEffects();
             }
         }));
+        this.checkErrorPlayerTeam();
         resetGame();
     }
 
@@ -812,6 +817,7 @@ private void autoStartLogic(){
     @Override
     public void cleanupMap() {
         super.cleanupMap();
+        this.checkErrorPlayerTeam();
         AreaData areaData = this.getMapArea();
         ServerLevel serverLevel = this.getServerLevel();
 
@@ -1099,12 +1105,6 @@ private void autoStartLogic(){
         });
         return a.get();
     }
-
-    @Override
-    public @NotNull CSGameMap getMap() {
-        return this;
-    }
-
     @Override
     public List<ItemStack> getKits(BaseTeam team) {
         List<ItemStack> itemStacks = new ArrayList<>();
@@ -1235,6 +1235,83 @@ private void autoStartLogic(){
         });
     }
 
+    @Override
+    public CSGameMap getMap() {
+        return this;
+    }
+    public static final Codec<CSGameMap> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        // 基础地图数据
+        Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
+        FPSMCodec.AREA_DATA_CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
+        ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
+
+        // 队伍出生点数据
+         FPSMCodec.SPAWN_POINT_DATA_MAP_LIST_CODEC.fieldOf("spawnpoints").forGetter(map->map.getMapTeams().getAllSpawnPoints()),
+
+        // 商店数据 - 使用字符串到FPSMShop的映射
+        Codec.unboundedMap(Codec.STRING, FPSMShop.CODEC).fieldOf("shops")
+            .forGetter(map -> map.shop),
+            
+        // 初始装备数据
+        FPSMCodec.TEAM_ITEMS_KITS_CODEC.fieldOf("startKits")
+            .forGetter(map -> map.startKits),
+            
+        // 炸弹区域数据
+        FPSMCodec.List_AREA_DATA_CODEC.fieldOf("bombAreas")
+            .forGetter(map -> map.bombAreaData),
+            
+        // 爆破队伍
+        Codec.STRING.fieldOf("blastTeam")
+            .forGetter(map -> map.blastTeam),
+            
+        // 比赛结束传送点
+        FPSMCodec.SPAWN_POINT_DATA_CODEC.optionalFieldOf("matchEndPoint")
+            .forGetter(map -> Optional.ofNullable(map.matchEndTeleportPoint))
+            
+    ).apply(instance, (mapName, mapArea, serverLevel, spawnPoints, shops, startKits, bombAreas, blastTeam, matchEndPoint) -> {
+        // 创建新的CSGameMap实例
+        CSGameMap gameMap = new CSGameMap(
+            FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)),
+            mapName,
+            mapArea
+        );
+
+        // 设置类型
+        gameMap.setGameType("cs");
+
+        // 设置出生点数据
+        gameMap.setMapTeams(new MapTeams(gameMap.getServerLevel(),gameMap.getTeams(),gameMap));
+        gameMap.getMapTeams().putAllSpawnPoints(spawnPoints);
+
+        // 设置商店数据
+        gameMap.shop.clear();
+        gameMap.shop.putAll(shops);
+        
+        // 设置初始装备
+        gameMap.startKits.clear();
+        gameMap.startKits.putAll(startKits);
+        
+        // 设置炸弹区域
+        gameMap.bombAreaData.clear();
+        gameMap.bombAreaData.addAll(bombAreas);
+        
+        // 设置爆破队伍
+        gameMap.blastTeam = blastTeam;
+        
+        // 设置比赛结束传送点
+        matchEndPoint.ifPresent(point -> gameMap.matchEndTeleportPoint = point);
+        
+        return gameMap;
+    }));
+
+    @Override
+    public Codec<CSGameMap> codec() {
+        return CODEC;
+    }
+
+    public void read() {
+        FPSMCore.getInstance().registerMap(this.gameType,this);
+    }
     public enum WinnerReason{
         TIME_OUT(3250),
         ACED(3250),

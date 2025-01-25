@@ -554,7 +554,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     }
                 }
 
-
                 this.imageView.setImageDrawable(new ImageDrawable(this.icon));
                 imageView.setImageTintList(ClientData.currentTeam.equals("ct") ? CT_TINT_LIST : T_TINT_LIST);
                 this.invalidate();

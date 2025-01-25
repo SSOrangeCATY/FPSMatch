@@ -1,7 +1,10 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
+import com.phasetranscrystal.fpsmatch.core.map.IMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -11,7 +14,7 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
 
-public abstract class BaseMap {
+public abstract class BaseMap{
     public final String mapName;
     public String gameType = "error";
     public boolean isStart = false;

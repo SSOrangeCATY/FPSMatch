@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -12,6 +13,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.*;
 
@@ -20,6 +23,34 @@ public class FPSMShop {
     private final Map<ItemType, ArrayList<ShopSlot>> defaultShopData;
     private final int startMoney;
     public final Map<UUID,ShopData> playersData = new HashMap<>();
+
+    public static final Codec<FPSMShop> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        Codec.STRING.fieldOf("mapName").forGetter(FPSMShop::getName),
+        Codec.INT.fieldOf("defaultMoney").forGetter(FPSMShop::getDefaultMoney),
+        Codec.unboundedMap(
+            Codec.STRING,
+            ShopSlot.CODEC.listOf()
+        ).fieldOf("shopData").forGetter(FPSMShop::getDefaultShopDataMapString)
+    ).apply(instance, (name, defaultMoney, shopData) -> {
+        FPSMShop shop = new FPSMShop(name, defaultMoney);
+
+        Map<ItemType, ArrayList<ShopSlot>> data = new HashMap<>();
+        shopData.forEach((t,l)->{
+            ArrayList<ShopSlot> list = new ArrayList<>(l);
+            data.put(ItemType.valueOf(t),list);
+        });
+
+        shop.setDefaultShopData(data);
+        return shop;
+    }));
+
+    private int getDefaultMoney() {
+        return startMoney;
+    }
+
+    public String getName() {
+        return name;
+    }
 
     public FPSMShop(String name, int startMoney){
         this.defaultShopData = ShopData.getRawData();
@@ -175,6 +206,14 @@ public class FPSMShop {
 
     public Map<ItemType, ArrayList<ShopSlot>> getDefaultShopDataMap() {
         return this.defaultShopData;
+    }
+
+    public Map<String, List<ShopSlot>> getDefaultShopDataMapString() {
+        Map<String, List<ShopSlot>> map = new HashMap<>();
+        this.defaultShopData.forEach((k,v)->{
+            map.put(k.name(),v);
+        });
+        return map;
     }
 
     public void handleButton(ServerPlayer serverPlayer, ItemType type, int index, ShopAction action) {

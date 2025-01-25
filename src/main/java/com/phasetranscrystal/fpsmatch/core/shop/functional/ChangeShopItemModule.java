@@ -4,12 +4,15 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 
-public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule {
+public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule , ISavedData<ChangeShopItemModule> {
 
     public static final Codec<ChangeShopItemModule> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ItemStack.CODEC.fieldOf("defaultItem").forGetter(ChangeShopItemModule::defaultItem),
@@ -18,12 +21,13 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
             Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost)
     ).apply(instance, ChangeShopItemModule::new));
 
-    public static JsonElement encodeToJson(ChangeShopItemModule data) {
-        return CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new RuntimeException(e); });
+    @Override
+    public Codec<ChangeShopItemModule> codec() {
+        return CODEC;
     }
 
-    public static ChangeShopItemModule decodeFromJson(JsonElement json) {
-        return CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    public void read() {
+        FPSMatch.listenerModuleManager.addListenerType(this);
     }
 
     @Override

@@ -6,7 +6,9 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -31,12 +33,14 @@ import java.util.function.Predicate;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     private static FPSMCore INSTANCE;
+    private final MinecraftServer server;
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private final Map<String, Function3<ServerLevel,String,AreaData,BaseMap>> REGISTRY = new HashMap<>();
     private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
-    public FPSMCore(String archiveName) {
+    private FPSMCore(String archiveName,MinecraftServer server) {
         this.archiveName = archiveName;
+        this.server = server;
     }
 
     public static FPSMCore getInstance(){
@@ -44,8 +48,8 @@ public class FPSMCore {
         return INSTANCE;
     }
 
-    protected static void setInstance(String archiveName){
-        INSTANCE = new FPSMCore(archiveName);
+    protected static void setInstance(String archiveName,MinecraftServer server){
+        INSTANCE = new FPSMCore(archiveName,server);
     }
 
     @Nullable public BaseMap getMapByPlayer(Player player){
@@ -84,6 +88,18 @@ public class FPSMCore {
             }
         }));
        return map.get();
+    }
+
+    public <T> List<T> getMapByClass(Class<T> clazz){
+        ArrayList<T> list = new ArrayList<>();
+        this.GAMES.values().forEach(mapList -> {
+            mapList.forEach(map -> {
+                if (clazz.isInstance(map)){
+                    list.add((T) map);
+                }
+            });
+        });
+        return list;
     }
 
     public List<String> getMapNames(){
@@ -150,10 +166,9 @@ public class FPSMCore {
         }
     }
 
-
     @SubscribeEvent
     public static void onServerStartingEvent(ServerStartingEvent event) {
-         FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
+         FPSMCore.setInstance(event.getServer().getWorldData().getLevelName(),event.getServer());
          FPSMCore.getInstance().clearData();
          MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
     }
@@ -209,5 +224,9 @@ public class FPSMCore {
                 }
             }
         }
+    }
+
+    public MinecraftServer getServer() {
+        return server;
     }
 }

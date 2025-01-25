@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
 import com.phasetranscrystal.fpsmatch.client.screen.FlashBombHud;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.command.VoteCommand;
+import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
@@ -16,8 +17,6 @@ import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.FenceBlock;
-import net.minecraft.world.level.block.GrassBlock;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
@@ -50,7 +49,6 @@ public class FPSMatch {
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
     );
-
     public static LMManager listenerModuleManager;
 
     public FPSMatch(FMLJavaModLoadingContext context)

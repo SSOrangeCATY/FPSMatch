@@ -1,17 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core;
 
-import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
-import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
-import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
-import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -27,11 +22,8 @@ import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -39,7 +31,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
@@ -242,53 +233,13 @@ public class FPSMEvents {
 
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        String name = event.getServer().getWorldData().getLevelName();
-        FileHelper.saveMaps(name);
-        FPSMatch.listenerModuleManager.save();
+        FPSMDataManager.getInstance().saveData();
     }
 
     @SubscribeEvent
     public static void onServerStartedEvent(ServerStartedEvent event) {
         FPSMatch.listenerModuleManager = new LMManager();
-        List<FileHelper.RawMapData> rawMapDataList = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
-            for(FileHelper.RawMapData rawMapData : rawMapDataList){
-                String mapType = rawMapData.mapRL.getNamespace();
-                String mapName = rawMapData.mapRL.getPath();
-                Function3<ServerLevel,String, AreaData,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(mapType);
-                Map<String, List<SpawnPointData>> data = rawMapData.teamsData;
-                if(!data.isEmpty()){
-                    ResourceKey<Level> level = rawMapData.levelResourceKey;
-                    if (game != null) {
-                        BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(event.getServer().getLevel(level), mapName, rawMapData.areaData));
-                        if(map != null){
-                            map.setGameType(mapType);
-                            map.getMapTeams().putAllSpawnPoints(data);
-
-                            if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null){
-                                rawMapData.shop.forEach((k,v)->{
-                                    // TODO ERROR BUG????
-                                    shopMap.getShop(k).setDefaultShopData(v);
-                                });
-                            }
-
-                            if(map instanceof BlastModeMap<?> blastModeMap){
-                                if (rawMapData.blastAreaDataList != null) {
-                                    rawMapData.blastAreaDataList.forEach(blastModeMap::addBombArea);
-                                }
-                            }
-
-                            if(map instanceof GiveStartKitsMap<?> startKitsMap && rawMapData.startKits != null){
-                                startKitsMap.setStartKits(rawMapData.startKits);
-                            }
-
-                            if(map instanceof CSGameMap csGameMap && rawMapData.matchEndTeleportPoint != null){
-                                csGameMap.setMatchEndTeleportPoint(rawMapData.matchEndTeleportPoint);
-                            }
-
-                        }
-                    }
-                }
-            }
+        FPSMDataManager.getInstance().setLevelData(FPSMCore.getInstance().archiveName);
     }
 
 

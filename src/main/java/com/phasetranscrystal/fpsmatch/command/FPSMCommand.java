@@ -13,6 +13,7 @@ import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
@@ -22,7 +23,6 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
-import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
@@ -34,23 +34,25 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
+import java.util.Map;
 
 public class FPSMCommand {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
+                .then(Commands.literal("loadOld").executes(this::handleLoadOld))
                 .then(Commands.literal("save").executes(this::handleSave))
                 .then(Commands.literal("sync").executes(this::handleSync))
                 .then(Commands.literal("reload").executes(this::handleReLoad))
@@ -271,8 +273,52 @@ public class FPSMCommand {
     }
 
     private int handleSave(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
-        FileHelper.saveMaps(FPSMCore.getInstance().archiveName);
-        FPSMatch.listenerModuleManager.save();
+        FPSMDataManager.getInstance().saveData();
+        commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
+        return 1;
+    }
+
+    private int handleLoadOld(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        List<FileHelper.RawMapData> rawMapDataList = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
+        for(FileHelper.RawMapData rawMapData : rawMapDataList){
+            String mapType = rawMapData.mapRL.getNamespace();
+            String mapName = rawMapData.mapRL.getPath();
+            Function3<ServerLevel,String, AreaData,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(mapType);
+            Map<String, List<SpawnPointData>> data = rawMapData.teamsData;
+            if(!data.isEmpty()){
+                ResourceKey<Level> level = rawMapData.levelResourceKey;
+                if (game != null) {
+                    BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(commandSourceStackCommandContext.getSource().getServer().getLevel(level), mapName, rawMapData.areaData));
+                    if(map != null){
+                        map.setGameType(mapType);
+                        map.getMapTeams().putAllSpawnPoints(data);
+
+                        if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null){
+                            rawMapData.shop.forEach((k,v)->{
+                                // TODO ERROR BUG????
+                                shopMap.getShop(k).setDefaultShopData(v);
+                            });
+                        }
+
+                        if(map instanceof BlastModeMap<?> blastModeMap){
+                            if (rawMapData.blastAreaDataList != null) {
+                                rawMapData.blastAreaDataList.forEach(blastModeMap::addBombArea);
+                            }
+                        }
+
+                        if(map instanceof GiveStartKitsMap<?> startKitsMap && rawMapData.startKits != null){
+                            startKitsMap.setStartKits(rawMapData.startKits);
+                        }
+
+                        if(map instanceof CSGameMap csGameMap && rawMapData.matchEndTeleportPoint != null){
+                            csGameMap.setMatchEndTeleportPoint(rawMapData.matchEndTeleportPoint);
+                        }
+
+                    }
+                }
+            }
+        }
+
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
         return 1;
     }

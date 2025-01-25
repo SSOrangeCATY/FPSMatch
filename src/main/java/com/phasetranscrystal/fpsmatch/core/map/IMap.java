@@ -1,8 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
-import org.jetbrains.annotations.NotNull;
+import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 
 public interface IMap<T extends BaseMap> {
-    @NotNull T getMap();
+    T getMap();
 }
