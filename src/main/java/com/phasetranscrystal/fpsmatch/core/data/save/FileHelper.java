@@ -33,6 +33,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+@Deprecated
 public class FileHelper {
     public static final File FPS_MATCH_DIR = new File(FMLLoader.getGamePath().toFile(), "fpsmatch");
 
@@ -48,6 +49,7 @@ public class FileHelper {
         return fileName;
     }
 
+    @Deprecated
     public static List<RawMapData> loadMaps(String levelName) {
         levelName = fixName(levelName);
         List<RawMapData> loadedMaps = new ArrayList<>();
