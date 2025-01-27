@@ -2,9 +2,7 @@ package com.phasetranscrystal.fpsmatch.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.entity.FlashBombEntity;
-import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
 import com.phasetranscrystal.fpsmatch.net.ThrowFlashBombC2SPacket;
-import com.phasetranscrystal.fpsmatch.net.ThrowGrenade2CSPacket;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;

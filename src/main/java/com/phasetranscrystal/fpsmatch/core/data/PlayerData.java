@@ -1,10 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import net.minecraft.client.gui.screens.advancements.AdvancementTab;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.saveddata.SavedData;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.*;
 
 public class PlayerData{

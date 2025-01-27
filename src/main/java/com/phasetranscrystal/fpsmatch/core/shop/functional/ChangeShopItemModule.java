@@ -1,11 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
-import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.tacz.guns.api.item.IGun;

@@ -1,24 +1,14 @@
 package com.phasetranscrystal.fpsmatch.core.data.save;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
-import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
-import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
-import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -29,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 

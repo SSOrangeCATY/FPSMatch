@@ -4,19 +4,12 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
-import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
-import com.phasetranscrystal.fpsmatch.item.CompositionC4;
-import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchLoginMessageS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchTabRemovalS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -88,6 +81,7 @@ public abstract class BaseMap{
 
     public void joinTeam(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player),new FPSMatchGameTypeS2CPacket(this.getMapName(),this.getGameType()));
         FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
         if(this instanceof ShopMap<?> shopMap){
             shopMap.getShop(teamName).syncShopData(player);
@@ -179,7 +173,7 @@ public abstract class BaseMap{
                 BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
                 if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
                     float damage = event.getAmount();
-                    map.getMapTeams().addHurtData(player,from.getUUID(),damage);
+                    map.getMapTeams().addHurtData(from,player.getUUID(),damage);
                 }
             }
         }

@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 

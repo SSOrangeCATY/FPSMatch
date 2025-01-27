@@ -3,7 +3,6 @@ package com.phasetranscrystal.fpsmatch.core.map;
 import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.world.entity.player.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 

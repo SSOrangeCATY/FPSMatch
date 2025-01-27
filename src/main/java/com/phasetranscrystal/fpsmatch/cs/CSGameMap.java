@@ -6,11 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
-import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.data.*;
 import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
@@ -25,6 +21,7 @@ import com.phasetranscrystal.fpsmatch.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
@@ -40,7 +37,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -55,7 +51,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -381,10 +376,32 @@ private void autoStartLogic(){
 
     @Override
     public void joinTeam(String teamName, ServerPlayer player) {
-        FPSMCore.checkAndLeaveTeam(player);
         MapTeams mapTeams = this.getMapTeams();
-        mapTeams.joinTeam(teamName,player);
-        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
+        mapTeams.joinTeam(teamName, player);
+        
+        // 同步游戏类型和地图信息
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player), 
+            new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
+        
+        // 同步新加入玩家的信息给所有人
+        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), 
+            new CSGameTabStatsS2CPacket(player.getUUID(), 
+                Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName))
+                    .getPlayerData(player.getUUID())).getTabData(), 
+                teamName));
+                
+        // 同步所有已存在玩家的信息给新玩家
+        for (BaseTeam team : mapTeams.getTeams()) {
+            for (UUID existingPlayerId : team.getPlayers().keySet()) {
+                if (!existingPlayerId.equals(player.getUUID())) {
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player),
+                        new CSGameTabStatsS2CPacket(existingPlayerId,
+                            Objects.requireNonNull(team.getPlayerData(existingPlayerId)).getTabData(),
+                            team.name));
+                }
+            }
+        }
+        
         this.getShop(teamName).syncShopData(player);
         if(this.isStart){
             player.setGameMode(GameType.SPECTATOR);
@@ -440,8 +457,7 @@ private void autoStartLogic(){
     }
 
     private void checkErrorPlayerTeam() {
-        /*
-        this.getMapTeams().getTeams().forEach(team->{
+      /*  this.getMapTeams().getTeams().forEach(team->{
             team.getPlayerList().forEach(uuid->{
                 if(this.getServerLevel().getPlayerByUUID(uuid) == null){
                     team.delPlayer(uuid);
@@ -1084,7 +1100,6 @@ private void autoStartLogic(){
                 player.setGameMode(GameType.ADVENTURE);
                 this.teleportPlayerToMatchEndPoint(player);
                 this.resetPlayerClientData(player);
-                this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
                 player.getInventory().clearContent();
                 player.removeAllEffects();
             }
@@ -1333,6 +1348,14 @@ private void autoStartLogic(){
                             if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
                                 Component killerName = fromPlayer.getDisplayName();
                                 Component deadName = player.getDisplayName();
+                                BaseTeam team = fromMap.getMapTeams().getTeamByPlayer(fromPlayer);
+
+                                if(event.isHeadShot() && team != null){
+                                    TabData tabData = Objects.requireNonNull(team.getPlayerData(fromPlayer.getUUID())).getTabData();
+                                    tabData.addHeadshotKill();
+                                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(tabData.getOwner(), tabData,team.name));
+                                }
+
                                 DeathMessage deathMessage = new DeathMessage(killerName, deadName, fromPlayer.getMainHandItem(), event.isHeadShot());
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
                                 fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {

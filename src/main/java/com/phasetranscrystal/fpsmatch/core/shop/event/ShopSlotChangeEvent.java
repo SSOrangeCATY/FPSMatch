@@ -2,7 +2,6 @@ package com.phasetranscrystal.fpsmatch.core.shop.event;
 
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 
 
 // ShopSlot内部调用 不传Forge事件

@@ -1,9 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +13,7 @@ public class TabData {
     private float damage;
     private int mvpCount;
     private boolean isLiving;
+    private int headshotKills;
 
     public TabData(UUID owner){
         this.owner = owner;
@@ -121,6 +118,7 @@ public class TabData {
         tabData.setAssists(assists);
         tabData.setDeaths(deaths);
         tabData.setKills(kills);
+        tabData.setHeadshotKills(headshotKills);
         return tabData;
     }
 
@@ -133,10 +131,23 @@ public class TabData {
         this.setDeaths(this.deaths + data.deaths);
         this.setAssists(this.assists + data.assists);
         this.setDamage(this.damage + data.damage);
+        this.setHeadshotKills(this.headshotKills + data.headshotKills);
     }
 
     public String getTabString(){
         return kills + "/" + deaths + "/" + assists;
+    }
+
+    public int getHeadshotKills() {
+        return headshotKills;
+    }
+
+    public void addHeadshotKill() {
+        this.headshotKills++;
+    }
+
+    public void setHeadshotKills(int headshotKills) {
+        this.headshotKills = headshotKills;
     }
 
 }

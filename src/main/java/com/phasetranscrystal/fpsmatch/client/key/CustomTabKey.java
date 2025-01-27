@@ -2,8 +2,6 @@ package com.phasetranscrystal.fpsmatch.client.key;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
-import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
-import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;

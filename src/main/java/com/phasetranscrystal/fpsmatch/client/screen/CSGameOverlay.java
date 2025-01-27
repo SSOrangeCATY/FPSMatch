@@ -19,7 +19,7 @@ public class CSGameOverlay implements IGuiOverlay {
     public static final int WARM_UP_TIME = 60;
     public static final int WAITING_TIME = 15;
     public static final int ROUND_TIME_LIMIT = 115;
-    public static int textCTWinnerRoundsColor = color(7,128,215);
+    public static int textCTWinnerRoundsColor = color(182, 210, 240);
     public static int textTWinnerRoundsColor = color(253,217,141);
     public static int noColor = color(0,0,0,0);
     public static int textRoundTimeColor = color(255,255,255);
@@ -32,43 +32,223 @@ public class CSGameOverlay implements IGuiOverlay {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if(mc.player == null) return;
+        
+        // 计算缩放因子 (以855x480为基准)
+        float scaleFactor = Math.min(screenWidth / 855.0f, screenHeight / 480.0f);
+        
+        int centerX = screenWidth / 2;
+        int startY = (int)(2 * scaleFactor);
+        int backgroundHeight = (int)(35 * scaleFactor);
+        int timeBarHeight = (int)(13 * scaleFactor);
+        int scoreBarHeight = (int)(19 * scaleFactor);
+        int boxWidth = (int)(24 * scaleFactor);
+        
+        // 计算各种间距
+        int gap = (int)(2 * scaleFactor); // 统一的2px间距
+        int timeAreaWidth = (int)(20 * scaleFactor); // 16 * 1.25 = 20
+        
+        // 计算存活栏位置
+        int ctBoxX = centerX - timeAreaWidth - gap - boxWidth; // 左侧存活栏
+        int tBoxX = centerX + timeAreaWidth + gap; // 右侧存活栏
+        
+        // 渲染中间时间区域背景 (扩大1.25倍)
+        guiGraphics.fillGradient(centerX - timeAreaWidth, startY, centerX + timeAreaWidth, startY + timeBarHeight, -1072689136, -804253680);
+        
+        // 分数栏背景
+        guiGraphics.fillGradient(centerX - timeAreaWidth, startY + timeBarHeight + gap, // 只间隔2px
+                               centerX - gap/2, startY + backgroundHeight, -1072689136, noColor);
+        guiGraphics.fillGradient(centerX + gap/2, startY + timeBarHeight + gap,
+                               centerX + timeAreaWidth, startY + backgroundHeight, -1072689136, noColor);
+
+        // 渲染CT存活信息（左侧）
+        int ctLivingCount = ClientData.getLivingWithTeam("ct");
+        String ctLivingStr = String.valueOf(ctLivingCount);
+        
+        // CT背景渐变
+        int gradientStartY = (int)(startY + timeBarHeight + scaleFactor);
+        // 上半部分
+        guiGraphics.fillGradient(
+            ctBoxX, 
+            startY,
+            ctBoxX + boxWidth, 
+            startY + timeBarHeight + (int)scaleFactor, // 增加1px高度
+            -1072689136, 
+            -1072689136
+        );
+        // 下半部分渐变
+        guiGraphics.fillGradient(
+            ctBoxX, 
+            gradientStartY,
+            ctBoxX + boxWidth, 
+            startY + backgroundHeight, 
+            -1072689136, 
+            noColor
+        );
+        
+        // CT存活数字
         guiGraphics.pose().pushPose();
-        guiGraphics.fillGradient((screenWidth / 2) - 16, 2, (screenWidth / 2) + 16, 15, -1072689136, -804253680);
-        guiGraphics.fillGradient(((screenWidth / 2) - 16), 16, (screenWidth / 2) - 1, 35, -1072689136, noColor);
-        guiGraphics.fillGradient((screenWidth / 2) + 1, 16, ((screenWidth / 2) + 16), 35, -1072689136, noColor);
-
-        Component ctLiving = Component.translatable("fpsm.cs.ct.living",ClientData.getLivingWithTeam("ct"));
-        int ct_t_w = (screenWidth / 2) - 48 - (font.width(ctLiving) / 2);
-        guiGraphics.fillGradient(ct_t_w - 2, 2, (screenWidth / 2) - 48 + font.width(ctLiving) / 2 + 3, 15, -1072689136, -1072689136);
-        guiGraphics.drawString(font, ctLiving, ct_t_w, 4, textCTWinnerRoundsColor,false);
-        guiGraphics.drawString(font, String.valueOf(ClientData.cTWinnerRounds), (screenWidth / 2) - 8 - (font.width(String.valueOf(ClientData.cTWinnerRounds)) / 2), 19, textCTWinnerRoundsColor,false);
-
-        Component tLiving = Component.translatable("fpsm.cs.t.living",ClientData.getLivingWithTeam("t"));
-        int t_t_w = (screenWidth / 2) + 48 - (font.width(tLiving) / 2);
-        guiGraphics.fillGradient(t_t_w - 2, 2, (screenWidth / 2) + 48 + font.width(tLiving) / 2 + 3, 15, -1072689136, -1072689136);
-        guiGraphics.drawString(font,tLiving, (screenWidth / 2) + 48 - (font.width(tLiving) / 2), 4, textTWinnerRoundsColor,false);
-        guiGraphics.drawString(font,String.valueOf(ClientData.tWinnerRounds), (screenWidth / 2) + 8 - (font.width(String.valueOf(ClientData.tWinnerRounds)) / 2), 19, textTWinnerRoundsColor,false);
-
-        String roundTime;
-        if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner){
-            roundTime = "--:--";
-            textRoundTimeColor = color(240,40,40);
-        }else{
-            roundTime = getCSGameTime();
-        }
-
-        guiGraphics.drawString(font,roundTime, (screenWidth / 2) - ((font.width(roundTime)) / 2), 5, textRoundTimeColor,false);
+        float numberScale = scaleFactor * 1.5f;
+        guiGraphics.pose().translate(
+            ctBoxX + boxWidth/2,
+            startY + backgroundHeight/2 - 6 * scaleFactor, // 从-2改为-6，向上移动4px
+            0
+        );
+        guiGraphics.pose().scale(numberScale, numberScale, 1.0f);
+        int ctNumberWidth = font.width(ctLivingStr);
+        guiGraphics.drawString(font, ctLivingStr,
+            -ctNumberWidth/2,
+            -4,
+            textCTWinnerRoundsColor,
+            false);
+        guiGraphics.pose().popPose();
+        
+        // CT "存活" 文字
+        float smallScale = numberScale * 0.5f; // 恢复为数字大小的一半
+        String livingText = "存活";
+        int smallTextWidth = font.width(livingText);
+        
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(
+            ctBoxX + boxWidth/2,
+            startY + backgroundHeight/2 + 2 * scaleFactor,
+            0
+        );
+        guiGraphics.pose().scale(smallScale, smallScale, 1.0f); // 使用smallScale
+        guiGraphics.drawString(font, livingText,
+            -smallTextWidth/2, // 使用smallTextWidth
+            0,
+            textCTWinnerRoundsColor,
+            false);
         guiGraphics.pose().popPose();
 
-        if(ClientData.dismantleBombProgress > 0){
-            MutableComponent component = Component.empty();
-            for (int i = 1; i < 8 ; i++){
-                boolean flag = getDemolitionProgressTextStyle(i);
-                int color = flag ? 5635925 : 16777215;
-                component.append(Component.literal(String.valueOf(code.toCharArray()[i - 1])).withStyle(Style.EMPTY.withColor(color).withObfuscated(!flag)));
-            }
-            player.displayClientMessage(component,true);
+        // 渲染T存活信息（右侧）
+        int tLivingCount = ClientData.getLivingWithTeam("t");
+        String tLivingStr = String.valueOf(tLivingCount);
+        
+        // T背景渐变
+        // 上半部分
+        guiGraphics.fillGradient(
+            tBoxX, 
+            startY,
+            tBoxX + boxWidth, 
+            startY + timeBarHeight + (int)scaleFactor, // 增加1px高度
+            -1072689136, 
+            -1072689136
+        );
+        // 下半部分渐变
+        guiGraphics.fillGradient(
+            tBoxX, 
+            gradientStartY,
+            tBoxX + boxWidth, 
+            startY + backgroundHeight, 
+            -1072689136, 
+            noColor
+        );
+        
+        // T存活数字
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(
+            tBoxX + boxWidth/2,
+            startY + backgroundHeight/2 - 6 * scaleFactor, // 从-2改为-6
+            0
+        );
+        guiGraphics.pose().scale(numberScale, numberScale, 1.0f);
+        int tNumberWidth = font.width(tLivingStr);
+        guiGraphics.drawString(font, tLivingStr,
+            -tNumberWidth/2,
+            -4,
+            textTWinnerRoundsColor,
+            false);
+        guiGraphics.pose().popPose();
+        
+        // T "存活" 文字
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(
+            tBoxX + boxWidth/2,
+            startY + backgroundHeight/2 + 2 * scaleFactor,
+            0
+        );
+        guiGraphics.pose().scale(smallScale, smallScale, 1.0f); // 使用smallScale
+        guiGraphics.drawString(font, livingText,
+            -smallTextWidth/2, // 使用smallTextWidth
+            0,
+            textTWinnerRoundsColor,
+            false);
+        guiGraphics.pose().popPose();
+
+        // 渲染时间
+        String roundTime = getRoundTimeString();
+        float timeScale = scaleFactor * 1.2f;
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(centerX, startY + timeBarHeight/2, 0);
+        guiGraphics.pose().scale(timeScale, timeScale, 1.0f);
+        guiGraphics.drawString(font, roundTime, 
+            -font.width(roundTime) / 2,
+            -4,
+            textRoundTimeColor,
+            false);
+        guiGraphics.pose().popPose();
+
+        // 渲染比分
+        float scoreScale = scaleFactor * 1.2f;
+        
+        // CT比分
+        String ctScore = String.valueOf(ClientData.cTWinnerRounds);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(
+            centerX - timeAreaWidth/2 - scaleFactor, // 左侧分数栏中心，向左偏移1px
+            startY + timeBarHeight + gap + scoreBarHeight/2,
+            0
+        );
+        guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);
+        int ctScoreWidth = font.width(ctScore);
+        guiGraphics.drawString(font, ctScore,
+            -ctScoreWidth/2,
+            -font.lineHeight/2,
+            textCTWinnerRoundsColor,
+            false);
+        guiGraphics.pose().popPose();
+        
+        // T比分
+        String tScore = String.valueOf(ClientData.tWinnerRounds);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(
+            centerX + timeAreaWidth/2 + scaleFactor, // 右侧分数栏中心，向右偏移1px
+            startY + timeBarHeight + gap + scoreBarHeight/2,
+            0
+        );
+        guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);
+        int tScoreWidth = font.width(tScore);
+        guiGraphics.drawString(font, tScore,
+            -tScoreWidth/2,
+            -font.lineHeight/2,
+            textTWinnerRoundsColor,
+            false);
+        guiGraphics.pose().popPose();
+
+        // 拆弹进度显示
+        if(ClientData.dismantleBombProgress > 0) {
+            renderDemolitionProgress(player, guiGraphics);
         }
+    }
+
+    private String getRoundTimeString() {
+        if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner) {
+            textRoundTimeColor = color(240,40,40);
+            return "--:--";
+        }
+        return getCSGameTime();
+    }
+
+    private void renderDemolitionProgress(LocalPlayer player, GuiGraphics guiGraphics) {
+        MutableComponent component = Component.empty();
+        for (int i = 1; i < 8; i++) {
+            boolean flag = getDemolitionProgressTextStyle(i);
+            int color = flag ? 5635925 : 16777215;
+            component.append(Component.literal(String.valueOf(code.toCharArray()[i - 1]))
+                .withStyle(Style.EMPTY.withColor(color).withObfuscated(!flag)));
+        }
+        player.displayClientMessage(component, true);
     }
 
     public static boolean getDemolitionProgressTextStyle(int index){

@@ -31,6 +31,7 @@ public class CSGameTabStatsS2CPacket {
         this.tabData.setAssists(buf.readInt());
         this.tabData.setDamage(buf.readFloat());
         this.tabData.setLiving(buf.readBoolean());
+        this.tabData.setHeadshotKills(buf.readInt());
         this.team = buf.readUtf();
     }
 
@@ -41,6 +42,7 @@ public class CSGameTabStatsS2CPacket {
         buf.writeInt(packet.tabData.getAssists());
         buf.writeFloat(packet.tabData.getDamage());
         buf.writeBoolean(packet.tabData.isLiving());
+        buf.writeInt(packet.tabData.getHeadshotKills());
         buf.writeUtf(packet.team);
     }
 

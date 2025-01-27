@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;

@@ -2,7 +2,6 @@ package com.phasetranscrystal.fpsmatch.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.entity.CTIncendiaryGrenadeEntity;
-import com.phasetranscrystal.fpsmatch.entity.TIncendiaryGrenadeEntity;
 import com.phasetranscrystal.fpsmatch.net.ThrowIncendiaryGrenadeC2SPacket;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;

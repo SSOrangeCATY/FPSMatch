@@ -17,26 +17,24 @@ import java.util.function.Supplier;
 public class ShopDataSlotS2CPacket {
     public final ItemType type;
     public final int index;
-    public final String name;
+
     public final ItemStack itemStack;
     public final int boughtCount;
     public final int cost;
     public final boolean locked;
 
-    public ShopDataSlotS2CPacket(ItemType type, int index, String name, ItemStack itemStack, int cost,int boughtCount,boolean locked){
+    public ShopDataSlotS2CPacket(ItemType type, int index, ItemStack itemStack, int cost,int boughtCount,boolean locked){
         this.type = type;
         this.index = index;
-        this.name = name;
         this.itemStack =itemStack;
         this.cost = cost;
         this.boughtCount = boughtCount;
         this.locked = locked;
     }
 
-    public ShopDataSlotS2CPacket(ItemType type, ShopSlot shopSlot, String name){
+    public ShopDataSlotS2CPacket(ItemType type, ShopSlot shopSlot){
         this.type = type;
         this.index = shopSlot.getIndex();
-        this.name = name;
         this.itemStack = shopSlot.process();
         this.cost = shopSlot.getCost();
         this.boughtCount = shopSlot.getBoughtCount();
@@ -46,7 +44,6 @@ public class ShopDataSlotS2CPacket {
     public static void encode(ShopDataSlotS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.type.ordinal());
         buf.writeInt(packet.index);
-        buf.writeUtf(packet.name);
         buf.writeItemStack(packet.itemStack, false);
         buf.writeInt(packet.cost);
         buf.writeInt(packet.boughtCount);
@@ -57,7 +54,6 @@ public class ShopDataSlotS2CPacket {
         return new ShopDataSlotS2CPacket(
                 ItemType.values()[buf.readInt()],
                 buf.readInt(),
-                buf.readUtf(),
                 buf.readItem(),
                 buf.readInt(),
                 buf.readInt(),
@@ -67,7 +63,6 @@ public class ShopDataSlotS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientData.currentMap = this.name;
             ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
             currentSlot.setItemStack(this.itemStack);
             currentSlot.setCost(cost);

@@ -9,7 +9,6 @@ import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;

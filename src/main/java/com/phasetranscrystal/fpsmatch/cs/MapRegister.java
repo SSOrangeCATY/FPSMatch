@@ -8,8 +8,6 @@ import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
-
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MapRegister {

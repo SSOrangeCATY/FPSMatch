@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.effect.FlashBlindnessMobEffect;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
@@ -8,14 +7,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
 
 public class FlashBombHud implements IGuiOverlay {
 

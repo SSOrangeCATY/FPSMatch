@@ -112,6 +112,12 @@
   "item.fpsmatch.ct_incendiary_grenade" : "Incendiary Grenade",
   "item.fpsmatch.t_incendiary_grenade" : "Incendiary Grenade",
   "command.cs.noMap": "You have not joined any maps.",
-  "command.cs.onlyPlayer": "This command only player execute."
-
+  "command.cs.onlyPlayer": "This command only player execute.",
+  "fpsmatch.tab.header.player": "Player",
+  "fpsmatch.tab.header.kills": "Kills",
+  "fpsmatch.tab.header.deaths": "Deaths",
+  "fpsmatch.tab.header.assists": "Assists",
+  "fpsmatch.tab.header.damage": "Damage",
+  "fpsmatch.tab.header.money": "Money",
+  "fpsmatch.tab.header.headshot": "Headshot Rate"
 }

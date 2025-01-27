@@ -49,19 +49,19 @@ import java.util.Locale;
 import java.util.Map;
 
 public class FPSMCommand {
-    public void onRegisterCommands(RegisterCommandsEvent event) {
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
-                .then(Commands.literal("loadOld").executes(this::handleLoadOld))
-                .then(Commands.literal("save").executes(this::handleSave))
-                .then(Commands.literal("sync").executes(this::handleSync))
-                .then(Commands.literal("reload").executes(this::handleReLoad))
+                .then(Commands.literal("loadOld").executes(FPSMCommand::handleLoadOld))
+                .then(Commands.literal("save").executes(FPSMCommand::handleSave))
+                .then(Commands.literal("sync").executes(FPSMCommand::handleSync))
+                .then(Commands.literal("reload").executes(FPSMCommand::handleReLoad))
                 .then(Commands.literal("listenerModule")
                        .then(Commands.literal("add")
                                .then(Commands.literal("changeItemModule")
                                       .then(Commands.argument("changedCost", IntegerArgumentType.integer(1))
                                               .then(Commands.argument("defaultCost", IntegerArgumentType.integer(1))
-                                                      .executes(this::handleChangeItemModule))))))
+                                                      .executes(FPSMCommand::handleChangeItemModule))))))
                 .then(Commands.literal("shop")
                         .then(Commands.argument("gameType", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION)
@@ -79,24 +79,24 @@ public class FPSMCommand {
                                                                                         .then(Commands.literal("add")
                                                                                                 .then(Commands.argument("listenerModule", StringArgumentType.string())
                                                                                                         .suggests(CommandSuggests.SHOP_SLOT_ADD_LISTENER_MODULES_SUGGESTION)
-                                                                                                        .executes(this::handleAddListenerModule)))
+                                                                                                        .executes(FPSMCommand::handleAddListenerModule)))
                                                                                 .then(Commands.literal("remove")
                                                                                        .then(Commands.argument("listenerModule", StringArgumentType.string())
                                                                                                .suggests(CommandSuggests.SHOP_SLOT_REMOVE_LISTENER_MODULES_SUGGESTION)
-                                                                                               .executes(this::handleRemoveListenerModule))))
+                                                                                               .executes(FPSMCommand::handleRemoveListenerModule))))
                                                                         .then(Commands.literal("groupID")
                                                                                .then(Commands.argument("groupID", IntegerArgumentType.integer(0))
-                                                                                       .executes(this::handleModifyShopGroupID)))
+                                                                                       .executes(FPSMCommand::handleModifyShopGroupID)))
                                                                         .then(Commands.literal("cost")
                                                                                 .then(Commands.argument("cost", IntegerArgumentType.integer(0))
-                                                                                        .executes(this::handleModifyCost)))
+                                                                                        .executes(FPSMCommand::handleModifyCost)))
                                                                         .then(Commands.literal("item")
-                                                                                .executes(this::handleModifyItemWithoutValue)
+                                                                                .executes(FPSMCommand::handleModifyItemWithoutValue)
                                                                                 .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
-                                                                                       .executes(this::handleModifyItem)))
+                                                                                       .executes(FPSMCommand::handleModifyItem)))
                                                                         .then(Commands.literal("dummyAmmoAmount")
                                                                                 .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
-                                                                                        .executes(this::handleGunModifyGunAmmoAmount)))
+                                                                                        .executes(FPSMCommand::handleGunModifyGunAmmoAmount)))
                                                                 ))))))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
@@ -105,53 +105,53 @@ public class FPSMCommand {
                                         .then(Commands.argument("mapName", StringArgumentType.string())
                                                 .then(Commands.argument("from", BlockPosArgument.blockPos())
                                                         .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                                                .executes(this::handleCreateMapWithoutSpawnPoint))))))
+                                                                .executes(FPSMCommand::handleCreateMapWithoutSpawnPoint))))))
                         .then(Commands.literal("modify")
                                 .then(Commands.argument("mapName", StringArgumentType.string())
                                 .suggests(CommandSuggests.MAP_NAMES_SUGGESTION)
                                         .then(Commands.literal("matchEndTeleportPoint")
                                                 .then(Commands.argument("point", BlockPosArgument.blockPos())
-                                                        .executes(this::handleModifyMatchEndTeleportPoint)))
+                                                        .executes(FPSMCommand::handleModifyMatchEndTeleportPoint)))
                                         .then(Commands.literal("bombArea").requires((permission)-> permission.hasPermission(2))
                                                 .then(Commands.literal("add")
                                                         .then(Commands.argument("from", BlockPosArgument.blockPos())
                                                                 .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                                                        .executes(this::handleBombAreaAction)))))
+                                                                        .executes(FPSMCommand::handleBombAreaAction)))))
                                         .then(Commands.literal("debug")
                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                         .suggests(CommandSuggests.MAP_DEBUG_SUGGESTION)
-                                                        .executes(this::handleDebugAction)))
+                                                        .executes(FPSMCommand::handleDebugAction)))
                                         .then(Commands.literal("join")
-                                                .executes(this::handleJoinMapWithoutTarget)
+                                                .executes(FPSMCommand::handleJoinMapWithoutTarget)
                                                 .then(Commands.argument("targets", EntityArgument.players())
-                                                                .executes(this::handleJoinMapWithTarget)))
+                                                                .executes(FPSMCommand::handleJoinMapWithTarget)))
                                         .then(Commands.literal("team")
                                                 .then(Commands.argument("teamName", StringArgumentType.string())
                                                 .suggests(CommandSuggests.TEAM_NAMES_SUGGESTION)
                                                         .then(Commands.literal("kits")
                                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                                         .suggests(CommandSuggests.SKITS_SUGGESTION)
-                                                                        .executes(this::handleKitsWithoutItemAction)
+                                                                        .executes(FPSMCommand::handleKitsWithoutItemAction)
                                                                         .then(Commands.literal("dummyAmmoAmount")
                                                                                 .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
-                                                                                        .executes(this::handleKitsGunModifyGunAmmoAmount)))
+                                                                                        .executes(FPSMCommand::handleKitsGunModifyGunAmmoAmount)))
                                                                         .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
-                                                                                .executes((c) -> this.handleKitsWithItemAction(c,1))
+                                                                                .executes((c) -> FPSMCommand.handleKitsWithItemAction(c,1))
                                                                                 .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                                                                        .executes((c) -> this.handleKitsWithItemAction(c,IntegerArgumentType.getInteger(c,"amount")))))))
+                                                                                        .executes((c) -> FPSMCommand.handleKitsWithItemAction(c,IntegerArgumentType.getInteger(c,"amount")))))))
                                                         .then(Commands.literal("spawnpoints")
                                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                                         .suggests(CommandSuggests.SPAWNPOINTS_ACTION_SUGGESTION)
-                                                                        .executes(this::handleSpawnAction)))
+                                                                        .executes(FPSMCommand::handleSpawnAction)))
                                                         .then(Commands.literal("players")
                                                                 .then(Commands.argument("targets", EntityArgument.players())
                                                                         .then(Commands.argument("action", StringArgumentType.string())
                                                                                 .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                .executes(this::handleTeamAction)))))))));
+                                                                                .executes(FPSMCommand::handleTeamAction)))))))));
         dispatcher.register(literal);
     }
 
-    private int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
         if(baseMap instanceof CSGameMap csGameMap){
@@ -160,7 +160,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleJoinMapWithTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int handleJoinMapWithTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
@@ -172,7 +172,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
+    private static int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
         BlockPos point = BlockPosArgument.getBlockPos(context,"point").above();
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
@@ -188,7 +188,7 @@ public class FPSMCommand {
     }
 
 
-    private int handleSync(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleSync(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         // TODO /fpsm sync shop <gameType> <gameName> <Player>
         FPSMCore.getInstance().getAllMaps().forEach((gameName,gameList)-> gameList.forEach(game->{
             if(game instanceof ShopMap<?> shopMap){
@@ -199,7 +199,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleModifyShopGroupID(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleModifyShopGroupID(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         int groupID = IntegerArgumentType.getInteger(commandSourceStackCommandContext, "groupID");
         String mapName = StringArgumentType.getString(commandSourceStackCommandContext, "mapName");
         String shopName = StringArgumentType.getString(commandSourceStackCommandContext, "shopName");
@@ -217,7 +217,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleRemoveListenerModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleRemoveListenerModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         String moduleName = StringArgumentType.getString(commandSourceStackCommandContext, "listenerModule");
         String mapName = StringArgumentType.getString(commandSourceStackCommandContext, "mapName");
         String shopName = StringArgumentType.getString(commandSourceStackCommandContext, "shopName");
@@ -234,7 +234,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleAddListenerModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleAddListenerModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         String moduleName = StringArgumentType.getString(commandSourceStackCommandContext, "listenerModule");
         String mapName = StringArgumentType.getString(commandSourceStackCommandContext, "mapName");
         String shopName = StringArgumentType.getString(commandSourceStackCommandContext, "shopName");
@@ -253,7 +253,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleChangeItemModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) throws CommandSyntaxException {
+    private static int handleChangeItemModule(CommandContext<CommandSourceStack> commandSourceStackCommandContext) throws CommandSyntaxException {
         int defaultCost = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"defaultCost");
         int changedCost = IntegerArgumentType.getInteger(commandSourceStackCommandContext,"changedCost");
         Player player = commandSourceStackCommandContext.getSource().getPlayerOrException();
@@ -265,20 +265,20 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleReLoad(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleReLoad(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         FPSMatch.listenerModuleManager = new LMManager();
         //TODO MORE
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.reload.success"), true);
         return 1;
     }
 
-    private int handleSave(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleSave(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         FPSMDataManager.getInstance().saveData();
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
         return 1;
     }
 
-    private int handleLoadOld(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+    private static int handleLoadOld(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         List<FileHelper.RawMapData> rawMapDataList = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
         for(FileHelper.RawMapData rawMapData : rawMapDataList){
             String mapType = rawMapData.mapRL.getNamespace();
@@ -323,7 +323,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
+    private static int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String type = StringArgumentType.getString(context, "gameType");
         BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
@@ -341,7 +341,7 @@ public class FPSMCommand {
         }
     }
 
-    private SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context){
+    private static SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context){
         SpawnPointData data;
         Entity entity = context.getSource().getEntity();
         BlockPos pos = BlockPos.containing(context.getSource().getPosition()).above();
@@ -354,7 +354,7 @@ public class FPSMCommand {
     }
 
 
-    private int handleModifyCost(CommandContext<CommandSourceStack> context) {
+    private static int handleModifyCost(CommandContext<CommandSourceStack> context) {
         String shopName = StringArgumentType.getString(context, "shopName");
         String mapName = StringArgumentType.getString(context, "mapName");
         String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
@@ -377,7 +377,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleModifyItemWithoutValue(CommandContext<CommandSourceStack> context) {
+    private static int handleModifyItemWithoutValue(CommandContext<CommandSourceStack> context) {
         String shopName = StringArgumentType.getString(context, "shopName");
         String mapName = StringArgumentType.getString(context, "mapName");
         String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
@@ -403,7 +403,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleModifyItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int handleModifyItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String shopName = StringArgumentType.getString(context, "shopName");
         String mapName = StringArgumentType.getString(context, "mapName");
         String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
@@ -429,7 +429,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleKitsGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
+    private static int handleKitsGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
@@ -478,7 +478,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
+    private static int handleGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
         String shopName = StringArgumentType.getString(context, "shopName");
         String mapName = StringArgumentType.getString(context, "mapName");
         String shopType = StringArgumentType.getString(context, "shopType").toUpperCase(Locale.ROOT);
@@ -510,7 +510,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
+    private static int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
         BlockPos pos1 = BlockPosArgument.getBlockPos(context,"from");
         BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");
         String mapName = StringArgumentType.getString(context, "mapName");
@@ -524,7 +524,7 @@ public class FPSMCommand {
         return 0;
     }
 
-    private int handleDebugAction(CommandContext<CommandSourceStack> context) {
+    private static int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String action = StringArgumentType.getString(context, "action");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
@@ -560,7 +560,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleTeamAction(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int handleTeamAction(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
         String mapName = StringArgumentType.getString(context, "mapName");
         String teamName = StringArgumentType.getString(context, "teamName");
@@ -601,7 +601,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private int handleKitsWithoutItemAction(CommandContext<CommandSourceStack> context) {
+    private static int handleKitsWithoutItemAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
@@ -639,7 +639,7 @@ public class FPSMCommand {
         }
         return 1;
     }
-    private int handleKitsWithItemAction(CommandContext<CommandSourceStack> context, int count) throws CommandSyntaxException {
+    private static int handleKitsWithItemAction(CommandContext<CommandSourceStack> context, int count) throws CommandSyntaxException {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
@@ -682,7 +682,7 @@ public class FPSMCommand {
         return 1;
     }
 
-    private void handleKitsListAction(CommandContext<CommandSourceStack> context, String team, BaseMap map, GiveStartKitsMap<?> startKitMap) {
+    private static void handleKitsListAction(CommandContext<CommandSourceStack> context, String team, BaseMap map, GiveStartKitsMap<?> startKitMap) {
         if (map.getMapTeams().checkTeam(team)) {
             List<ItemStack> itemStacks = startKitMap.getKits(map.getMapTeams().getTeamByName(team));
             for(ItemStack itemStack1 : itemStacks) {
@@ -694,7 +694,7 @@ public class FPSMCommand {
         }
     }
 
-    private int handleSpawnAction(CommandContext<CommandSourceStack> context) {
+    private static int handleSpawnAction(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, "mapName");
         String team = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");

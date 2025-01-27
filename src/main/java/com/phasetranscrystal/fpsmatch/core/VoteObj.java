@@ -1,11 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 public class VoteObj {
     private final long endVoteTimer;

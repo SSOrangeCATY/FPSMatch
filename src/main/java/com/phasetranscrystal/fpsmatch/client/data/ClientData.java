@@ -3,7 +3,6 @@ package com.phasetranscrystal.fpsmatch.client.data;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.Config;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.ChatFormatting;
@@ -18,11 +17,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ClientData {
     public static String currentMap = "fpsm_none";
-    public static String currentGameType = "error";
+    public static String currentGameType = "none";
     public static String currentTeam = "ct";
     public static boolean currentMapSupportShop = true;
     public static final Map<ItemType, List<ClientShopSlot>> clientShopData = getDefaultShopSlotData();
-    public static int money = 0;
     public static int nextRoundMoney = 0;
     public static final Map<UUID, Pair<String,TabData>> tabData = new HashMap<>();
     public static final Map<UUID,Integer> playerMoney = new HashMap<>();
@@ -45,7 +43,7 @@ public class ClientData {
     public static boolean customTab = true;
 
     public static int getMoney(){
-        return money;
+        return playerMoney.getOrDefault(Minecraft.getInstance().player.getUUID(),0);
     }
     public static Map<ItemType, List<ClientShopSlot>> getDefaultShopSlotData(){
         Map<ItemType, List<ClientShopSlot>> data = new HashMap<>();
@@ -95,7 +93,7 @@ public class ClientData {
 
     public static void reset() {
         currentMap = "fpsm_none";
-        currentGameType = "error";
+        currentGameType = "none";
         currentMapSupportShop = true;
         resetShopData();
         tabData.clear();
@@ -123,10 +121,6 @@ public class ClientData {
         return nextRoundMoney;
     }
 
-    public static void setMoney(int count) {
-        money = count;
-    }
-
     @Nullable
     public static TabData getTabDataByUUID(UUID uuid){
         if(ClientData.tabData.containsKey(uuid)){
@@ -152,4 +146,5 @@ public class ClientData {
         });
         return living.get();
     }
+
 }

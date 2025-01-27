@@ -2,13 +2,11 @@ package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.tacz.guns.client.resource.texture.FilePackTexture;
 import com.tacz.guns.client.resource.texture.ZipPackTexture;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ClientTaczTextureData {

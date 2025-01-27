@@ -110,5 +110,12 @@
   "item.fpsmatch.flash_bomb" : "闪光弹",
   "item.fpsmatch.grenade" : "手榴弹",
   "item.fpsmatch.ct_incendiary_grenade" : "燃烧弹",
-  "item.fpsmatch.t_incendiary_grenade" : "燃烧弹"
+  "item.fpsmatch.t_incendiary_grenade" : "燃烧弹",
+  "fpsmatch.tab.header.player": "玩家",
+  "fpsmatch.tab.header.kills": "击杀",
+  "fpsmatch.tab.header.deaths": "死亡",
+  "fpsmatch.tab.header.assists": "助攻",
+  "fpsmatch.tab.header.damage": "伤害",
+  "fpsmatch.tab.header.money": "金钱",
+  "fpsmatch.tab.header.headshot": "爆头率"
 }

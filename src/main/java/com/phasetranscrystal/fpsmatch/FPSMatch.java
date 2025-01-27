@@ -6,9 +6,10 @@ import com.phasetranscrystal.fpsmatch.client.renderer.*;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
 import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
 import com.phasetranscrystal.fpsmatch.client.screen.FlashBombHud;
+import com.phasetranscrystal.fpsmatch.client.screen.CSGameTabRenderer;
+import com.phasetranscrystal.fpsmatch.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.command.VoteCommand;
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
@@ -172,13 +173,20 @@ public class FPSMatch {
                 .decoder(FPSMatchTabRemovalS2CPacket::decode)
                 .consumerNetworkThread(FPSMatchTabRemovalS2CPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(FPSMatchGameTypeS2CPacket.class, i.getAndIncrement())
+                .encoder(FPSMatchGameTypeS2CPacket::encode)
+                .decoder(FPSMatchGameTypeS2CPacket::decode)
+                .consumerNetworkThread(FPSMatchGameTypeS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        new FPSMCommand().onRegisterCommands(event);
+        FPSMCommand.onRegisterCommands(event);
         VoteCommand.onRegisterCommands(event);
     }
+
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
@@ -186,7 +194,7 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
-
+            TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
         }
 
         @SubscribeEvent
