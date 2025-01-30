@@ -27,12 +27,16 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
 
     public FlashBombEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.FLASH_BOMB.get(), shooter, level);
-        setTimeLeft(0);
+        setTimeLeft(1);
         setTimeoutTicks(20);
     }
 
     @Override
     protected void onActivated() {
+        applyFlashEffect();
+    }
+    @Override
+    protected void onTimeOut(){
         applyFlashEffect();
     }
 
