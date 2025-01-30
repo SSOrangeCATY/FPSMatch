@@ -15,11 +15,8 @@ public class EntityRegister {
     public static final RegistryObject<EntityType<SmokeShellEntity>> SMOKE_SHELL =
             ENTITY_TYPES.register("smoke_shell", () -> EntityType.Builder.<SmokeShellEntity>of(SmokeShellEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).build("smoke_shell"));
-    public static final RegistryObject<EntityType<TIncendiaryGrenadeEntity>> T_INCENDIARY_GRENADE =
-            ENTITY_TYPES.register("t_incendiary_grenade", () -> EntityType.Builder.<TIncendiaryGrenadeEntity>of(TIncendiaryGrenadeEntity::new, MobCategory.MISC)
-                    .sized(0.25f, 0.25f).build("t_incendiary_grenade"));
-    public static final RegistryObject<EntityType<CTIncendiaryGrenadeEntity>> CT_INCENDIARY_GRENADE =
-            ENTITY_TYPES.register("ct_incendiary_grenade", () -> EntityType.Builder.<CTIncendiaryGrenadeEntity>of(CTIncendiaryGrenadeEntity::new, MobCategory.MISC)
+    public static final RegistryObject<EntityType<IncendiaryGrenadeEntity>> INCENDIARY_GRENADE =
+            ENTITY_TYPES.register("ct_incendiary_grenade", () -> EntityType.Builder.<IncendiaryGrenadeEntity>of(IncendiaryGrenadeEntity::new, MobCategory.MISC)
                     .sized(0.25f, 0.25f).build("ct_incendiary_grenade"));
     public static final RegistryObject<EntityType<GrenadeEntity>> GRENADE =
             ENTITY_TYPES.register("grenade", () -> EntityType.Builder.<GrenadeEntity>of(GrenadeEntity::new, MobCategory.MISC)

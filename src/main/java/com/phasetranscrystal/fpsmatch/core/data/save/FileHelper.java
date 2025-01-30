@@ -116,16 +116,7 @@ public class FileHelper {
                                 if (startKitFile.exists() && startKitFile.isFile()) {
                                     try (FileReader startKitReader = new FileReader(startKitFile)) {
                                         JsonElement startKitJson = new Gson().fromJson(startKitReader, JsonElement.class);
-                                        Map<String,List<ItemStack>> rawData = FPSMCodec.decodeTeamKitsFromJson(startKitJson);
-                                        Map<String, ArrayList<ItemStack>> startKitList = new HashMap<>();
-                                        for (String teamName : rawData.keySet()){
-                                            ArrayList<ItemStack> itemStacks = new ArrayList<>();
-                                            for (ItemStack itemStack : rawData.get(teamName)){
-                                                ItemStack stack = itemStack.copy();
-                                                itemStacks.add(stack);
-                                            }
-                                            startKitList.put(teamName,itemStacks);
-                                        }
+                                        Map<String,ArrayList<ItemStack>> startKitList = FPSMCodec.decodeTeamKitsFromJson(startKitJson);
                                         rawMapData.setStartKits(startKitList);
                                     } catch (IOException e) {
                                         throw new RuntimeException(e);

@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import com.tacz.guns.GunMod;
 import com.tacz.guns.api.item.IGun;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;

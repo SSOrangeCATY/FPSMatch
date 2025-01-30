@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
+    "MixinDustParticleOptionsBase",
     "MixinFilePackTexture",
     "MixinItemEntity",
     "MixinZipPackTexture"

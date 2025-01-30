@@ -3,16 +3,13 @@ package com.phasetranscrystal.fpsmatch.core.data;
 import java.util.*;
 
 public class PlayerData{
-    private UUID owner;
+    private final UUID owner;
     private int scores = 0;
-    private TabData tabData;
-    private TabData tabDataTemp;
+    private final TabData tabData;
+    private final TabData tabDataTemp;
     private boolean isOffline = false;
     private SpawnPointData spawnPointsData;
     private boolean vote = false;
-
-    public PlayerData() {
-    }
 
     public PlayerData(UUID owner) {
         this.owner = owner;

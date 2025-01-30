@@ -137,8 +137,14 @@ public class FPSMCodec {
         return TEAM_ITEMS_KITS_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> { throw new RuntimeException(e); });
     }
 
-    public static Map<String, List<ItemStack>> decodeTeamKitsFromJson(JsonElement json) {
-        return TEAM_ITEMS_KITS_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+    public static Map<String, ArrayList<ItemStack>> decodeTeamKitsFromJson(JsonElement json) {
+        Map<String, List<ItemStack>> map = TEAM_ITEMS_KITS_CODEC.decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> { throw new RuntimeException(e); }).getFirst();
+        Map<String, ArrayList<ItemStack>> data = new HashMap<>();
+        map.forEach((t,l)->{
+            ArrayList<ItemStack> list = new ArrayList<>(l);
+            data.put(t,list);
+        });
+        return data;
     }
 
 }

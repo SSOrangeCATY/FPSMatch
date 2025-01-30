@@ -51,6 +51,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -1100,6 +1101,7 @@ private void autoStartLogic(){
                 player.setGameMode(GameType.ADVENTURE);
                 this.teleportPlayerToMatchEndPoint(player);
                 this.resetPlayerClientData(player);
+                this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
                 player.getInventory().clearContent();
                 player.removeAllEffects();
             }
@@ -1337,6 +1339,23 @@ private void autoStartLogic(){
     }
 
     @SubscribeEvent
+    public static void onPlayerHurt(LivingHurtEvent event){
+        if(event.getEntity() instanceof ServerPlayer serverPlayer){
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
+            if(map instanceof CSGameMap csGameMap){
+                BaseTeam team = csGameMap.getMapTeams().getTeamByPlayer(serverPlayer);
+                if(team != null){
+                    PlayerData playerData = team.getPlayerData(serverPlayer.getUUID());
+                    if(playerData != null){
+                        playerData.getTabData().addDamage(event.getAmount());
+                        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(serverPlayer.getUUID(), playerData.getTabData(),team.name));
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerKilledByGun(EntityKillByGunEvent event){
         if(event.getLogicalSide() == LogicalSide.SERVER){
             if (event.getKilledEntity() instanceof ServerPlayer player) {
@@ -1346,8 +1365,6 @@ private void autoStartLogic(){
                         BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
                         if (fromMap != null && fromMap.equals(map)) {
                             if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
-                                Component killerName = fromPlayer.getDisplayName();
-                                Component deadName = player.getDisplayName();
                                 BaseTeam team = fromMap.getMapTeams().getTeamByPlayer(fromPlayer);
 
                                 if(event.isHeadShot() && team != null){
@@ -1356,7 +1373,7 @@ private void autoStartLogic(){
                                     FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(tabData.getOwner(), tabData,team.name));
                                 }
 
-                                DeathMessage deathMessage = new DeathMessage(killerName, deadName, fromPlayer.getMainHandItem(), event.isHeadShot());
+                                DeathMessage deathMessage = new DeathMessage.Builder(fromPlayer, player, fromPlayer.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
                                 fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                                     ServerPlayer serverPlayer = (ServerPlayer) fromMap.getServerLevel().getPlayerByUUID(uuid);
@@ -1375,24 +1392,26 @@ private void autoStartLogic(){
     @SubscribeEvent
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            ServerPlayer from = null;
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map != null && map.checkGameHasPlayer(player)) {
-                if(event.getSource().getEntity() instanceof ServerPlayer fromPlayer){
-                    BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
-                    if (fromMap != null && fromMap.equals(map)) {
-                        from = fromPlayer;
-                    }
-                }
-                if(map instanceof CSGameMap csGameMap){
-                    csGameMap.handlePlayerDeath(player,from);
-                    event.setCanceled(true);
-                }
+            if (map instanceof CSGameMap csGameMap && map.checkGameHasPlayer(player)) {
+                csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
+                event.setCanceled(true);
             }
         }
     }
 
-    public void handlePlayerDeath(ServerPlayer player, @Nullable ServerPlayer from){
+    public void handlePlayerDeath(ServerPlayer player, @Nullable Entity fromEntity) {
+        ServerPlayer from = null;
+        if (fromEntity instanceof ServerPlayer fromPlayer) {
+            BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
+            if (fromMap != null && fromMap.equals(this)) {
+                from = fromPlayer;
+                if(fromPlayer.getMainHandItem().isEmpty()){
+                    DeathMessage message = new DeathMessage.Builder(player,fromPlayer, ItemStack.EMPTY).setArg("hand").build();
+                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new DeathMessageS2CPacket(message));
+                }
+            }
+        }
         if(this.isStart) {
             MapTeams teams = this.getMapTeams();
             BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
@@ -1541,8 +1560,12 @@ private void autoStartLogic(){
         gameMap.shop.putAll(shops);
         
         // 设置初始装备
-        gameMap.startKits.clear();
-        gameMap.startKits.putAll(startKits);
+        Map<String, ArrayList<ItemStack>> data = new HashMap<>();
+        startKits.forEach((t,l)->{
+            ArrayList<ItemStack> list = new ArrayList<>(l);
+            data.put(t,list);
+        });
+        gameMap.setStartKits(data);
         
         // 设置炸弹区域
         gameMap.bombAreaData.clear();

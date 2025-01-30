@@ -138,34 +138,16 @@ public class FPSMatch {
                 .consumerNetworkThread(FPSMatchLoginMessageS2CPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ThrowSmokeShellC2SPacket.class, i.getAndIncrement())
-                .encoder(ThrowSmokeShellC2SPacket::encode)
-                .decoder(ThrowSmokeShellC2SPacket::decode)
-                .consumerNetworkThread(ThrowSmokeShellC2SPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(ThrowIncendiaryGrenadeC2SPacket.class, i.getAndIncrement())
-                .encoder(ThrowIncendiaryGrenadeC2SPacket::encode)
-                .decoder(ThrowIncendiaryGrenadeC2SPacket::decode)
-                .consumerNetworkThread(ThrowIncendiaryGrenadeC2SPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(ThrowGrenade2CSPacket.class, i.getAndIncrement())
-                .encoder(ThrowGrenade2CSPacket::encode)
-                .decoder(ThrowGrenade2CSPacket::decode)
-                .consumerNetworkThread(ThrowGrenade2CSPacket::handle)
+        INSTANCE.messageBuilder(ThrowEntityC2SPacket.class, i.getAndIncrement())
+                .encoder(ThrowEntityC2SPacket::encode)
+                .decoder(ThrowEntityC2SPacket::decode)
+                .consumerNetworkThread(ThrowEntityC2SPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(FlashBombAddonS2CPacket.class, i.getAndIncrement())
                 .encoder(FlashBombAddonS2CPacket::encode)
                 .decoder(FlashBombAddonS2CPacket::decode)
                 .consumerNetworkThread(FlashBombAddonS2CPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(ThrowFlashBombC2SPacket.class, i.getAndIncrement())
-                .encoder(ThrowFlashBombC2SPacket::encode)
-                .decoder(ThrowFlashBombC2SPacket::decode)
-                .consumerNetworkThread(ThrowFlashBombC2SPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(FPSMatchTabRemovalS2CPacket.class, i.getAndIncrement())
@@ -209,8 +191,7 @@ public class FPSMatch {
         public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(EntityRegister.C4.get(), new C4Renderer());
             event.registerEntityRenderer(EntityRegister.SMOKE_SHELL.get(), new SmokeShellRenderer());
-            event.registerEntityRenderer(EntityRegister.T_INCENDIARY_GRENADE.get(), new TIncendiaryGrenadeRenderer());
-            event.registerEntityRenderer(EntityRegister.CT_INCENDIARY_GRENADE.get(), new CTIncendiaryGrenadeRenderer());
+            event.registerEntityRenderer(EntityRegister.INCENDIARY_GRENADE.get(), new IncendiaryGrenadeRenderer());
             event.registerEntityRenderer(EntityRegister.GRENADE.get(), new GrenadeRenderer());
             event.registerEntityRenderer(EntityRegister.FLASH_BOMB.get(),new FlashBombRenderer());
             event.registerEntityRenderer(EntityRegister.MATCH_DROP_ITEM.get(),new MatchDropRenderer());
