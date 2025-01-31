@@ -47,7 +47,7 @@ public class CSGameTabRenderer implements TabRenderer {
         int playerAreaWidth = 400;
         int playerRowHeight = 12;
         int playerGap = 2;
-        int teamGap = 20; // 减小队伍间隔
+        // 减小队伍间隔
         int headerHeight = 12;
         
         // 背景尺寸（玩家信息栏+边距）

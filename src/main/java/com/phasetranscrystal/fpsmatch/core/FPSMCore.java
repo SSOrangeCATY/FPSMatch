@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;

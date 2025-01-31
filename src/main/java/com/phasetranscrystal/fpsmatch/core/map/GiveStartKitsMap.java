@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -14,9 +13,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
-    List<ItemStack> getKits(BaseTeam team);
+    ArrayList<ItemStack> getKits(BaseTeam team);
     void addKits(BaseTeam team, ItemStack itemStack);
-    default void setTeamKits(BaseTeam team, List<ItemStack> itemStack){
+    default void setTeamKits(BaseTeam team, ArrayList<ItemStack> itemStack){
         this.clearTeamKits(team);
         this.getKits(team).addAll(itemStack);
     }
@@ -47,7 +46,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
         BaseMap map = this.getMap();
         BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
         if(team != null){
-            List<ItemStack> items = this.getKits(team);
+            ArrayList<ItemStack> items = this.getKits(team);
             player.getInventory().clearContent();
             items.forEach((itemStack -> {
                 player.getInventory().add(itemStack.copy());
@@ -63,7 +62,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
         for(UUID uuid : team.getPlayerList()){
             Player player = map.getServerLevel().getPlayerByUUID(uuid);
             if (player != null){
-                List<ItemStack> items = this.getKits(team);
+                ArrayList<ItemStack> items = this.getKits(team);
                 player.getInventory().clearContent();
                 items.forEach((itemStack -> {
                     player.getInventory().add(itemStack.copy());
@@ -81,7 +80,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
             if (player != null){
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
                 if(team != null){
-                    List<ItemStack> items = this.getKits(team);
+                    ArrayList<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
                     items.forEach((itemStack -> {
                         player.getInventory().add(itemStack.copy());

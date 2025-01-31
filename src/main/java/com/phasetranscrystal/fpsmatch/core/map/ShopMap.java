@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 

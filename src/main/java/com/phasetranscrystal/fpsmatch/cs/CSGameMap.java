@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.*;
 import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -30,6 +31,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.resources.ResourceKey;
@@ -57,6 +59,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -266,7 +269,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         boolean flag = this.getMapTeams().getJoinedPlayers().size() != 1;
                         switch (this.isBlasting()){
                             case 1 : this.checkBlastingVictory(); break;
-                            case 2 : if(!isWaitingWinner) this.roundVictory("ct",WinnerReason.DEFUSE_BOMB); break;
+                            case 2 : if(!isWaitingWinner) this.roundVictory(this.getCTTeam(),WinnerReason.DEFUSE_BOMB); break;
                             default : if(flag) this.checkRoundVictory(); break;
                         }
 
@@ -281,7 +284,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }
                 }else{
                     if(!checkWinnerTime()){
-                        this.roundVictory("ct",WinnerReason.TIME_OUT);
+                        this.roundVictory(this.getCTTeam(),WinnerReason.TIME_OUT);
                     }else if(this.currentPauseTime >= WINNER_WAITING_TIME){
                         this.startNewRound();
                     }
@@ -347,17 +350,7 @@ private void autoStartLogic(){
         List<BaseTeam> baseTeams = mapTeams.getTeams();
         if(baseTeams.isEmpty()) return;
         BaseTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
-        mapTeams.joinTeam(team.name, player);
-        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(team.name)).getPlayerData(player.getUUID())).getTabData(),team.name));
-        this.getShop(team.name).syncShopData(player);
-        if(this.isStart){
-            player.setGameMode(GameType.SPECTATOR);
-            PlayerData data = team.getPlayerData(player.getUUID());
-            if(data != null){
-                data.setLiving(false);
-            }
-            setBystander(player, mapTeams);
-        }
+        this.joinTeam(team.name, player);
     }
 
     private void setBystander(ServerPlayer player, MapTeams mapTeams) {
@@ -381,29 +374,30 @@ private void autoStartLogic(){
         mapTeams.joinTeam(teamName, player);
         
         // 同步游戏类型和地图信息
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player), 
-            new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
-        
+        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+
         // 同步新加入玩家的信息给所有人
-        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), 
-            new CSGameTabStatsS2CPacket(player.getUUID(), 
+        this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(),
                 Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName))
-                    .getPlayerData(player.getUUID())).getTabData(), 
+                        .getPlayerData(player.getUUID())).getTabData(),
                 teamName));
                 
         // 同步所有已存在玩家的信息给新玩家
         for (BaseTeam team : mapTeams.getTeams()) {
             for (UUID existingPlayerId : team.getPlayers().keySet()) {
                 if (!existingPlayerId.equals(player.getUUID())) {
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player),
-                        new CSGameTabStatsS2CPacket(existingPlayerId,
+                    var packet = new CSGameTabStatsS2CPacket(existingPlayerId,
                             Objects.requireNonNull(team.getPlayerData(existingPlayerId)).getTabData(),
-                            team.name));
+                            team.name);
+                    this.sendPacketToJoinedPlayer(player,packet,true);
                 }
             }
         }
-        
+
+        // 同步商店数据
         this.getShop(teamName).syncShopData(player);
+
+        // 如果游戏已经开始，设置玩家为旁观者
         if(this.isStart){
             player.setGameMode(GameType.SPECTATOR);
             BaseTeam team = mapTeams.getTeamByName(teamName);
@@ -506,7 +500,9 @@ private void autoStartLogic(){
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                syncNormalMessage(serverPlayer);
+                syncNormalRoundStartMessage(serverPlayer);
+                serverPlayer.removeAllEffects();
+                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
                 serverPlayer.heal(serverPlayer.getMaxHealth());
                 serverPlayer.setGameMode(GameType.ADVENTURE);
                 this.clearPlayerInventory(serverPlayer);
@@ -596,28 +592,34 @@ private void autoStartLogic(){
         Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
         if(teamsLiving.size() == 1){
             String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-            this.roundVictory(winnerTeam,WinnerReason.ACED);
+            BaseTeam check = this.getMapTeams().getTeamByName(winnerTeam);
+            if (check != null) {
+                this.roundVictory(check,WinnerReason.ACED);
+            }else{
+                FPSMatch.LOGGER.error("Winner team is null: " + winnerTeam);
+            }
         }
 
         if(teamsLiving.isEmpty()){
-            this.roundVictory("ct",WinnerReason.ACED);
+            this.roundVictory(this.getCTTeam(),WinnerReason.ACED);
         }
     }
 
     public void checkBlastingVictory(){
         if(isWaitingWinner) return;
         if(this.isExploded()) {
-            this.roundVictory("t",WinnerReason.DETONATE_BOMB);
+            this.roundVictory(this.getTTeam(),WinnerReason.DETONATE_BOMB);
         }else {
             Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
             if(teamsLiving.size() == 1){
                 String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-                boolean flag = this.checkCanPlacingBombs(Objects.requireNonNull(this.getMapTeams().getTeamByName(winnerTeam)).getFixedName());
+                BaseTeam check = this.getMapTeams().getTeamByName(winnerTeam);
+                boolean flag = this.checkCanPlacingBombs(Objects.requireNonNull(check).getFixedName());
                 if(flag){
-                    this.roundVictory(winnerTeam,WinnerReason.ACED);
+                    this.roundVictory(check,WinnerReason.ACED);
                 }
             }else if(teamsLiving.isEmpty()){
-                this.roundVictory("t",WinnerReason.ACED);
+                this.roundVictory(this.getTTeam(),WinnerReason.ACED);
             }
         }
     }
@@ -631,12 +633,8 @@ private void autoStartLogic(){
             this.currentRoundTime++;
         }
         if((this.currentRoundTime >= 200 || this.currentRoundTime == -1 ) && !this.isShopLocked){
-            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                if(serverPlayer != null){
-                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(false));
-                }
-            }));
+            var packet = new ShopStatesS2CPacket(false);
+            this.sendPacketToAllPlayer(packet);
             this.isShopLocked = true;
         }
         return this.currentRoundTime >= this.roundTimeLimit;
@@ -667,37 +665,32 @@ private void autoStartLogic(){
     /**
      * 处理回合胜利的逻辑
      * 将isWaitingWinner设置成true以倒计时处理startNewRound逻辑
-     * @param winnerTeamName 胜利队伍的名称
+     * @param winnerTeam 胜利队伍
      * @param reason 胜利原因
      */
-    private void roundVictory(String winnerTeamName, WinnerReason reason) {
+    private void roundVictory(@NotNull BaseTeam winnerTeam, @NotNull WinnerReason reason) {
         // 检查获胜队伍是否存在
-        if(this.getMapTeams().checkTeam(winnerTeamName)){
             // 如果已经在等待胜利者，则直接返回
             if(isWaitingWinner) return;
-            this.showWinnerMessage(winnerTeamName);
+            this.showWinnerMessage(winnerTeam.name);
             // 设置为等待胜利者状态
             this.isWaitingWinner = true;
-            BaseTeam winnerTeam = this.getMapTeams().getTeamByName(winnerTeamName);
-            if(winnerTeam != null){
-                int currentScore = winnerTeam.getScores();
-                int target = currentScore + 1;
-                List<BaseTeam> baseTeams =this.getMapTeams().getTeams();
-                if(target == 12 && baseTeams.remove(winnerTeam) && baseTeams.get(0).getScores() == 12 && !this.isOvertime){
-                    this.isWaitingOverTimeVote = true;
-                }
-                winnerTeam.setScores(target);
-            }
+        int currentScore = winnerTeam.getScores();
+        int target = currentScore + 1;
+        List<BaseTeam> baseTeams =this.getMapTeams().getTeams();
+        if(target == 12 && baseTeams.remove(winnerTeam) && baseTeams.get(0).getScores() == 12 && !this.isOvertime){
+            this.isWaitingOverTimeVote = true;
+        }
+        winnerTeam.setScores(target);
 
-            // 获取胜利队伍和失败队伍列表
+        // 获取胜利队伍和失败队伍列表
             List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
             lostTeams.remove(winnerTeam);
 
             // 处理胜利经济奖励
             int reward = reason.winMoney;
 
-            if (winnerTeam == null) return;
-            // 遍历所有玩家，更新经济
+        // 遍历所有玩家，更新经济
             this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
                 // 如果是胜利队伍的玩家
                 if (winnerTeam.getPlayerList().contains(uuid)) {
@@ -719,10 +712,9 @@ private void autoStartLogic(){
                 }
             });
             // 检查连败情况
-            this.checkLoseStreaks(winnerTeamName);
+            this.checkLoseStreaks(winnerTeam.name);
             // 同步商店金钱数据
             this.getShops().forEach(FPSMShop::syncShopMoneyData);
-        }
     }
 
     private void checkLoseStreaks(String winnerTeam) {
@@ -755,7 +747,9 @@ private void autoStartLogic(){
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                syncNormalMessage(serverPlayer);
+                syncNormalRoundStartMessage(serverPlayer);
+                serverPlayer.removeAllEffects();
+                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
                 this.teleportPlayerToReSpawnPoint(serverPlayer);
             }
         }));
@@ -765,8 +759,8 @@ private void autoStartLogic(){
     }
 
     public void checkMatchPoint(){
-        int ctScore = Objects.requireNonNull(this.getMapTeams().getTeamByName("ct")).getScores();
-        int tScore = Objects.requireNonNull(this.getMapTeams().getTeamByName("t")).getScores();
+        int ctScore = this.getCTTeam().getScores();
+        int tScore = this.getTTeam().getScores();
         if(this.isOvertime){
             int check = WINNER_ROUND - 1 - 6 * this.overCount + 4;
 
@@ -780,14 +774,14 @@ private void autoStartLogic(){
         }
     }
 
-    private void syncNormalMessage(ServerPlayer serverPlayer) {
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), new ShopStatesS2CPacket(true));
-        serverPlayer.removeAllEffects();
-        serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombDemolitionProgressS2CPacket(0));
+    private void syncNormalRoundStartMessage(ServerPlayer serverPlayer) {
+        this.sendPacketToJoinedPlayer(serverPlayer, new ShopStatesS2CPacket(true), true);
+        var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
+        this.sendPacketToJoinedPlayer(serverPlayer, bombResetPacket, true);
         BaseTeam baseTeam = this.getMapTeams().getTeamByPlayer(serverPlayer);
         if(baseTeam != null){
-            FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(serverPlayer.getUUID(), Objects.requireNonNull(baseTeam.getPlayerData(serverPlayer.getUUID())).getTabData(),baseTeam.name));
+            var packet = new CSGameTabStatsS2CPacket(serverPlayer.getUUID(), Objects.requireNonNull(baseTeam.getPlayerData(serverPlayer.getUUID())).getTabData(),baseTeam.name);
+            this.sendPacketToJoinedPlayer(serverPlayer, packet, true);
         }
     }
 
@@ -796,7 +790,7 @@ private void autoStartLogic(){
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new FPSMatchStatsResetS2CPacket());
+                this.sendPacketToJoinedPlayer(serverPlayer,new FPSMatchStatsResetS2CPacket(),true);
                 serverPlayer.removeAllEffects();
             }
         }));
@@ -865,8 +859,8 @@ private void autoStartLogic(){
             }
         });
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        int ctScore = Objects.requireNonNull(this.getMapTeams().getTeamByName("ct")).getScores();
-        int tScore = Objects.requireNonNull(this.getMapTeams().getTeamByName("t")).getScores();
+        int ctScore = this.getCTTeam().getScores();
+        int tScore = this.getTTeam().getScores();
         boolean switchFlag;
         if (!isOvertime) {
             // 发起加时赛投票
@@ -941,16 +935,6 @@ private void autoStartLogic(){
         this.getShops().forEach(FPSMShop::syncShopData);
     }
 
-
-    public <MSG> void sendPacketToAllPlayer(MSG packet){
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-            if(serverPlayer != null){
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->serverPlayer), packet);
-            }
-        }));
-    }
-
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
         BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
         if (team == null) return;
@@ -966,10 +950,6 @@ private void autoStartLogic(){
 
     private void teleportToPoint(ServerPlayer player, SpawnPointData data) {
         BlockPos pos = data.getPosition();
-        /*
-        float f = Mth.wrapDegrees(data.getYaw());
-        float f1 = Mth.wrapDegrees(data.getPitch());
-         */
         if(!Level.isInSpawnableBounds(pos)) return;
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
         set.add(RelativeMovement.X_ROT);
@@ -1119,7 +1099,6 @@ private void autoStartLogic(){
         this.getMapTeams().reset();
     }
 
-
     public final void setBlastTeam(String team){
         this.blastTeam = this.getGameType()+"_"+this.getMapName()+"_"+team;
     }
@@ -1137,10 +1116,8 @@ private void autoStartLogic(){
         return a.get();
     }
     @Override
-    public List<ItemStack> getKits(BaseTeam team) {
-        List<ItemStack> itemStacks = new ArrayList<>();
-        this.startKits.getOrDefault(team.getFixedName(),new ArrayList<>()).forEach((itemStack) -> itemStacks.add(itemStack.copy()));
-        return itemStacks;
+    public ArrayList<ItemStack> getKits(BaseTeam team) {
+        return (ArrayList<ItemStack>) this.startKits.get(team.getFixedName());
     }
 
     @Override
@@ -1194,9 +1171,8 @@ private void autoStartLogic(){
     }
 
     public void syncToClient() {
-        BaseTeam ct = this.getMapTeams().getTeamByName("ct");
-        BaseTeam t = this.getMapTeams().getTeamByName("t");
-        if(ct == null || t == null) return;
+        BaseTeam ct = this.getCTTeam();
+        BaseTeam t = this.getTTeam();
         CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(ct.getScores(),t.getScores(), this.currentPauseTime,this.currentRoundTime,this.isDebug(),this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
@@ -1272,7 +1248,7 @@ private void autoStartLogic(){
                     player.getInventory().setChanged();
                 }
                 player.getInventory().clearContent();
-                csGameMap.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
+                map.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
             }
         }
     }
@@ -1348,7 +1324,7 @@ private void autoStartLogic(){
                     PlayerData playerData = team.getPlayerData(serverPlayer.getUUID());
                     if(playerData != null){
                         playerData.getTabData().addDamage(event.getAmount());
-                        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(serverPlayer.getUUID(), playerData.getTabData(),team.name));
+                        map.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(serverPlayer.getUUID(), playerData.getTabData(),team.name));
                     }
                 }
             }
@@ -1370,7 +1346,7 @@ private void autoStartLogic(){
                                 if(event.isHeadShot() && team != null){
                                     TabData tabData = Objects.requireNonNull(team.getPlayerData(fromPlayer.getUUID())).getTabData();
                                     tabData.addHeadshotKill();
-                                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(tabData.getOwner(), tabData,team.name));
+                                    map.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(tabData.getOwner(), tabData,team.name));
                                 }
 
                                 DeathMessage deathMessage = new DeathMessage.Builder(fromPlayer, player, fromPlayer.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
@@ -1408,7 +1384,7 @@ private void autoStartLogic(){
                 from = fromPlayer;
                 if(fromPlayer.getMainHandItem().isEmpty()){
                     DeathMessage message = new DeathMessage.Builder(player,fromPlayer, ItemStack.EMPTY).setArg("hand").build();
-                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new DeathMessageS2CPacket(message));
+                    this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
                 }
             }
         }
@@ -1458,7 +1434,7 @@ private void autoStartLogic(){
                 if (entity != null) {
                     player.setCamera(entity);
                 }
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData(),deadPlayerTeam.name));
+                this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData(),deadPlayerTeam.name));
             }
 
 
@@ -1481,7 +1457,7 @@ private void autoStartLogic(){
                             // 如果是击杀者就不添加助攻
                             if (assistData == null || from != null && from.getUUID().equals(assistId)) continue;
                             assistData.getTabData().addAssist();
-                            FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(assistData.getOwner(), assistData.getTabData(),assistPlayerTeam.name));
+                            this.sendPacketToAllPlayer( new CSGameTabStatsS2CPacket(assistData.getOwner(), assistData.getTabData(),assistPlayerTeam.name));
                         }
                     }
                 }
@@ -1494,7 +1470,7 @@ private void autoStartLogic(){
                 if (data == null) return;
                 data.getTabData().addKills();
                 MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(this, player, from));
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(from.getUUID(), data.getTabData(),killerPlayerTeam.name));
+                this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(from.getUUID(), data.getTabData(),killerPlayerTeam.name));
             }
         }
     }
@@ -1584,6 +1560,15 @@ private void autoStartLogic(){
     public Codec<CSGameMap> codec() {
         return CODEC;
     }
+
+
+    public BaseTeam getTTeam(){
+        return this.getMapTeams().getTeamByName("t");
+    }
+    public BaseTeam getCTTeam(){
+        return this.getMapTeams().getTeamByName("ct");
+    }
+
 
     public void read() {
         FPSMCore.getInstance().registerMap(this.gameType,this);

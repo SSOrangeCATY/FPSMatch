@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
 import com.mojang.datafixers.util.Pair;
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;

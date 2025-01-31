@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -8,12 +9,15 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.BossEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public class CSGameOverlay implements IGuiOverlay {
+    private static final ResourceLocation GUI_BARS_LOCATION = new ResourceLocation("textures/gui/bars.png");
     public static final int PAUSE_TIME = 60;
     public static final int WINNER_WAITING_TIME = 8;
     public static final int WARM_UP_TIME = 60;
@@ -254,6 +258,15 @@ public class CSGameOverlay implements IGuiOverlay {
     public static boolean getDemolitionProgressTextStyle(int index){
         float i = (float) index / 7;
         return ClientData.dismantleBombProgress >= i;
+    }
+
+    private void drawBar(GuiGraphics pGuiGraphics, int pX, int pY, BossEvent pBossEvent, int pWidth, int p_281636_) {
+        pGuiGraphics.blit(GUI_BARS_LOCATION, pX, pY, 0, BossEvent.BossBarColor.GREEN.ordinal() * 5 * 2 + p_281636_, pWidth, 5);
+        if (pBossEvent.getOverlay() != BossEvent.BossBarOverlay.PROGRESS) {
+            RenderSystem.enableBlend();
+            pGuiGraphics.blit(GUI_BARS_LOCATION, pX, pY, 0, 80 + (pBossEvent.getOverlay().ordinal() - 1) * 5 * 2 + p_281636_, pWidth, 5);
+            RenderSystem.disableBlend();
+        }
     }
 
     public static String getCSGameTime(){

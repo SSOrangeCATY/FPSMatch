@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
 import com.mojang.datafixers.util.Function3;
-import com.phasetranscrystal.fpsmatch.core.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.server.level.ServerLevel;

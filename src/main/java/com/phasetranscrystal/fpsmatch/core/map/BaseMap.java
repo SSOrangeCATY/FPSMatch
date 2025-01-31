@@ -1,11 +1,14 @@
-package com.phasetranscrystal.fpsmatch.core;
+package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -16,6 +19,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -128,6 +132,29 @@ public abstract class BaseMap{
 
     public AreaData getMapArea() {
         return mapArea;
+    }
+
+    public <MSG> void sendPacketToAllPlayer(MSG packet){
+        this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
+            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+            if (player != null) {
+                this.sendPacketToJoinedPlayer(player,packet,true);
+            }else{
+                FPSMatch.LOGGER.error(this.getMapTeams().playerName.get(uuid).getString() + " is not found in online world");
+            }
+        });
+    }
+
+    public <MSG> void sendPacketToJoinedPlayer(@NotNull ServerPlayer player, MSG packet, boolean noCheck){
+        if(noCheck || this.checkGameHasPlayer(player)){
+            if (packet instanceof Packet<?> vanillaPacket) {
+                player.connection.send(vanillaPacket);
+            } else {
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+            }
+        }else{
+            FPSMatch.LOGGER.error(player.getDisplayName().getString() + " is not join "+this.getGameType()+":"+ this.getMapName());
+        }
     }
 
     @SubscribeEvent
