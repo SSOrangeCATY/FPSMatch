@@ -190,7 +190,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         .append(Component.literal("[" + tabData.getTabData().getTabString() + "]").withStyle(ChatFormatting.DARK_AQUA));
 
                 MutableComponent damagesComponent = Component.literal(" | damages : ").withStyle(ChatFormatting.GRAY)
-                        .append(Component.literal("[" + String.valueOf(tabData.getTabData().getDamage()) + "]").withStyle(ChatFormatting.DARK_AQUA));
+                        .append(Component.literal("[" + tabData.getTabData().getDamage() + "]").withStyle(ChatFormatting.DARK_AQUA));
 
                 MutableComponent isLivingComponent = Component.literal(" | isLiving :").withStyle(ChatFormatting.GRAY)
                         .append(formatBoolean(tabData.getTabData().isLiving()));
@@ -826,12 +826,10 @@ private void autoStartLogic(){
         this.isPause = false;
         this.currentPauseTime = 0;
         this.syncShopData();
-        this.getMapTeams().getTeams().forEach(team->{
-            team.getPlayers().forEach((uuid, playerData)->{
-                playerData.setLiving(false);
-                this.setPlayerMoney(uuid, 10000);
-            });
-        });
+        this.getMapTeams().getTeams().forEach(team-> team.getPlayers().forEach((uuid, playerData)->{
+            playerData.setLiving(false);
+            this.setPlayerMoney(uuid, 10000);
+        }));
         this.startNewRound();
     }
 
@@ -870,10 +868,7 @@ private void autoStartLogic(){
                 this.currentPauseTime = pauseTime - 500;
                 return;
             }else{
-                this.getMapTeams().getTeams().forEach((team)->{
-                    atomicInteger.addAndGet(team.getScores());
-                });
-
+                this.getMapTeams().getTeams().forEach((team)-> atomicInteger.addAndGet(team.getScores()));
                 if(atomicInteger.get() == 12){
                     switchFlag = true;
                     this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
@@ -891,9 +886,7 @@ private void autoStartLogic(){
                 switchFlag = true;
                 this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
                 this.syncShopData();
-                this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                    this.setPlayerMoney(uuid, 10000);
-                }));
+                this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid, 10000)));
                 if (check == 6 && ctScore < 12 + 3 * this.overCount + 4 && tScore < 12 + 3 * this.overCount + 4 ) {
                     this.overCount++;
                 }
@@ -1063,9 +1056,7 @@ private void autoStartLogic(){
     }
 
     public void resetGame() {
-        this.getMapTeams().getTeams().forEach(baseTeam -> {
-            baseTeam.setScores(0);
-        });
+        this.getMapTeams().getTeams().forEach(baseTeam -> baseTeam.setScores(0));
         this.isOvertime = false;
         this.isWaitingOverTimeVote = false;
         this.overCount = 0;
