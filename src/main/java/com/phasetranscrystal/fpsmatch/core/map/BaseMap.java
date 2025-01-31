@@ -31,6 +31,7 @@ public abstract class BaseMap{
     private final ServerLevel serverLevel;
     private MapTeams mapTeams;
     public final AreaData mapArea;
+    private final Map<String,Integer> teams = new HashMap<>();
 
     public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
         this.serverLevel = serverLevel;
@@ -38,11 +39,11 @@ public abstract class BaseMap{
         this.mapArea = areaData;
     }
 
-    public Map<String,Integer> getTeams(){
-        Map<String,Integer> teams = new HashMap<>();
-        teams.put("teamA",5);
-        teams.put("teamB",5);
+    public final Map<String,Integer> getTeams(){
         return teams;
+    }
+    public void addTeam(String teamName,int playerLimit){
+        this.teams.put(teamName,playerLimit);
     }
 
     public final void setMapTeams(MapTeams teams){
@@ -110,7 +111,7 @@ public abstract class BaseMap{
         return mapName;
     }
 
-    public void setGameType(String gameType) {
+    public final void setGameType(String gameType) {
         this.gameType = gameType;
         this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams(),this));
     }
@@ -168,7 +169,6 @@ public abstract class BaseMap{
                     PlayerData data = playerTeam.getPlayerData(player.getUUID());
                     if(data == null) return;
                     data.setOffline(false);
-                    //TODO
                 }
             }else{
                 if(!player.isCreative()){
@@ -196,7 +196,14 @@ public abstract class BaseMap{
     public static void onLivingHurtEvent(LivingHurtEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             DamageSource damageSource = event.getSource();
-            if(damageSource.getEntity() instanceof ServerPlayer from){
+            ServerPlayer from = null;
+            if(damageSource.getEntity() instanceof ServerPlayer target){
+                from = target;
+            } else if (damageSource.getDirectEntity() instanceof ServerPlayer target) {
+                from = target;
+            }
+
+            if(from != null){
                 BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
                 if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
                     float damage = event.getAmount();
