@@ -909,7 +909,7 @@ private void autoStartLogic(){
                 if(switchFlag){
                     this.clearPlayerInventory(player);
                     this.givePlayerKits(player);
-                    player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.team.switch").withStyle(ChatFormatting.GREEN)));
+                    this.sendPacketToJoinedPlayer(player,new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.team.switch").withStyle(ChatFormatting.GREEN)),true);
                 }else{
                     boolean isLiving = Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByPlayer(player)).getPlayerTabData(player.getUUID())).isLiving();
                     if(!isLiving) {
