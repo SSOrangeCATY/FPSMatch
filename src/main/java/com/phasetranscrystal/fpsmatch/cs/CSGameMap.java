@@ -404,7 +404,6 @@ private void autoStartLogic(){
                    data.setLiving(false);
                }
             }
-
             setBystander(player);
         }
     }
@@ -1110,6 +1109,8 @@ private void autoStartLogic(){
 
     @Override
     public void addKits(BaseTeam team, ItemStack itemStack) {
+        Objects.requireNonNull(team, "Team cannot be null");
+        Objects.requireNonNull(itemStack, "ItemStack cannot be null");
         this.startKits.computeIfAbsent(team.getFixedName(), t -> new ArrayList<>()).add(itemStack);
     }
 

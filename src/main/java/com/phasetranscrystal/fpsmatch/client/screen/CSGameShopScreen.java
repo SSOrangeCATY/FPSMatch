@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.mojang.blaze3d.platform.Window;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
@@ -8,7 +7,6 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import com.tacz.guns.GunMod;
 import com.tacz.guns.api.item.IGun;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
@@ -29,7 +27,6 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
@@ -71,11 +68,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     }
 
     public static class WindowLayout extends RelativeLayout {
-        private float width_ = 1920;
-        private float height_ = 1080;
-        private float scaleWidth = 1;
-        private float scaleHeight = 1;
-
+        private float scale = calculateScaleFactor(this.getWidth(),this.getHeight());
         // main
         private ImageView background;
         private RelativeLayout headBar;
@@ -110,25 +103,25 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             shopWindow = new LinearLayout(this.getContext());
             for (int i = 0; i < 5; i++) {
                 TypeBarLayout typeBar = new TypeBarLayout(this.getContext(),i);
-                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scaleWidth), -1));
+                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
                 typeBarLayouts.add(typeBar);
             }
-            content.addView(shopWindow, new LinearLayout.LayoutParams(dp(950 * scaleWidth), dp(550* scaleHeight)));
+            content.addView(shopWindow, new LinearLayout.LayoutParams(dp(950 * scale), dp(550* scale)));
 
             RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
-                    dp(950 * scaleHeight),
-                    dp(550 * scaleWidth));
-            shopWindowParams.setMargins(dp(240 * scaleWidth), dp(210 * scaleHeight), 0, 0);
+                    dp(950 * scale),
+                    dp(550 * scale));
+            shopWindowParams.setMargins(dp(240 * scale), dp(210 * scale), 0, 0);
 
             RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
-                    dp(950 * scaleHeight),
-                    dp(550 * scaleWidth));
-            shopWindowBackGroundParams.setMargins(dp(240 * scaleWidth), dp(208 * scaleHeight), 0, 0);
+                    dp(950 * scale),
+                    dp(550 * scale));
+            shopWindowBackGroundParams.setMargins(dp(240 * scale), dp(208 * scale), 0, 0);
 
             // HEAD BAR START
             headBar = new RelativeLayout(getContext());
-            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scaleWidth*950), dp(scaleHeight*38));
-            titleBarParams.setMargins(dp(scaleWidth*240), dp(scaleHeight*170), 0, 0);
+            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scale *950), dp(scale*38));
+            titleBarParams.setMargins(dp(scale *240), dp(scale*170), 0, 0);
 
             ImageView titleBarBackground = new ImageView(getContext());
             titleBarBackground.setImageDrawable(imageDrawable);
@@ -140,7 +133,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
             moneyParams.addRule(RelativeLayout.CENTER_IN_PARENT);
             moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            moneyParams.setMargins((int) (25*scaleWidth),0,0,0);
+            moneyParams.setMargins((int) (25* scale),0,0,0);
             moneyText.setLayoutParams(moneyParams);
             moneyText.setTextColor(ClientData.currentTeam.equals("ct") ? RenderUtil.color(150,200,250) : RenderUtil.color(234, 192, 85));
             moneyText.setTextSize(18);
@@ -162,7 +155,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             //ClientData.getNextRoundMinMoney()
             nextRoundMinMoneyText.setText(I18n.get("fpsm.shop.title.min.money", "?"));
-            minmoneyText.setMargins(0,0, (int) (20*scaleWidth),0);
+            minmoneyText.setMargins(0,0, (int) (20* scale),0);
             nextRoundMinMoneyText.setLayoutParams(minmoneyText);
             nextRoundMinMoneyText.setTextSize(15);
             headBar.addView(moneyText);
@@ -175,20 +168,13 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             addView(content, shopWindowParams);
         }
 
-        private void calculateScaleFactor(int w, int h) {
-            scaleWidth = (float) w / 1920;
-            scaleHeight = (float) h / 1080;
-            this.width_ = w;
-            this.height_ = h;
+        private float calculateScaleFactor(int w, int h) {
+           return Math.min((float) w / 1920,(float) h / 1080);
         }
 
         @Override
-        public void draw(@NotNull Canvas canvas) {
-            super.draw(canvas);
-            Window w = Minecraft.getInstance().getWindow();
-            if(this.width_ != w.getWidth() || this.height_ != w.getHeight()){
-                calculateScaleFactor(w.getWidth(), w.getHeight());
-                float scale = Math.min(scaleWidth,scaleHeight);
+        protected void onSizeChanged(int width, int height, int prevWidth, int prevHeight) {
+                scale = calculateScaleFactor(width, height);
 
                 RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
                         dp(950 * scale),
@@ -232,7 +218,10 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 typeBarLayouts.forEach(typeBarLayout -> typeBarLayout.setScale(scale));
 
                 shopButtons.forEach((type,gunButtons)-> gunButtons.forEach(gunButtonLayout -> gunButtonLayout.setScale(scale)));
-            }
+        }
+        @Override
+        public void draw(@NotNull Canvas canvas) {
+            super.draw(canvas);
             updateText();
         }
 

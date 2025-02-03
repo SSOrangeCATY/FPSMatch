@@ -119,5 +119,6 @@
   "fpsmatch.tab.header.assists": "Assists",
   "fpsmatch.tab.header.damage": "Damage",
   "fpsmatch.tab.header.money": "Money",
-  "fpsmatch.tab.header.headshot": "Headshot Rate"
+  "fpsmatch.tab.header.headshot": "Headshot Rate",
+  "key.fpsm.debug.mvp.hud.desc": "Debug Mvp Hud"
 }

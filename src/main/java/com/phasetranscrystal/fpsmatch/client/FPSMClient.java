@@ -2,8 +2,10 @@ package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.key.CustomTabKey;
+import com.phasetranscrystal.fpsmatch.client.key.DebugMVPHudKey;
 import com.phasetranscrystal.fpsmatch.client.key.DismantleBombKey;
 import com.phasetranscrystal.fpsmatch.client.key.OpenShopKey;
+import com.phasetranscrystal.fpsmatch.client.screen.MVPHud;
 import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -25,6 +27,7 @@ public class FPSMClient {
         event.register(OpenShopKey.OPEN_SHOP_KEY);
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
         event.register(CustomTabKey.CUSTOM_TAB_KEY);
+        event.register(DebugMVPHudKey.CUSTOM_TAB_KEY);
     }
 
 

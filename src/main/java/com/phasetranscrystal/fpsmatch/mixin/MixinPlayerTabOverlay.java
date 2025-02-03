@@ -19,10 +19,6 @@ import java.util.*;
 
 @Mixin(PlayerTabOverlay.class)
 public class MixinPlayerTabOverlay{
-    @Final
-    @Shadow
-    private  Minecraft minecraft;
-
     @Inject(at = {@At("HEAD")}, method = "render(Lnet/minecraft/client/gui/GuiGraphics;ILnet/minecraft/world/scores/Scoreboard;Lnet/minecraft/world/scores/Objective;)V", cancellable = true)
     public void fpsMatch$render$Custom(GuiGraphics guiGraphics, int windowWidth, Scoreboard scoreboard, Objective objective, CallbackInfo ci) {
         if(!ClientData.customTab || ClientData.currentGameType.equals("none")) {

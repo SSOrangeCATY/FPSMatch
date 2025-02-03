@@ -90,10 +90,10 @@ public abstract class BaseMap{
         FPSMCore.checkAndLeaveTeam(player);
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player),new FPSMatchGameTypeS2CPacket(this.getMapName(),this.getGameType()));
         FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
+        this.getMapTeams().joinTeam(teamName,player);
         if(this instanceof ShopMap<?> shopMap){
             shopMap.getShop(teamName).syncShopData(player);
         }
-        this.getMapTeams().joinTeam(teamName,player);
     }
 
     public ServerLevel getServerLevel() {
@@ -122,9 +122,6 @@ public abstract class BaseMap{
         return gameType;
     }
 
-    public boolean isStart() {
-        return isStart;
-    }
     public boolean equals(Object object){
         if(object instanceof BaseMap map){
             return map.getMapName().equals(this.getMapName()) && map.getGameType().equals(this.getGameType());
@@ -164,7 +161,7 @@ public abstract class BaseMap{
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map != null && map.isStart){
+            if(map != null){
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {
@@ -184,7 +181,7 @@ public abstract class BaseMap{
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map != null && map.isStart){
+            if(map != null){
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
                 if(playerTeam != null) {

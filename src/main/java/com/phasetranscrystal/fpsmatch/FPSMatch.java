@@ -3,10 +3,7 @@ package com.phasetranscrystal.fpsmatch;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.*;
-import com.phasetranscrystal.fpsmatch.client.screen.CSGameOverlay;
-import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
-import com.phasetranscrystal.fpsmatch.client.screen.FlashBombHud;
-import com.phasetranscrystal.fpsmatch.client.screen.CSGameTabRenderer;
+import com.phasetranscrystal.fpsmatch.client.screen.*;
 import com.phasetranscrystal.fpsmatch.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.command.VoteCommand;
@@ -184,6 +181,7 @@ public class FPSMatch {
             event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
             event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
             event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
+            event.registerAboveAll("mvp_hud", MVPHud.INSTANCE);
         }
 
 
