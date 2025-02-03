@@ -131,7 +131,7 @@ public class MVPHud implements IGuiOverlay {
         if (bannerProgress >= 1f) {
             Component leftArrow = Component.literal("»");
             Component rightArrow = Component.literal("«");
-            final float ARROW_SCALE = 3.0f; // 从2.0改为3.0
+            final float ARROW_SCALE = 3.0f;
             final float TEXT_SCALE = 3.0f;
             float combinedArrowScale = scaleFactor * ARROW_SCALE;
             float combinedTextScale = scaleFactor * TEXT_SCALE;
@@ -141,7 +141,7 @@ public class MVPHud implements IGuiOverlay {
             // 计算垂直居中位置（新增高度差补偿）
             int textTotalHeight = (int)(font.lineHeight * combinedTextScale);
             int arrowTotalHeight = (int)(font.lineHeight * combinedArrowScale);
-            int verticalOffset = (textTotalHeight - arrowTotalHeight) / 2; // 新增垂直补偿
+            int verticalOffset = (textTotalHeight - arrowTotalHeight) / 2;
             int textY = y + (scaledHeight - textTotalHeight) / 2 + verticalOffset;
             int textColor = 0x00FFFFFF;
             // 文字透明度过渡
@@ -152,21 +152,22 @@ public class MVPHud implements IGuiOverlay {
 
             // 左侧箭头渲染（应用垂直补偿）
             pose.pushPose();
-            pose.scale(combinedArrowScale, combinedArrowScale, 1f); // 改用combinedArrowScale
+            pose.scale(combinedArrowScale, combinedArrowScale, 1f);
             guiGraphics.drawString(font, leftArrow,
-                    (int)((leftX / scaleFactor) / ARROW_SCALE), // 修正位置计算
-                    (int)((textY / scaleFactor) / ARROW_SCALE) - verticalOffset/2, // 微调垂直位置
+                    (int)((leftX / scaleFactor) / ARROW_SCALE),
+                    (int)((textY / scaleFactor) / ARROW_SCALE) - verticalOffset/2,
                     textColor, false);
             pose.popPose();
 
             // 右侧箭头渲染（应用垂直补偿）
             pose.pushPose();
-            pose.scale(combinedArrowScale, combinedArrowScale, 1f); // 改用combinedArrowScale
+            pose.scale(combinedArrowScale, combinedArrowScale, 1f);
             guiGraphics.drawString(font, rightArrow,
-                    (int)((rightX / scaleFactor) / ARROW_SCALE), // 修正位置计算
-                    (int)((textY / scaleFactor) / ARROW_SCALE) - verticalOffset/2, // 微调垂直位置
+                    (int)((rightX / scaleFactor) / ARROW_SCALE),
+                    (int)((textY / scaleFactor) / ARROW_SCALE) - verticalOffset/2,
                     textColor, false);
             pose.popPose();
+
             // 中间文本
             int middleWidth = (int)(font.width(currentTeamName) * combinedTextScale);
             renderScaledText(guiGraphics, pose, currentTeamName,
@@ -184,7 +185,6 @@ public class MVPHud implements IGuiOverlay {
 
         int animatedWidth = (int) (scaledPanelWidth * progress);
         int x = (screenWidth - animatedWidth) / 2;
-        int y = yPosition;
 
         // 背景颜色过渡
         int bgColor = 0xFFFFFFFF;
@@ -196,36 +196,35 @@ public class MVPHud implements IGuiOverlay {
             bgColor = lerpColor(0xFFFFFFFF, 0xAA000000, colorProgress);
         }
 
-        guiGraphics.fill(x, y, x + animatedWidth, y + scaledPanelHeight, bgColor);
+        guiGraphics.fill(x, yPosition, x + animatedWidth, yPosition + scaledPanelHeight, bgColor);
 
         if(progress < 1) return;
 
         // 头像
         int avatarX = x + (int)(110 * scaleFactor);
-        int avatarY = y + (scaledPanelHeight - (int)(AVATAR_SIZE * scaleFactor)) / 2;
+        int avatarY = yPosition + (scaledPanelHeight - (int)(AVATAR_SIZE * scaleFactor)) / 2;
         renderAvatar(guiGraphics, avatarX, avatarY, scaleFactor);
 
         // 信息区域
         int infoStartX = avatarX + (int)((AVATAR_SIZE + 8) * scaleFactor);
-        int infoStartY = avatarY;
 
         // MVP原因条
         int reasonWidth = (int)(font.width(mvpReason) * scaleFactor);
         int padding = (int)(8 * scaleFactor);
         int colorBarWidth = reasonWidth + padding * 2;
 
-        guiGraphics.fill(infoStartX, infoStartY,
+        guiGraphics.fill(infoStartX, avatarY,
                 infoStartX + colorBarWidth,
-                infoStartY + (int)(COLOR_BAR_HEIGHT * scaleFactor),
+                avatarY + (int)(COLOR_BAR_HEIGHT * scaleFactor),
                 0x773366FF);
 
         renderScaledText(guiGraphics, pose, Component.literal(mvpReason),
                 infoStartX + padding,
-                infoStartY + (int)(6 * scaleFactor),
+                avatarY + (int)(6 * scaleFactor),
                 0xFFFFFFFF, scaleFactor);
 
         float nameScale = scaleFactor * 2.0f;
-        int nameY = infoStartY + (int)(COLOR_BAR_HEIGHT * scaleFactor) + (int)(10 * scaleFactor) - 6; // 修改这里
+        int nameY = avatarY + (int)(COLOR_BAR_HEIGHT * scaleFactor) + (int)(10 * scaleFactor) - 6;
         renderScaledTextWithShadow(guiGraphics, pose, currentPlayerName,
                 infoStartX, // 直接使用头像右侧位置
                 nameY,      // 已减少2px
@@ -234,17 +233,17 @@ public class MVPHud implements IGuiOverlay {
         // 统计数据（放大到原始尺寸并下移2px）
         renderScaledText(guiGraphics, pose, extraInfo1,
                 infoStartX,
-                nameY + (int)(font.lineHeight * scaleFactor * 1.4f) + 8, // 增加2px
+                nameY + (int)(font.lineHeight * scaleFactor * 1.4f) + 8,
                 -1,
-                scaleFactor); // 从0.9改为1.0
+                scaleFactor * 1.1f);
 
         // 新增额外信息渲染（放大到原始尺寸并下移2px）
-        int currentY = nameY + (int)(font.lineHeight * nameScale) + (int)(4 * scaleFactor) + 12; // 增加2px
+        int currentY = nameY + (int)(font.lineHeight * nameScale) + (int)(4 * scaleFactor) + 12;
         renderScaledText(guiGraphics, pose, extraInfo2,
                 infoStartX,
                 currentY,
                 0xFFFFFFFF,
-                scaleFactor); // 从0.9改为1.0
+                scaleFactor * 1.1f);
     }
 
     private void renderScaledText(GuiGraphics guiGraphics, PoseStack pose, Component text,
