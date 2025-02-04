@@ -1,19 +1,33 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.ChatFormatting;
+import com.phasetranscrystal.fpsmatch.core.data.MvpReason;
+import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.UUID;
 
 public class MVPHud implements IGuiOverlay {
+    private static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((p_253306_) -> {
+        return p_253306_.getGameMode() == GameType.SPECTATOR ? 1 : 0;
+    }).thenComparing((p_269613_) -> {
+        return Optionull.mapOrDefault(p_269613_.getTeam(), PlayerTeam::getName, "");
+    }).thenComparing((p_253305_) -> {
+        return p_253305_.getProfile().getName();
+    }, String::compareToIgnoreCase);
     public static final MVPHud INSTANCE = new MVPHud();
     private static final Minecraft minecraft = Minecraft.getInstance();
     private static final Font font = minecraft.font;
@@ -32,11 +46,12 @@ public class MVPHud implements IGuiOverlay {
     private boolean isClosing = false;
 
     // 玩家信息
+    private UUID player;
     private Component currentPlayerName = Component.empty();
     private Component currentTeamName = Component.empty();
     private Component extraInfo1 = Component.empty();
     private Component extraInfo2 = Component.empty();
-    private String mvpReason = "";
+    private Component mvpReason = Component.empty();
 
     // 配置参数
     private static final int BASE_WIDTH = 1920;
@@ -49,22 +64,20 @@ public class MVPHud implements IGuiOverlay {
     private static final int AVATAR_SIZE = 74;
     private static final int COLOR_BAR_HEIGHT = 20;
 
-    public void triggerAnimation(Component teamName, Component playerName, String mvpReason, @Nullable Component extraInfo1,@Nullable Component extraInfo2) {
-        this.triggerAnimation(teamName, playerName, mvpReason);
-        this.extraInfo1 = extraInfo1;
-        this.extraInfo2 = extraInfo2;
-    }
-
-    public void triggerAnimation(Component teamName, Component playerName, String mvpReason) {
-        this.currentTeamName = ((MutableComponent) teamName).append("取得回合胜利");;
-        this.currentPlayerName = playerName;
-        this.mvpReason = mvpReason;
+    public void triggerAnimation(MvpReason reason) {
+        this.player = reason.uuid;
+        this.currentTeamName = ((MutableComponent) reason.teamName).append("取得回合胜利");;
+        this.currentPlayerName = reason.playerName;
+        this.mvpReason = reason.mvpReason;
+        this.extraInfo1 = reason.extraInfo1;
+        this.extraInfo2 = reason.extraInfo2;
         this.roundBannerStartTime = System.currentTimeMillis();
         this.mvpInfoStartTime = -1;
         this.colorTransitionStartTime = -1;
         this.mvpColorTransitionStartTime = -1;
         this.animationPlaying = true;
     }
+
 
     public long getMvpInfoStartTime() {
         return mvpInfoStartTime;
@@ -96,7 +109,7 @@ public class MVPHud implements IGuiOverlay {
         }
 
         // MVP面板动画
-        if (mvpInfoStartTime != -1 && currentTime > mvpInfoStartTime) {
+        if (mvpInfoStartTime != -1 && currentTime > mvpInfoStartTime && !this.currentPlayerName.getString().isEmpty()) {
             float mvpProgress = Math.min((currentTime - mvpInfoStartTime) / (float)MVP_PANEL_DURATION, 1f);
             renderMVPInfoPanel(guiGraphics, pose, mvpProgress, scaleFactor, screenWidth, screenHeight, currentTime);
         }
@@ -218,14 +231,14 @@ public class MVPHud implements IGuiOverlay {
                 avatarY + (int)(COLOR_BAR_HEIGHT * scaleFactor),
                 0x773366FF);
 
-        renderScaledText(guiGraphics, pose, Component.literal(mvpReason),
+        renderScaledText(guiGraphics, pose, mvpReason,
                 infoStartX + padding,
                 avatarY + (int)(6 * scaleFactor),
-                0xFFFFFFFF, scaleFactor);
+                -1, scaleFactor);
 
         float nameScale = scaleFactor * 2.0f;
         int nameY = avatarY + (int)(COLOR_BAR_HEIGHT * scaleFactor) + (int)(10 * scaleFactor) - 6;
-        renderScaledTextWithShadow(guiGraphics, pose, currentPlayerName,
+        renderScaledText(guiGraphics, pose, currentPlayerName,
                 infoStartX, // 直接使用头像右侧位置
                 nameY,      // 已减少2px
                 -1, nameScale);
@@ -255,24 +268,16 @@ public class MVPHud implements IGuiOverlay {
         pose.popPose();
     }
 
-    private void renderScaledTextWithShadow(GuiGraphics guiGraphics, PoseStack pose, Component text,
-                                            int x, int y, int color, float scale) {
-        pose.pushPose();
-        pose.translate(x, y, 0);
-        pose.scale(scale, scale, 1f);
-        // 渲染阴影
-        guiGraphics.drawString(font, text, 1, 1, 0xAA000000, false);
-        // 渲染主体文字
-        guiGraphics.drawString(font, text, 0, 0, color, false);
-        pose.popPose();
-    }
-
     private void renderAvatar(GuiGraphics guiGraphics, int x, int y, float scaleFactor) {
         int scaledSize = (int)(AVATAR_SIZE * scaleFactor);
         ResourceLocation avatarTexture = new ResourceLocation("fpsmatch", "textures/ui/avatar.png");
-
-        // 绘制头像
-        guiGraphics.blit(avatarTexture, x, y, scaledSize, scaledSize, 0, 0, 64, 64, 64, 64);
+        PlayerInfo info = getPlayerInfoByUUID(this.player);
+        if(info != null){
+            PlayerFaceRenderer.draw(guiGraphics, info.getSkinLocation(), x, y, scaledSize);
+            return;
+        }else{
+            guiGraphics.blit(avatarTexture, x, y, scaledSize, scaledSize, 0, 0, 64, 64, 64, 64);
+        }
     }
 
     private int lerpColor(int startColor, int endColor, float progress) {
@@ -375,5 +380,12 @@ public class MVPHud implements IGuiOverlay {
         currentTeamName = Component.empty();
         extraInfo1 = Component.empty();
         extraInfo2 = Component.empty();
+        player = null;
+    }
+    public PlayerInfo getPlayerInfoByUUID(UUID uuid) {
+        Optional<PlayerInfo> playerInfo = this.minecraft.player.connection.getListedOnlinePlayers().stream().filter((playerInfo1 -> {
+            return playerInfo1.getProfile().getId().equals(uuid);
+        })).findFirst();
+        return playerInfo.orElse(null);
     }
 }

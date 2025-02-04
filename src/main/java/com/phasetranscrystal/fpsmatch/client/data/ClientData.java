@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.Config;
+import com.phasetranscrystal.fpsmatch.client.screen.MVPHud;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
@@ -92,6 +93,7 @@ public class ClientData {
     }
 
     public static void reset() {
+        MVPHud.INSTANCE.resetAnimation();
         currentMap = "fpsm_none";
         currentGameType = "none";
         currentMapSupportShop = true;

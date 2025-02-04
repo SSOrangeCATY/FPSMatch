@@ -307,31 +307,31 @@ public class MapTeams {
         return data;
     }
 
-    public UUID getGameMvp(){
+    public RawMVPData getGameMvp(BaseTeam winnerTeam){
         UUID mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
-        for (Map.Entry<UUID, TabData> entry : this.getAllTabData().entrySet()) {
-            TabData tabData = entry.getValue();
+        for (TabData tabData: winnerTeam.getPlayerDataTemp()) {
             int kills = tabData.getKills() * 2;
             int assists = tabData.getAssists();
             int score = kills + assists;
-            if (entry.getKey().equals(damageMvpId)){
+            if (tabData.getOwner().equals(damageMvpId)){
                 score += 2;
             }
 
             if (mvpId == null || score > highestScore) {
-                mvpId = entry.getKey();
+                mvpId = tabData.getOwner();
                 highestScore = score;
             }
         }
 
-        return mvpId;
+        return mvpId == null ? null : new RawMVPData(mvpId,"MVP");
     }
 
     public void startNewRound() {
         this.resetAllHurtData();
-        this.setDonePlayerStatsTemp();
+        this.resetLivingPlayers();
+        this.teams.values().forEach(BaseTeam::saveTemp);
     }
 
     public boolean isFirstRound(){
@@ -340,37 +340,38 @@ public class MapTeams {
         return flag.get() == 0;
     }
 
-    public UUID getRoundMvpPlayer(String winnerTeam) {
-        UUID mvpId = null;
+    public RawMVPData getRoundMvpPlayer(BaseTeam winnerTeam) {
+        RawMVPData mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
-        BaseTeam team = teams.getOrDefault(winnerTeam,null);
-        if (team == null) return null;
+        if (!teams.containsValue(winnerTeam)) return null;
 
         if (isFirstRound()) {
-            mvpId = this.getGameMvp();
+            mvpId = this.getGameMvp(winnerTeam);
         }else{
-            for (PlayerData data : team.getPlayersData()) {
-                int kills = data.getTabData().getKills() - data.getTabDataTemp().getKills();
-                int assists = data.getTabData().getAssists() - data.getTabDataTemp().getAssists();
+            for (PlayerData data : winnerTeam.getPlayersData()) {
+                TabData temp = winnerTeam.getPlayerTabTemp(data.getOwner());
+                int kills = data.getTabData().getKills() - temp.getKills();
+                int assists = data.getTabData().getAssists() - temp.getAssists();
                 int score = kills * 2 + assists;
                 if (data.getOwner().equals(damageMvpId)){
                     score += 2;
                 }
 
                 if (mvpId == null || score > highestScore) {
-                    mvpId = data.getOwner();
+                    mvpId = new RawMVPData(data.getOwner(),"MVP");
                     highestScore = score;
                 }
             }
         }
 
         if(mvpId != null){
-            Objects.requireNonNull(team.getPlayerData(mvpId)).getTabData().addMvpCount(1);
+            Objects.requireNonNull(winnerTeam.getPlayerData(mvpId.uuid())).getTabData().addMvpCount(1);
         }
 
         return mvpId;
     }
+
     public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
         Map<UUID,Map<UUID,Float>> hurtData = new HashMap<>();
         teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)-> hurtData.put(data.getOwner(),data.getDamageData())));
@@ -381,9 +382,7 @@ public class MapTeams {
         this.teams.values().forEach((t)-> t.getPlayersTabData().forEach(TabData::clearDamageData));
     }
 
-    public void setDonePlayerStatsTemp(){
-        this.teams.values().forEach((t)-> t.getPlayersTabData().forEach(tabData -> {
-        }));
+    public record RawMVPData(UUID uuid,String reason){
     }
 
 }

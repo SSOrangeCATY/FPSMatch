@@ -115,15 +115,12 @@ public class TabData {
     public TabData copy(){
         TabData tabData = new TabData(owner);
         tabData.setDamage(damage);
+        tabData.setMvpCount(mvpCount);
         tabData.setAssists(assists);
         tabData.setDeaths(deaths);
         tabData.setKills(kills);
         tabData.setHeadshotKills(headshotKills);
         return tabData;
-    }
-
-    public TabData getTempData(){
-        return new TabData(this.owner);
     }
 
     public void merge(TabData data){

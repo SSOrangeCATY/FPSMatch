@@ -158,6 +158,16 @@ public class FPSMatch {
                 .decoder(FPSMatchGameTypeS2CPacket::decode)
                 .consumerNetworkThread(FPSMatchGameTypeS2CPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(MvpMessageS2CPacket.class, i.getAndIncrement())
+                .encoder(MvpMessageS2CPacket::encode)
+                .decoder(MvpMessageS2CPacket::decode)
+                .consumerNetworkThread(MvpMessageS2CPacket::handle)
+                .add();
+        INSTANCE.messageBuilder(MvpHUDCloseS2CPacket.class, i.getAndIncrement())
+                .encoder(MvpHUDCloseS2CPacket::encode)
+                .decoder(MvpHUDCloseS2CPacket::decode)
+                .consumerNetworkThread(MvpHUDCloseS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent

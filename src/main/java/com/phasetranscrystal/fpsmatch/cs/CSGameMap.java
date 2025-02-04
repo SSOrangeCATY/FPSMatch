@@ -665,12 +665,23 @@ private void autoStartLogic(){
      * @param reason 胜利原因
      */
     private void roundVictory(@NotNull BaseTeam winnerTeam, @NotNull WinnerReason reason) {
-        // 检查获胜队伍是否存在
-            // 如果已经在等待胜利者，则直接返回
-            if(isWaitingWinner) return;
-            this.showWinnerMessage(winnerTeam.name);
-            // 设置为等待胜利者状态
-            this.isWaitingWinner = true;
+        // 如果已经在等待胜利者，则直接返回
+        if(isWaitingWinner) return;
+        // 设置为等待胜利者状态
+        this.isWaitingWinner = true;
+        MapTeams.RawMVPData data = this.getMapTeams().getRoundMvpPlayer(winnerTeam);
+        MvpReason mvpReason;
+        if(data != null){
+            mvpReason = new MvpReason.Builder(data.uuid())
+                    .setMvpReason(Component.literal(data.reason()))
+                    .setPlayerName(this.getMapTeams().playerName.get(data.uuid()))
+                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
+        }else{
+            mvpReason = new MvpReason.Builder(UUID.randomUUID())
+                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
+        }
+        this.sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
+        this.showWinnerMessage(winnerTeam.name);
         int currentScore = winnerTeam.getScores();
         int target = currentScore + 1;
         List<BaseTeam> baseTeams =this.getMapTeams().getTeams();
@@ -680,37 +691,37 @@ private void autoStartLogic(){
         winnerTeam.setScores(target);
 
         // 获取胜利队伍和失败队伍列表
-            List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
-            lostTeams.remove(winnerTeam);
+        List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
+        lostTeams.remove(winnerTeam);
 
-            // 处理胜利经济奖励
-            int reward = reason.winMoney;
+        // 处理胜利经济奖励
+        int reward = reason.winMoney;
 
         // 遍历所有玩家，更新经济
-            this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
-                // 如果是胜利队伍的玩家
-                if (winnerTeam.getPlayerList().contains(uuid)) {
-                    this.addPlayerMoney(uuid, reward);
-                } else { // 失败队伍的玩家
-                    lostTeams.forEach((lostTeam)->{
-                        if (lostTeam.getPlayerList().contains(uuid)) {
-                            int defaultEconomy = 1400;
-                            int compensation = 500;
-                            int compensationFactor = lostTeam.getCompensationFactor();
-                            // 计算失败补偿
-                            int loss = defaultEconomy + compensation * compensationFactor;
-                            // 如果玩家没有活着，则给予失败补偿
-                            if(!Objects.requireNonNull(lostTeam.getPlayerData(uuid)).getTabData().isLiving()){
-                                this.addPlayerMoney(uuid, loss);
-                            }
+        this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
+            // 如果是胜利队伍的玩家
+            if (winnerTeam.getPlayerList().contains(uuid)) {
+                this.addPlayerMoney(uuid, reward);
+            } else { // 失败队伍的玩家
+                lostTeams.forEach((lostTeam)->{
+                    if (lostTeam.getPlayerList().contains(uuid)) {
+                        int defaultEconomy = 1400;
+                        int compensation = 500;
+                        int compensationFactor = lostTeam.getCompensationFactor();
+                        // 计算失败补偿
+                        int loss = defaultEconomy + compensation * compensationFactor;
+                        // 如果玩家没有活着，则给予失败补偿
+                        if(!Objects.requireNonNull(lostTeam.getPlayerData(uuid)).getTabData().isLiving()){
+                            this.addPlayerMoney(uuid, loss);
                         }
-                    });
-                }
-            });
-            // 检查连败情况
-            this.checkLoseStreaks(winnerTeam.name);
-            // 同步商店金钱数据
-            this.getShops().forEach(FPSMShop::syncShopMoneyData);
+                    }
+                });
+            }
+        });
+        // 检查连败情况
+        this.checkLoseStreaks(winnerTeam.name);
+        // 同步商店金钱数据
+        this.getShops().forEach(FPSMShop::syncShopMoneyData);
     }
 
     private void checkLoseStreaks(String winnerTeam) {
@@ -739,7 +750,7 @@ private void autoStartLogic(){
         this.isWaiting = true;
         this.isWaitingWinner = false;
         this.cleanupMap();
-        this.getMapTeams().resetLivingPlayers();
+        this.getMapTeams().startNewRound();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
@@ -772,6 +783,7 @@ private void autoStartLogic(){
 
     private void syncNormalRoundStartMessage(ServerPlayer serverPlayer) {
         this.sendPacketToJoinedPlayer(serverPlayer, new ShopStatesS2CPacket(true), true);
+        this.sendPacketToJoinedPlayer(serverPlayer,new MvpHUDCloseS2CPacket(),true);
         var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
         this.sendPacketToJoinedPlayer(serverPlayer, bombResetPacket, true);
         BaseTeam baseTeam = this.getMapTeams().getTeamByPlayer(serverPlayer);

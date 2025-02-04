@@ -20,6 +20,7 @@ public class BaseTeam {
     private final PlayerTeam playerTeam;
     private int scores = 0;
     private final Map<UUID, PlayerData> players = new HashMap<>();
+    private final Map<UUID, TabData> playerDataTemp = new HashMap<>();
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
     public final List<UUID> teamUnableToSwitch = new ArrayList<>();
     private int loseStreak;
@@ -61,7 +62,6 @@ public class BaseTeam {
         PlayerData playerData = players.get(uuid);
         playerData.setLiving(false);
         playerData.setOffline(true);
-        playerData.getTabDataTemp().addDeaths();
         player.heal(player.getMaxHealth());
         player.setGameMode(GameType.SPECTATOR);
     }
@@ -100,10 +100,19 @@ public class BaseTeam {
         return tabDataList;
     }
 
-    public List<TabData> getPlayersTabDataTemp(){
-        List<TabData> tabDataList = new ArrayList<>();
-        this.players.values().forEach((data)-> tabDataList.add(data.getTabDataTemp()));
-        return tabDataList;
+    public void saveTemp(){
+        this.playerDataTemp.clear();
+        for (Map.Entry<UUID, PlayerData> entry : this.players.entrySet()) {
+            this.playerDataTemp.put(entry.getKey(),entry.getValue().getTabData().copy());
+        }
+    }
+
+    public List<TabData> getPlayerDataTemp(){
+        return this.playerDataTemp.values().stream().toList();
+    }
+
+    public TabData getPlayerTabTemp(UUID uuid){
+        return this.playerDataTemp.get(uuid);
     }
 
     public List<UUID> getPlayerList(){

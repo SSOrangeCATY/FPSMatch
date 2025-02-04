@@ -1,8 +1,8 @@
 package com.phasetranscrystal.fpsmatch.client.key;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.screen.MVPHud;
+import com.phasetranscrystal.fpsmatch.core.data.MvpReason;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -39,11 +39,7 @@ public class DebugMVPHudKey {
             if(MVPHud.INSTANCE.getMvpInfoStartTime() != -1){
                 MVPHud.INSTANCE.triggerCloseAnimation();
             }else{
-                MVPHud.INSTANCE.triggerAnimation(Component.literal("test"),
-                        Component.literal("player"),
-                        "Kill All Players",
-                        Component.literal("test1"),
-                        Component.literal("test2"));
+                MVPHud.INSTANCE.triggerAnimation(new MvpReason.Builder(Minecraft.getInstance().player.getUUID()).setTeamName(Component.literal("Red")).setPlayerName(Component.literal("Player")).setMvpReason(Component.literal("Reason")).build());
             }
         }
     }

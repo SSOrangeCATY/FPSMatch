@@ -6,7 +6,6 @@ public class PlayerData{
     private final UUID owner;
     private int scores = 0;
     private final TabData tabData;
-    private final TabData tabDataTemp;
     private boolean isOffline = false;
     private SpawnPointData spawnPointsData;
     private boolean vote = false;
@@ -14,7 +13,6 @@ public class PlayerData{
     public PlayerData(UUID owner) {
         this.owner = owner;
         this.tabData = new TabData(owner);
-        this.tabDataTemp = new TabData(owner);
     }
 
     public void setLiving(boolean b) {
@@ -47,10 +45,6 @@ public class PlayerData{
 
     public TabData getTabData() {
         return tabData;
-    }
-
-    public TabData getTabDataTemp() {
-        return tabDataTemp;
     }
 
     public SpawnPointData getSpawnPointsData() {
