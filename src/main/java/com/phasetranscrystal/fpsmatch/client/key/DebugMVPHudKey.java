@@ -35,12 +35,12 @@ public class DebugMVPHudKey {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player == null) {
                 return;
-            }
+            }/*
             if(MVPHud.INSTANCE.getMvpInfoStartTime() != -1){
                 MVPHud.INSTANCE.triggerCloseAnimation();
             }else{
                 MVPHud.INSTANCE.triggerAnimation(new MvpReason.Builder(Minecraft.getInstance().player.getUUID()).setTeamName(Component.literal("Red")).setPlayerName(Component.literal("Player")).setMvpReason(Component.literal("Reason")).build());
-            }
+            }*/
         }
     }
 }

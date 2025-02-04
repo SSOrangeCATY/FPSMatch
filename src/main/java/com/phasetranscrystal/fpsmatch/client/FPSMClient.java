@@ -27,7 +27,7 @@ public class FPSMClient {
         event.register(OpenShopKey.OPEN_SHOP_KEY);
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
         event.register(CustomTabKey.CUSTOM_TAB_KEY);
-        event.register(DebugMVPHudKey.CUSTOM_TAB_KEY);
+        //event.register(DebugMVPHudKey.CUSTOM_TAB_KEY);
     }
 
 
