@@ -330,10 +330,7 @@ public class FPSMCommand {
         BlockPos pos2 = BlockPosArgument.getBlockPos(context,"to");
         Function3<ServerLevel,String, AreaData,BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
         if(game != null){
-            BaseMap map = FPSMCore.getInstance().registerMap(type, game.apply(context.getSource().getLevel(),mapName,new AreaData(pos1,pos2)));
-            if(map != null) {
-                map.setGameType(type);
-            }else return 0;
+            FPSMCore.getInstance().registerMap(type, game.apply(context.getSource().getLevel(),mapName,new AreaData(pos1,pos2)));
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.create.success", mapName), true);
             return 1;
         }else{

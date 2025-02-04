@@ -31,25 +31,18 @@ public abstract class BaseMap{
     public boolean isStart = false;
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
-    private MapTeams mapTeams;
+    private final MapTeams mapTeams;
     public final AreaData mapArea;
-    private final Map<String,Integer> teams = new HashMap<>();
 
     public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
         this.serverLevel = serverLevel;
         this.mapName = mapName;
         this.mapArea = areaData;
+        this.mapTeams = new MapTeams(serverLevel,this);
     }
 
-    public final Map<String,Integer> getTeams(){
-        return teams;
-    }
     public void addTeam(String teamName,int playerLimit){
-        this.teams.put(teamName,playerLimit);
-    }
-
-    public final void setMapTeams(MapTeams teams){
-        this.mapTeams = teams;
+        this.mapTeams.addTeam(teamName,playerLimit);
     }
 
     public final void mapTick(){
@@ -115,7 +108,6 @@ public abstract class BaseMap{
 
     public final void setGameType(String gameType) {
         this.gameType = gameType;
-        this.setMapTeams(new MapTeams(this.getServerLevel(),this.getTeams(),this));
     }
 
     public String getGameType() {

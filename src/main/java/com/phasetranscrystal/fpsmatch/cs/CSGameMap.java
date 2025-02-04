@@ -226,6 +226,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.addTeam("ct",5);
         this.addTeam("t",5);
         this.setBlastTeam("t");
+        this.setGameType("cs");
     }
     @Override
     public void addTeam(String teamName,int playerLimit){
@@ -882,7 +883,7 @@ private void autoStartLogic(){
                 this.getMapTeams().getTeams().forEach((team)-> atomicInteger.addAndGet(team.getScores()));
                 if(atomicInteger.get() == 12){
                     switchFlag = true;
-                    this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
+                    this.getMapTeams().switchAttackAndDefend("t","ct");
                     this.syncShopData();
                 } else {
                     switchFlag = false;
@@ -895,7 +896,7 @@ private void autoStartLogic(){
             int check = total - 24 - 6 * this.overCount;
             if(check % 3 == 0 && check > 0){
                 switchFlag = true;
-                this.getMapTeams().switchAttackAndDefend(this.getServerLevel(),"t","ct");
+                this.getMapTeams().switchAttackAndDefend("t","ct");
                 this.syncShopData();
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid, 10000)));
                 if (check == 6 && ctScore < 12 + 3 * this.overCount + 4 && tScore < 12 + 3 * this.overCount + 4 ) {
@@ -1116,7 +1117,7 @@ private void autoStartLogic(){
     }
     @Override
     public ArrayList<ItemStack> getKits(BaseTeam team) {
-        return (ArrayList<ItemStack>) this.startKits.get(team.getFixedName());
+        return (ArrayList<ItemStack>) this.startKits.getOrDefault(team.getFixedName(),new ArrayList<>());
     }
 
     @Override
@@ -1511,11 +1512,7 @@ private void autoStartLogic(){
             mapArea
         );
 
-        // 设置类型
-        gameMap.setGameType("cs");
-
         // 设置出生点数据
-        gameMap.setMapTeams(new MapTeams(gameMap.getServerLevel(),gameMap.getTeams(),gameMap));
         gameMap.getMapTeams().putAllSpawnPoints(spawnPoints);
 
         // 设置商店数据
@@ -1547,8 +1544,6 @@ private void autoStartLogic(){
     public Codec<CSGameMap> codec() {
         return CODEC;
     }
-
-
     public BaseTeam getTTeam(){
         return this.getMapTeams().getTeamByName("t");
     }
@@ -1558,36 +1553,27 @@ private void autoStartLogic(){
     public int getStartMoney() {
         return startMoney;
     }
-
     public void setStartMoney(int startMoney) {
         this.startMoney = startMoney;
     }
-
     public int getWaitingTime() {
         return waitingTime;
     }
-
     public void setWaitingTime(int waitingTime) {
         this.waitingTime = waitingTime;
     }
-
     public int getRoundTimeLimit() {
         return roundTimeLimit;
     }
-
     public void setRoundTimeLimit(int roundTimeLimit) {
         this.roundTimeLimit = roundTimeLimit;
     }
-
     public int getAutoStartTime() {
         return autoStartTime;
     }
-
     public void setAutoStartTime(int autoStartTime) {
         this.autoStartTime = autoStartTime;
     }
-
-
     public void read() {
         FPSMCore.getInstance().registerMap(this.gameType,this);
     }

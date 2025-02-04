@@ -19,12 +19,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MapTeams {
     protected final ServerLevel level;
+    protected final BaseMap map;
     private final Map<String,BaseTeam> teams = new HashMap<>();
     private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public final Map<UUID,Component> playerName = new HashMap<>();
     public MapTeams(ServerLevel level,Map<String,Integer> team, BaseMap map){
         this.level = level;
-        team.forEach((name,limit)-> this.addTeam(name,limit,map));
+        this.map = map;
+        team.forEach(this::addTeam);
+    }
+
+    public MapTeams(ServerLevel level,BaseMap map){
+        this.level = level;
+        this.map = map;
     }
 
     @Nullable
@@ -40,15 +47,15 @@ public class MapTeams {
         return data;
     }
 
-    public void switchAttackAndDefend(ServerLevel serverLevel, String attackTeamName, String defendTeamName) {
+    public void switchAttackAndDefend(String attackTeamName, String defendTeamName) {
         BaseTeam attackTeam = this.getTeamByName(attackTeamName);
         BaseTeam defendTeam = this.getTeamByName(defendTeamName);
         if(attackTeam == null || defendTeam == null) return;
 
         //交换玩家
         Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
-        attackTeam.resetAllPlayers(serverLevel, defendTeam.getPlayers());
-        defendTeam.resetAllPlayers(serverLevel, tempPlayers);
+        attackTeam.resetAllPlayers(this.level, defendTeam.getPlayers());
+        defendTeam.resetAllPlayers(this.level, tempPlayers);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
@@ -101,7 +108,7 @@ public class MapTeams {
         this.teams.forEach((s,t)-> t.resetSpawnPointData());
     }
 
-    public void addTeam(String teamName,int limit,BaseMap map){
+    public void addTeam(String teamName,int limit){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
         playerteam.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
