@@ -226,7 +226,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.addTeam("ct",5);
         this.addTeam("t",5);
         this.setBlastTeam("t");
-        this.setGameType("cs");
     }
     @Override
     public void addTeam(String teamName,int playerLimit){
@@ -407,6 +406,11 @@ private void autoStartLogic(){
             }
             setBystander(player);
         }
+    }
+
+    @Override
+    public String getGameType() {
+        return "cs";
     }
 
     private void voteLogic() {
@@ -1575,7 +1579,7 @@ private void autoStartLogic(){
         this.autoStartTime = autoStartTime;
     }
     public void read() {
-        FPSMCore.getInstance().registerMap(this.gameType,this);
+        FPSMCore.getInstance().registerMap(this.getGameType(),this);
     }
     public enum WinnerReason{
         TIME_OUT(3250),

@@ -27,7 +27,6 @@ import java.util.function.Predicate;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class BaseMap{
     public final String mapName;
-    public String gameType = "error";
     public boolean isStart = false;
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
@@ -106,13 +105,7 @@ public abstract class BaseMap{
         return mapName;
     }
 
-    public final void setGameType(String gameType) {
-        this.gameType = gameType;
-    }
-
-    public String getGameType() {
-        return gameType;
-    }
+    public abstract String getGameType();
 
     public boolean equals(Object object){
         if(object instanceof BaseMap map){

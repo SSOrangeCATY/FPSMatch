@@ -112,7 +112,7 @@ public class BaseTeam {
     }
 
     public TabData getPlayerTabTemp(UUID uuid){
-        return this.playerDataTemp.get(uuid);
+        return this.playerDataTemp.getOrDefault(uuid,new TabData(uuid));
     }
 
     public List<UUID> getPlayerList(){

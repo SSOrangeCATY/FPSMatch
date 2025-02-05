@@ -290,7 +290,6 @@ public class FPSMCommand {
                 if (game != null) {
                     BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(commandSourceStackCommandContext.getSource().getServer().getLevel(level), mapName, rawMapData.areaData));
                     if(map != null){
-                        map.setGameType(mapType);
                         map.getMapTeams().putAllSpawnPoints(data);
 
                         if(map instanceof ShopMap<?> shopMap && rawMapData.shop != null){
