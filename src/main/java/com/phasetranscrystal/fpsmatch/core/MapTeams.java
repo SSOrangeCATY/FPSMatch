@@ -373,7 +373,12 @@ public class MapTeams {
         }
 
         if(mvpId != null){
-            Objects.requireNonNull(winnerTeam.getPlayerData(mvpId.uuid())).getTabData().addMvpCount(1);
+            PlayerData data = winnerTeam.getPlayerData(mvpId.uuid());
+            if (data != null){
+                data.getTabData().addMvpCount(1);
+            }else{
+                System.out.println("error : MVP Player Data is null -> " + mvpId.uuid.toString());
+            }
         }
 
         return mvpId;
