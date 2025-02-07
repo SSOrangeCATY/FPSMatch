@@ -496,6 +496,7 @@ private void autoStartLogic(){
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.isShopLocked = false;
+        this.getMapTeams().startNewRound();
         this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
