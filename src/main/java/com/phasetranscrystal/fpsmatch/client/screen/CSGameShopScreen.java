@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
@@ -7,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
@@ -27,6 +29,7 @@ import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
@@ -333,7 +336,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
         public final ItemType type;
         public final int index;
-        public final ImageView imageView;
         public final ShapeDrawable backgroud;
         public final RelativeLayout returnGoodsLayout;
         public final ValueAnimator backgroundAnimeFadeIn;
@@ -342,7 +344,8 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public final TextView itemNameText;
         public final TextView costText;
         public final TextView returnGoodsText;
-        public Image icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
+        public ResourceLocation icon = new ResourceLocation(FPSMatch.MODID, BROKEN_ICON);
+        public boolean shouldRenderGunIcon = false;
         public MinecraftSurfaceView minecraftSurfaceView;
 
         public GunButtonLayout(Context context, ItemType type, int index) {
@@ -360,19 +363,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             backgroud.setAlpha(200);
             setBackground(backgroud);
 
-            imageView = new ImageView(context);
-            imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            ImageDrawable imageDrawable = new ImageDrawable(this.icon);
-            var imageParam = new RelativeLayout.LayoutParams(39, 13);
-            imageParam.addRule(RelativeLayout.CENTER_IN_PARENT);
-            imageView.setLayoutParams(imageParam);
-            imageView.setScaleX(3);
-            imageView.setScaleY(3);
-            imageView.setImageDrawable(imageDrawable);
-            imageView.setImageTintList(CT_TINT_LIST);
-            imageView.setForegroundGravity(Gravity.CENTER);
-            addView(imageView);
-
             minecraftSurfaceView = new MinecraftSurfaceView(getContext());
             var msvp = new RelativeLayout.LayoutParams(32, 32);
             msvp.addRule(RelativeLayout.CENTER_IN_PARENT);
@@ -389,18 +379,43 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 public void onDraw(@NotNull GuiGraphics gr, int mouseX, int mouseY, float deltaTick, double guiScale, float alpha) {
                     ClientShopSlot currentSlot = ClientData.getSlotData(GunButtonLayout.this.type,GunButtonLayout.this.index);
                     ItemStack itemStack = currentSlot.itemStack();
+                    boolean enable = ClientData.getMoney() >= currentSlot.cost() && !itemStack.isEmpty() && !currentSlot.isLocked();
+                    /*
                     boolean isGun = itemStack.getItem() instanceof IGun;
                     if(!isGun){
                         boolean enable = ClientData.getMoney() >= currentSlot.cost() && !itemStack.isEmpty() && !currentSlot.isLocked();
                         gr.pose().pushPose();
-                        if(!enable){
-                            gr.setColor(125 / 255F,125 / 255F,125 / 255F,1);
+                        if(GunButtonLayout.this.shouldRenderGunIcon){
+                            if(enable){
+                                if(ClientData.currentTeam.equals("ct")){
+                                    gr.setColor((float) 150 / 255, (float) 200 / 255, (float) 250 / 255,1);
+                                }else{
+                                    gr.setColor((float) 234 / 255, (float) 192 /255, (float) 85 /255,1);
+                                }
+                            }else{
+                                gr.setColor(65 / 255F,65 / 255F,65 / 255F,1);
+                            }
+                            gr.blit(GunButtonLayout.this.icon,0,0,0,0,39,13,117,44);
                         }else{
-                            gr.setColor(1,1,1,1);
+                            if(!enable){
+                                gr.setColor(125 / 255F,125 / 255F,125 / 255F,1);
+                            }else{
+                                gr.setColor(1,1,1,1);
+                            }
+                            gr.renderItem(itemStack, 0, 0);
                         }
-                        gr.renderItem(itemStack, 0, 0);
+
                         gr.pose().popPose();
+                    }*/
+
+                    gr.pose().pushPose();
+                    if(!enable){
+                        gr.setColor(125 / 255F,125 / 255F,125 / 255F,1);
+                    }else{
+                        gr.setColor(1,1,1,1);
                     }
+                    gr.renderItem(itemStack, 0, 0);
+                    gr.pose().popPose();
                 }
             });
             addView(minecraftSurfaceView);
@@ -482,7 +497,9 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             });
 
             setOnClickListener((v) -> {
-                if(imageView.isEnabled()) FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
+                ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
+                boolean enable = ClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
+                if(enable) FPSMatch.INSTANCE.sendToServer(new ShopActionC2SPacket(ClientData.currentMap, this.type, this.index, ShopAction.BUY));
             });
         }
 
@@ -493,7 +510,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
         public void setElements(boolean enable){
             ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
-            imageView.setEnabled(enable);
             if(enable){
                 int color = ClientData.currentTeam.equals("ct") ? RenderUtil.color(150,200,250) : RenderUtil.color(234, 192, 85);
                 numText.setTextColor(color);
@@ -530,22 +546,16 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 setStats(data.canReturn());
                 ItemStack itemStack = data.itemStack();
                 boolean empty = itemStack.isEmpty();
-                boolean isGun = itemStack.getItem() instanceof IGun;
+                boolean isGun = false;
+                if(itemStack.getItem() instanceof IGun igun){
+                    isGun = true;
+                    TimelessAPI.getClientGunIndex(igun.getGunId(itemStack)).ifPresent(gunIndex -> this.icon = gunIndex.getDefaultDisplay().getHUDTexture());
+                }else{
+                    this.icon = new ResourceLocation(FPSMatch.MODID, BROKEN_ICON);
+                }
                 this.itemNameText.setText(empty ? I18n.get("fpsm.shop.slot.empty") : data.name());
                 this.costText.setText("$ "+ data.cost());
-                ResourceLocation texture = data.texture();
-                if(texture != null){
-                    this.icon = RenderUtil.getGunTextureByRL(texture);
-                }else{
-                    if(!empty && !isGun){
-                        this.icon = Image.create(FPSMatch.MODID, ITEM_ICON);
-                    }else{
-                        this.icon = Image.create(FPSMatch.MODID, BROKEN_ICON);
-                    }
-                }
-
-                this.imageView.setImageDrawable(new ImageDrawable(this.icon));
-                imageView.setImageTintList(ClientData.currentTeam.equals("ct") ? CT_TINT_LIST : T_TINT_LIST);
+                this.shouldRenderGunIcon = isGun;
                 this.invalidate();
 
                 //END
@@ -557,12 +567,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
 
         private void setScale(float scale) {
-            var imageParam = new RelativeLayout.LayoutParams(dp(39*scale), dp(13*scale));
-            imageParam.addRule(RelativeLayout.CENTER_IN_PARENT);
-            this.imageView.setLayoutParams(imageParam);
-            imageView.setScaleX(3*scale);
-            imageView.setScaleY(3*scale);
-
             RelativeLayout.LayoutParams numParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
                     RelativeLayout.LayoutParams.WRAP_CONTENT);

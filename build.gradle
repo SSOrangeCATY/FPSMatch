@@ -118,7 +118,7 @@ dependencies {
     }
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
 
-    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:5722050")
+    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6069384")
     //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

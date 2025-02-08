@@ -1,8 +1,9 @@
 package com.phasetranscrystal.fpsmatch.util;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import com.phasetranscrystal.fpsmatch.client.data.ClientTaczTextureData;
-import com.tacz.guns.client.resource.texture.FilePackTexture;
-import com.tacz.guns.client.resource.texture.ZipPackTexture;
+import com.tacz.guns.client.resource_legacy.texture.FilePackTexture;
+import com.tacz.guns.client.resource_legacy.texture.ZipPackTexture;
 import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Image;
 import net.minecraft.client.Minecraft;
@@ -10,13 +11,12 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
 
 public class RenderUtil {
     public static int color(int r,int g,int b){
@@ -35,8 +35,7 @@ public class RenderUtil {
             texturePath = ClientTaczTextureData.getPathByGunTexture(pack);
             if(texturePath != null ){
                 File textureFile = texturePath.toFile();
-                String path = textureFile.getPath();
-                try (InputStream stream = new FileInputStream(path.replace("\\","/"))){
+                try (InputStream stream = Files.newInputStream(textureFile.toPath())){
                     image = Image.createTextureFromBitmap(BitmapFactory.decodeStream(stream));
                 } catch (Exception e){
                     throw new RuntimeException(e);

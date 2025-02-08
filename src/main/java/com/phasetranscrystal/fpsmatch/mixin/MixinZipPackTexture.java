@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.client.data.ClientTaczTextureData;
-import com.tacz.guns.client.resource.texture.ZipPackTexture;
+import com.tacz.guns.client.resource_legacy.texture.ZipPackTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

@@ -122,7 +122,7 @@ public class DeathMessage {
         if (item instanceof IGun iGun) {
             ResourceLocation gunId = iGun.getGunId(weapon);
             ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(gunId).orElse(null);
-            return gunIndex != null ? gunIndex.getHUDTexture() : null;
+            return gunIndex != null ? gunIndex.getDefaultDisplay().getHUDTexture() : null;
         }
         return null;
     }

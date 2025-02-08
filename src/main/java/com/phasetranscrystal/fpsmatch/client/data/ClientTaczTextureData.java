@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.client.data;
 
-import com.tacz.guns.client.resource.texture.FilePackTexture;
-import com.tacz.guns.client.resource.texture.ZipPackTexture;
+import com.tacz.guns.client.resource_legacy.texture.FilePackTexture;
+import com.tacz.guns.client.resource_legacy.texture.ZipPackTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
