@@ -35,6 +35,7 @@ import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.commands.PlaySoundCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -642,15 +643,6 @@ private void autoStartLogic(){
         return this.currentRoundTime >= this.roundTimeLimit;
     }
 
-    public void showWinnerMessage(String winnerTeamName){
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer serverPlayer = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
-            if(serverPlayer != null){
-                serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner."+winnerTeamName+".round.message").withStyle(winnerTeamName.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
-            }
-        }));
-    }
-
     public void sendAllPlayerTitle(Component title,@Nullable Component subtitle){
         ServerLevel level = this.getServerLevel();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
@@ -687,7 +679,6 @@ private void autoStartLogic(){
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
         }
         this.sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
-        this.showWinnerMessage(winnerTeam.name);
         int currentScore = winnerTeam.getScores();
         int target = currentScore + 1;
         List<BaseTeam> baseTeams =this.getMapTeams().getTeams();

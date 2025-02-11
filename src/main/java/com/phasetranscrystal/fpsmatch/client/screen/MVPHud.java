@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.client.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.fpsmatch.core.data.MvpReason;
+import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -11,6 +12,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
@@ -76,6 +78,14 @@ public class MVPHud implements IGuiOverlay {
         this.colorTransitionStartTime = -1;
         this.mvpColorTransitionStartTime = -1;
         this.animationPlaying = true;
+
+        //TODO MVP音效先暂时放这里了
+        boolean flag = reason.teamName.getString().equals("CT");
+        if (minecraft.level != null) {
+            if (minecraft.player != null) {
+                minecraft.level.playLocalSound(minecraft.player.getOnPos().above().above(), flag ? FPSMSoundRegister.voice_ct_win.get() : FPSMSoundRegister.voice_t_win.get(), SoundSource.VOICE, 1.0f, 1.0f,false);
+            }
+        }
     }
 
 

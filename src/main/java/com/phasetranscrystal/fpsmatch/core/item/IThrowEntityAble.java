@@ -2,6 +2,8 @@ package com.phasetranscrystal.fpsmatch.core.item;
 
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
 import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -19,7 +21,7 @@ public interface IThrowEntityAble {
             if(pPlayer.getCooldowns().isOnCooldown((Item) this)){
                 return itemstack;
             }
-            pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
+            pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), this.getThrowVoice(), SoundSource.PLAYERS, 0.5F, 1);
             pPlayer.getCooldowns().addCooldown((Item) this, 20);
             if (!pLevel.isClientSide) {
                 BaseProjectileEntity shell = this.getEntity(pPlayer, pLevel);
@@ -35,4 +37,8 @@ public interface IThrowEntityAble {
             return itemstack;
     };
      BaseProjectileEntity getEntity(Player pPlayer, Level pLevel);
+
+     default SoundEvent getThrowVoice(){
+         return SoundEvents.SNOWBALL_THROW;
+     };
 }

@@ -234,6 +234,7 @@ public class CSGameOverlay implements IGuiOverlay {
         if(ClientData.dismantleBombProgress > 0) {
             renderDemolitionProgress(player, guiGraphics);
         }
+        this.renderMoneyText(guiGraphics,screenWidth,screenHeight);
     }
 
     private String getRoundTimeString() {
@@ -253,6 +254,15 @@ public class CSGameOverlay implements IGuiOverlay {
                 .withStyle(Style.EMPTY.withColor(color).withObfuscated(!flag)));
         }
         player.displayClientMessage(component, true);
+    }
+
+    private void renderMoneyText(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+        Font font = Minecraft.getInstance().font;
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(5,screenHeight - 20,0 );
+        guiGraphics.pose().scale(2,2,0);
+        guiGraphics.drawString(font, "$ "+ClientData.getMoney(), 0,0, ClientData.currentTeam.equals("ct") ? textCTWinnerRoundsColor : textTWinnerRoundsColor);
+        guiGraphics.pose().popPose();
     }
 
     public static boolean getDemolitionProgressTextStyle(int index){

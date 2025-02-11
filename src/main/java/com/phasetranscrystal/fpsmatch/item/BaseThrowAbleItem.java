@@ -2,8 +2,10 @@ package com.phasetranscrystal.fpsmatch.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
+import com.phasetranscrystal.fpsmatch.core.function.IHolder;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.net.ThrowEntityC2SPacket;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -23,9 +25,17 @@ import java.util.function.BiFunction;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
     public final BiFunction<Player,Level,BaseProjectileEntity> factory;
+    public final IHolder<SoundEvent> voice;
     public BaseThrowAbleItem(Properties pProperties, BiFunction<Player,Level,BaseProjectileEntity> factory) {
         super(pProperties);
         this.factory = factory;
+        this.voice = null;
+    }
+
+    public BaseThrowAbleItem(Properties pProperties, BiFunction<Player,Level,BaseProjectileEntity> factory, IHolder<SoundEvent> voice) {
+        super(pProperties);
+        this.factory = factory;
+        this.voice = voice;
     }
 
     @SubscribeEvent
@@ -58,5 +68,10 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
     @Override
     public BaseProjectileEntity getEntity(Player pPlayer, Level pLevel) {
         return this.factory.apply(pPlayer, pLevel);
+    }
+
+    @Override
+    public SoundEvent getThrowVoice() {
+        return this.voice == null ? IThrowEntityAble.super.getThrowVoice() : this.voice.get();
     }
 }

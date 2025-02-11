@@ -13,6 +13,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.commands.TeamMsgCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -79,7 +80,7 @@ public class CompositionC4 extends Item {
 		});
 	}
 
-	public void inventoryTick(ItemStack pStack, Level pLevel, Entity pEntity, int pSlotId, boolean pIsSelected) {
+	public void inventoryTick(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull Entity pEntity, int pSlotId, boolean pIsSelected) {
 		if(pLevel instanceof ServerLevel serverLevel && pEntity instanceof ServerPlayer player) {
 			int i = player.getInventory().countItem(FPSMItemRegister.C4.get());
 			if (i > 0) {
