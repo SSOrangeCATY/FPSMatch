@@ -250,6 +250,18 @@ public class MatchDropEntity extends Entity {
         };
         return checker;
     });
+    public static final Predicate<ItemStack> THIRD_WEAPON_PREDICATE = (itemStack -> {
+        boolean checker = false;
+        if(itemStack.getItem() instanceof IGun gun){
+            for (ItemStack itemStack1 : AbstractGunItem.fillItemCategory(GunTabType.RPG)){
+                if (itemStack1.getItem() instanceof IGun iGun && iGun.getGunId(itemStack1).equals(gun.getGunId(itemStack))){
+                    checker = true;
+                    break;
+                }
+            };
+        };
+        return checker;
+    });
 
     public static final Predicate<ItemStack> THROW_PREDICATE = (itemStack -> throwable.contains(itemStack.getItem()));
 
@@ -269,6 +281,10 @@ public class MatchDropEntity extends Entity {
             int i = player.getInventory().clearOrCountMatchingItems(THROW_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
             return i < 4;
         })),
+        THIRD_WEAPON((player -> {
+            int i = player.getInventory().clearOrCountMatchingItems(THIRD_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
+            return i < 2;
+        })),
         MISC((player -> true));
 
         public final Predicate<Player> playerPredicate;
@@ -282,6 +298,7 @@ public class MatchDropEntity extends Entity {
         return switch (type) {
             case MAIN_WEAPON -> MAIN_WEAPON_PREDICATE;
             case SECONDARY_WEAPON -> SECONDARY_WEAPON_PREDICATE;
+            case THIRD_WEAPON -> THIRD_WEAPON_PREDICATE;
             case THROW -> THROW_PREDICATE;
             case MISC -> MISC_PREDICATE;
         };

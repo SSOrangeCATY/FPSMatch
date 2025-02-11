@@ -10,13 +10,17 @@ import com.phasetranscrystal.fpsmatch.command.VoteCommand;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
+import com.phasetranscrystal.fpsmatch.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import com.tacz.guns.GunMod;
+import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
@@ -58,6 +62,7 @@ public class FPSMatch {
         FPSMSoundRegister.SOUNDS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
+        FPSMatchRule.init();
         context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
     }
 
@@ -220,6 +225,17 @@ public class FPSMatch {
                 }
             }
         }
+
+
+        @SubscribeEvent
+        public static void onUse(InputEvent.MouseButton.Pre event){
+            if((ClientData.isWaiting || ClientData.isPause) && InputExtraCheck.isInGame()){
+                event.setCanceled(true);
+            }
+        }
+
+
+
     }
 
 

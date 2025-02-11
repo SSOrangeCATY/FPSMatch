@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.entity;
 
+import com.phasetranscrystal.fpsmatch.gamerule.FPSMatchRule;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -9,6 +10,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -54,7 +56,11 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
         if (this.getState() == 2) return;
         super.onHit(r);
         if (!(r instanceof BlockHitResult result)) return;
-
+        if(this.level().getGameRules().getRule(FPSMatchRule.RULE_THROWABLE_CAN_CROSS_BARRIER).get()){
+            if(this.level().getBlockState(result.getBlockPos()).getBlock() == Blocks.BARRIER){
+                return;
+            }
+        }
         // 状态管理
         if (getState() == 0) setState(1);
 
