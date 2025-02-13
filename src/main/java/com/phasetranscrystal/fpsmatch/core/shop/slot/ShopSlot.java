@@ -15,8 +15,11 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -361,7 +364,11 @@ public class ShopSlot{
                 }
             }
         }
-        player.getInventory().add(itemStack);
+        if(itemStack.getItem() instanceof ArmorItem armorItem){
+            player.setItemSlot(armorItem.getEquipmentSlot(),itemStack);
+        }else{
+            player.getInventory().add(itemStack);
+        }
         player.getInventory().setChanged();
         player.inventoryMenu.broadcastChanges();
         return money - cost;

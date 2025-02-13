@@ -22,6 +22,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -280,10 +281,19 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
-        if(player != null){
+        if(player != null && checkDemolisher(player)){
             this.playDefusingSound();
+            this.demolisher = player;
         }
-        this.demolisher = player;
+    }
+
+    public AABB getR(){
+        AABB ab = this.getBoundingBox();
+        int r = 3;
+        return new AABB(ab.minX - r, ab.minY - r, ab.minZ - r, ab.maxX + r, ab.maxY + r, ab.maxZ + r);
+    }
+    public boolean checkDemolisher(Player player){
+        return this.getR().contains(player.getPosition(0));
     }
 
     @Nullable
