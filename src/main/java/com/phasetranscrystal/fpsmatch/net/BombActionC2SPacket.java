@@ -59,14 +59,12 @@ public record BombActionC2SPacket(int action, UUID uuid) {
                             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sender), new BombActionS2CPacket(action,this.uuid));
                         }
                     }else{
-                        if (action == 0){
-                            c4.setDemolisher(null);
-                        }
-                        if(c4.checkDemolisher(sender)){
+                        if(c4.checkDemolisher(sender) && action != 0){
                             c4.setDemolisher(sender);
                             c4.setDemolitionStates(action);
                         }else{
-                            c4.setDemolitionStates(action);
+                            c4.setDemolisher(null);
+                            c4.setDemolitionStates(0);
                         }
                         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sender), new BombActionS2CPacket(action,this.uuid));
                     }
