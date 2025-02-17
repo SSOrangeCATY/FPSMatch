@@ -1399,8 +1399,10 @@ private void autoStartLogic(){
                 PlayerData data = deadPlayerTeam.getPlayerData(player.getUUID());
                 if (data == null) return;
                 data.getTabData().addDeaths();
-                data.setLiving(false);
-
+                if(data.getTabData().isLiving()){
+                    data.setLiving(false);
+                    this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(), data.getTabData(),deadPlayerTeam.name));
+                }
                 // 清除c4,并掉落c4
                 dropC4(player);
 
