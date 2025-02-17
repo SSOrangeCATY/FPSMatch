@@ -284,6 +284,8 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         if(player != null && checkDemolisher(player)){
             this.playDefusingSound();
             this.demolisher = player;
+        }else{
+            this.demolisher = null;
         }
     }
 
