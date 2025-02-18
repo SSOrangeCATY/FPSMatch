@@ -120,5 +120,6 @@
   "fpsmatch.tab.header.damage": "Damage",
   "fpsmatch.tab.header.money": "Money",
   "fpsmatch.tab.header.headshot": "Headshot Rate",
-  "key.fpsm.debug.mvp.hud.desc": "Debug Mvp Hud"
+  "key.fpsm.debug.mvp.hud.desc": "Debug Mvp Hud",
+  "commands.fpsm.mvp.success": "success add %2$s mvp music to %1$s players"
 }

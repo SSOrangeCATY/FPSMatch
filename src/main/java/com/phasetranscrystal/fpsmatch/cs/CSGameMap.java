@@ -8,6 +8,9 @@ import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.*;
 import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
+import com.phasetranscrystal.fpsmatch.core.event.CSGameRoundEndEvent;
+import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
+import com.phasetranscrystal.fpsmatch.core.event.PlayerGetMvpEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
@@ -674,11 +677,13 @@ private void autoStartLogic(){
                     .setMvpReason(Component.literal(data.reason()))
                     .setPlayerName(this.getMapTeams().playerName.get(data.uuid()))
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
+            MinecraftForge.EVENT_BUS.post(new PlayerGetMvpEvent(this.getServerLevel().getPlayerByUUID(data.uuid()),this));
         }else{
             mvpReason = new MvpReason.Builder(UUID.randomUUID())
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
         }
         this.sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
+        MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this,winnerTeam,reason));
         int currentScore = winnerTeam.getScores();
         int target = currentScore + 1;
         List<BaseTeam> baseTeams =this.getMapTeams().getTeams();
@@ -799,7 +804,6 @@ private void autoStartLogic(){
                 serverPlayer.removeAllEffects();
             }
         }));
-        this.checkErrorPlayerTeam();
         resetGame();
     }
 
@@ -812,6 +816,11 @@ private void autoStartLogic(){
         this.getMapTeams().getTeams().forEach((team) -> {
             if (team.getScores() >= (isOvertime ? winnerRound - 1 + (this.overCount * 3) + 4 : winnerRound)) {
                 isVictory.set(true);
+                boolean flag = team.name.equals("t");
+                MinecraftForge.EVENT_BUS.post(new GameWinnerEvent(this,
+                        flag ? this.getTTeam().getPlayerList(): this.getCTTeam().getPlayerList(),
+                        flag ? this.getCTTeam().getPlayerList() : this.getTTeam().getPlayerList(),
+                        this.getServerLevel()));
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
                     if (serverPlayer != null) {

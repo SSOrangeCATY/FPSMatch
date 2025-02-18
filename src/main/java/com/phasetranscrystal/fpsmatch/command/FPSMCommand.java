@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
@@ -22,6 +23,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.core.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
@@ -30,11 +32,14 @@ import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -51,7 +56,12 @@ import java.util.Map;
 public class FPSMCommand {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
+        RequiredArgumentBuilder<CommandSourceStack, ResourceLocation> requiredargumentbuilder = Commands.argument("sound", ResourceLocationArgument.id()).suggests(SuggestionProviders.AVAILABLE_SOUNDS);
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
+                .then(Commands.literal("mvp")
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .then(requiredargumentbuilder)
+                                .executes(FPSMCommand::handleMvp)))
                 .then(Commands.literal("loadOld").executes(FPSMCommand::handleLoadOld))
                 .then(Commands.literal("save").executes(FPSMCommand::handleSave))
                 .then(Commands.literal("sync").executes(FPSMCommand::handleSync))
@@ -149,6 +159,14 @@ public class FPSMCommand {
                                                                                 .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
                                                                                 .executes(FPSMCommand::handleTeamAction)))))))));
         dispatcher.register(literal);
+    }
+
+    private static int handleMvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
+        ResourceLocation sound = ResourceLocationArgument.getId(context,"sound");
+        players.forEach(player -> MVPMusicManager.getInstance().addMvpMusic(player.getUUID().toString(),sound));
+        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.mvp.success",players.size(),sound), true);
+        return 1;
     }
 
     private static int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

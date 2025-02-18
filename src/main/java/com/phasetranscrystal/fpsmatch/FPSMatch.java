@@ -173,6 +173,17 @@ public class FPSMatch {
                 .decoder(MvpHUDCloseS2CPacket::decode)
                 .consumerNetworkThread(MvpHUDCloseS2CPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(FPSMusicPlayS2CPacket.class, i.getAndIncrement())
+                .encoder(FPSMusicPlayS2CPacket::encode)
+                .decoder(FPSMusicPlayS2CPacket::decode)
+                .consumerNetworkThread(FPSMusicPlayS2CPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(FPSMusicStopS2CPacket.class, i.getAndIncrement())
+                .encoder(FPSMusicStopS2CPacket::encode)
+                .decoder(FPSMusicStopS2CPacket::decode)
+                .consumerNetworkThread(FPSMusicStopS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent

@@ -10,24 +10,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 
-public class FPSMusicManager {
-    Minecraft mc;
-    private SoundInstance currentMusic;
-    public FPSMusicManager() {
-        mc = Minecraft.getInstance();
-    }
-
-    public void play(ResourceLocation musicResource){
+public class FPSClientMusicManager {
+    static Minecraft mc = Minecraft.getInstance();
+    private static SoundInstance currentMusic;
+    public static void play(ResourceLocation musicResource){
         SoundManager soundManager = mc.getSoundManager();
         WeighedSoundEvents sound = soundManager.getSoundEvent(musicResource);
         if (sound != null) {
-            this.play(SoundEvent.createVariableRangeEvent(sound.getSound(RandomSource.create()).getLocation()));
+            play(SoundEvent.createVariableRangeEvent(sound.getSound(RandomSource.create()).getLocation()));
         }else{
             FPSMatch.LOGGER.error("failed to play music: " + musicResource);
         }
     }
 
-    public void play(SoundEvent musicResource){
+    public static void play(SoundEvent musicResource){
         SoundManager soundManager = mc.getSoundManager();
         if (musicResource != null && soundManager.getAvailableSounds().contains(musicResource.getLocation())) {
             SimpleSoundInstance instance = SimpleSoundInstance.forMusic(musicResource);
@@ -38,14 +34,14 @@ public class FPSMusicManager {
         }
     }
 
-    public void stop(){
+    public static void stop(){
         if(currentMusic != null){
             mc.getSoundManager().stop(currentMusic);
             currentMusic = null;
         }
     }
 
-    public SoundInstance getCurrentMusic() {
+    public static SoundInstance getCurrentMusic() {
         return currentMusic;
     }
 }
