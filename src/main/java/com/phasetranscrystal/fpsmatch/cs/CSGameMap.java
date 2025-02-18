@@ -19,11 +19,13 @@ import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.core.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
@@ -678,6 +680,10 @@ private void autoStartLogic(){
                     .setPlayerName(this.getMapTeams().playerName.get(data.uuid()))
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
             MinecraftForge.EVENT_BUS.post(new PlayerGetMvpEvent(this.getServerLevel().getPlayerByUUID(data.uuid()),this));
+            boolean flag = MVPMusicManager.getInstance().playerHasMvpMusic(data.uuid().toString());
+            if(flag){
+                this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(MVPMusicManager.getInstance().getMvpMusic(data.uuid().toString())));
+            }
         }else{
             mvpReason = new MvpReason.Builder(UUID.randomUUID())
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
@@ -786,6 +792,7 @@ private void autoStartLogic(){
     private void syncNormalRoundStartMessage(ServerPlayer serverPlayer) {
         this.sendPacketToJoinedPlayer(serverPlayer, new ShopStatesS2CPacket(true), true);
         this.sendPacketToJoinedPlayer(serverPlayer,new MvpHUDCloseS2CPacket(),true);
+        this.sendPacketToJoinedPlayer(serverPlayer,new FPSMusicStopS2CPacket(),true);
         var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
         this.sendPacketToJoinedPlayer(serverPlayer, bombResetPacket, true);
         BaseTeam baseTeam = this.getMapTeams().getTeamByPlayer(serverPlayer);
