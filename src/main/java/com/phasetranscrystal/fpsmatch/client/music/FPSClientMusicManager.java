@@ -25,6 +25,7 @@ public class FPSClientMusicManager {
 
     public static void play(SoundEvent musicResource){
         SoundManager soundManager = mc.getSoundManager();
+        stop();
         if (musicResource != null && soundManager.getAvailableSounds().contains(musicResource.getLocation())) {
             SimpleSoundInstance instance = SimpleSoundInstance.forMusic(musicResource);
             soundManager.play(instance);

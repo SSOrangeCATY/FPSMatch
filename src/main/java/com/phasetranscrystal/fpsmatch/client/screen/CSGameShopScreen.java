@@ -51,7 +51,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     public static boolean refreshFlag = false;
     public static boolean debug;
     private static CSGameShopScreen INSTANCE;
-    private RelativeLayout window = null;
 
     public CSGameShopScreen(boolean debug){
         CSGameShopScreen.debug = debug;
@@ -65,10 +64,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     }
 
     public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
-        if (window == null) {
-            window = new WindowLayout(getContext());
-        }
-        return window;
+        return new WindowLayout(getContext());
     }
 
     public static class WindowLayout extends RelativeLayout {
