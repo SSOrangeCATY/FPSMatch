@@ -64,6 +64,7 @@ public class FPSMatch {
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
         context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
+        // context.registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

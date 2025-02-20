@@ -1,7 +1,10 @@
 package com.phasetranscrystal.fpsmatch;
 
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.commons.lang3.tuple.Pair;
+
+import java.io.File;
 
 public class Config {
     public static class Client{
@@ -24,12 +27,28 @@ public class Config {
         }
     }
 
+
+    public static class Server{
+        public final ForgeConfigSpec.BooleanValue dummy;
+        private Server(ForgeConfigSpec.Builder builder) {
+            builder.push("server");
+            {
+                dummy = builder.comment("dummy").define("dummy", false);
+            }
+            builder.pop();
+        }
+    }
     public static final Client client;
     public static final ForgeConfigSpec clientSpec;
+    public static final Server server;
+    public static final ForgeConfigSpec serverSpec;
 
     static {
         final Pair<Client, ForgeConfigSpec> clientSpecPair = new ForgeConfigSpec.Builder().configure(Client::new);
         client = clientSpecPair.getLeft();
         clientSpec = clientSpecPair.getRight();
+        final Pair<Server,ForgeConfigSpec> serverSpecPair = new ForgeConfigSpec.Builder().configure(Server::new);
+        server = serverSpecPair.getLeft();
+        serverSpec = serverSpecPair.getRight();
     }
 }

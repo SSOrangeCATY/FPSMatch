@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.sound;
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
@@ -49,9 +50,15 @@ public class MVPMusicManager implements ISavedData<MVPMusicManager> {
 
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event){
-        event.registerData(MVPMusicManager.class,"MvpMusicData", new SaveHolder<>(MVPMusicManager.CODEC,MVPMusicManager::read, (manager)->{
-            manager.saveData(MVPMusicManager.getInstance(),"data");
-        }));
+        event.registerData(MVPMusicManager.class,"MvpMusicData",
+                new SaveHolder<>(
+                        MVPMusicManager.CODEC,
+                        MVPMusicManager::read,
+                        MVPMusicManager::write,
+                        MVPMusicManager::merge,
+                        true
+                )
+        );
     }
 
     private void read() {
@@ -61,5 +68,14 @@ public class MVPMusicManager implements ISavedData<MVPMusicManager> {
     @Override
     public Codec<MVPMusicManager> codec() {
         return CODEC;
+    }
+
+    public static void write(FPSMDataManager manager){
+        manager.saveData(MVPMusicManager.getInstance(),"data");
+    }
+
+    public static MVPMusicManager merge(MVPMusicManager old, MVPMusicManager newer){
+        old.mvpMusicMap.putAll(newer.mvpMusicMap);
+        return old;
     }
 }

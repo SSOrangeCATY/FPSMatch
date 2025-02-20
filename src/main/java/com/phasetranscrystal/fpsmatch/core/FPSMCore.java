@@ -35,7 +35,7 @@ public class FPSMCore {
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private final Map<String, Function3<ServerLevel,String,AreaData,BaseMap>> REGISTRY = new HashMap<>();
     private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
-    private FPSMCore(String archiveName,MinecraftServer server) {
+    private FPSMCore(String archiveName, MinecraftServer server) {
         this.archiveName = archiveName;
         this.server = server;
     }
@@ -45,7 +45,7 @@ public class FPSMCore {
         return INSTANCE;
     }
 
-    protected static void setInstance(String archiveName,MinecraftServer server){
+    protected static void setInstance(String archiveName, MinecraftServer server){
         INSTANCE = new FPSMCore(archiveName,server);
     }
 

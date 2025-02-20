@@ -19,11 +19,17 @@ public class MapRegister {
 
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event){
-        event.registerData(CSGameMap.class,"CSGameMaps", new SaveHolder<>(CSGameMap.CODEC,CSGameMap::read, (manager)->{
-            FPSMCore.getInstance().getMapByClass(CSGameMap.class).forEach((baseMap -> {
-                manager.saveData(baseMap,baseMap.getMapName());
-            }));
-        }));
+        event.registerData(CSGameMap.class,"CSGameMaps",
+                new SaveHolder<>(
+                        CSGameMap.CODEC,
+                        CSGameMap::read,
+                        (manager)->{
+                            FPSMCore.getInstance().getMapByClass(CSGameMap.class)
+                                    .forEach((baseMap -> {
+                                        manager.saveData(baseMap,baseMap.getMapName());
+                                    }));
+                        })
+        );
     }
 
 

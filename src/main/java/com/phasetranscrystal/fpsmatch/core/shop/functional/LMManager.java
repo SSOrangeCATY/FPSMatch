@@ -49,7 +49,6 @@ public class LMManager {
                     manager.saveData(cSIM,cSIM.getName());
                 }
             });
-        }));
-
+        },false));
     }
 }
