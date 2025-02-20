@@ -40,6 +40,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.commands.PlaySoundCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -56,12 +57,12 @@ import java.util.Map;
 public class FPSMCommand {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
-        RequiredArgumentBuilder<CommandSourceStack, ResourceLocation> requiredargumentbuilder = Commands.argument("sound", ResourceLocationArgument.id()).suggests(SuggestionProviders.AVAILABLE_SOUNDS);
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("fpsm").requires((permission)-> permission.hasPermission(2))
                 .then(Commands.literal("mvp")
                         .then(Commands.argument("targets", EntityArgument.players())
-                                .then(requiredargumentbuilder)
-                                .executes(FPSMCommand::handleMvp)))
+                                .then(Commands.argument("sound", ResourceLocationArgument.id())
+                                        .suggests(SuggestionProviders.AVAILABLE_SOUNDS)
+                                        .executes(FPSMCommand::handleMvp))))
                 .then(Commands.literal("loadOld").executes(FPSMCommand::handleLoadOld))
                 .then(Commands.literal("save").executes(FPSMCommand::handleSave))
                 .then(Commands.literal("sync").executes(FPSMCommand::handleSync))
