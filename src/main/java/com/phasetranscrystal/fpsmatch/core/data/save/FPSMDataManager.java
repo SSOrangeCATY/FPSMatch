@@ -157,16 +157,25 @@ public class FPSMDataManager {
      * @param clazz 数据类的类型
      * @param folderName 数据目录的名称
      * @param iSavedData 数据保存逻辑
-     * @param <T> 数据类的泛型类型
      */
     public <T extends ISavedData<T>> void registerData(Class<T> clazz, String folderName, SaveHolder<T> iSavedData) {
         folderName = fixName(folderName);
         this.REGISTRY.put(clazz, Pair.of(folderName, iSavedData));
         this.DATA.add(iSavedData.writeHandler());
-        File mapData = new File(iSavedData.isGlobal() ? globalData : levelData, folderName);
-        if (!mapData.exists()) {
-            if (!mapData.mkdirs()) throw new RuntimeException("error : can't create " + mapData + " folder.");
+        File dataFolder = new File(iSavedData.isGlobal() ? globalData : levelData, folderName);
+        if (!dataFolder.exists()) {
+            if (!dataFolder.mkdirs()) throw new RuntimeException("error : can't create " + dataFolder + " folder.");
         }
+    }
+
+    /**
+     * 获取数据保存目录。
+     * @param savedData 数据对象
+     * */
+    public <T extends ISavedData<?>> File getSaveFolder(T savedData) {
+        Pair<String, ISavedData<?>> pair = REGISTRY.getOrDefault(savedData.getClass(), null);
+        if (pair == null) throw new RuntimeException("error : " + savedData.getClass().getName() + " data is not registered.");
+        return new File(pair.getSecond().isGlobal() ? globalData : levelData, pair.getFirst());
     }
 
     /**
@@ -176,7 +185,6 @@ public class FPSMDataManager {
      *
      * @param data 待保存的数据对象
      * @param fileName 文件名（不包含扩展名）
-     * @param <T> 数据类的泛型类型
      */
     public <T extends ISavedData<?>> void saveData(T data, String fileName) {
         fileName = fixName(fileName);

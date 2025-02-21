@@ -95,4 +95,5 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
             shop.syncShopMoneyData();
         });
     }
+
 }

@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.client.screen.*;
 import com.phasetranscrystal.fpsmatch.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.command.VoteCommand;
+import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
@@ -15,9 +16,13 @@ import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.tacz.guns.GunMod;
+import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.InputEvent;
@@ -242,10 +247,21 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onUse(InputEvent.MouseButton.Pre event){
             if((ClientData.isWaiting || ClientData.isPause) && InputExtraCheck.isInGame()){
-                event.setCanceled(true);
+                if(checkLocalPlayerHand()){
+                    event.setCanceled(true);
+                }
             }
         }
 
+        public static boolean checkLocalPlayerHand(){
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player != null) {
+                Item main = player.getMainHandItem().getItem();
+                Item off = player.getOffhandItem().getItem();
+                return main instanceof IGun || main instanceof IThrowEntityAble || off instanceof IGun || off instanceof IThrowEntityAble;
+            }
+            return false;
+        }
 
 
     }

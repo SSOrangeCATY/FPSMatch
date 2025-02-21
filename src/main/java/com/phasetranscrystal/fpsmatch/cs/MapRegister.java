@@ -23,12 +23,8 @@ public class MapRegister {
                 new SaveHolder<>(
                         CSGameMap.CODEC,
                         CSGameMap::read,
-                        (manager)->{
-                            FPSMCore.getInstance().getMapByClass(CSGameMap.class)
-                                    .forEach((baseMap -> {
-                                        manager.saveData(baseMap,baseMap.getMapName());
-                                    }));
-                        })
+                        CSGameMap::write
+                        )
         );
     }
 

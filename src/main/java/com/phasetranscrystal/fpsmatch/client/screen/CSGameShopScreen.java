@@ -430,7 +430,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
             itemNameText = new TextView(getContext());
             itemNameText.setTextSize(13);
-            itemNameText.setText(I18n.get("fpsm.shop.slot.empty"));
+            itemNameText.setText(this.getSlot().itemStack().isEmpty() ? I18n.get("fpsm.shop.slot.empty") : getSlot().name());
             RelativeLayout.LayoutParams itemNameParams = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT,
                     RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -527,8 +527,12 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             returnGoodsLayout.setEnabled(currentSlot.canReturn());
         }
 
+        public ClientShopSlot getSlot(){
+            return ClientData.getSlotData(this.type,this.index);
+        }
+
         public void updateButtonState() {
-            ClientShopSlot currentSlot = ClientData.getSlotData(this.type,this.index);
+            ClientShopSlot currentSlot = this.getSlot();
             boolean enable = ClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
             this.setElements(enable);
 

@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import net.minecraft.network.protocol.Packet;
@@ -198,6 +199,13 @@ public abstract class BaseMap {
      * @return 游戏类型
      */
     public abstract String getGameType();
+
+
+    /**
+     * 重新加载地图逻辑
+     * */
+    //TODO WIP
+    public void reload(){}
 
     /**
      * 比较两张地图是否相等

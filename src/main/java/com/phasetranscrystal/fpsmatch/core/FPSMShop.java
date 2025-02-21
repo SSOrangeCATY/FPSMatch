@@ -38,7 +38,7 @@ public class FPSMShop {
     /**
      * 玩家初始金钱。
      */
-    private final int startMoney;
+    private int startMoney;
 
     /**
      * 存储所有玩家的商店数据，键为玩家 UUID，值为对应的 ShopData。
@@ -401,6 +401,10 @@ public class FPSMShop {
             map.put(k.name(), v);
         });
         return map;
+    }
+
+    public void setStartMoney(int money){
+        this.startMoney = money;
     }
 
     /**

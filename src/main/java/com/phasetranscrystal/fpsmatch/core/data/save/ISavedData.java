@@ -73,17 +73,17 @@ public interface ISavedData<T> {
     /**
      * 获取目录读取器。
      * <p>
-     * 该方法返回一个 Consumer，用于遍历指定目录中的所有文件，并尝试从中读取数据。
-     * 每个文件的内容将被解析为 JSON，然后通过 {@link #decodeFromJson(JsonElement)} 解码为数据对象。
-     * 解码后的数据将通过 {@link #readHandler()} 进行处理。
-     *
+     * <p>该方法返回一个 Consumer，用于遍历指定目录中的所有文件，并尝试从中读取数据。
+     * <p>每个文件的内容将被解析为 JSON，然后通过 {@link #decodeFromJson(JsonElement)} 解码为数据对象。
+     * <p>解码后的数据将通过 {@link #readHandler()} 进行处理。
+     * <p>只读取json文件。
      * @return 目录读取器
      */
     default Consumer<File> getReader() {
         return (directory) -> {
             if (directory.exists() && directory.isDirectory()) {
                 for (File file : Objects.requireNonNull(directory.listFiles())) {
-                    if (file.isFile()) {
+                    if (file.isFile() && file.getName().endsWith("."+this.getFileType())) {
                         try {
                             FileReader reader = new FileReader(file);
                             JsonElement element = new Gson().fromJson(reader, JsonElement.class);
@@ -119,7 +119,7 @@ public interface ISavedData<T> {
                 if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
             }
             if (directory.isDirectory()) {
-                File file = new File(directory, fileName + ".json");
+                File file = new File(directory, fileName + "." + this.getFileType());
                 try {
                     if (!file.exists()) {
                         if (!file.createNewFile()) throw new RuntimeException("error : can't create " + fileName + " data file.");
@@ -167,5 +167,9 @@ public interface ISavedData<T> {
      */
     default T mergeHandler(T oldData, T newData) {
         return newData;
+    }
+
+    default String getFileType(){
+        return "json";
     }
 }
