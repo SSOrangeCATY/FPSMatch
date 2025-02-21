@@ -212,53 +212,52 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.autoStartLogic();
     }
 
-
-private void autoStartLogic(){
-    if(isStart) {
-        autoStartTimer = 0;
-        autoStartFirstMessageFlag = false;
-        return;
-    }
-
-    List<BaseTeam> teams = this.getMapTeams().getTeams();
-    if(!teams.get(0).getPlayerList().isEmpty() && !teams.get(1).getPlayerList().isEmpty()){
-        autoStartTimer++;
-        if(!autoStartFirstMessageFlag){
-            this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.message", autoStartTime / 20).withStyle(ChatFormatting.YELLOW),false);
-            autoStartFirstMessageFlag = true;
+    private void autoStartLogic(){
+        if(isStart) {
+            autoStartTimer = 0;
+            autoStartFirstMessageFlag = false;
+            return;
         }
-    } else {
-        autoStartTimer = 0;
-    }
 
-    if(this.autoStartTimer > 0){
-        if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer <= 1180 && autoStartTimer % 20 == 0)) {
-            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                if (serverPlayer != null) {
-                    serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.title", (autoStartTime - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
-                    serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
-                }
-            }));
-        } else {
-            if(autoStartTimer % 20 == 0){
-                if(this.voteObj == null) this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.actionbar",(autoStartTime - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW),true);
+        List<BaseTeam> teams = this.getMapTeams().getTeams();
+        if(!teams.get(0).getPlayerList().isEmpty() && !teams.get(1).getPlayerList().isEmpty()){
+            autoStartTimer++;
+            if(!autoStartFirstMessageFlag){
+                this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.message", autoStartTime / 20).withStyle(ChatFormatting.YELLOW),false);
+                autoStartFirstMessageFlag = true;
             }
+        } else {
+            autoStartTimer = 0;
+        }
 
-            if(autoStartTimer >= 1200){
+        if(this.autoStartTimer > 0){
+            if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer <= 1180 && autoStartTimer % 20 == 0)) {
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
                     if (serverPlayer != null) {
-                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
-                        serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
+                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.title", (autoStartTime - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
+                        serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
                     }
                 }));
-                this.autoStartTimer = 0;
-                this.startGame();
+            } else {
+                if(autoStartTimer % 20 == 0){
+                    if(this.voteObj == null) this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.auto.start.actionbar",(autoStartTime - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW),true);
+                }
+
+                if(autoStartTimer >= 1200){
+                    this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                        ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                        if (serverPlayer != null) {
+                            serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
+                            serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
+                        }
+                    }));
+                    this.autoStartTimer = 0;
+                    this.startGame();
+                }
             }
         }
     }
-}
 
     public void joinTeam(ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
