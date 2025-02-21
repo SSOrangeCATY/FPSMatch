@@ -24,177 +24,302 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.function.Predicate;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public abstract class BaseMap{
+/**
+ * BaseMap 抽象类，表示游戏中的基础地图。
+ */
+public abstract class BaseMap {
+    // 地图名称
     public final String mapName;
+    // 游戏是否开始
     public boolean isStart = false;
+    // 是否处于调试模式
     private boolean isDebug = false;
+    // 服务器级别
     private final ServerLevel serverLevel;
+    // 地图团队
     private final MapTeams mapTeams;
+    // 地图区域数据
     public final AreaData mapArea;
 
+    /**
+     * BaseMap 类的构造函数。
+     *
+     * @param serverLevel 地图所在的服务器级别。
+     * @param mapName 地图名称。
+     * @param areaData 地图的区域数据。
+     */
     public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
         this.serverLevel = serverLevel;
         this.mapName = mapName;
         this.mapArea = areaData;
-        this.mapTeams = new MapTeams(serverLevel,this);
+        this.mapTeams = new MapTeams(serverLevel, this);
     }
 
-    public void addTeam(String teamName,int playerLimit){
-        this.mapTeams.addTeam(teamName,playerLimit);
+    /**
+     * 添加团队
+     * @param teamName 团队名称
+     * @param playerLimit 玩家限制
+     */
+    public void addTeam(String teamName, int playerLimit) {
+        this.mapTeams.addTeam(teamName, playerLimit);
     }
 
-    public final void mapTick(){
+    /**
+     * 地图每个 tick 的操作
+     */
+    public final void mapTick() {
         checkForVictory();
         tick();
         syncToClient();
     }
 
-   public abstract void syncToClient();
+    /**
+     * 同步数据到客户端
+     */
+    public abstract void syncToClient();
 
-    public void tick(){
+    /**
+     * 每个 tick 的操作
+     */
+    public void tick() {
     }
 
-    // 检查胜利条件
+    /**
+     * 检查胜利条件
+     */
     public final void checkForVictory() {
         if (this.victoryGoal()) {
             this.victory();
         }
     }
 
+    /**
+     * 开始游戏
+     */
     public abstract void startGame();
 
-    public boolean checkGameHasPlayer(Player player){
+    /**
+     * 检查玩家是否在游戏中
+     *
+     * @param player 玩家对象
+     * @return 是否在游戏中
+     */
+    public boolean checkGameHasPlayer(Player player) {
         return this.getMapTeams().getJoinedPlayers().contains(player.getUUID());
     }
-    public  void startNewRound(){}
-    public abstract void victory();
-    public abstract boolean victoryGoal();
-    public void cleanupMap(){
+
+    /**
+     * 开始新一轮游戏
+     */
+    public void startNewRound() {
     }
+
+    /**
+     * 胜利操作
+     */
+    public abstract void victory();
+
+    /**
+     * 胜利条件
+     *
+     * @return 是否满足胜利条件
+     */
+    public abstract boolean victoryGoal();
+
+    /**
+     * 清理地图
+     */
+    public void cleanupMap() {
+    }
+
+    /**
+     * 重置游戏
+     */
     public abstract void resetGame();
 
+    /**
+     * 获取地图团队
+     * @return 地图团队对象
+     */
     public MapTeams getMapTeams() {
         return mapTeams;
     }
 
+    /**
+     * 加入团队
+     * @param teamName 团队名称
+     * @param player 玩家对象
+     */
     public void joinTeam(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()->player),new FPSMatchGameTypeS2CPacket(this.getMapName(),this.getGameType()));
-        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(),teamName));
-        this.getMapTeams().joinTeam(teamName,player);
-        if(this instanceof ShopMap<?> shopMap){
+        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
+        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(), teamName));
+        this.getMapTeams().joinTeam(teamName, player);
+        if (this instanceof ShopMap<?> shopMap) {
             shopMap.getShop(teamName).syncShopData(player);
         }
     }
 
+    /**
+     * 获取服务器级别
+     * @return 服务器级别对象
+     */
     public ServerLevel getServerLevel() {
         return serverLevel;
     }
 
+    /**
+     * 是否处于调试模式
+     * @return 是否处于调试模式
+     */
     public boolean isDebug() {
         return isDebug;
     }
 
-    public boolean switchDebugMode(){
+    /**
+     * 切换调试模式
+     * @return 切换后的调试模式状态
+     */
+    public boolean switchDebugMode() {
         this.isDebug = !this.isDebug;
         return this.isDebug;
     }
 
-    public String getMapName(){
+    /**
+     * 获取地图名称
+     * @return 地图名称
+     */
+    public String getMapName() {
         return mapName;
     }
 
+    /**
+     * 获取游戏类型
+     * @return 游戏类型
+     */
     public abstract String getGameType();
 
-    public boolean equals(Object object){
-        if(object instanceof BaseMap map){
+    /**
+     * 比较两张地图是否相等
+     * @param object 比较对象
+     * @return 是否相等
+     */
+    public boolean equals(Object object) {
+        if (object instanceof BaseMap map) {
             return map.getMapName().equals(this.getMapName()) && map.getGameType().equals(this.getGameType());
-        }else{
+        } else {
             return false;
         }
     }
 
+    /**
+     * 获取地图区域数据
+     * @return 地图区域数据对象
+     */
     public AreaData getMapArea() {
         return mapArea;
     }
 
-    public <MSG> void sendPacketToAllPlayer(MSG packet){
+    /**
+     * 发送数据包给所有玩家
+     * @param packet 数据包对象
+     * @param <MSG> 数据包类型
+     */
+    public <MSG> void sendPacketToAllPlayer(MSG packet) {
         this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if (player != null) {
-                this.sendPacketToJoinedPlayer(player,packet,true);
-            }else{
+                this.sendPacketToJoinedPlayer(player, packet, true);
+            } else {
                 FPSMatch.LOGGER.error(this.getMapTeams().playerName.get(uuid).getString() + " is not found in online world");
             }
         });
     }
 
-    public <MSG> void sendPacketToJoinedPlayer(@NotNull ServerPlayer player, MSG packet, boolean noCheck){
-        if(noCheck || this.checkGameHasPlayer(player)){
+    /**
+     * 发送数据包给加入游戏的玩家
+     * @param player 玩家对象
+     * @param packet 数据包对象
+     * @param noCheck 是否跳过检查
+     * @param <MSG> 数据包类型
+     */
+    public <MSG> void sendPacketToJoinedPlayer(@NotNull ServerPlayer player, MSG packet, boolean noCheck) {
+        if (noCheck || this.checkGameHasPlayer(player)) {
             if (packet instanceof Packet<?> vanillaPacket) {
                 player.connection.send(vanillaPacket);
             } else {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
-        }else{
-            FPSMatch.LOGGER.error(player.getDisplayName().getString() + " is not join "+this.getGameType()+":"+ this.getMapName());
+        } else {
+            FPSMatch.LOGGER.error(player.getDisplayName().getString() + " is not join " + this.getGameType() + ":" + this.getMapName());
         }
     }
 
+    /**
+     * 玩家登录事件处理
+     * @param event 玩家登录事件
+     */
     @SubscribeEvent
-    public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event){
-        if(event.getEntity() instanceof ServerPlayer player){
+    public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map != null){
+            if (map != null) {
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
-                if(playerTeam != null) {
+                if (playerTeam != null) {
                     PlayerData data = playerTeam.getPlayerData(player.getUUID());
-                    if(data == null) return;
+                    if (data == null) return;
                     data.setOffline(false);
                 }
-            }else{
-                if(!player.isCreative()){
+            } else {
+                if (!player.isCreative()) {
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.ADVENTURE);
                 }
             }
         }
     }
+
+    /**
+     * 玩家登出事件处理
+     * @param event 玩家登出事件
+     */
     @SubscribeEvent
-    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
-        if(event.getEntity() instanceof ServerPlayer player){
+    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map != null){
+            if (map != null) {
                 MapTeams teams = map.getMapTeams();
                 BaseTeam playerTeam = teams.getTeamByPlayer(player);
-                if(playerTeam != null) {
+                if (playerTeam != null) {
                     playerTeam.leave(player);
                 }
             }
         }
     }
 
+    /**
+     * 玩家受伤事件处理
+     * @param event 玩家受伤事件
+     */
     @SubscribeEvent
     public static void onLivingHurtEvent(LivingHurtEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             DamageSource damageSource = event.getSource();
             ServerPlayer from = null;
-            if(damageSource.getEntity() instanceof ServerPlayer target){
+            if (damageSource.getEntity() instanceof ServerPlayer target) {
                 from = target;
             } else if (damageSource.getDirectEntity() instanceof ServerPlayer target) {
                 from = target;
             }
 
-            if(from != null){
+            if (from != null) {
                 BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
                 if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
                     float damage = event.getAmount();
-                    map.getMapTeams().addHurtData(from,player.getUUID(),damage);
+                    map.getMapTeams().addHurtData(from, player.getUUID(), damage);
                 }
             }
         }
     }
-
 }

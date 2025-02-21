@@ -22,6 +22,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * 旧版本数据保存系统 用于读取旧版数据 不再参与存储功能
+ * */
 @Deprecated
 public class FileHelper {
     public static final File FPS_MATCH_DIR = new File(FMLLoader.getGamePath().toFile(), "fpsmatch");

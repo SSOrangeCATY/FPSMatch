@@ -14,41 +14,71 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
+/**
+ * 监听模块管理器，用于注册和管理监听模块。
+ * <p>
+ * 该类通过 Forge 的事件总线注册监听模块，并提供方法添加和获取监听模块。
+ * 同时支持将监听模块的数据保存到游戏中。
+ */
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LMManager {
+    /**
+     * 存储所有注册的监听模块。
+     */
     protected final Map<String, ListenerModule> registry = new HashMap<>();
 
-    public LMManager(){
+    /**
+     * 构造函数，初始化监听模块管理器。
+     * <p>
+     * 该方法会触发 {@link RegisterListenerModuleEvent}，允许其他模块注册监听模块。
+     */
+    public LMManager() {
         MinecraftForge.EVENT_BUS.post(new RegisterListenerModuleEvent(this));
     }
 
-    public void addListenerType(ListenerModule listenerModule){
+    /**
+     * 添加一个新的监听模块。
+     * @param listenerModule 要添加的监听模块
+     */
+    public void addListenerType(ListenerModule listenerModule) {
         String name = listenerModule.getName();
-        registry.put(name,listenerModule);
+        registry.put(name, listenerModule);
     }
 
+    /**
+     * 获取指定名称的监听模块。
+     * @param name 监听模块的名称
+     * @return 如果找到对应的监听模块，返回该模块；否则返回 null
+     */
     @Nullable
-    public ListenerModule getListenerModule(String name){
-        return registry.getOrDefault(name,null);
+    public ListenerModule getListenerModule(String name) {
+        return registry.getOrDefault(name, null);
     }
 
-    public List<String> getListenerModules(){
+    /**
+     * 获取所有注册的监听模块名称列表。
+     * @return 监听模块名称列表
+     */
+    public List<String> getListenerModules() {
         return new ArrayList<>(registry.keySet());
     }
 
-
-    public Map<String, ListenerModule> getRegistry(){
+    /**
+     * 获取所有注册的监听模块。
+     * @return 监听模块的 Map（键为模块名称，值为模块实例）
+     */
+    public Map<String, ListenerModule> getRegistry() {
         return registry;
     }
 
     @SubscribeEvent
-    public static void onDataRegister(RegisterFPSMSaveDataEvent event){
-        event.registerData(ChangeShopItemModule.class,"ListenerModule", new SaveHolder<>(ChangeShopItemModule.CODEC,ChangeShopItemModule::read, (manager)->{
-            FPSMatch.listenerModuleManager.getRegistry().forEach((name,module)->{
-                if(module instanceof ChangeShopItemModule cSIM){
-                    manager.saveData(cSIM,cSIM.getName());
+    public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
+        event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder<>(ChangeShopItemModule.CODEC, ChangeShopItemModule::read, (manager) -> {
+            FPSMatch.listenerModuleManager.getRegistry().forEach((name, module) -> {
+                if (module instanceof ChangeShopItemModule cSIM) {
+                    manager.saveData(cSIM, cSIM.getName());
                 }
             });
-        },false));
+        }, false));
     }
 }
