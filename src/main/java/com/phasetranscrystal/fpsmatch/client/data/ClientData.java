@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.Config;
+import com.phasetranscrystal.fpsmatch.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.MVPHud;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
@@ -97,6 +98,7 @@ public class ClientData {
         currentMap = "fpsm_none";
         currentGameType = "none";
         currentMapSupportShop = true;
+        CSGameHud.INSTANCE.stopKillAnim();
         resetShopData();
         tabData.clear();
         playerMoney.clear();
