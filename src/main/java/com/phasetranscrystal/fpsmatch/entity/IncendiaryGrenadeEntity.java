@@ -27,7 +27,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     private final int effectRadius;
     private static final int ACTIVATE_TIMEOUT = 20 * 2; // 2秒未激活自动删除
     private static final int ACTIVE_DURATION = 140;      // 激活后存活时间
-    private static final float DAMAGE = 3.0f;
+    private static final float DAMAGE = 2.0f;
     public IncendiaryGrenadeEntity(EntityType<? extends IncendiaryGrenadeEntity> type, Level level) {
         super(type, level);
         setTimeoutTicks(ACTIVATE_TIMEOUT);
