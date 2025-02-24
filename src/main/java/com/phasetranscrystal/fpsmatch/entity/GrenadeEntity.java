@@ -99,7 +99,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
             }
 
             // 应用伤害
-            entity.hurt(damageSources().explosion(this, getOwner()), damage);
+            entity.hurt(this.level().damageSources().fellOutOfWorld(), damage);
         }
     }
 

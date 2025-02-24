@@ -62,7 +62,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     private void applyPlayerDamage(LivingEntity entity) {
-        DamageSource source = this.level().damageSources().onFire();
+        DamageSource source = this.level().damageSources().fellOutOfWorld();
         entity.setSecondsOnFire(1);
         entity.hurt(source, DAMAGE);
     }
