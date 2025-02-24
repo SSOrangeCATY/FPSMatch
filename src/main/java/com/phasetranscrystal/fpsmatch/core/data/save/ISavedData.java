@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileReader;
@@ -81,6 +82,10 @@ public interface ISavedData<T> {
      */
     default Consumer<File> getReader() {
         return (directory) -> {
+            if(!directory.exists()){
+                if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
+                return;
+            }
             if (directory.exists() && directory.isDirectory()) {
                 for (File file : Objects.requireNonNull(directory.listFiles())) {
                     if (file.isFile() && file.getName().endsWith("."+this.getFileType())) {
@@ -126,7 +131,10 @@ public interface ISavedData<T> {
                     }
                     FileReader reader = new FileReader(file);
                     JsonElement element = new Gson().fromJson(reader, JsonElement.class);
-                    T old = this.decodeFromJson(element);
+                    T old = null;
+                    if(element != null){
+                        old = this.decodeFromJson(element);
+                    }
                     T merged = this.mergeHandler(old, data);
                     Gson gson = new GsonBuilder().setPrettyPrinting().create();
                     String jsonStr = gson.toJson(this.encodeToJson(merged));
@@ -165,7 +173,7 @@ public interface ISavedData<T> {
      * @param newData 新数据
      * @return 合并后的数据
      */
-    default T mergeHandler(T oldData, T newData) {
+    default T mergeHandler(@Nullable T oldData, T newData) {
         return newData;
     }
 

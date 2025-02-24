@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -74,8 +75,12 @@ public class MVPMusicManager implements ISavedData<MVPMusicManager> {
         manager.saveData(MVPMusicManager.getInstance(),"data");
     }
 
-    public static MVPMusicManager merge(MVPMusicManager old, MVPMusicManager newer){
-        old.mvpMusicMap.putAll(newer.mvpMusicMap);
-        return old;
+    public static MVPMusicManager merge(@Nullable MVPMusicManager old, MVPMusicManager newer){
+        if(old == null){
+            return newer;
+        }else{
+            old.mvpMusicMap.putAll(newer.mvpMusicMap);
+            return old;
+        }
     }
 }

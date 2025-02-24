@@ -18,7 +18,7 @@ public class SaveHolder<T> implements ISavedData<T> {
     Codec<T> codec;
     Consumer<T> readHandler;
     Consumer<FPSMDataManager> writeHandler;
-    @Nullable BiFunction<T, T, T> margeHandler;
+    @Nullable BiFunction<@Nullable T, T, T> margeHandler;
     boolean isGlobal;
 
     public SaveHolder(Codec<T> codec, Consumer<T> readHandler, Consumer<FPSMDataManager> writeHandler){
@@ -35,7 +35,7 @@ public class SaveHolder<T> implements ISavedData<T> {
         this.isGlobal = isGlobal;
     }
 
-    public SaveHolder(Codec<T> codec, Consumer<T> readHandler, Consumer<FPSMDataManager> writeHandler, @Nullable BiFunction<T, T, T> margeHandler){
+    public SaveHolder(Codec<T> codec, Consumer<T> readHandler, Consumer<FPSMDataManager> writeHandler, @Nullable BiFunction<@Nullable T, T, T> margeHandler){
         this.codec = codec;
         this.readHandler = readHandler;
         this.writeHandler = writeHandler;
@@ -43,7 +43,7 @@ public class SaveHolder<T> implements ISavedData<T> {
         this.isGlobal = false;
     }
 
-    public SaveHolder(Codec<T> codec, Consumer<T> readHandler, Consumer<FPSMDataManager> writeHandler, @Nullable BiFunction<T, T, T> margeHandler, boolean isGlobal){
+    public SaveHolder(Codec<T> codec, Consumer<T> readHandler, Consumer<FPSMDataManager> writeHandler, @Nullable BiFunction<@Nullable T, T, T> margeHandler, boolean isGlobal){
         this.codec = codec;
         this.readHandler = readHandler;
         this.writeHandler = writeHandler;
@@ -71,7 +71,7 @@ public class SaveHolder<T> implements ISavedData<T> {
     }
 
     @Override
-    public T mergeHandler(T oldData, T newData) {
+    public T mergeHandler(@Nullable T oldData, T newData) {
         return margeHandler == null ? ISavedData.super.mergeHandler(oldData, newData) : margeHandler.apply(oldData, newData);
     }
 }
