@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.Config;
-import com.phasetranscrystal.fpsmatch.client.screen.MVPHud;
+import com.phasetranscrystal.fpsmatch.client.screen.hud.MVPHud;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
@@ -10,7 +10,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.client.screen;
+package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.fpsmatch.core.data.MvpReason;
@@ -8,12 +8,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.Music;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
@@ -376,7 +374,7 @@ public class MVPHud implements IGuiOverlay {
     // 新增手动触发关闭动画方法
     public void triggerCloseAnimation() {
         if (!animationPlaying) return;
-
+        CSGameHud.INSTANCE.stopKillAnim();
         isClosing = true;
         closeAnimationStartTime = System.currentTimeMillis();
     }

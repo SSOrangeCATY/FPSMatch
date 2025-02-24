@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.cs;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
@@ -16,7 +15,6 @@ public class MapRegister {
     public static void onMapRegister(RegisterFPSMapEvent event){
         event.registerGameType("cs", CSGameMap::new,true);
     }
-
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event){
         event.registerData(CSGameMap.class,"CSGameMaps",

@@ -1,5 +1,6 @@
-package com.phasetranscrystal.fpsmatch.client.screen;
+package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.fpsmatch.Config;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
@@ -7,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -138,7 +140,6 @@ public class DeathMessageHud implements IGuiOverlay {
 
         int currentX = x + 5;
         int rightPadding = x + width - 5;
-
         // 致盲图标
         if (message.isBlinded()) {
             renderIcon(guiGraphics, specialKillIcons.get("blindness"), currentX, y + 2, 12, 12);

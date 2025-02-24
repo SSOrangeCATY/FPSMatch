@@ -1,9 +1,10 @@
 package com.phasetranscrystal.fpsmatch;
 
 import com.mojang.logging.LogUtils;
+import com.phasetranscrystal.fpsmatch.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.*;
-import com.phasetranscrystal.fpsmatch.client.screen.*;
+import com.phasetranscrystal.fpsmatch.client.screen.hud.*;
 import com.phasetranscrystal.fpsmatch.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.command.VoteCommand;
@@ -15,14 +16,12 @@ import com.phasetranscrystal.fpsmatch.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import com.tacz.guns.GunMod;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.InputEvent;
@@ -214,6 +213,7 @@ public class FPSMatch {
             event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
             event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
             event.registerAboveAll("mvp_hud", MVPHud.INSTANCE);
+            event.registerBelowAll("hud_manager", FPSMGameHudManager.INSTANCE);
         }
 
 

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.client.screen;
+package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.effect.FlashBlindnessMobEffect;

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.client.screen;
+package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.client.screen;
+package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.tab.TabRenderer;

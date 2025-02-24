@@ -1,7 +1,9 @@
 package com.phasetranscrystal.fpsmatch.net;
 
-import com.phasetranscrystal.fpsmatch.client.screen.DeathMessageHud;
+import com.phasetranscrystal.fpsmatch.client.screen.hud.CSGameHud;
+import com.phasetranscrystal.fpsmatch.client.screen.hud.DeathMessageHud;
 import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -56,6 +58,11 @@ public class DeathMessageS2CPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             DeathMessageHud.INSTANCE.addKillMessage(deathMessage);
+            boolean isLocalPlayer = Minecraft.getInstance().player != null &&
+                    deathMessage.getKillerUUID().equals(Minecraft.getInstance().player.getUUID());
+            if(isLocalPlayer) {
+                CSGameHud.INSTANCE.addKill();
+            }
         });
         ctx.get().setPacketHandled(true);
     }

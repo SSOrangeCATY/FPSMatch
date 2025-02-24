@@ -1,12 +1,9 @@
 package com.phasetranscrystal.fpsmatch.client.key;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.phasetranscrystal.fpsmatch.client.screen.MVPHud;
-import com.phasetranscrystal.fpsmatch.core.data.MvpReason;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;

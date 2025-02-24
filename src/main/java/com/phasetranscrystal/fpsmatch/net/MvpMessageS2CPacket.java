@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.net;
 
-import com.phasetranscrystal.fpsmatch.client.screen.MVPHud;
+import com.phasetranscrystal.fpsmatch.client.screen.hud.MVPHud;
 import com.phasetranscrystal.fpsmatch.core.data.MvpReason;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
