@@ -131,11 +131,11 @@ public interface ISavedData<T> {
                     }
                     FileReader reader = new FileReader(file);
                     JsonElement element = new Gson().fromJson(reader, JsonElement.class);
-                    T old = null;
+                    T merged = data;
                     if(element != null){
-                        old = this.decodeFromJson(element);
+                        T old = this.decodeFromJson(element);
+                        merged = this.mergeHandler(old, data);
                     }
-                    T merged = this.mergeHandler(old, data);
                     Gson gson = new GsonBuilder().setPrettyPrinting().create();
                     String jsonStr = gson.toJson(this.encodeToJson(merged));
                     try (FileWriter writer = new FileWriter(file)) {
