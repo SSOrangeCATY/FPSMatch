@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.animation.EnderKillAnimator;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.animation.KillAnimator;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
@@ -27,12 +26,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 public class CSGameHud implements IHudRenderer {
 
     public static final CSGameHud INSTANCE = new CSGameHud();

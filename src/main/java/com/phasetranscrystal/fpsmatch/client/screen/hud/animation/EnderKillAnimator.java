@@ -53,7 +53,7 @@ public class EnderKillAnimator implements KillAnimator {
     public void addKill() {
         startTime = System.currentTimeMillis();
 
-        if (arcRotations.size() < 6){
+        if (arcRotations.size() < 5){
             arcRotations.add(0F);
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, (float) (1.05 + 0.1F * arcRotations.size() - 1),1));
         }else{
