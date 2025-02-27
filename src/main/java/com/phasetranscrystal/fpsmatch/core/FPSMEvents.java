@@ -1,18 +1,16 @@
 package com.phasetranscrystal.fpsmatch.core;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
-import com.phasetranscrystal.fpsmatch.command.VoteCommand;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
-import com.phasetranscrystal.fpsmatch.net.*;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchLoginMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;

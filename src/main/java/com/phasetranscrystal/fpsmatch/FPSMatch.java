@@ -2,7 +2,6 @@ package com.phasetranscrystal.fpsmatch;
 
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
-import com.phasetranscrystal.fpsmatch.bukkit.event.FPSMBukkitEventBirge;
 import com.phasetranscrystal.fpsmatch.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.*;
@@ -70,7 +69,9 @@ public class FPSMatch {
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
         context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
-        if(FPSMBukkit.isBukkitEnvironment()) FPSMBukkitEventBirge.register();
+        if(FPSMBukkit.isBukkitEnvironment()){
+            FPSMBukkit.register();
+        }
         // context.registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
     }
 

@@ -106,7 +106,8 @@ repositories {
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"// Modern UI core framework
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    // Modern UI core framework
     minecraftLibrary("icyllis.modernui:ModernUI-Core:${modernui_core_version}") {
         exclude group: "org.apache.logging.log4j", module: "log4j-core"
         exclude group: "org.apache.logging.log4j", module: "log4j-api"
