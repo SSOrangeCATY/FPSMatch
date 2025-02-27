@@ -7,11 +7,11 @@ import java.util.UUID;
 
 public class MvpReason{
     public final UUID uuid;
-    public final Component teamName;
-    public final Component playerName;
-    public final Component mvpReason;
-    public final Component extraInfo1;
-    public final Component extraInfo2;
+    private Component teamName;
+    private Component playerName;
+    private Component mvpReason;
+    private Component extraInfo1;
+    private Component extraInfo2;
     private MvpReason(Builder builder){
         this.uuid = builder.uuid;
         this.teamName = builder.teamName;
@@ -20,6 +20,48 @@ public class MvpReason{
         this.extraInfo1 = builder.extraInfo1 == null ? Component.empty() : builder.extraInfo1;
         this.extraInfo2 = builder.extraInfo2 == null ? Component.empty() : builder.extraInfo2;
     }
+
+    public Component getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(Component teamName) {
+        this.teamName = teamName;
+    }
+
+    public Component getPlayerName() {
+        return playerName;
+    }
+
+    public void setPlayerName(Component playerName) {
+        this.playerName = playerName;
+    }
+
+    public Component getMvpReason() {
+        return mvpReason;
+    }
+
+    public void setMvpReason(Component mvpReason) {
+        this.mvpReason = mvpReason;
+    }
+
+    public Component getExtraInfo1() {
+        return extraInfo1;
+    }
+
+    public void setExtraInfo1(Component extraInfo1) {
+        this.extraInfo1 = extraInfo1;
+    }
+
+    public Component getExtraInfo2() {
+        return extraInfo2;
+    }
+
+    public void setExtraInfo2(Component extraInfo2) {
+        this.extraInfo2 = extraInfo2;
+    }
+
+
 
     public static class Builder{
         public final UUID uuid;

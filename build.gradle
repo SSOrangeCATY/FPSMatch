@@ -94,6 +94,15 @@ repositories {
         url 'https://maven.izzel.io/releases/'
     }
 
+    maven {
+        name = "spigotmc-repo"
+        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+
 }
 
 dependencies {
@@ -118,6 +127,8 @@ dependencies {
     }
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
     implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6069384")
+    compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
+
     //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

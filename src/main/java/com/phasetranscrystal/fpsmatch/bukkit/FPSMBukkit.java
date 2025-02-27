@@ -1,0 +1,22 @@
+package com.phasetranscrystal.fpsmatch.bukkit;
+
+import net.minecraft.server.level.ServerLevel;
+
+public class FPSMBukkit {
+    public static boolean isBukkitEnvironment() {
+        try {
+            Class.forName("org.bukkit.Bukkit");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static String getLevelName(ServerLevel level) {
+        String original = level.toString();
+        if (original.startsWith("ServerLevel[") && original.endsWith("]")) {
+            return original.substring("ServerLevel[".length(), original.length() - 1);
+        }
+        return "UnknownLevel";
+    }
+}

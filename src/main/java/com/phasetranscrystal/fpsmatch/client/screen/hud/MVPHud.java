@@ -68,11 +68,11 @@ public class MVPHud implements IGuiOverlay {
 
     public void triggerAnimation(MvpReason reason) {
         this.player = reason.uuid;
-        this.currentTeamName = ((MutableComponent) reason.teamName).append("取得回合胜利");;
-        this.currentPlayerName = reason.playerName;
-        this.mvpReason = reason.mvpReason;
-        this.extraInfo1 = reason.extraInfo1;
-        this.extraInfo2 = reason.extraInfo2;
+        this.currentTeamName = ((MutableComponent) reason.getTeamName()).append(Component.translatable("cs.game.winner.mvpNameSub"));;
+        this.currentPlayerName = reason.getPlayerName();
+        this.mvpReason = reason.getMvpReason();
+        this.extraInfo1 = reason.getExtraInfo1();
+        this.extraInfo2 = reason.getExtraInfo2();
         this.roundBannerStartTime = System.currentTimeMillis();
         this.mvpInfoStartTime = -1;
         this.colorTransitionStartTime = -1;
@@ -80,7 +80,7 @@ public class MVPHud implements IGuiOverlay {
         this.animationPlaying = true;
 
         //TODO MVP音效先暂时放这里了
-        boolean flag = reason.teamName.getString().equals("CT");
+        boolean flag = reason.getTeamName().getString().equals("CT");
         if (minecraft.level != null) {
             if (minecraft.player != null) {
                 minecraft.level.playLocalSound(minecraft.player.getOnPos().above().above(), flag ? FPSMSoundRegister.voice_ct_win.get() : FPSMSoundRegister.voice_t_win.get(), SoundSource.VOICE, 1.0f, 1.0f,false);

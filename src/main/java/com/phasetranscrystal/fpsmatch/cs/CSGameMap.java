@@ -23,9 +23,7 @@ import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
@@ -38,8 +36,6 @@ import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.commands.FunctionCommand;
-import net.minecraft.server.commands.PlaySoundCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -581,12 +577,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isWaitingWinner = true;
         MapTeams.RawMVPData data = this.getMapTeams().getRoundMvpPlayer(winnerTeam);
         MvpReason mvpReason;
+
         if(data != null){
-            mvpReason = new MvpReason.Builder(data.uuid())
+            PlayerGetMvpEvent event = new PlayerGetMvpEvent(this.getServerLevel().getPlayerByUUID(data.uuid()),this,
+                    new MvpReason.Builder(data.uuid())
                     .setMvpReason(Component.literal(data.reason()))
                     .setPlayerName(this.getMapTeams().playerName.get(data.uuid()))
-                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
-            MinecraftForge.EVENT_BUS.post(new PlayerGetMvpEvent(this.getServerLevel().getPlayerByUUID(data.uuid()),this));
+                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build());
+            MinecraftForge.EVENT_BUS.post(event);
+            mvpReason = event.getReason();
             boolean flag = MVPMusicManager.getInstance().playerHasMvpMusic(data.uuid().toString());
             if(flag){
                 this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(MVPMusicManager.getInstance().getMvpMusic(data.uuid().toString())));

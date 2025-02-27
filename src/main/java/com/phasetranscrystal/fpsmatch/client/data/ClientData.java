@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClientData {
@@ -37,7 +36,6 @@ public class ClientData {
     public static boolean isWaiting = false;
     public static boolean isWarmTime = false;
     public static boolean isWaitingWinner = false;
-    public static int purchaseTime = 1;
     public static boolean canOpenShop = false;
     public static int dismantleBombStates = 0; // 0 = 没拆呢 | 1 = 正在拆 | 2 = 错误可能是不在队伍或者地图导致的
     public static UUID bombUUID = null;
@@ -67,15 +65,6 @@ public class ClientData {
 
     public static ClientShopSlot getSlotData(ItemType type,int index){
         return clientShopData.get(type).get(index);
-    }
-
-    public static int getThrowableTypeBoughtCount(){
-        List<ClientShopSlot> slots = clientShopData.get(ItemType.THROWABLE);
-        AtomicInteger count = new AtomicInteger();
-        slots.forEach((slot)->{
-             count.addAndGet(slot.boughtCount());
-        });
-        return count.get();
     }
 
     public static void handleLoginMessage(){
@@ -114,7 +103,6 @@ public class ClientData {
         isWarmTime = false;
         isWaitingWinner = false;
         nextRoundMoney = 0;
-        purchaseTime = 1;
         canOpenShop = false;
         dismantleBombStates = 0;
         bombUUID = null;

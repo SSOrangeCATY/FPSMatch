@@ -15,11 +15,11 @@ public class MvpMessageS2CPacket {
     }
     public static void encode(MvpMessageS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUUID(packet.mvpReason.uuid);
-        buf.writeComponent(packet.mvpReason.teamName);
-        buf.writeComponent(packet.mvpReason.playerName);
-        buf.writeComponent(packet.mvpReason.mvpReason);
-        buf.writeComponent(packet.mvpReason.extraInfo1);
-        buf.writeComponent(packet.mvpReason.extraInfo2);
+        buf.writeComponent(packet.mvpReason.getTeamName());
+        buf.writeComponent(packet.mvpReason.getPlayerName());
+        buf.writeComponent(packet.mvpReason.getMvpReason());
+        buf.writeComponent(packet.mvpReason.getExtraInfo1());
+        buf.writeComponent(packet.mvpReason.getExtraInfo2());
     }
 
     public static MvpMessageS2CPacket decode(FriendlyByteBuf buf) {
