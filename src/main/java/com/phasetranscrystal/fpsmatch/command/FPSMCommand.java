@@ -4,18 +4,17 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -40,7 +39,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.commands.PlaySoundCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -383,11 +381,11 @@ public class FPSMCommand {
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.cost.success",shopType,slotNum,cost), true);
                 return 1;
             } else {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.cost.failed"));
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed.noSupport"));
                 return 0;
             }
         }else {
-            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.cost.map.failed"));
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
             return 0;
         }
     }
@@ -409,11 +407,11 @@ public class FPSMCommand {
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success",shopType,slotNum,itemStack.getDisplayName()), true);
                 return 1;
             } else {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed.noSupport"));
                 return 0;
             }
         }else {
-            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
             return 0;
         }
     }
@@ -435,11 +433,11 @@ public class FPSMCommand {
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success",shopType,slotNum,itemStack.getDisplayName()), true);
                 return 1;
             } else {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.failed.noSupport"));
                 return 0;
             }
         }else {
-            context.getSource().sendFailure(Component.translatable("commands.fpsm.shop.modify.item.failed"));
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
             return 0;
         }
     }
@@ -462,11 +460,9 @@ public class FPSMCommand {
                                     iGun.setMaxDummyAmmoAmount(itemStack, dummyAmmoAmount);
                                     iGun.setDummyAmmoAmount(itemStack, dummyAmmoAmount);
                                     iGun.setCurrentAmmoCount(itemStack, gunData.getAmmoAmount());
-                                    context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
-                                }else{
-                                    context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.dummyAmmoAmount.fail", itemStack.getDisplayName(), team));
                                 }
                         startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
+                        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
                     }

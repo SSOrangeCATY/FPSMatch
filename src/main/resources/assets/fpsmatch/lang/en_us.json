@@ -122,5 +122,8 @@
   "fpsmatch.tab.header.headshot": "Headshot Rate",
   "key.fpsm.debug.mvp.hud.desc": "Debug Mvp Hud",
   "commands.fpsm.mvp.success": "success add %2$s mvp music to %1$s players",
-  "cs.game.winner.mvpNameSub": "Get Round Winner"
+  "cs.game.winner.mvpNameSub": "Get Round Winner",
+  "commands.fpsm.shop.modify.cost.success": "The price for slot %2$s of %1$s in the store has been changed to %3$s",
+  "commands.fpsm.shop.modify.failed.noSupport": "map not support shop.",
+  "commands.fpsm.shop.modify.item.success": "Successfully modified item in %1$s shop slot %2$s to %3$s"
 }

@@ -4,7 +4,6 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.key.CustomTabKey;
 import com.phasetranscrystal.fpsmatch.client.key.DismantleBombKey;
 import com.phasetranscrystal.fpsmatch.client.key.OpenShopKey;
-import com.phasetranscrystal.fpsmatch.client.screen.hud.CSGameHud;
 import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;

@@ -122,5 +122,8 @@
   "fpsmatch.tab.header.headshot": "爆头率",
   "key.fpsm.debug.mvp.hud.desc": "Debug Mvp Hud",
   "commands.fpsm.mvp.success": "success add %2$s mvp music to %1$s players",
-  "cs.game.winner.mvpNameSub": "取得回合胜利"
+  "cs.game.winner.mvpNameSub": "取得回合胜利",
+  "commands.fpsm.shop.modify.cost.success": "成功将%1$s商店槽位%2$s的价格修改为%3$s",
+  "commands.fpsm.shop.modify.failed.noSupport" : "地图不支持商店",
+  "commands.fpsm.shop.modify.item.success": "成功将%1$s商店槽位%2$s的物品修改为%3$s"
 }

@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
@@ -24,20 +23,24 @@ import icyllis.modernui.mc.ScreenCallback;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.LayoutInflater;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.InputEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class CSGameShopScreen extends Fragment implements ScreenCallback{
