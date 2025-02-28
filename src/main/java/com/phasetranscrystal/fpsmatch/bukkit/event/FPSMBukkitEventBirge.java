@@ -36,9 +36,8 @@ public class FPSMBukkitEventBirge {
     public void onForgeMvpEvent(PlayerGetMvpEvent event) {
         if (!FPSMBukkit.isBukkitEnvironment()) return;
 
-
         BukkitPlayerGetMvpEvent bukkitEvent = new BukkitPlayerGetMvpEvent(
-                event.getPlayer().getUUID(),
+                event.getReason().uuid,
                 event.getMap(),
                 event.getReason()
         );
