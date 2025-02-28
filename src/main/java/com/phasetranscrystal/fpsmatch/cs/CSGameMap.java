@@ -492,15 +492,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public void checkRoundVictory(){
         if(isWaitingWinner) return;
-        Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+        Map<BaseTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
         if(teamsLiving.size() == 1){
-            String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-            BaseTeam check = this.getMapTeams().getTeamByName(winnerTeam);
-            if (check != null) {
-                this.roundVictory(check,WinnerReason.ACED);
-            }else{
-                FPSMatch.LOGGER.error("Winner team is null: " + winnerTeam);
-            }
+            BaseTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
+            this.roundVictory(winnerTeam, WinnerReason.ACED);
         }
 
         if(teamsLiving.isEmpty()){
@@ -513,13 +508,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(this.isExploded()) {
             this.roundVictory(this.getTTeam(),WinnerReason.DETONATE_BOMB);
         }else {
-            Map<String, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+            Map<BaseTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
             if(teamsLiving.size() == 1){
-                String winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-                BaseTeam check = this.getMapTeams().getTeamByName(winnerTeam);
-                boolean flag = this.checkCanPlacingBombs(Objects.requireNonNull(check).getFixedName());
+                BaseTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
+                boolean flag = this.checkCanPlacingBombs(winnerTeam.getFixedName());
                 if(flag){
-                    this.roundVictory(check,WinnerReason.ACED);
+                    this.roundVictory(winnerTeam,WinnerReason.ACED);
                 }
             }else if(teamsLiving.isEmpty()){
                 this.roundVictory(this.getTTeam(),WinnerReason.ACED);

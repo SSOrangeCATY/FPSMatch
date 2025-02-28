@@ -451,12 +451,12 @@ public class MapTeams {
      *
      * @return 包含所有队伍存活玩家数据的 Map
      */
-    public Map<String, List<UUID>> getTeamsLiving() {
-        Map<String, List<UUID>> teamsLiving = new HashMap<>();
+    public Map<BaseTeam, List<UUID>> getTeamsLiving() {
+        Map<BaseTeam, List<UUID>> teamsLiving = new HashMap<>();
         teams.forEach((s, t) -> {
             List<UUID> list = t.getLivingPlayers();
             if (!list.isEmpty()) {
-                teamsLiving.put(s, list);
+                teamsLiving.put(t, list);
             }
         });
         return teamsLiving;
