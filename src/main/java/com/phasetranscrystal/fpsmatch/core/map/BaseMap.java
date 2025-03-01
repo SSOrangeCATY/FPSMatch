@@ -6,7 +6,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import net.minecraft.network.protocol.Packet;
@@ -18,12 +17,10 @@ import net.minecraft.world.level.GameType;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
-import java.util.function.Predicate;
+import java.util.Objects;
 
 /**
  * BaseMap 抽象类，表示游戏中的基础地图。
@@ -45,7 +42,7 @@ public abstract class BaseMap {
     /**
      * BaseMap 类的构造函数。
      *
-     * @param serverLevel 地图所在的服务器级别。
+     * @param serverLevel 地图所在世界。
      * @param mapName 地图名称。
      * @param areaData 地图的区域数据。
      */
@@ -295,14 +292,7 @@ public abstract class BaseMap {
     @SubscribeEvent
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map != null) {
-                MapTeams teams = map.getMapTeams();
-                BaseTeam playerTeam = teams.getTeamByPlayer(player);
-                if (playerTeam != null) {
-                    playerTeam.leave(player);
-                }
-            }
+            FPSMCore.checkAndLeaveTeam(player);
         }
     }
 

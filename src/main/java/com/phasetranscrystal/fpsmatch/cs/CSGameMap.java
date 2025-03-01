@@ -203,7 +203,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 }
             }
         }
-
+        this.checkErrorPlayerTeam();
         this.voteLogic();
         this.autoStartLogic();
     }
@@ -348,14 +348,19 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     private void checkErrorPlayerTeam() {
-      /*  this.getMapTeams().getTeams().forEach(team->{
+        List<UUID> uuids = new ArrayList<>();
+        this.getServerLevel().players().forEach((player)->{
+            uuids.add(player.getUUID());
+        });
+
+        this.getMapTeams().getTeams().forEach(team->{
             team.getPlayerList().forEach(uuid->{
-                if(this.getServerLevel().getPlayerByUUID(uuid) == null){
+                if(!uuids.contains(uuid) && this.getServerLevel().getPlayerByUUID(uuid) == null){
                     team.delPlayer(uuid);
                     this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(uuid));
-                };
+                }
             });
-        });*/
+        });
     }
 
     /**
@@ -756,7 +761,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public void cleanupMap() {
         super.cleanupMap();
-        this.checkErrorPlayerTeam();
         AreaData areaData = this.getMapArea();
         ServerLevel serverLevel = this.getServerLevel();
 
