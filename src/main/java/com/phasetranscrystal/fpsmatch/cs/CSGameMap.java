@@ -348,14 +348,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     private void checkErrorPlayerTeam() {
-        List<UUID> uuids = new ArrayList<>();
-        this.getServerLevel().players().forEach((player)->{
-            uuids.add(player.getUUID());
-        });
-
         this.getMapTeams().getTeams().forEach(team->{
             team.getPlayerList().forEach(uuid->{
-                if(!uuids.contains(uuid) && this.getServerLevel().getServer().getPlayerList().getPlayer(uuid) == null){
+                if(this.getServerLevel().getServer().getPlayerList().getPlayer(uuid) == null){
                     team.delPlayer(uuid);
                     this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(uuid));
                 }
