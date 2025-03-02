@@ -107,6 +107,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private SpawnPointData matchEndTeleportPoint = null;
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
+    private boolean requireSyncTab = false;
 
     /**
      * 构造函数：创建CS地图实例
@@ -1101,13 +1102,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if(player != null){
                 this.sendPacketToJoinedPlayer(player,packet,true);
-                for (BaseTeam team : this.getMapTeams().getTeams()) {
-                    for (UUID existingPlayerId : team.getPlayers().keySet()) {
-                        var p1 = new CSGameTabStatsS2CPacket(existingPlayerId,
-                                Objects.requireNonNull(team.getPlayerData(existingPlayerId)).getTabData(),
-                                team.name);
-                        this.sendPacketToJoinedPlayer(player,p1,true);
+                if(requireSyncTab){
+                    for (BaseTeam team : this.getMapTeams().getTeams()) {
+                        for (UUID existingPlayerId : team.getPlayers().keySet()) {
+                            var p1 = new CSGameTabStatsS2CPacket(existingPlayerId,
+                                    Objects.requireNonNull(team.getPlayerData(existingPlayerId)).getTabData(),
+                                    team.name);
+                            this.sendPacketToJoinedPlayer(player,p1,true);
+                        }
                     }
+                    requireSyncTab = false;
                 }
             }
         }));
@@ -1169,10 +1173,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map instanceof CSGameMap csGameMap && csGameMap.isStart){
+            if(map instanceof CSGameMap csGameMap){
                 dropC4(player);
                 player.getInventory().clearContent();
-                map.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
+                csGameMap.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
             }
         }
     }
@@ -1258,9 +1262,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 if(team != null){
                     PlayerData playerData = team.getPlayerData(serverPlayer.getUUID());
                     if(playerData != null){
-                        playerData.getTabData().addDamage(event.getAmount());
+                        playerData.getTabData().addDamage(Math.min(event.getAmount(),serverPlayer.getHealth()));
                     }
                 }
+                csGameMap.requireSyncTab = true;
             }
         }
     }
@@ -1273,24 +1278,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 if (map instanceof CSGameMap && map.checkGameHasPlayer(player)) {
                     if(event.getAttacker() instanceof ServerPlayer fromPlayer){
                         BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
-                        if (fromMap != null && fromMap.equals(map)) {
+                        if (fromMap instanceof CSGameMap csGameMap && csGameMap.equals(map)) {
                             if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
-                                BaseTeam team = fromMap.getMapTeams().getTeamByPlayer(fromPlayer);
+                                BaseTeam team = csGameMap.getMapTeams().getTeamByPlayer(fromPlayer);
 
                                 if(event.isHeadShot() && team != null){
                                     TabData tabData = Objects.requireNonNull(team.getPlayerData(fromPlayer.getUUID())).getTabData();
                                     tabData.addHeadshotKill();
-
                                 }
 
                                 DeathMessage deathMessage = new DeathMessage.Builder(fromPlayer, player, fromPlayer.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
-                                fromMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                                    ServerPlayer serverPlayer = (ServerPlayer) fromMap.getServerLevel().getPlayerByUUID(uuid);
+                                csGameMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                                    ServerPlayer serverPlayer = (ServerPlayer) csGameMap.getServerLevel().getPlayerByUUID(uuid);
                                     if(serverPlayer != null){
                                         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
                                     }
                                 }));
+                                csGameMap.requireSyncTab = true;
                             }
                         }
                     }
@@ -1317,7 +1322,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public void handlePlayerDeath(ServerPlayer player, @Nullable Entity fromEntity) {
         ServerPlayer from = null;
         if (fromEntity instanceof ServerPlayer fromPlayer) {
-            BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
+            BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(fromPlayer);
             if (fromMap != null && fromMap.equals(this)) {
                 from = fromPlayer;
                 if(fromPlayer.getMainHandItem().isEmpty()){
@@ -1389,8 +1394,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 if (data == null) return;
                 data.getTabData().addKills();
                 MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(this, player, from));
-
             }
+            this.requireSyncTab = true;
         }
     }
 
@@ -1559,6 +1564,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 formatBoolean(this.isWarmTime)), false);
         serverPlayer.displayClientMessage(Component.literal("| isError ").withStyle(ChatFormatting.GRAY).append(
                 formatBoolean(this.isError)), false);
+        serverPlayer.displayClientMessage(Component.literal("| requireSyncTab ").withStyle(ChatFormatting.GRAY).append(
+                formatBoolean(this.requireSyncTab)), false);
 
         for (BaseTeam team : this.getMapTeams().getTeams()) {
             serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
