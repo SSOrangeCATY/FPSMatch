@@ -107,7 +107,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private SpawnPointData matchEndTeleportPoint = null;
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
-    private boolean requireSyncTab = false;
 
     /**
      * 构造函数：创建CS地图实例
@@ -814,7 +813,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
             this.currentPauseTime = 0;
         }
-        this.requireSyncTab = true;
 
         this.setBlasting(0);
         this.setExploded(false);
@@ -1103,7 +1101,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if(player != null){
                 this.sendPacketToJoinedPlayer(player,packet,true);
-                if(requireSyncTab){
                     for (BaseTeam team : this.getMapTeams().getTeams()) {
                         for (UUID existingPlayerId : team.getPlayers().keySet()) {
                             var p1 = new CSGameTabStatsS2CPacket(existingPlayerId,
@@ -1112,8 +1109,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                             this.sendPacketToJoinedPlayer(player,p1,true);
                         }
                     }
-                    requireSyncTab = false;
-                }
             }
         }));
     }
@@ -1266,7 +1261,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         playerData.getTabData().addDamage(Math.min(event.getAmount(),serverPlayer.getHealth()));
                     }
                 }
-                csGameMap.requireSyncTab = true;
             }
         }
     }
@@ -1296,7 +1290,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                                         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
                                     }
                                 }));
-                                csGameMap.requireSyncTab = true;
                             }
                         }
                     }
@@ -1396,7 +1389,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 data.getTabData().addKills();
                 MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(this, player, from));
             }
-            this.requireSyncTab = true;
         }
     }
 
@@ -1565,8 +1557,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 formatBoolean(this.isWarmTime)), false);
         serverPlayer.displayClientMessage(Component.literal("| isError ").withStyle(ChatFormatting.GRAY).append(
                 formatBoolean(this.isError)), false);
-        serverPlayer.displayClientMessage(Component.literal("| requireSyncTab ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.requireSyncTab)), false);
 
         for (BaseTeam team : this.getMapTeams().getTeams()) {
             serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
