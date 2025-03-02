@@ -814,6 +814,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
             this.currentPauseTime = 0;
         }
+        this.requireSyncTab = true;
 
         this.setBlasting(0);
         this.setExploded(false);
