@@ -259,6 +259,11 @@ public class CSGameTabRenderer implements TabRenderer {
         String damage = String.valueOf(Math.round(tabData.getDamage()));
         guiGraphics.drawString(minecraft.font, damage, 
             damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, textColor);
+
+        if(!tabData.isLiving()){
+            //渲染一层半透明灰色
+            guiGraphics.fill(x, y, x + width, y + height, 0x40000000);
+        }
     }
 
     private void renderEmptyPlayerRow(GuiGraphics guiGraphics, int x, int y, int width, int height, int textColor) {
