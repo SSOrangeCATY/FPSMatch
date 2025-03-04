@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.client;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.client.key.CustomHudKey;
 import com.phasetranscrystal.fpsmatch.client.key.CustomTabKey;
 import com.phasetranscrystal.fpsmatch.client.key.DismantleBombKey;
 import com.phasetranscrystal.fpsmatch.client.key.OpenShopKey;
@@ -25,6 +26,7 @@ public class FPSMClient {
         event.register(OpenShopKey.OPEN_SHOP_KEY);
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
         event.register(CustomTabKey.CUSTOM_TAB_KEY);
+        event.register(CustomHudKey.KEY);
         //event.register(DebugMVPHudKey.CUSTOM_TAB_KEY);
     }
 

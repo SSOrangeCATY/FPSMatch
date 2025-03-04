@@ -125,3 +125,4 @@ run/
 /.eclipse/configurations/FPSMatch - runGameTestServerSlim.launch
 /.eclipse/configurations/FPSMatch - runServerSlim.launch
 /logs/
+/.eclipse/

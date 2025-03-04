@@ -1096,7 +1096,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public void syncToClient() {
         BaseTeam ct = this.getCTTeam();
         BaseTeam t = this.getTTeam();
-        CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(ct.getScores(),t.getScores(), this.currentPauseTime,this.currentRoundTime,this.isDebug(),this.isStart,this.isError,this.isPause,this.isWaiting,this.isWaitingWinner);
+        CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(
+                ct.getScores(),t.getScores(),
+                this.currentPauseTime,
+                this.currentRoundTime,
+                this.isDebug(),
+                this.isStart,
+                this.isError,
+                this.isPause,
+                this.isWaiting,
+                this.isWaitingWinner
+        );
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if(player != null){

@@ -164,7 +164,6 @@ public class FPSMCore {
     @SubscribeEvent
     public static void onServerStartingEvent(ServerStartingEvent event) {
          FPSMCore.setInstance(event.getServer().getWorldData().getLevelName(),event.getServer());
-         FPSMCore.getInstance().clearData();
          MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
     }
 

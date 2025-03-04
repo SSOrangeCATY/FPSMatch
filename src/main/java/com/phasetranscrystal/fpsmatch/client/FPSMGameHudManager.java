@@ -19,6 +19,7 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE,value = Dist.CLIENT)
 public class FPSMGameHudManager implements IGuiOverlay{
+    public static boolean enable = true;
     public static final FPSMGameHudManager INSTANCE = new FPSMGameHudManager();
     private final Map<String, List<IHudRenderer>> gameHudMap = Maps.newHashMap();
 
@@ -29,7 +30,7 @@ public class FPSMGameHudManager implements IGuiOverlay{
 
     @SubscribeEvent
     public static void onRenderGuiOverlayPre(RenderGuiOverlayEvent.Pre event) {
-        if(INSTANCE.gameHudMap.containsKey(ClientData.currentGameType)){
+        if(enable && INSTANCE.gameHudMap.containsKey(ClientData.currentGameType)){
             INSTANCE.gameHudMap.get(ClientData.currentGameType)
                     .forEach(overlay -> overlay.onRenderGuiOverlayPre(event));
         }
@@ -42,7 +43,7 @@ public class FPSMGameHudManager implements IGuiOverlay{
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         // 渲染游戏HUD
-        if(gameHudMap.containsKey(ClientData.currentGameType)){
+        if(enable && gameHudMap.containsKey(ClientData.currentGameType)){
             gameHudMap.get(ClientData.currentGameType)
                     .forEach(overlay -> overlay.render(gui, guiGraphics, partialTick, screenWidth, screenHeight));
         }

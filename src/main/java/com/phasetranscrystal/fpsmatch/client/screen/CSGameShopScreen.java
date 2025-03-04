@@ -52,16 +52,15 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
     private static final String[] TOP_NAME_KEYS = new String[]{"fpsm.shop.title.equipment","fpsm.shop.title.pistol","fpsm.shop.title.mid_rank","fpsm.shop.title.rifle","fpsm.shop.title.throwable"};
     public static boolean refreshFlag = false;
-    public static boolean debug;
+    public boolean debug = false;
     private static CSGameShopScreen INSTANCE;
 
-    public CSGameShopScreen(boolean debug){
-        CSGameShopScreen.debug = debug;
+    public CSGameShopScreen(){
     }
 
-    public static CSGameShopScreen getInstance(boolean debug) {
+    public static CSGameShopScreen getInstance() {
         if(INSTANCE == null) {
-            INSTANCE = new CSGameShopScreen(debug);
+            INSTANCE = new CSGameShopScreen();
         }
         return INSTANCE;
     }

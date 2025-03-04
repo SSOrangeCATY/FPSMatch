@@ -111,8 +111,8 @@
   "item.fpsmatch.grenade": "手榴弹",
   "item.fpsmatch.ct_incendiary_grenade": "燃烧弹",
   "item.fpsmatch.t_incendiary_grenade": "燃烧弹",
-  "command.cs.noMap": "You have not joined any maps.",
-  "command.cs.onlyPlayer": "This command only player execute.",
+  "command.cs.noMap": "你没有加入任何FPSM地图",
+  "command.cs.onlyPlayer": "这个指令只有玩家能够执行",
   "fpsmatch.tab.header.player": "玩家",
   "fpsmatch.tab.header.kills": "击杀",
   "fpsmatch.tab.header.deaths": "死亡",
@@ -120,10 +120,12 @@
   "fpsmatch.tab.header.damage": "伤害",
   "fpsmatch.tab.header.money": "金钱",
   "fpsmatch.tab.header.headshot": "爆头率",
-  "key.fpsm.debug.mvp.hud.desc": "Debug Mvp Hud",
-  "commands.fpsm.mvp.success": "success add %2$s mvp music to %1$s players",
+  "commands.fpsm.mvp.success": "成功添加 %2$s Mvp 音乐给 %1$s 位玩家",
   "cs.game.winner.mvpNameSub": "取得回合胜利",
   "commands.fpsm.shop.modify.cost.success": "成功将%1$s商店槽位%2$s的价格修改为%3$s",
   "commands.fpsm.shop.modify.failed.noSupport" : "地图不支持商店",
-  "commands.fpsm.shop.modify.item.success": "成功将%1$s商店槽位%2$s的物品修改为%3$s"
+  "commands.fpsm.shop.modify.item.success": "成功将%1$s商店槽位%2$s的物品修改为%3$s",
+  "key.fpsm.hud.custom.desc": "自定义游戏UI",
+  "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
+  "key.fpsm.hud.custom.off": "自定义游戏UI 关闭"
 }

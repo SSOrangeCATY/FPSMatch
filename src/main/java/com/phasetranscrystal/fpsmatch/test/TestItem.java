@@ -17,7 +17,7 @@ public class TestItem extends Item {
     public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
         if(pLevel.isClientSide){
             try{
-               icyllis.modernui.mc.forge.MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
+               icyllis.modernui.mc.forge.MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
             }catch (Exception e){
                 e.printStackTrace();
             }

@@ -38,7 +38,7 @@ public class OpenShopKey {
             }
 
             if(ClientData.isDebug){
-                MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
+                MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
             }else{
                 if(ClientData.currentMap.equals("fpsm_none")){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.no_map"));
@@ -56,7 +56,7 @@ public class OpenShopKey {
                 }
 
                 if(ClientData.isStart){
-                    MuiForgeApi.openScreen(CSGameShopScreen.getInstance(false));
+                    MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
                 }else{
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.fpsm.open.shop.failed.game.not_started"));
                 }
