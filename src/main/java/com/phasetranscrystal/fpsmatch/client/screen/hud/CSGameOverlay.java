@@ -232,7 +232,7 @@ public class CSGameOverlay implements IGuiOverlay {
 
         // 拆弹进度显示
         if(ClientData.dismantleBombProgress > 0) {
-            renderDemolitionProgress(player, guiGraphics);
+            renderDemolitionProgress(player, guiGraphics,screenWidth,screenHeight);
         }
         this.renderMoneyText(guiGraphics,screenWidth,screenHeight);
     }
@@ -245,7 +245,8 @@ public class CSGameOverlay implements IGuiOverlay {
         return getCSGameTime();
     }
 
-    private void renderDemolitionProgress(LocalPlayer player, GuiGraphics guiGraphics) {
+    private void renderDemolitionProgress(LocalPlayer player, GuiGraphics guiGraphics,int screenWidth, int screenHeight) {
+        Font font = Minecraft.getInstance().font;
         MutableComponent component = Component.empty();
         for (int i = 1; i < 8; i++) {
             boolean flag = getDemolitionProgressTextStyle(i);
@@ -253,7 +254,13 @@ public class CSGameOverlay implements IGuiOverlay {
             component.append(Component.literal(String.valueOf(code.toCharArray()[i - 1]))
                 .withStyle(Style.EMPTY.withColor(color).withObfuscated(!flag)));
         }
-        player.displayClientMessage(component, true);
+        float xStart = screenWidth / 2F - ((font.width(component) * 1.5F) / 2F);
+        float yStart = screenHeight / 2F + 65 + (font.lineHeight * 1.5F / 2F);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(xStart, yStart, 0);
+        guiGraphics.pose().scale(1.5F,1.5F,0);
+        guiGraphics.drawString(font, component, 0, 0, -1,true);
+        guiGraphics.pose().popPose();
     }
 
     private void renderMoneyText(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {

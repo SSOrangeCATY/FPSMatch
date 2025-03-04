@@ -1,17 +1,14 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.BombDemolitionProgressS2CPacket;
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -104,6 +101,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
     public void tick() {
         if(this.getDeleteTime() >= 140){
+            this.syncDemolitionProgress(0);
             this.discard();
         }
 
@@ -133,9 +131,11 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                 this.setDemolitionProgress(this.getDemolitionProgress() + 1);
                 if (demolisher instanceof ServerPlayer serverPlayer){
                     if(serverPlayer.gameMode.getGameModeForPlayer() == GameType.SPECTATOR){
-                        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombActionS2CPacket(0,this.uuid));
                         this.syncDemolitionProgress(0);
                         this.demolisher = null;
+                    }
+                    if(i % 2 == 0 && i > 0){
+                        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombActionS2CPacket());
                     }
                 }
             }
@@ -159,13 +159,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
             if(this.getDemolitionProgress() >= j){
                 this.deleting = true;
                 map.setBlasting(2);
-                map.getMap().getMapTeams().getJoinedPlayers().forEach(uuid -> {
-                    ServerPlayer serverPlayer = (ServerPlayer) this.level().getPlayerByUUID(uuid);
-                    if(serverPlayer != null){
-                        this.playDefusedSound();
-                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.item.c4.dismantled").withStyle(ChatFormatting.GREEN)));
-                    }
-                });
+                this.playDefusedSound();
                 return;
             }
 
@@ -219,7 +213,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
     public void syncDemolitionProgress(float progress){
         BaseMap map = (BaseMap) this.map;
-        if(map != null && this.demolisher != null){
+        if(map != null){
             map.getMapTeams().getJoinedPlayers().forEach((pUUID)->{
                 ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
                 if(receiver != null){
@@ -281,12 +275,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
-        if(player != null && checkDemolisher(player)){
-            this.playDefusingSound();
-            this.demolisher = player;
-        }else{
-            this.demolisher = null;
+        if(this.demolisher == null) {
+            if (player != null && checkDemolisher(player)) {
+                this.playDefusingSound();
+                this.demolisher = player;
+            }
         }
+    }
+
+    public void resetDemolisher(){
+        this.demolisher = null;
     }
 
     public AABB getR(){

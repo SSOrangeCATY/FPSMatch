@@ -1,29 +1,24 @@
 package com.phasetranscrystal.fpsmatch.net;
 
-import com.phasetranscrystal.fpsmatch.client.data.ClientData;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.client.key.DismantleBombKey;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.UUID;
 import java.util.function.Supplier;
 
-public record BombActionS2CPacket(int action, UUID uuid) {
+public record BombActionS2CPacket() {
     public static void encode(BombActionS2CPacket packet, FriendlyByteBuf buf) {
-        buf.writeInt(packet.action);
-        buf.writeUUID(packet.uuid);
     }
 
     public static BombActionS2CPacket decode(FriendlyByteBuf buf) {
-        return new BombActionS2CPacket(
-                buf.readInt(),
-                buf.readUUID());
+        return new BombActionS2CPacket();
     }
 
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ClientData.dismantleBombStates = action;
-            ClientData.bombUUID = (action == 2 || action == 0) ? null : uuid;
+            FPSMatch.INSTANCE.sendToServer(new BombActionC2SPacket(DismantleBombKey.DISMANTLE_BOMB_KEY.isDown()));
         });
         ctx.get().setPacketHandled(true);
     }

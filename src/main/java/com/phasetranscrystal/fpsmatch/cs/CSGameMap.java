@@ -1253,12 +1253,21 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public static void onPlayerHurt(LivingHurtEvent event){
         if(event.getEntity() instanceof ServerPlayer serverPlayer){
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
-            if(map instanceof CSGameMap csGameMap){
-                BaseTeam team = csGameMap.getMapTeams().getTeamByPlayer(serverPlayer);
-                if(team != null){
-                    PlayerData playerData = team.getPlayerData(serverPlayer.getUUID());
-                    if(playerData != null){
-                        playerData.getTabData().addDamage(Math.min(event.getAmount(),serverPlayer.getHealth()));
+            if(map instanceof CSGameMap csGameMap && csGameMap.isStart){
+                ServerPlayer sp = null;
+                if(event.getSource().getEntity() instanceof ServerPlayer sourcePlayer){
+                    sp = sourcePlayer;
+                }else if(event.getSource().getDirectEntity() instanceof ServerPlayer sourcePlayer){
+                    sp = sourcePlayer;
+                }
+
+                if(sp != null){
+                    BaseTeam team = csGameMap.getMapTeams().getTeamByPlayer(sp);
+                    if(team != null){
+                        PlayerData data = team.getPlayerData(sp.getUUID());
+                        if(data != null){
+                            data.getTabData().addDamage(Math.min(serverPlayer.getHealth(), event.getAmount()));
+                        }
                     }
                 }
             }
@@ -1284,12 +1293,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
                                 DeathMessage deathMessage = new DeathMessage.Builder(fromPlayer, player, fromPlayer.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
-                                csGameMap.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                                    ServerPlayer serverPlayer = (ServerPlayer) csGameMap.getServerLevel().getPlayerByUUID(uuid);
-                                    if(serverPlayer != null){
-                                        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), killMessageS2CPacket);
-                                    }
-                                }));
+                                csGameMap.sendPacketToAllPlayer(killMessageS2CPacket);
                             }
                         }
                     }
@@ -1462,7 +1466,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         gameMap.setStartKits(data);
         
         // 设置炸弹区域
-        gameMap.bombAreaData.clear();
         gameMap.bombAreaData.addAll(bombAreas);
 
         // 设置爆破队伍
