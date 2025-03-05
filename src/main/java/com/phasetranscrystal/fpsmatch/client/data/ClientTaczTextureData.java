@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class ClientTaczTextureData {
     public static final Map<ResourceLocation, Path> textureFilePath = new HashMap<>();
     public static final Map<ResourceLocation, Path> textureZipPath = new HashMap<>();

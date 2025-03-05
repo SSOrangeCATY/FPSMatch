@@ -29,8 +29,6 @@ public class CSGameTabRenderer implements TabRenderer {
 
     @Override
     public void render(GuiGraphics guiGraphics, int windowWidth, List<PlayerInfo> playerInfoList, Scoreboard scoreboard, Objective objective) {
-        if (!"cs".equals(ClientData.currentGameType)) return;
-        
         // 列宽定义（总宽度400px）
         int padding = 5;
         int pingWidth = 40;      

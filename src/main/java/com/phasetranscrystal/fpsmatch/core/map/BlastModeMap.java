@@ -79,10 +79,10 @@ public interface BlastModeMap<T extends BaseMap> extends IMap<T> {
      * <p>
      * 该方法用于判断当前队伍是否有权限放置炸弹。
      *
-     * @param team 队伍名称
+     * @param fixedTeamName 队伍完整名称
      * @return 如果可以放置炸弹，返回 true；否则返回 false
      */
-    boolean checkCanPlacingBombs(String team);
+    boolean checkCanPlacingBombs(String fixedTeamName);
 
     /**
      * 检查玩家是否处于炸弹区域内。

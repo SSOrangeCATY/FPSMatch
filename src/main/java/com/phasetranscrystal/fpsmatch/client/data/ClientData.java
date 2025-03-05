@@ -37,8 +37,6 @@ public class ClientData {
     public static boolean isWarmTime = false;
     public static boolean isWaitingWinner = false;
     public static boolean canOpenShop = false;
-    public static int dismantleBombStates = 0; // 0 = 没拆呢 | 1 = 正在拆 | 2 = 错误可能是不在队伍或者地图导致的
-    public static UUID bombUUID = null;
     public static float dismantleBombProgress = 0;
     public static boolean customTab = true;
 
@@ -104,8 +102,6 @@ public class ClientData {
         isWaitingWinner = false;
         nextRoundMoney = 0;
         canOpenShop = false;
-        dismantleBombStates = 0;
-        bombUUID = null;
         dismantleBombProgress = 0;
     }
 

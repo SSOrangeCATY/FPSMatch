@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.util;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import com.phasetranscrystal.fpsmatch.client.data.ClientTaczTextureData;
 import com.tacz.guns.client.resource_legacy.texture.FilePackTexture;
 import com.tacz.guns.client.resource_legacy.texture.ZipPackTexture;
@@ -27,6 +26,7 @@ public class RenderUtil {
         return (((a) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF)));
     }
 
+    @Deprecated
     public static Image getGunTextureByRL(ResourceLocation resourceLocation){
         Path texturePath;
         Image image = null;
