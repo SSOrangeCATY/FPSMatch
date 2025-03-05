@@ -12,10 +12,19 @@ public class ClientShopSlot{
     private ResourceLocation texture = null;
     private int boughtCount = 0;
     private boolean locked = false;
+    private int groupId = -1;
     
     public ClientShopSlot(ItemStack itemStack, int defaultCost) {
         this.itemStack = itemStack;
         this.cost = defaultCost;
+    }
+
+    public int groupId(){
+        return groupId;
+    }
+
+    public void setGroupId(int groupId) {
+        this.groupId = groupId;
     }
 
     public int cost(){

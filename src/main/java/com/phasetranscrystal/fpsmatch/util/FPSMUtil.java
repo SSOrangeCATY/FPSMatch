@@ -15,6 +15,25 @@ import java.util.Optional;
 
 public class FPSMUtil {
 
+    public static void setTotalDummyAmmo(ItemStack itemStack, IGun iGun, int amount){
+        Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
+        if(commonGunIndexOptional.isPresent()){
+            CommonGunIndex gunIndex = commonGunIndexOptional.get();
+            int maxAmmon = gunIndex.getGunData().getAmmoAmount();
+            iGun.useDummyAmmo(itemStack);
+            if(amount - maxAmmon > 0) {
+                iGun.setCurrentAmmoCount(itemStack,maxAmmon);
+                int dummy = amount - maxAmmon;
+                iGun.setMaxDummyAmmoAmount(itemStack,dummy);
+                iGun.setDummyAmmoAmount(itemStack, dummy);
+            }else{
+                iGun.setCurrentAmmoCount(itemStack,amount);
+                iGun.setDummyAmmoAmount(itemStack,0);
+                iGun.setMaxDummyAmmoAmount(itemStack,0);
+            }
+        }
+    }
+
     /**
      * use dummy ammo
      * */

@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +20,7 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
      * @param shopName 商店名称
      * @return 商店实例
      */
-    FPSMShop getShop(String shopName);
+    @Nullable FPSMShop getShop(String shopName);
 
     /**
      * 获取地图中所有商店的列表。

@@ -15,11 +15,9 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -413,5 +411,34 @@ public class ShopSlot{
         slot.setIndex(this.index);
         slot.listener.addAll(this.listener);
         return slot;
+    }
+
+    public int getAmmoCount() {
+        ItemStack itemStack = this.itemSupplier.get();
+        if(itemStack.getItem() instanceof IGun iGun){
+            return iGun.getMaxDummyAmmoAmount(itemStack);
+        }
+        return 0;
+    }
+
+    public int getDummyAmmoCount() {
+        ItemStack itemStack = this.itemSupplier.get();
+        if(itemStack.getItem() instanceof IGun iGun){
+            return iGun.getMaxDummyAmmoAmount(itemStack);
+        }
+        return 0;
+    }
+    public String toString(){
+        return "ShopSlot{" +
+                "itemStack=" + this.process() +
+                ", defaultCost=" + defaultCost +
+                ", cost=" + cost +
+                ", groupId=" + groupId +
+                ", boughtCount=" + boughtCount +
+                ", maxBuyCount=" + maxBuyCount +
+                ", locked=" + locked +
+                ", index=" + index +
+                ", listener=" + listener +
+                '}';
     }
 }
