@@ -75,6 +75,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
      */
     public BaseProjectileEntity(EntityType<? extends BaseProjectileEntity> type, LivingEntity shooter, Level level) {
         super(type, shooter, level);
+        this.noCulling = true;
     }
 
     @Override
@@ -331,4 +332,9 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     }
 
     // endregion
+
+    @Override
+    public boolean shouldRender(double pX, double pY, double pZ) {
+        return true;
+    }
 }

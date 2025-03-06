@@ -34,6 +34,18 @@ public class FPSMUtil {
         }
     }
 
+
+    public static int getTotalDummyAmmo(ItemStack itemStack, IGun iGun){
+        Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
+        if(commonGunIndexOptional.isPresent()){
+            CommonGunIndex gunIndex = commonGunIndexOptional.get();
+            int maxAmmon = gunIndex.getGunData().getAmmoAmount();
+            int dummy = iGun.getMaxDummyAmmoAmount(itemStack);
+            return maxAmmon + dummy;
+        }
+        return 0;
+    }
+
     /**
      * use dummy ammo
      * */

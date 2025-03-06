@@ -6,7 +6,6 @@ import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.net.ShopActionC2SPacket;
-import com.phasetranscrystal.fpsmatch.net.UpdateShopSlotPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
@@ -28,7 +27,10 @@ import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.LayoutInflater;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.widget.*;
+import icyllis.modernui.widget.ImageView;
+import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.RelativeLayout;
+import icyllis.modernui.widget.TextView;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
@@ -40,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 
@@ -613,66 +614,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public void draw(@NotNull Canvas canvas) {
             super.draw(canvas);
             updateButtonState();
-        }
-    }
-
-    public static class ShopSlotEditDialog extends Fragment {
-        private final ClientShopSlot slot;
-        private final ItemType type;
-        private final int index;
-        private EditText priceField;
-        private EditText groupField;
-
-        public ShopSlotEditDialog(ClientShopSlot slot, ItemType type, int index) {
-            this.slot = slot;
-            this.type = type;
-            this.index = index;
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
-            LinearLayout layout = new LinearLayout(getContext());
-            layout.setOrientation(LinearLayout.VERTICAL);
-            layout.setPadding(20, 20, 20, 20);
-
-            // 价格编辑
-            priceField = new EditText(getContext());
-            priceField.setHint("价格 (" + slot.cost() + ")");
-            priceField.setText(String.valueOf(slot.cost()));
-            layout.addView(priceField, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-
-            // 组ID编辑
-            groupField = new EditText(getContext());
-            groupField.setHint("组ID (" + slot.groupId() + ")");
-            groupField.setText(String.valueOf(slot.groupId()));
-            layout.addView(groupField, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-
-            // 保存按钮
-            Button saveButton = new Button(getContext());
-            saveButton.setText("保存");
-            saveButton.setOnClickListener(v -> saveChanges());
-            layout.addView(saveButton, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-
-            return layout;
-        }
-
-        private void saveChanges() {
-            try {
-                int newCost = Integer.parseInt(priceField.getText().toString());
-                int newGroup = Integer.parseInt(groupField.getText().toString());
-                ClientShopSlot shopSlot = this.slot;
-                shopSlot.setCost(newCost);
-                shopSlot.setGroupId(newGroup);
-                // 发送更新包
-                FPSMatch.INSTANCE.sendToServer(new UpdateShopSlotPacket(
-                        type,
-                        index,
-                        shopSlot
-                ));
-
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
