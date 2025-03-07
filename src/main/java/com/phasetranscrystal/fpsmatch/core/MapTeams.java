@@ -10,7 +10,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.Team;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -21,6 +20,7 @@ public class MapTeams {
     protected final ServerLevel level;
     protected final BaseMap map;
     private final Map<String,BaseTeam> teams = new HashMap<>();
+    private final BaseTeam spectatorTeam = this.addTeam("spectator",-1);
     private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public final Map<UUID,Component> playerName = new HashMap<>();
 
@@ -192,14 +192,12 @@ public class MapTeams {
      * @param teamName 队伍名称
      * @param limit 队伍人数上限
      */
-    public void addTeam(String teamName,int limit){
+    public BaseTeam addTeam(String teamName,int limit){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        playerteam.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
-        playerteam.setAllowFriendlyFire(false);
-        playerteam.setSeeFriendlyInvisibles(false);
-        playerteam.setDeathMessageVisibility(Team.Visibility.NEVER);
-        this.teams.put(teamName, new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam));
+        BaseTeam team = new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam);
+        this.teams.put(teamName, team);
+        return team;
     }
 
     /**
@@ -283,6 +281,10 @@ public class MapTeams {
         return uuids;
     }
 
+    public List<UUID> getSpecPlayers(){
+        return this.spectatorTeam.getPlayerList();
+    }
+
     /**
      * 重置所有队伍的“存活状态”。
      * <p>
@@ -300,10 +302,8 @@ public class MapTeams {
      * @param player 玩家对象
      * @param teamName 队伍名称
      */
-    public void playerJoin(ServerPlayer player, String teamName) {
-        BaseTeam team = this.teams.getOrDefault(teamName, null);
-        if (team == null) return;
-        team.join(player);
+    private void playerJoin(ServerPlayer player, String teamName) {
+        this.teams.getOrDefault(teamName, this.spectatorTeam).join(player);
     }
 
     /**
@@ -353,7 +353,7 @@ public class MapTeams {
     public boolean testTeamIsFull(String teamName) {
         BaseTeam team = teams.get(teamName);
         if (team == null) return false;
-        return team.getPlayerLimit() < team.getPlayerList().size();
+        return team.getPlayerLimit() < team.getPlayerList().size() || team.getPlayerLimit() == -1;
     }
 
     /**
@@ -367,6 +367,9 @@ public class MapTeams {
         return new ArrayList<>(teams.values().stream().toList());
     }
 
+    public BaseTeam getSpectatorTeam() {
+        return spectatorTeam;
+    }
     /**
      * 获取所有队伍的名称列表。
      * <p>
@@ -439,6 +442,7 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void leaveTeam(ServerPlayer player) {
+        this.spectatorTeam.leave(player);
         this.teams.values().forEach((t) -> t.leave(player));
         this.playerName.remove(player.getUUID());
     }

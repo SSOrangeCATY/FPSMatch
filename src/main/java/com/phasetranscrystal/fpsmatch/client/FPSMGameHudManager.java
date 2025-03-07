@@ -30,7 +30,7 @@ public class FPSMGameHudManager implements IGuiOverlay{
 
     @SubscribeEvent
     public static void onRenderGuiOverlayPre(RenderGuiOverlayEvent.Pre event) {
-        if(enable && INSTANCE.gameHudMap.containsKey(ClientData.currentGameType)){
+        if(enable && INSTANCE.gameHudMap.containsKey(ClientData.currentGameType) && !ClientData.currentTeam.equals("spectator")){
             INSTANCE.gameHudMap.get(ClientData.currentGameType)
                     .forEach(overlay -> overlay.onRenderGuiOverlayPre(event));
         }
@@ -43,7 +43,7 @@ public class FPSMGameHudManager implements IGuiOverlay{
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         // 渲染游戏HUD
-        if(enable && gameHudMap.containsKey(ClientData.currentGameType)){
+        if(enable && gameHudMap.containsKey(ClientData.currentGameType) && !ClientData.currentTeam.equals("spectator")){
             gameHudMap.get(ClientData.currentGameType)
                     .forEach(overlay -> overlay.render(gui, guiGraphics, partialTick, screenWidth, screenHeight));
         }

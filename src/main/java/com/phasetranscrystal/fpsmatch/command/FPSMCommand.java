@@ -135,6 +135,12 @@ public class FPSMCommand {
                                                 .then(Commands.argument("targets", EntityArgument.players())
                                                                 .executes(FPSMCommand::handleJoinMapWithTarget)))
                                         .then(Commands.literal("team")
+                                                .then(Commands.literal("spectator")
+                                                        .then(Commands.literal("players")
+                                                                .then(Commands.argument("targets", EntityArgument.players())
+                                                                        .then(Commands.argument("action", StringArgumentType.string())
+                                                                                .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
+                                                                                .executes(FPSMCommand::handleSpecTeamAction)))))
                                                 .then(Commands.argument("teamName", StringArgumentType.string())
                                                 .suggests(CommandSuggests.TEAM_NAMES_SUGGESTION)
                                                         .then(Commands.literal("kits")
@@ -571,44 +577,80 @@ public class FPSMCommand {
         return 1;
     }
 
+    private static int handleSpecTeamAction(CommandContext<CommandSourceStack> context) throws CommandSyntaxException{
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
+        String mapName = StringArgumentType.getString(context, "mapName");
+        String action = StringArgumentType.getString(context, "action");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
+        if (map != null) {
+            BaseTeam team = map.getMapTeams().getSpectatorTeam();
+            switch (action) {
+                case "join":
+                    for(ServerPlayer player : players) {
+                        team.join(player);
+                        context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
+                    }
+                    break;
+                case "leave":
+                    if (team != null) {
+                        for(ServerPlayer player : players) {
+                            team.leave(player);
+                            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
+                        }
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", "spectator"));
+                    }
+                    break;
+                default:
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.team.invalidAction"));
+                    return 0;
+            }
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
+            return 0;
+        }
+
+        return 1;
+    }
+
     private static int handleTeamAction(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
         String mapName = StringArgumentType.getString(context, "mapName");
         String teamName = StringArgumentType.getString(context, "teamName");
         String action = StringArgumentType.getString(context, "action");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
-            if (map != null) {
-                BaseTeam team = map.getMapTeams().getTeamByName(teamName);
-                switch (action) {
-                    case "join":
-                            if (team != null && team.getRemainingLimit() - players.size() >= 0) {
-                                for(ServerPlayer player : players) {
-                                    map.joinTeam(teamName, player);
-                                    context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
-                                }
-                            } else {
-                                // 翻译文本
-                                context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
-                            }
-                        break;
-                    case "leave":
-                        if (team != null) {
-                            for(ServerPlayer player : players) {
-                                map.getMapTeams().leaveTeam(player);
-                                context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
-                            }
-                        } else {
-                            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", teamName));
+        if (map != null) {
+            BaseTeam team = map.getMapTeams().getTeamByName(teamName);
+            switch (action) {
+                case "join":
+                    if (team != null && team.getRemainingLimit() - players.size() >= 0) {
+                        for(ServerPlayer player : players) {
+                            map.joinTeam(teamName, player);
+                            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
                         }
-                        break;
-                    default:
-                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.invalidAction"));
-                        return 0;
-                }
-            } else {
-                context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
-                return 0;
+                    } else {
+                        // 翻译文本
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
+                    }
+                    break;
+                case "leave":
+                    if (team != null) {
+                        for(ServerPlayer player : players) {
+                            map.getMapTeams().leaveTeam(player);
+                            context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
+                        }
+                    } else {
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", teamName));
+                    }
+                    break;
+                default:
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.team.invalidAction"));
+                    return 0;
             }
+        } else {
+            context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
+            return 0;
+        }
         return 1;
     }
 

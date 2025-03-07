@@ -49,6 +49,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
@@ -86,6 +88,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Setting<Integer> warmUpTime = this.addSetting("warmUpTime",1200);
     private final Setting<Integer> waitingTime = this.addSetting("waitingTime",300);
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
+    private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
     private boolean isError = false;
@@ -107,6 +110,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private SpawnPointData matchEndTeleportPoint = null;
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
+    private final BaseTeam ctTeam;
+    private final BaseTeam tTeam;
 
     /**
      * 构造函数：创建CS地图实例
@@ -118,9 +123,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public CSGameMap(ServerLevel serverLevel,String mapName,AreaData areaData) {
         super(serverLevel,mapName,areaData);
         this.loadConfig();
-        this.addTeam("ct",5);
-        this.addTeam("t",5);
-        this.setBlastTeam("t");
+        this.ctTeam = this.addTeam("ct",5);
+        this.tTeam = this.addTeam("t",5);
+        this.setBlastTeam(this.tTeam);
     }
 
     /**
@@ -130,9 +135,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
      * @see FPSMShop 每个队伍拥有独立商店实例
      */
     @Override
-    public void addTeam(String teamName,int playerLimit){
-        super.addTeam(teamName,playerLimit);
-        this.shop.put(teamName,new FPSMShop(this.getMapName(), 800));
+    public BaseTeam addTeam(String teamName,int playerLimit){
+        BaseTeam team = super.addTeam(teamName,playerLimit);
+        PlayerTeam playerTeam = team.getPlayerTeam();
+        playerTeam.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
+        playerTeam.setAllowFriendlyFire(false);
+        playerTeam.setSeeFriendlyInvisibles(false);
+        playerTeam.setDeathMessageVisibility(Team.Visibility.NEVER);
+        this.shop.put(teamName, new FPSMShop(this.getMapName(), startMoney.get()));
+        return team;
     }
 
     public void startVote(String title,Component message,int second,float playerPercent){
@@ -403,7 +414,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                syncNormalRoundStartMessage(serverPlayer);
                 serverPlayer.removeAllEffects();
                 serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
                 serverPlayer.heal(serverPlayer.getMaxHealth());
@@ -412,6 +422,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 this.teleportPlayerToReSpawnPoint(serverPlayer);
             }
         }));
+        syncNormalRoundStartMessage();
         this.giveAllPlayersKits();
         this.giveBlastTeamBomb();
         this.syncShopData();
@@ -662,12 +673,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if(serverPlayer != null){
-                syncNormalRoundStartMessage(serverPlayer);
                 serverPlayer.removeAllEffects();
                 serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
                 this.teleportPlayerToReSpawnPoint(serverPlayer);
             }
         }));
+        syncNormalRoundStartMessage();
         this.giveBlastTeamBomb();
         this.getShops().forEach(FPSMShop::syncShopData);
         this.checkMatchPoint();
@@ -689,12 +700,32 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-    private void syncNormalRoundStartMessage(ServerPlayer serverPlayer) {
-        this.sendPacketToJoinedPlayer(serverPlayer, new ShopStatesS2CPacket(true), true);
-        this.sendPacketToJoinedPlayer(serverPlayer,new MvpHUDCloseS2CPacket(),true);
-        this.sendPacketToJoinedPlayer(serverPlayer,new FPSMusicStopS2CPacket(),true);
+    private void syncNormalRoundStartMessage() {
+        var shopStatesPacket = new ShopStatesS2CPacket(false);
+        var mvpHUDClosePacket = new MvpHUDCloseS2CPacket();
+        var fpsMusicStopPacket = new FPSMusicStopS2CPacket();
         var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
-        this.sendPacketToJoinedPlayer(serverPlayer, bombResetPacket, true);
+
+        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                this.sendPacketToJoinedPlayer(serverPlayer, shopStatesPacket, true);
+                this.sendPacketToJoinedPlayer(serverPlayer, mvpHUDClosePacket,true);
+                this.sendPacketToJoinedPlayer(serverPlayer, fpsMusicStopPacket,true);
+                this.sendPacketToJoinedPlayer(serverPlayer, bombResetPacket, true);
+            }
+        }));
+
+        this.getMapTeams().getSpecPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                this.sendPacketToJoinedPlayer(serverPlayer, shopStatesPacket, true);
+                this.sendPacketToJoinedPlayer(serverPlayer, mvpHUDClosePacket,true);
+                this.sendPacketToJoinedPlayer(serverPlayer, fpsMusicStopPacket,true);
+                this.sendPacketToJoinedPlayer(serverPlayer, bombResetPacket, true);
+            }
+        }));
+
     }
 
     @Override
@@ -704,6 +735,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(serverPlayer != null){
                 this.sendPacketToJoinedPlayer(serverPlayer,new FPSMatchStatsResetS2CPacket(),true);
                 serverPlayer.removeAllEffects();
+            }
+        }));
+
+        this.getMapTeams().getSpecPlayers().forEach((uuid -> {
+            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            if(serverPlayer != null){
+                this.sendPacketToJoinedPlayer(serverPlayer,new FPSMatchStatsResetS2CPacket(),true);
+                serverPlayer.setGameMode(GameType.ADVENTURE);
             }
         }));
         resetGame();
@@ -1010,8 +1049,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().reset();
     }
 
-    public final void setBlastTeam(String team){
-        this.blastTeam = this.getGameType()+"_"+this.getMapName()+"_"+team;
+    public final void setBlastTeam(BaseTeam team){
+        this.blastTeam = team.getFixedName();
     }
 
     public boolean checkCanPlacingBombs(String team){
@@ -1491,11 +1530,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public Codec<CSGameMap> codec() {
         return CODEC;
     }
-    public BaseTeam getTTeam(){
-        return this.getMapTeams().getTeamByName("t");
+    public @NotNull BaseTeam getTTeam(){
+        return this.tTeam;
     }
-    public BaseTeam getCTTeam(){
-        return this.getMapTeams().getTeamByName("ct");
+    public @NotNull BaseTeam getCTTeam(){
+        return this.ctTeam;
     }
 
     public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){

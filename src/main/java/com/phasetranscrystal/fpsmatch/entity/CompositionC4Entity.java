@@ -226,6 +226,13 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
                     }
                 }
             });
+
+            map.getMapTeams().getSpecPlayers().forEach((pUUID)-> {
+                ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
+                if (receiver != null) {
+                    FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                }
+            });
         }
     }
 

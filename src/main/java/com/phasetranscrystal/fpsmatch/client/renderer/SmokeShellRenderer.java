@@ -32,7 +32,6 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
             public @NotNull ResourceLocation getTextureLocation(@NotNull SmokeShellEntity entity) {
                 return InventoryMenu.BLOCK_ATLAS;
             }
-
             @Override
             public void render(@NotNull SmokeShellEntity entity, float yaw, float partialTicks,
                                @NotNull PoseStack poseStack, @NotNull MultiBufferSource buffer, int packedLight) {

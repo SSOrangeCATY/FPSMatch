@@ -38,7 +38,6 @@ public abstract class BaseMap {
     private final MapTeams mapTeams;
     // 地图区域数据
     public final AreaData mapArea;
-
     /**
      * BaseMap 类的构造函数。
      *
@@ -58,8 +57,12 @@ public abstract class BaseMap {
      * @param teamName 团队名称
      * @param playerLimit 玩家限制
      */
-    public void addTeam(String teamName, int playerLimit) {
-        this.mapTeams.addTeam(teamName, playerLimit);
+    public BaseTeam addTeam(String teamName, int playerLimit) {
+        return this.mapTeams.addTeam(teamName, playerLimit);
+    }
+
+    public BaseTeam getSpectatorTeam(){
+        return this.mapTeams.getSpectatorTeam();
     }
 
     /**
@@ -153,9 +156,15 @@ public abstract class BaseMap {
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
         FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(), teamName));
         this.getMapTeams().joinTeam(teamName, player);
-        if (this instanceof ShopMap<?> shopMap) {
+        if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
             shopMap.getShop(teamName).syncShopData(player);
         }
+    }
+
+    public void joinSpecTeam(ServerPlayer player){
+        FPSMCore.checkAndLeaveTeam(player);
+        player.setGameMode(GameType.SPECTATOR);
+        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
     }
 
     /**
@@ -232,6 +241,15 @@ public abstract class BaseMap {
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
         this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
+            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+            if (player != null) {
+                this.sendPacketToJoinedPlayer(player, packet, true);
+            } else {
+                FPSMatch.LOGGER.error(this.getMapTeams().playerName.get(uuid).getString() + " is not found in online world");
+            }
+        });
+
+        this.getMapTeams().getSpecPlayers().forEach(uuid -> {
             ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
             if (player != null) {
                 this.sendPacketToJoinedPlayer(player, packet, true);

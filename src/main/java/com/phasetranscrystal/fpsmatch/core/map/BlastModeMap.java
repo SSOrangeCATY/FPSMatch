@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.world.entity.player.Player;
 
@@ -36,7 +37,7 @@ public interface BlastModeMap<T extends BaseMap> extends IMap<T> {
      *
      * @param team 爆破方队伍名称
      */
-    void setBlastTeam(String team);
+    void setBlastTeam(BaseTeam team);
 
     /**
      * 设置当前的爆破状态。
