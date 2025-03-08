@@ -168,8 +168,8 @@ public abstract class BaseMap {
     }
 
     /**
-     * 获取服务器级别
-     * @return 服务器级别对象
+     * 获取服务器世界
+     * @return 服务器世界对象
      */
     public ServerLevel getServerLevel() {
         return serverLevel;

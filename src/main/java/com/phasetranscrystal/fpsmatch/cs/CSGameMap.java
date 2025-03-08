@@ -275,6 +275,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.joinTeam(team.name, player);
     }
 
+    @Override
+    public void joinSpecTeam(ServerPlayer player) {
+        FPSMCore.checkAndLeaveTeam(player);
+        player.setGameMode(GameType.SPECTATOR);
+        this.sendPacketToJoinedPlayer(player, new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()), true);
+        this.getMapTeams().getSpectatorTeam().join(player);
+        this.getMapTeams().getSpectatorTeam().getSpawnPointsData().stream().findAny().ifPresent(data -> this.teleportToPoint(player, data));
+    }
+
     private void setBystander(ServerPlayer player) {
         List<UUID> uuids = this.getMapTeams().getSameTeamPlayerUUIDs(player);
         uuids.remove(player.getUUID());

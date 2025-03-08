@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.phasetranscrystal.fpsmatch.mixin",
-  "compatibilityLevel": "JAVA_18",
+  "compatibilityLevel": "JAVA_8",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "MixinDustParticleOptionsBase",

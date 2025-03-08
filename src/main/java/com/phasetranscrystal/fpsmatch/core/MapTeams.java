@@ -5,10 +5,12 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,7 +22,7 @@ public class MapTeams {
     protected final ServerLevel level;
     protected final BaseMap map;
     private final Map<String,BaseTeam> teams = new HashMap<>();
-    private final BaseTeam spectatorTeam = this.addTeam("spectator",-1);
+    private final BaseTeam spectatorTeam;
     private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public final Map<UUID,Component> playerName = new HashMap<>();
 
@@ -31,8 +33,7 @@ public class MapTeams {
      * @param map 地图对象。
      */
     public MapTeams(ServerLevel level, Map<String, Integer> team, BaseMap map) {
-        this.level = level;
-        this.map = map;
+        this(level,map);
         team.forEach(this::addTeam);
     }
 
@@ -41,9 +42,12 @@ public class MapTeams {
      * @param level 服务器级别。
      * @param map 地图对象。
      */
-    public MapTeams(ServerLevel level,BaseMap map){
+    public MapTeams(ServerLevel level, BaseMap map){
         this.level = level;
         this.map = map;
+        this.spectatorTeam = this.addTeam("spectator",-1);
+        Vec3 vec3 = map.mapArea.getAABB().getCenter();
+        spectatorTeam.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),new BlockPos((int) vec3.x(), (int) vec3.y(), (int) vec3.z()),0,0));
     }
 
     /**
@@ -705,6 +709,7 @@ public class MapTeams {
     public void resetAllHurtData() {
         this.teams.values().forEach((t) -> t.getPlayersTabData().forEach(TabData::clearDamageData));
     }
+
 
     /**
      * 用于表示 MVP 数据的记录类。
