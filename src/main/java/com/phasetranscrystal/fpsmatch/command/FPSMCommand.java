@@ -130,39 +130,44 @@ public class FPSMCommand {
                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                         .suggests(CommandSuggests.MAP_DEBUG_SUGGESTION)
                                                         .executes(FPSMCommand::handleDebugAction)))
-                                        .then(Commands.literal("join")
-                                                .executes(FPSMCommand::handleJoinMapWithoutTarget)
-                                                .then(Commands.argument("targets", EntityArgument.players())
-                                                                .executes(FPSMCommand::handleJoinMapWithTarget)))
                                         .then(Commands.literal("team")
-                                                .then(Commands.literal("spectator")
-                                                        .then(Commands.literal("players")
-                                                                .then(Commands.argument("targets", EntityArgument.players())
+                                                .then(Commands.literal("join")
+                                                        .executes(FPSMCommand::handleJoinMapWithoutTarget)
+                                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                                .executes(FPSMCommand::handleJoinMapWithTarget)))
+                                                .then(Commands.literal("leave")
+                                                        .executes(FPSMCommand::handleLeaveMapWithoutTarget)
+                                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                                .executes(FPSMCommand::handleLeaveMapWithTarget)))
+                                                .then(Commands.literal("teams")
+                                                        .then(Commands.literal("spectator")
+                                                                .then(Commands.literal("players")
+                                                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                                                .then(Commands.argument("action", StringArgumentType.string())
+                                                                                        .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
+                                                                                        .executes(FPSMCommand::handleSpecTeamAction)))))
+                                                        .then(Commands.argument("teamName", StringArgumentType.string())
+                                                                .suggests(CommandSuggests.TEAM_NAMES_SUGGESTION)
+                                                                .then(Commands.literal("kits")
                                                                         .then(Commands.argument("action", StringArgumentType.string())
-                                                                                .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                .executes(FPSMCommand::handleSpecTeamAction)))))
-                                                .then(Commands.argument("teamName", StringArgumentType.string())
-                                                .suggests(CommandSuggests.TEAM_NAMES_SUGGESTION)
-                                                        .then(Commands.literal("kits")
-                                                                .then(Commands.argument("action", StringArgumentType.string())
-                                                                        .suggests(CommandSuggests.SKITS_SUGGESTION)
-                                                                        .executes(FPSMCommand::handleKitsWithoutItemAction)
-                                                                        .then(Commands.literal("dummyAmmoAmount")
-                                                                                .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
-                                                                                        .executes(FPSMCommand::handleKitsGunModifyGunAmmoAmount)))
-                                                                        .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
-                                                                                .executes((c) -> FPSMCommand.handleKitsWithItemAction(c,1))
-                                                                                .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                                                                        .executes((c) -> FPSMCommand.handleKitsWithItemAction(c,IntegerArgumentType.getInteger(c,"amount")))))))
-                                                        .then(Commands.literal("spawnpoints")
-                                                                .then(Commands.argument("action", StringArgumentType.string())
-                                                                        .suggests(CommandSuggests.SPAWNPOINTS_ACTION_SUGGESTION)
-                                                                        .executes(FPSMCommand::handleSpawnAction)))
-                                                        .then(Commands.literal("players")
-                                                                .then(Commands.argument("targets", EntityArgument.players())
+                                                                                .suggests(CommandSuggests.SKITS_SUGGESTION)
+                                                                                .executes(FPSMCommand::handleKitsWithoutItemAction)
+                                                                                .then(Commands.literal("dummyAmmoAmount")
+                                                                                        .then(Commands.argument("dummyAmmoAmount", IntegerArgumentType.integer(0))
+                                                                                                .executes(FPSMCommand::handleKitsGunModifyGunAmmoAmount)))
+                                                                                .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
+                                                                                        .executes((c) -> FPSMCommand.handleKitsWithItemAction(c,1))
+                                                                                        .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                                                                .executes((c) -> FPSMCommand.handleKitsWithItemAction(c,IntegerArgumentType.getInteger(c,"amount")))))))
+                                                                .then(Commands.literal("spawnpoints")
                                                                         .then(Commands.argument("action", StringArgumentType.string())
-                                                                                .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                .executes(FPSMCommand::handleTeamAction)))))))));
+                                                                                .suggests(CommandSuggests.SPAWNPOINTS_ACTION_SUGGESTION)
+                                                                                .executes(FPSMCommand::handleSpawnAction)))
+                                                                .then(Commands.literal("players")
+                                                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                                                .then(Commands.argument("action", StringArgumentType.string())
+                                                                                        .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
+                                                                                        .executes(FPSMCommand::handleTeamAction))))))))));
         dispatcher.register(literal);
     }
 
@@ -177,8 +182,8 @@ public class FPSMCommand {
     private static int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
-        if(baseMap instanceof CSGameMap csGameMap){
-            csGameMap.joinTeam(context.getSource().getPlayerOrException());
+        if(baseMap != null){
+            baseMap.join(context.getSource().getPlayerOrException());
         }
         return 1;
     }
@@ -187,9 +192,30 @@ public class FPSMCommand {
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
-        if(baseMap instanceof CSGameMap csGameMap){
+        if(baseMap != null){
             for (ServerPlayer player : players){
-                csGameMap.joinTeam(player);
+                baseMap.join(player);
+            }
+        }
+        return 1;
+    }
+
+    private static int handleLeaveMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
+        if(baseMap != null){
+            baseMap.leave(context.getSource().getPlayerOrException());
+        }
+        return 1;
+    }
+
+    private static int handleLeaveMapWithTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String mapName = StringArgumentType.getString(context, "mapName");
+        BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context,"targets");
+        if(baseMap != null){
+            for (ServerPlayer player : players){
+                baseMap.leave(player);
             }
         }
         return 1;
@@ -587,14 +613,14 @@ public class FPSMCommand {
             switch (action) {
                 case "join":
                     for(ServerPlayer player : players) {
-                        team.join(player);
+                        map.joinSpec(player);
                         context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
                     }
                     break;
                 case "leave":
                     if (team != null) {
                         for(ServerPlayer player : players) {
-                            team.leave(player);
+                            map.leave(player);
                             context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
                         }
                     } else {
@@ -625,7 +651,7 @@ public class FPSMCommand {
                 case "join":
                     if (team != null && team.getRemainingLimit() - players.size() >= 0) {
                         for(ServerPlayer player : players) {
-                            map.joinTeam(teamName, player);
+                            map.join(teamName, player);
                             context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
                         }
                     } else {
@@ -636,7 +662,7 @@ public class FPSMCommand {
                 case "leave":
                     if (team != null) {
                         for(ServerPlayer player : players) {
-                            map.getMapTeams().leaveTeam(player);
+                            map.leave(player);
                             context.getSource().sendSuccess(()-> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
                         }
                     } else {

@@ -28,7 +28,6 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -42,13 +41,11 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.MinecraftForge;
@@ -69,7 +66,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
  * 反恐精英（CS）模式地图核心逻辑类
@@ -266,24 +262,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-    public void joinTeam(ServerPlayer player) {
-        FPSMCore.checkAndLeaveTeam(player);
-        MapTeams mapTeams = this.getMapTeams();
-        List<BaseTeam> baseTeams = mapTeams.getTeams();
-        if(baseTeams.isEmpty()) return;
-        BaseTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
-        this.joinTeam(team.name, player);
-    }
-
-    @Override
-    public void joinSpecTeam(ServerPlayer player) {
-        FPSMCore.checkAndLeaveTeam(player);
-        player.setGameMode(GameType.SPECTATOR);
-        this.sendPacketToJoinedPlayer(player, new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()), true);
-        this.getMapTeams().getSpectatorTeam().join(player);
-        this.getMapTeams().getSpectatorTeam().getSpawnPointsData().stream().findAny().ifPresent(data -> this.teleportToPoint(player, data));
-    }
-
     private void setBystander(ServerPlayer player) {
         List<UUID> uuids = this.getMapTeams().getSameTeamPlayerUUIDs(player);
         uuids.remove(player.getUUID());
@@ -300,7 +278,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
-    public void joinTeam(String teamName, ServerPlayer player) {
+    public void join(String teamName, ServerPlayer player) {
         MapTeams mapTeams = this.getMapTeams();
         mapTeams.joinTeam(teamName, player);
         // 同步游戏类型和地图信息
@@ -891,35 +869,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getShops().forEach(FPSMShop::syncShopData);
     }
 
-    public void teleportPlayerToReSpawnPoint(ServerPlayer player){
-        BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
-        if (team == null) return;
-        SpawnPointData data = Objects.requireNonNull(team.getPlayerData(player.getUUID())).getSpawnPointsData();
-        teleportToPoint(player, data);
-    }
-
     public void teleportPlayerToMatchEndPoint(ServerPlayer player){
         if (this.matchEndTeleportPoint == null ) return;
         SpawnPointData data = this.matchEndTeleportPoint;
         teleportToPoint(player, data);
-    }
-
-    private void teleportToPoint(ServerPlayer player, SpawnPointData data) {
-        BlockPos pos = data.getPosition();
-        if(!Level.isInSpawnableBounds(pos)) return;
-        Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
-        set.add(RelativeMovement.X_ROT);
-        set.add(RelativeMovement.Y_ROT);
-        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), pos.getX(),pos.getY(),pos.getZ(), set, 0, 0)) {
-            label23: {
-                if (player.isFallFlying()) {
-                    break label23;
-                }
-
-                player.setDeltaMovement(player.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
-                player.setOnGround(true);
-            }
-        }
     }
 
     /**
@@ -946,25 +899,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 }
             }
         }
-    }
-
-    public void clearPlayerInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
-        Player player = this.getServerLevel().getPlayerByUUID(uuid);
-        if(player instanceof ServerPlayer serverPlayer){
-            this.clearPlayerInventory(serverPlayer,inventoryPredicate);
-        }
-    }
-
-    public void clearPlayerInventory(ServerPlayer player, Predicate<ItemStack> predicate){
-        player.getInventory().clearOrCountMatchingItems(predicate, -1, player.inventoryMenu.getCraftSlots());
-        player.containerMenu.broadcastChanges();
-        player.inventoryMenu.slotsChanged(player.getInventory());
-    }
-
-    public void clearPlayerInventory(ServerPlayer player){
-        player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
-        player.containerMenu.broadcastChanges();
-        player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
     @Override
