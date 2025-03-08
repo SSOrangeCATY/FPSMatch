@@ -52,11 +52,21 @@ public class FPSMCore {
     @Nullable public BaseMap getMapByPlayer(Player player){
         AtomicReference<BaseMap> map = new AtomicReference<>();
         GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
+            if(baseMap.checkGameHasPlayer(player)) map.set(baseMap);
+        })));
+         return map.get();
+    }
+
+    @Nullable public BaseMap getMapByPlayerWithSpec(Player player){
+        AtomicReference<BaseMap> map = new AtomicReference<>();
+        GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
             if(baseMap.checkGameHasPlayer(player)){
+                map.set(baseMap);
+            }else if (baseMap.checkSpecHasPlayer(player)){
                 map.set(baseMap);
             }
         })));
-         return map.get();
+        return map.get();
     }
 
     public BaseMap registerMap(String type, BaseMap map){
@@ -152,12 +162,9 @@ public class FPSMCore {
     }
 
     public static void checkAndLeaveTeam(ServerPlayer player){
-        BaseMap map1 = FPSMCore.getInstance().getMapByPlayer(player);
-        if(map1 != null){
-            BaseTeam team1 = map1.getMapTeams().getTeamByPlayer(player);
-            if(team1 != null){
-                team1.leave(player);
-            }
+        BaseMap map = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
+        if(map != null){
+            map.leave(player);
         }
     }
 

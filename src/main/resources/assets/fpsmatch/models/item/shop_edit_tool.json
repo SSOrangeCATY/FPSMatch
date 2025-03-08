@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "0": "fpsmatch:item/shop_edit_tool"
+  }
+}

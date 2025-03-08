@@ -3,24 +3,32 @@ package com.phasetranscrystal.fpsmatch.core.map;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
+import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * BaseMap 抽象类，表示游戏中的基础地图。
@@ -109,6 +117,10 @@ public abstract class BaseMap {
         return this.getMapTeams().getJoinedPlayers().contains(player.getUUID());
     }
 
+    public boolean checkSpecHasPlayer(Player player) {
+        return this.getMapTeams().getSpecPlayers().contains(player.getUUID());
+    }
+
     /**
      * 开始新一轮游戏
      */
@@ -146,30 +158,94 @@ public abstract class BaseMap {
         return mapTeams;
     }
 
+    public void leave(ServerPlayer player) {
+        this.sendPacketToJoinedPlayer(player,new FPSMatchStatsResetS2CPacket(),true);
+        player.setGameMode(GameType.ADVENTURE);
+        this.getMapTeams().leaveTeam(player);
+    }
+
+
+    public void join(ServerPlayer player) {
+        MapTeams mapTeams = this.getMapTeams();
+        List<BaseTeam> baseTeams = mapTeams.getTeams();
+        if(baseTeams.isEmpty()) return;
+        BaseTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
+        this.join(team.name, player);
+    }
+
     /**
      * 加入团队
      * @param teamName 团队名称
      * @param player 玩家对象
      */
-    public void joinTeam(String teamName, ServerPlayer player) {
+    public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
         FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(), teamName));
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
-            shopMap.getShop(teamName).syncShopData(player);
+            FPSMShop shop = shopMap.getShop(teamName);
+            if(shop == null) return;
+            shop.syncShopData(player);
         }
     }
 
-    public void joinSpecTeam(ServerPlayer player){
+    public void joinSpec(ServerPlayer player){
         FPSMCore.checkAndLeaveTeam(player);
         player.setGameMode(GameType.SPECTATOR);
         this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+        this.getMapTeams().getSpectatorTeam().join(player);
+        this.getMapTeams().getSpectatorTeam().getSpawnPointsData().stream().findAny().ifPresent(data -> this.teleportToPoint(player, data));
+    }
+
+
+    public void teleportPlayerToReSpawnPoint(ServerPlayer player){
+        BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
+        if (team == null) return;
+        SpawnPointData data = Objects.requireNonNull(team.getPlayerData(player.getUUID())).getSpawnPointsData();
+        teleportToPoint(player, data);
+    }
+
+    public void teleportToPoint(ServerPlayer player, SpawnPointData data) {
+        BlockPos pos = data.getPosition();
+        if(!Level.isInSpawnableBounds(pos)) return;
+        Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
+        set.add(RelativeMovement.X_ROT);
+        set.add(RelativeMovement.Y_ROT);
+        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), pos.getX(),pos.getY(),pos.getZ(), set, 0, 0)) {
+            label23: {
+                if (player.isFallFlying()) {
+                    break label23;
+                }
+
+                player.setDeltaMovement(player.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
+                player.setOnGround(true);
+            }
+        }
+    }
+
+    public void clearPlayerInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
+        Player player = this.getServerLevel().getPlayerByUUID(uuid);
+        if(player instanceof ServerPlayer serverPlayer){
+            this.clearPlayerInventory(serverPlayer,inventoryPredicate);
+        }
+    }
+
+    public void clearPlayerInventory(ServerPlayer player, Predicate<ItemStack> predicate){
+        player.getInventory().clearOrCountMatchingItems(predicate, -1, player.inventoryMenu.getCraftSlots());
+        player.containerMenu.broadcastChanges();
+        player.inventoryMenu.slotsChanged(player.getInventory());
+    }
+
+    public void clearPlayerInventory(ServerPlayer player){
+        player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
+        player.containerMenu.broadcastChanges();
+        player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
     /**
-     * 获取服务器级别
-     * @return 服务器级别对象
+     * 获取服务器世界
+     * @return 服务器世界对象
      */
     public ServerLevel getServerLevel() {
         return serverLevel;
@@ -277,7 +353,6 @@ public abstract class BaseMap {
             FPSMatch.LOGGER.error(player.getDisplayName().getString() + " is not join " + this.getGameType() + ":" + this.getMapName());
         }
     }
-
     /**
      * 玩家登录事件处理
      * @param event 玩家登录事件

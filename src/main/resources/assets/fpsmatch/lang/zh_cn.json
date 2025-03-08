@@ -127,5 +127,8 @@
   "commands.fpsm.shop.modify.item.success": "成功将%1$s商店槽位%2$s的物品修改为%3$s",
   "key.fpsm.hud.custom.desc": "自定义游戏UI",
   "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
-  "key.fpsm.hud.custom.off": "自定义游戏UI 关闭"
+  "key.fpsm.hud.custom.off": "自定义游戏UI 关闭",
+  "gui.fpsm.shop_editor.title": "商店内容编辑器",
+  "gui.fpsm.shop_editor.save_button": "确认并保存",
+  "item.fpsmatch.shop_edit_tool": "商店内容编辑工具"
 }

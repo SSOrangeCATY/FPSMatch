@@ -127,5 +127,8 @@
   "cs.game.winner.mvpNameSub": "Get Round Winner",
   "commands.fpsm.shop.modify.cost.success": "The price for slot %2$s of %1$s in the store has been changed to %3$s",
   "commands.fpsm.shop.modify.failed.noSupport": "map not support shop.",
-  "commands.fpsm.shop.modify.item.success": "Successfully modified item in %1$s shop slot %2$s to %3$s"
+  "commands.fpsm.shop.modify.item.success": "Successfully modified item in %1$s shop slot %2$s to %3$s",
+  "gui.fpsm.shop_editor.title": "Shop Editor",
+  "gui.fpsm.shop_editor.save_button": "Confirm and save",
+  "item.fpsmatch.shop_edit_tool": "shop edit tool"
 }

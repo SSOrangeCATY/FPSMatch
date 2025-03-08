@@ -25,6 +25,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         this.inventoryLabelY = this.imageHeight - 94; // 下移玩家物品栏标签
     }
 
+
     @Override
     protected void init() {
         super.init();
@@ -53,11 +54,13 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         int buttonWidth = 50;
         int buttonX = leftPos + (imageWidth - buttonWidth) / 2;
         int buttonY = topPos + imageHeight - 30;
-        addRenderableWidget(new Button(
-                buttonX, buttonY, buttonWidth, 20,
-                Component.literal("确认并保存"),
-                button -> saveAndClose()
-        ));
+        addRenderableWidget(Button.builder(
+                                Component.translatable("gui.fpsm.shop_editor.save_button"), // 使用翻译键
+                                button -> saveAndClose()
+                        )
+                        .bounds(buttonX, buttonY, buttonWidth, 20)
+                        .build()
+        );
     }
 
     private void saveAndClose() {
@@ -65,7 +68,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         List<Integer> values = textBoxes.stream()
                 .map(box -> box.getValue().isEmpty() ? 0 : Integer.parseInt(box.getValue()))
                 .collect(Collectors.toList());
-        NetworkHandler.CHANNEL.sendToServer(new NumberInputPacket(values));
+//        NetworkHandler.CHANNEL.sendToServer(new NumberInputPacket(values));
         this.onClose(); // 关闭界面
     }
 
