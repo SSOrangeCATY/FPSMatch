@@ -61,5 +61,17 @@
         "sounds": [
         "fpsmatch:voice_t_win"
         ]
-    }
+    },
+  "flash": {
+    "subtitle": "sounds.fpsmatch.effect.flash",
+    "sounds": [
+      "fpsmatch:flash"
+    ]
+  },
+  "boom": {
+    "subtitle": "sounds.fpsmatch.throwable.boom",
+    "sounds": [
+      "fpsmatch:boom"
+    ]
+  }
 }

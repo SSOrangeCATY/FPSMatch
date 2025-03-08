@@ -7,12 +7,10 @@ import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.net.ThrowEntityC2SPacket;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -51,14 +49,6 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
         if (event.getEntity().getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof IThrowEntityAble iThrowEntityAble) {
             iThrowEntityAble.shoot(event.getEntity(), event.getLevel(), InteractionHand.MAIN_HAND, 1.5F, 1.0F);
         }
-    }
-
-    public @NotNull InteractionResult useOn(UseOnContext pContext) {
-        Player player = pContext.getPlayer();
-        if(player == null){
-            return InteractionResult.PASS;
-        }
-        return this.use(pContext.getLevel(), player, pContext.getHand()).getResult();
     }
 
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pHand) {

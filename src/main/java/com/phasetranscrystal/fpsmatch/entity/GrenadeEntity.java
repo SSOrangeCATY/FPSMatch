@@ -2,9 +2,9 @@ package com.phasetranscrystal.fpsmatch.entity;
 
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -115,7 +115,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
 
     private void playExplosionSound() {
         level().playSound(null, getX(), getY(), getZ(),
-                SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE,
+                FPSMSoundRegister.boom.get(), SoundSource.HOSTILE,
                 4.0F, (1.0F + (random.nextFloat() - random.nextFloat()) * 0.2F) * 0.7F);
     }
 

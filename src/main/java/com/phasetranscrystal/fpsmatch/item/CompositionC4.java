@@ -1,9 +1,9 @@
 package com.phasetranscrystal.fpsmatch.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
@@ -13,12 +13,10 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.commands.TeamMsgCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
@@ -27,7 +25,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
@@ -87,14 +84,6 @@ public class CompositionC4 extends Item {
 				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX(),player.getY() + 2,player.getZ(),1,0,0,0,1);
 			}
 		}
-	}
-
-	public @NotNull InteractionResult useOn(UseOnContext pContext) {
-		Player player = pContext.getPlayer();
-		if(player == null){
-			return InteractionResult.PASS;
-		}
-		return this.use(pContext.getLevel(), player, pContext.getHand()).getResult();
 	}
 
 	@Override
