@@ -316,17 +316,8 @@ public abstract class BaseMap {
      * @param <MSG> 数据包类型
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
-        this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
-            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
-            if (player != null) {
-                this.sendPacketToJoinedPlayer(player, packet, true);
-            } else {
-                FPSMatch.LOGGER.error(this.getMapTeams().playerName.get(uuid).getString() + " is not found in online world");
-            }
-        });
-
-        this.getMapTeams().getSpecPlayers().forEach(uuid -> {
-            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid -> {
+            ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 this.sendPacketToJoinedPlayer(player, packet, true);
             } else {

@@ -236,7 +236,7 @@ public class FPSMatch {
     public static class ClientEvents {
         @SubscribeEvent
         public static void onEvent(TickEvent.ClientTickEvent event) {
-            if(ClientData.isWaiting || ClientData.isPause && !ClientData.currentMap.equals("fpsm_none") && !ClientData.currentTeam.equals("spectator")){
+            if((ClientData.isWaiting || ClientData.isPause) && (!ClientData.currentMap.equals("fpsm_none") && !ClientData.currentTeam.equals("spectator"))){
                 if (Minecraft.getInstance().player != null) {
                     Minecraft.getInstance().options.keyUp.setDown(false);
                     Minecraft.getInstance().options.keyLeft.setDown(false);

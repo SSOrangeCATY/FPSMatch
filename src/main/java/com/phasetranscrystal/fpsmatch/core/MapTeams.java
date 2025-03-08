@@ -45,7 +45,7 @@ public class MapTeams {
     public MapTeams(ServerLevel level, BaseMap map){
         this.level = level;
         this.map = map;
-        this.spectatorTeam = this.addTeam("spectator",-1);
+        this.spectatorTeam = this.addTeam("spectator",-1,false);
         Vec3 vec3 = map.mapArea.getAABB().getCenter();
         spectatorTeam.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),new BlockPos((int) vec3.x(), (int) vec3.y(), (int) vec3.z()),0,0));
     }
@@ -187,6 +187,15 @@ public class MapTeams {
         this.teams.forEach((s,t)-> t.resetSpawnPointData());
     }
 
+
+    public BaseTeam addTeam(String teamName,int limit, boolean addToSystem){
+        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
+        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
+        BaseTeam team = new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam);
+        if(addToSystem) this.teams.put(teamName, team);
+        return team;
+    }
+
     /**
      * 添加一个新队伍。
      * <p>
@@ -197,11 +206,7 @@ public class MapTeams {
      * @param limit 队伍人数上限
      */
     public BaseTeam addTeam(String teamName,int limit){
-        String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
-        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        BaseTeam team = new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam);
-        this.teams.put(teamName, team);
-        return team;
+        return addTeam(teamName,limit,true);
     }
 
     /**
@@ -273,15 +278,27 @@ public class MapTeams {
     }
 
     /**
+     * 获取所有可进行游戏的玩家 UUID 列表。
+     *
+     * @return 包含所有可进行游戏的玩家 UUID 的列表
+     */
+    public List<UUID> getJoinedPlayers() {
+        List<UUID> uuids = new ArrayList<>();
+        this.teams.values().forEach((t) -> uuids.addAll(t.getPlayerList()));
+        return uuids;
+    }
+
+    /**
      * 获取所有已加入队伍的玩家 UUID 列表。
      * <p>
      * 遍历所有队伍，收集所有队伍中的玩家 UUID。
      *
      * @return 包含所有已加入队伍的玩家 UUID 的列表
      */
-    public List<UUID> getJoinedPlayers() {
+    public List<UUID> getJoinedPlayersWithSpec() {
         List<UUID> uuids = new ArrayList<>();
         this.teams.values().forEach((t) -> uuids.addAll(t.getPlayerList()));
+        uuids.addAll(this.spectatorTeam.getPlayerList());
         return uuids;
     }
 
@@ -369,6 +386,13 @@ public class MapTeams {
      */
     public List<BaseTeam> getTeams() {
         return new ArrayList<>(teams.values().stream().toList());
+    }
+
+
+    public List<BaseTeam> getTeamsWithSpec(){
+        List<BaseTeam> list = new ArrayList<>(teams.values().stream().toList());
+        list.add(spectatorTeam);
+        return list;
     }
 
     public BaseTeam getSpectatorTeam() {
