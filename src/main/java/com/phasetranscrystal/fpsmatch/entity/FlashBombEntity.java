@@ -54,6 +54,9 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
 
         for (Entity entity : level().getEntitiesOfClass(Entity.class, area)) {
             if (entity instanceof LivingEntity living) {
+                if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+                    continue;
+                }
                 applyBlindnessEffect(living);
             }
         }

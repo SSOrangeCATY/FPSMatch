@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -86,6 +87,9 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
         );
 
         for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, explosionArea)) {
+            if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+                continue;
+            }
             // 计算距离
             double distance = distanceTo(entity);
             if (distance > EXPLOSION_RADIUS) continue;
