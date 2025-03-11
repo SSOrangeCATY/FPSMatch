@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
-import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraft.client.gui.GuiGraphics;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -18,7 +17,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     private static final int d = 10; // **Slot 之间的间隔**
     private static final int TEXTBOX_HEIGHT = Math.max(1, (int) (d * 0.618)); // **文本框高度**
     private static final int COLUMNS = 5;
-    private static final int ROWS = 4;
+    private static final int ROWS = 5;
 
     public EditorShopScreen(EditorShopContainer container, Inventory inv, Component title) {
         super(container, inv, Component.translatable("gui.fpsm.shop_editor.title"));
@@ -30,7 +29,6 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     @Override
     protected void init() {
         super.init();
-
     }
 
 
@@ -41,8 +39,8 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         this.menu.getAllSlots().forEach(slot -> slotCost.add(slot.getCost()));
         for (int i = 0; i < ROWS * COLUMNS; i++) {
             Slot slot = this.menu.slots.get(i);
-            int x = leftPos + slot.x;
-            int y = topPos + slot.y + SLOT_SIZE + TEXTBOX_HEIGHT - d / 2;
+            int x = slot.x;
+            int y = slot.y + SLOT_SIZE + TEXTBOX_HEIGHT - d / 2;
             pGuiGraphics.drawString(this.font, String.valueOf(slotCost.get(i)), x, y, 0xFFFFFF);
         }
     }

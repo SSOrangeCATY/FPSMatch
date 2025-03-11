@@ -8,6 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
@@ -27,7 +28,7 @@ import java.util.List;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class ShopEditTool extends Item {
+public class ShopEditTool extends Item implements Container {
     public static final String MAP_TAG = "SelectedMap";
     public static final String SHOP_TAG = "SelectedShop";
     private static List<String> mapList = new ArrayList<>();
@@ -166,4 +167,6 @@ public class ShopEditTool extends Item {
     public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
     }
+
+
 }
