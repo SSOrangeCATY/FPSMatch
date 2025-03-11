@@ -372,6 +372,10 @@ public class ShopSlot{
         return money - cost;
     }
 
+    public void setItemSupplier(Supplier<ItemStack> itemSupplier) {
+        this.itemSupplier = itemSupplier;
+    }
+
     //同上
     /**
      * 返回物品

@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
 
 public class EditorShopContainer extends AbstractContainerMenu {
     private static final int SLOT_SIZE = 18;
-    private static final int ROWS = 4;
+    private static final int ROWS = 5;
     private static final int COLS = 5;
     private static final int d = 10; // 设定间隔
     private ItemStack guiItemStack; // 存储打开 GUI 的物品
@@ -42,37 +42,41 @@ public class EditorShopContainer extends AbstractContainerMenu {
                                      col + row * COLS,
                                      startX + col * (SLOT_SIZE + 4 * d), // **加上间隔 d**
                                      startY + row * (SLOT_SIZE + d)  // **加上间隔 d**
-                             ) {
-                                 @Override
-                                 public boolean mayPlace(ItemStack stack) {
-                                     return false;
-                                 }
-
-                                 @Override
-                                 public boolean mayPickup(Player player) {
-                                     return false;
-                                 }
-                             }
-                ).set(slotItem.isEmpty() ? slotItem : ItemStack.EMPTY)
+                             )
+//                             {
+//                                 @Override
+//                                 public boolean mayPlace(ItemStack stack) {
+//                                     return false;
+//                                 }
+//
+//                                 @Override
+//                                 public boolean mayPickup(Player player) {
+//                                     return false;
+//                                 }
+//                             }
+                ).set(slotItem.isEmpty() ? ItemStack.EMPTY : slotItem)
                 ;
             }
         }
 
-
-    }
-
-
-    public EditorShopContainer(int id, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(id, playerInventory, buf.readItem()); // 从 `buf` 读取 ItemStack
-    }
-
-    public EditorShopContainer(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, ItemStack.EMPTY);
-
+        // **玩家物品栏（下移，避免与 GUI 重叠）**
+        addPlayerInventory(playerInventory, 8, 160);
     }
 
 
 
+
+
+    private void addPlayerInventory(Inventory playerInventory, int x, int y) {
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, x + col * 18, y + row * 18));
+            }
+        }
+        for (int col = 0; col < 9; col++) {
+            this.addSlot(new Slot(playerInventory, col, x + col * 18, y + 58));
+        }
+    }
 
     @Override
     public boolean stillValid(Player player) {
