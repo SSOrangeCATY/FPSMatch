@@ -130,5 +130,13 @@
   "key.fpsm.hud.custom.off": "自定义游戏UI 关闭",
   "gui.fpsm.shop_editor.title": "商店内容编辑器",
   "gui.fpsm.shop_editor.save_button": "确认并保存",
-  "item.fpsmatch.shop_edit_tool": "商店内容编辑工具"
+  "item.fpsmatch.shop_edit_tool": "商店内容编辑工具",
+  "tooltip.fpsm.shop_edit_tool.map_selected": "当前选中地图 :",
+  "tooltip.fpsm.shop_edit_tool.team_selected": "当前选中队伍 :",
+  "message.fpsm.shop_edit_tool.all_maps": "所有可用地图 : ",
+  "message.fpsm.shop_edit_tool.all_shops": "所有可用商店 : ",
+  "message.fpsm.shop_edit_tool.select_map": "你选择了 地图 : ",
+  "message.fpsm.shop_edit_tool.select_shop": "你选择了 商店 : ",
+  "message.fpsm.shop_edit_tool.missing_map": "没有可用地图！",
+  "message.fpsm.shop_edit_tool.missing_shop": "没有可用商店!"
 }
