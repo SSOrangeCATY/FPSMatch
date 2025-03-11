@@ -127,5 +127,16 @@
   "cs.game.winner.mvpNameSub": "Get Round Winner",
   "commands.fpsm.shop.modify.cost.success": "The price for slot %2$s of %1$s in the store has been changed to %3$s",
   "commands.fpsm.shop.modify.failed.noSupport": "map not support shop.",
-  "commands.fpsm.shop.modify.item.success": "Successfully modified item in %1$s shop slot %2$s to %3$s"
+  "commands.fpsm.shop.modify.item.success": "Successfully modified item in %1$s shop slot %2$s to %3$s",
+  "gui.fpsm.shop_editor.title": "Shop Editor",
+  "gui.fpsm.shop_editor.save_button": "Confirm and save",
+  "item.fpsmatch.shop_edit_tool": "shop edit tool",
+  "tooltip.fpsm.shop_edit_tool.map_selected": "Current Selected Map :",
+  "tooltip.fpsm.shop_edit_tool.team_selected": "Current Selected Team :",
+  "message.fpsm.shop_edit_tool.all_maps": "All Available Maps :",
+  "message.fpsm.shop_edit_tool.all_shops": "All Available Shops :",
+  "message.fpsm.shop_edit_tool.select_map": "You Choose Map :",
+  "message.fpsm.shop_edit_tool.select_shop": "You Choose Shop :",
+  "message.fpsm.shop_edit_tool.missing_map": "No Map is available!",
+  "message.fpsm.shop_edit_tool.missing_shop": "No Shop is available!"
 }
