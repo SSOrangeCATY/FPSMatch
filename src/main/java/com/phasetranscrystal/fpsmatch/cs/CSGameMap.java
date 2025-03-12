@@ -38,6 +38,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -1220,30 +1221,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     }
 
-    @SubscribeEvent
-    public static void onPlayerHurt(LivingHurtEvent event){
-        if(event.getEntity() instanceof ServerPlayer serverPlayer){
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
-            if(map instanceof CSGameMap csGameMap && csGameMap.isStart){
-                ServerPlayer sp = null;
-                if(event.getSource().getEntity() instanceof ServerPlayer sourcePlayer){
-                    sp = sourcePlayer;
-                }else if(event.getSource().getDirectEntity() instanceof ServerPlayer sourcePlayer){
-                    sp = sourcePlayer;
-                }
-
-                if(sp != null){
-                    BaseTeam team = csGameMap.getMapTeams().getTeamByPlayer(sp);
-                    if(team != null){
-                        PlayerData data = team.getPlayerData(sp.getUUID());
-                        if(data != null){
-                            data.getTabData().addDamage(Math.min(serverPlayer.getHealth(), event.getAmount()));
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     @SubscribeEvent
     public static void onPlayerKilledByGun(EntityKillByGunEvent event){
