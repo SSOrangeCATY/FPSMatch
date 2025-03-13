@@ -256,12 +256,11 @@ public class FPSMShop {
      * @return 玩家的商店数据
      */
     public ShopData getPlayerShopData(UUID uuid) {
-        ShopData data = this.playersData.getOrDefault(uuid, null);
-        if (data == null) {
-            this.playersData.put(uuid, this.getDefaultShopData());
-            data = this.playersData.get(uuid);
+        if (this.playersData.containsKey(uuid)) {
+            return this.playersData.get(uuid);
+        }else{
+            return this.getDefaultShopData();
         }
-        return data;
     }
 
     /**
