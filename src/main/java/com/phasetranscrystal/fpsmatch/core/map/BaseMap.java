@@ -316,17 +316,8 @@ public abstract class BaseMap {
      * @param <MSG> 数据包类型
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
-        this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
-            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
-            if (player != null) {
-                this.sendPacketToJoinedPlayer(player, packet, true);
-            } else {
-                FPSMatch.LOGGER.error(this.getMapTeams().playerName.get(uuid).getString() + " is not found in online world");
-            }
-        });
-
-        this.getMapTeams().getSpecPlayers().forEach(uuid -> {
-            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid -> {
+            ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 this.sendPacketToJoinedPlayer(player, packet, true);
             } else {
@@ -394,21 +385,22 @@ public abstract class BaseMap {
      * @param event 玩家受伤事件
      */
     @SubscribeEvent
-    public static void onLivingHurtEvent(LivingHurtEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            DamageSource damageSource = event.getSource();
-            ServerPlayer from = null;
-            if (damageSource.getEntity() instanceof ServerPlayer target) {
-                from = target;
-            } else if (damageSource.getDirectEntity() instanceof ServerPlayer target) {
-                from = target;
-            }
+    public static void onPlayerHurt(LivingHurtEvent event){
+        if(event.getEntity() instanceof ServerPlayer hurt){
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(hurt);
+            if(map != null && map.isStart) {
+                DamageSource source = event.getSource();
+                ServerPlayer attacker;
+                if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
+                    attacker = sourcePlayer;
+                } else if (source.getDirectEntity() instanceof ServerPlayer sourcePlayer) {
+                    attacker = sourcePlayer;
+                } else {
+                    attacker = null;
+                }
 
-            if (from != null) {
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map != null && map.checkGameHasPlayer(player) && map.checkGameHasPlayer(from)) {
-                    float damage = event.getAmount();
-                    map.getMapTeams().addHurtData(from, player.getUUID(), damage);
+                if (attacker != null && !attacker.getUUID().equals(hurt.getUUID())) {
+                    map.getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
                 }
             }
         }

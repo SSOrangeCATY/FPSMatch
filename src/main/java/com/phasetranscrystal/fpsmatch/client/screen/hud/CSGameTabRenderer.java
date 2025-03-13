@@ -135,7 +135,7 @@ public class CSGameTabRenderer implements TabRenderer {
         for (PlayerInfo info : playerInfoList) {
             String team = ClientData.getTeamByUUID(info.getProfile().getId());
             TabData tabData = ClientData.getTabDataByUUID(info.getProfile().getId());
-            if (team != null && tabData != null) {
+            if (team != null && tabData != null && !team.equals("spectator")) {
                 teamPlayers.get(team).add(info);
             }
         }

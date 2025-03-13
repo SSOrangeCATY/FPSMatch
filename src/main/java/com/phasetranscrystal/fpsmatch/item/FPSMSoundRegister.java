@@ -19,7 +19,7 @@ public class FPSMSoundRegister {
     public static RegistryObject<SoundEvent> voice_grenade = SOUNDS.register("voice_grenade", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "voice_grenade")));
     public static RegistryObject<SoundEvent> voice_t_win = SOUNDS.register("voice_ct_win", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "voice_ct_win")));
     public static RegistryObject<SoundEvent> voice_ct_win = SOUNDS.register("voice_t_win", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "voice_t_win")));
-
-
+    public static RegistryObject<SoundEvent> flash = SOUNDS.register("flash", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "flash")));
+    public static RegistryObject<SoundEvent> boom = SOUNDS.register("boom", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "boom")));
 
 }

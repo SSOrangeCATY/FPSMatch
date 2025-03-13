@@ -7,6 +7,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -64,6 +65,9 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     private void applyPlayerDamage(LivingEntity entity) {
         DamageSource source = this.level().damageSources().fellOutOfWorld();
         entity.setSecondsOnFire(1);
+        if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+            return;
+        }
         entity.hurt(source, DAMAGE);
     }
 

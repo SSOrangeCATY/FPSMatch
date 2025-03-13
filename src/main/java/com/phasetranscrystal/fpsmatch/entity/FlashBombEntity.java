@@ -4,6 +4,11 @@ import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.effect.FlashBlindnessMobEffect;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
+import net.minecraft.core.Holder;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -49,6 +54,9 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
 
         for (Entity entity : level().getEntitiesOfClass(Entity.class, area)) {
             if (entity instanceof LivingEntity living) {
+                if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+                    continue;
+                }
                 applyBlindnessEffect(living);
             }
         }
@@ -72,6 +80,11 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         }
 
         target.addEffect(effect);
+
+
+        if(target instanceof ServerPlayer player){
+            player.connection.send(new ClientboundSoundPacket(Holder.direct(FPSMSoundRegister.flash.get()), SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), 0.8f, 1, 0));
+        }
     }
 
     private boolean isLineOfSightBlocked(Vec3 eyePos) {
