@@ -667,6 +667,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         syncNormalRoundStartMessage();
         this.giveBlastTeamBomb();
         this.getShops().forEach(FPSMShop::syncShopData);
+        this.getShops().forEach(FPSMShop::syncShopData);
         this.checkMatchPoint();
     }
 

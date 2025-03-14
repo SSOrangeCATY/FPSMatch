@@ -270,6 +270,13 @@ public class FPSMShop {
         this.playersData.clear();
     }
 
+    public void resetPlayerData(List<UUID> uuids){
+        this.playersData.clear();
+        uuids.forEach(this::getDefaultAndPutData);
+        this.syncShopData();
+        this.syncShopMoneyData();
+    }
+
     /**
      * 清空指定玩家的商店数据。
      * <p>
