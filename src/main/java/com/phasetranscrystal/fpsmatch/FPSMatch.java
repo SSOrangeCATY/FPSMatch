@@ -64,6 +64,7 @@ public class FPSMatch {
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
         FPSMItemRegister.ITEMS.register(modEventBus);
+        FPSMItemRegister.TABS.register(modEventBus);
         FPSMSoundRegister.SOUNDS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);

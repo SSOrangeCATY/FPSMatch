@@ -1,14 +1,22 @@
 package com.phasetranscrystal.fpsmatch.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.entity.*;
+import com.phasetranscrystal.fpsmatch.entity.FlashBombEntity;
+import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.IncendiaryGrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.SmokeShellEntity;
 import com.phasetranscrystal.fpsmatch.test.TestItem;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class FPSMItemRegister {
+    public static final DeferredRegister<CreativeModeTab> TABS;
+    public static RegistryObject<CreativeModeTab> FPSM_TAB;
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, FPSMatch.MODID);
     public static final RegistryObject<Item> TEST_ITEM = ITEMS.register("test_item", () -> new TestItem(new Item.Properties()));
     public static final RegistryObject<Item> C4 = ITEMS.register("c4", () -> new CompositionC4(new Item.Properties()));
@@ -27,4 +35,13 @@ public class FPSMItemRegister {
     public static final RegistryObject<BaseThrowAbleItem> FLASH_BOMB = ITEMS.register("flash_bomb",
             () -> new BaseThrowAbleItem(new Item.Properties(), FlashBombEntity::new, FPSMSoundRegister.voice_flash::get));
 
+    static {
+        TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");
+        FPSM_TAB = TABS.register("other", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.tab.fpsm"))
+                .icon(() -> C4.get().getDefaultInstance()).displayItems((parameters, output) -> {
+            ITEMS.getEntries().forEach((entry) -> {
+                output.accept(entry.get());
+            });
+        }).build());
+    }
 }
