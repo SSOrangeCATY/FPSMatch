@@ -28,7 +28,7 @@ import java.util.List;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class ShopEditTool extends Item implements Container {
+public class ShopEditTool extends Item {
     public static final String MAP_TAG = "SelectedMap";
     public static final String SHOP_TAG = "SelectedShop";
     private static List<String> mapList = new ArrayList<>();
