@@ -12,6 +12,7 @@ import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,6 +27,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -317,11 +319,11 @@ public abstract class BaseMap {
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
         this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid -> {
-            ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer player = this.getPlayerByUUID(uuid);
             if (player != null) {
                 this.sendPacketToJoinedPlayer(player, packet, true);
             } else {
-                FPSMatch.LOGGER.error(this.getMapTeams().playerName.get(uuid).getString() + " is not found in online world");
+                FPSMatch.LOGGER.error(this.getMapTeams().playerName.getOrDefault(uuid, Component.literal(uuid.toString())).getString() + " is not found in online world");
             }
         });
     }
@@ -343,6 +345,10 @@ public abstract class BaseMap {
         } else {
             FPSMatch.LOGGER.error(player.getDisplayName().getString() + " is not join " + this.getGameType() + ":" + this.getMapName());
         }
+    }
+
+    @Nullable public ServerPlayer getPlayerByUUID(UUID uuid){
+        return this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
     }
     /**
      * 玩家登录事件处理
