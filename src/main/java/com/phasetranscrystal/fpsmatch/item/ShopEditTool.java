@@ -17,9 +17,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
@@ -114,7 +117,13 @@ public class ShopEditTool extends Item {
                 // 服务器端调用 openScreen 方法
                 NetworkHooks.openScreen(serverPlayer,
                         new SimpleMenuProvider(
-                                (windowId, inv, p) -> new EditorShopContainer(windowId, inv, itemInHand), // 创建容器并传递物品
+                                (windowId, inv, p) -> {
+                                    ItemStackHandler itemStackHandler = itemInHand.getCapability(ForgeCapabilities.ITEM_HANDLER)
+                                            .filter(h -> h instanceof ItemStackHandler) // 确保是 ItemStackHandler
+                                            .map(h -> (ItemStackHandler) h) // 强制转换
+                                            .orElse(new ItemStackHandler(5 * 5)); // 默认提供一个空的 25 格存储
+                                    return new EditorShopContainer(windowId, inv, itemInHand, itemStackHandler); // 创建容器并传递物品
+                                },
                                 Component.translatable("gui.fpsm.shop_editor.title")
                         ),
                         buf -> buf.writeItem(itemInHand)  // 将物品写入缓冲区
@@ -160,6 +169,12 @@ public class ShopEditTool extends Item {
                 );
             }
         }
+    }
+
+    //初始化库存
+    @Override
+    public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
+        return new EditorShopCapabilityProvider(stack);
     }
 
     //显示选择信息

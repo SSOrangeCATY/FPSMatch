@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public class EditorShopCapabilityProvider implements ICapabilityProvider {
     public static final int ROWS = 5;
     public static final int COLS = 5;
-    private ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS);
+    private final ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS);
     private final LazyOptional<ItemStackHandler> lazyOptional = LazyOptional.of(() -> itemStackHandler);
     private final ItemStack shopEditToolStack;
 

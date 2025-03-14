@@ -222,7 +222,7 @@ public class FPSMatch {
             event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
             event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
             event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
-            event.registerAboveAll("mvp_hud", MVPHud.INSTANCE);
+            event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"mvp_hud", MVPHud.INSTANCE);
             event.registerBelowAll("hud_manager", FPSMGameHudManager.INSTANCE);
         }
 
