@@ -66,6 +66,10 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         Vec3 eyePos = new Vec3(target.getX(), target.getEyeY(), target.getZ());
         if (isLineOfSightBlocked(eyePos)) return;
 
+        double distance = eyePos.distanceTo(position());
+
+        //有效闪光距离20格 如果超过该距离则削弱效果
+
         double angle = calculateViewAngle(target);
         int[] duration = calculateBlindnessDuration(angle);
 
@@ -75,8 +79,13 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         );
 
         if (effect.getEffect() instanceof FlashBlindnessMobEffect flashEffect) {
-            flashEffect.setFullBlindnessTime(duration[0]);
-            flashEffect.setTotalAndTicker(duration[1] - duration[0]);
+            if(distance > 20){
+                flashEffect.setFullBlindnessTime(1);
+                flashEffect.setTotalAndTicker(10);
+            }else{
+                flashEffect.setFullBlindnessTime(duration[0]);
+                flashEffect.setTotalAndTicker(duration[1] - duration[0]);
+            }
         }
 
         target.addEffect(effect);
@@ -106,7 +115,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         if (angle < 53) return new int[]{38, 98};
         if (angle < 72) return new int[]{9, 68};
         if (angle < 101) return new int[]{2, 39};
-        return new int[]{2, 19};
+        return new int[]{1, 10};
     }
 
 

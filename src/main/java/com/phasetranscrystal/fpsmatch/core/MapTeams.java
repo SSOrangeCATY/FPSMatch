@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -114,6 +115,17 @@ public class MapTeams {
         attackTeam.setNeedPause(defendTeam.needPause());
         defendTeam.setPauseTime(tempP);
         defendTeam.setNeedPause(tempN);
+
+        if(this.map instanceof ShopMap<?> shopMap){
+            FPSMShop attackShop = shopMap.getShop(attackTeam.name);
+            FPSMShop defendShop = shopMap.getShop(defendTeam.name);
+            if(attackShop != null){
+                attackShop.resetPlayerData(attackTeam.getPlayerList());
+            }
+            if(defendShop != null){
+                defendShop.resetPlayerData(defendTeam.getPlayerList());
+            }
+        }
     }
 
     /**
@@ -374,7 +386,7 @@ public class MapTeams {
     public boolean testTeamIsFull(String teamName) {
         BaseTeam team = teams.get(teamName);
         if (team == null) return false;
-        return team.getPlayerLimit() < team.getPlayerList().size() || team.getPlayerLimit() == -1;
+        return team.getPlayerLimit() <= team.getPlayerList().size() || team.getPlayerLimit() == -1;
     }
 
     /**
