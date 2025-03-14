@@ -143,7 +143,7 @@ public class FPSMShop {
         BaseMap map = FPSMCore.getInstance().getMapByName(name);
         if (map != null) {
             for (UUID uuid : playersData.keySet()) {
-                ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
+                ServerPlayer player = map.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
                 if (player != null) {
                     ShopData shopData = this.getPlayerShopData(uuid);
                     for (ItemType type : ItemType.values()) {
@@ -164,7 +164,7 @@ public class FPSMShop {
         BaseMap map = FPSMCore.getInstance().getMapByName(name);
         if (map != null) {
             for (UUID uuid : playersData.keySet()) {
-                ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
+                ServerPlayer player = map.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
                 if (player != null) {
                     ShopData shopData = this.getPlayerShopData(uuid);
                     FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
@@ -259,7 +259,7 @@ public class FPSMShop {
         if (this.playersData.containsKey(uuid)) {
             return this.playersData.get(uuid);
         }else{
-            return this.getDefaultShopData();
+            return this.getDefaultAndPutData(uuid);
         }
     }
 
@@ -378,6 +378,12 @@ public class FPSMShop {
     public ShopData getDefaultShopData() {
         Map<ItemType, ArrayList<ShopSlot>> map = new HashMap<>(this.defaultShopData);
         return new ShopData(map, this.startMoney);
+    }
+
+    public ShopData getDefaultAndPutData(UUID uuid){
+        ShopData data = this.getDefaultShopData();
+        this.playersData.put(uuid, data);
+        return data;
     }
 
     /**

@@ -38,7 +38,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -53,7 +52,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -237,7 +235,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(this.autoStartTimer > 0){
             if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer <= 1180 && autoStartTimer % 20 == 0)) {
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                    ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                    ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
                     if (serverPlayer != null) {
                         serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.title", (autoStartTime.get() - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
                         serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("fpsm.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
@@ -250,7 +248,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
                 if(autoStartTimer >= 1200){
                     this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                        ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                        ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
                         if (serverPlayer != null) {
                             serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
                             serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
@@ -349,7 +347,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private void checkErrorPlayerTeam() {
         this.getMapTeams().getTeams().forEach(team->{
             team.getPlayerList().forEach(uuid->{
-                if(this.getServerLevel().getServer().getPlayerList().getPlayer(uuid) == null){
+                if(this.getPlayerByUUID(uuid) == null){
                     team.delPlayer(uuid);
                     this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(uuid));
                 }
@@ -368,7 +366,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
         AtomicBoolean checkFlag = new AtomicBoolean(true);
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer player = this.getPlayerByUUID(uuid);
             if (player != null){
                 BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
                 if(team == null) checkFlag.set(false);
@@ -400,7 +398,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
             if(serverPlayer != null){
                 serverPlayer.removeAllEffects();
                 serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
@@ -659,7 +657,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.cleanupMap();
         this.getMapTeams().startNewRound();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
             if(serverPlayer != null){
                 serverPlayer.removeAllEffects();
                 serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
@@ -695,7 +693,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
 
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> {
-            ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
             if(serverPlayer != null){
                 this.sendPacketToJoinedPlayer(serverPlayer, shopStatesPacket, true);
                 this.sendPacketToJoinedPlayer(serverPlayer, mvpHUDClosePacket,true);
@@ -725,7 +723,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         flag ? this.getCTTeam().getPlayerList() : this.getTTeam().getPlayerList(),
                         this.getServerLevel()));
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-                    ServerPlayer serverPlayer = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                    ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
                     if (serverPlayer != null) {
                         serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("fpsm.map.cs.winner." + team.name + ".message").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW)));
                     }
@@ -821,7 +819,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isShopLocked = false;
         this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer player = this.getPlayerByUUID(uuid);
             if(player != null){
                 player.heal(player.getMaxHealth());
                 player.setGameMode(GameType.ADVENTURE);
@@ -848,7 +846,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if (this.matchEndTeleportPoint == null ) return;
         SpawnPointData data = this.matchEndTeleportPoint;
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> {
-            ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer player = this.getPlayerByUUID(uuid);
             if (player != null) {
                 teleportToPoint(player, data);
                 player.setGameMode(GameType.ADVENTURE);
@@ -872,7 +870,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
             UUID uuid = team.getPlayerList().get(random.nextInt(team.getPlayerList().size()));
             if(uuid!= null){
-                ServerPlayer player = this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+                ServerPlayer player = this.getPlayerByUUID(uuid);
                 if(player != null){
                     player.addItem(new ItemStack(FPSMItemRegister.C4.get(),1));
                     player.inventoryMenu.broadcastChanges();
@@ -950,7 +948,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.cleanupMap();
         this.syncShopData();
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> {
-            ServerPlayer player =  this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+            ServerPlayer player = this.getPlayerByUUID(uuid);
             if (player != null) {
                 this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
                 player.getInventory().clearContent();
