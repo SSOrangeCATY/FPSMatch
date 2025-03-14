@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.item.ShopEditTool;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,6 +14,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
 
 
 import java.util.*;
@@ -21,13 +24,15 @@ import java.util.stream.IntStream;
 
 public class EditorShopContainer extends AbstractContainerMenu {
     private static final int SLOT_SIZE = 18;
-    private static final int ROWS = 5;
-    private static final int COLS = 5;
+    private static final int ROWS = EditorShopCapabilityProvider.ROWS;
+    private static final int COLS = EditorShopCapabilityProvider.COLS;
     private static final int d = 10; // 设定间隔
     private ItemStack guiItemStack; // 存储打开 GUI 的物品
+    private final ItemStackHandler itemStackHandler;
 
-    public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
+    public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack, ItemStackHandler itemHandler) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
+        this.itemStackHandler = itemHandler;
         this.guiItemStack = stack;
 
         int startX = (176 - (COLS * (SLOT_SIZE + 4 * d))) / 2; // 居中于默认 GUI 宽度
@@ -37,23 +42,12 @@ public class EditorShopContainer extends AbstractContainerMenu {
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
                 ItemStack slotItem = this.getAllSlots().get(col + row * COLS).process();
-                this.addSlot(new Slot(
-                                     playerInventory,
+                this.addSlot(new SlotItemHandler(
+                                     itemHandler,
                                      col + row * COLS,
                                      startX + col * (SLOT_SIZE + 4 * d), // **加上间隔 d**
                                      startY + row * (SLOT_SIZE + d)  // **加上间隔 d**
                              )
-//                             {
-//                                 @Override
-//                                 public boolean mayPlace(ItemStack stack) {
-//                                     return false;
-//                                 }
-//
-//                                 @Override
-//                                 public boolean mayPickup(Player player) {
-//                                     return false;
-//                                 }
-//                             }
                 ).set(slotItem.isEmpty() ? ItemStack.EMPTY : slotItem)
                 ;
             }
@@ -76,6 +70,10 @@ public class EditorShopContainer extends AbstractContainerMenu {
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(playerInventory, col, x + col * 18, y + 58));
         }
+    }
+
+    public ItemStackHandler getItemStackHandler() {
+        return itemStackHandler;
     }
 
     @Override

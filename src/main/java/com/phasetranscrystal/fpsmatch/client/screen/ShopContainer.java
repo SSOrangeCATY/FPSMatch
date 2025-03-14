@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+//负责物品存储交互（不属于客户端建议更改位置！）
 public class ShopContainer implements Container {
     public final ClientShopSlot slot;
 
