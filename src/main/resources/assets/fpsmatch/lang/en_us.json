@@ -138,5 +138,6 @@
   "message.fpsm.shop_edit_tool.select_map": "You Choose Map :",
   "message.fpsm.shop_edit_tool.select_shop": "You Choose Shop :",
   "message.fpsm.shop_edit_tool.missing_map": "No Map is available!",
-  "message.fpsm.shop_edit_tool.missing_shop": "No Shop is available!"
+  "message.fpsm.shop_edit_tool.missing_shop": "No Shop is available!",
+  "itemGroup.tab.fpsm": "FPSMatch"
 }
