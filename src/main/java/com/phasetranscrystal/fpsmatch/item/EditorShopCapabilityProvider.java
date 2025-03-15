@@ -14,9 +14,16 @@ import org.jetbrains.annotations.Nullable;
 public class EditorShopCapabilityProvider implements ICapabilityProvider {
     public static final int ROWS = 5;
     public static final int COLS = 5;
-    private ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS);
-    private final LazyOptional<ItemStackHandler> lazyOptional = LazyOptional.of(() -> itemStackHandler);
     private final ItemStack shopEditToolStack;
+    private final ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS) {
+        //填写内容变更时的处理
+        @Override
+        protected void onContentsChanged(int slot) {
+            super.onContentsChanged(slot);
+            save();
+        }
+    };
+    private final LazyOptional<ItemStackHandler> lazyOptional = LazyOptional.of(() -> itemStackHandler);
 
     public EditorShopCapabilityProvider(ItemStack shopEditToolStack) {
         this.shopEditToolStack = shopEditToolStack;
@@ -25,8 +32,7 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
             itemStackHandler.deserializeNBT(tag.getCompound("ShopItems"));
         }
     }
-
-//direction 为 方块访问提供面参数，物品默认为null
+    //direction 为 方块访问提供面参数，物品默认为null
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
         return capability == ForgeCapabilities.ITEM_HANDLER ? lazyOptional.cast() : LazyOptional.empty();
@@ -37,4 +43,5 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
         CompoundTag tag = shopEditToolStack.getOrCreateTag();
         tag.put("ShopItems", itemStackHandler.serializeNBT());
     }
+
 }

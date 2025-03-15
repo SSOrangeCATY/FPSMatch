@@ -129,6 +129,7 @@
   "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
   "key.fpsm.hud.custom.off": "自定义游戏UI 关闭",
   "gui.fpsm.shop_editor.title": "商店内容编辑器",
+  "gui.fpsm.edit_shop_slot.title": "编辑当前槽位",
   "gui.fpsm.shop_editor.save_button": "确认并保存",
   "item.fpsmatch.shop_edit_tool": "商店内容编辑工具",
   "tooltip.fpsm.shop_edit_tool.map_selected": "当前选中地图 :",
@@ -136,7 +137,13 @@
   "message.fpsm.shop_edit_tool.all_maps": "所有可用地图 : ",
   "message.fpsm.shop_edit_tool.all_shops": "所有可用商店 : ",
   "message.fpsm.shop_edit_tool.select_map": "你选择了 地图 : ",
-  "message.fpsm.shop_edit_tool.select_shop": "你选择了 商店 : ",
+  "message.fpsm.shop_edit_tool.select_and_join_shop": "你选择了商店并加入了队伍 :",
   "message.fpsm.shop_edit_tool.missing_map": "没有可用地图！",
-  "message.fpsm.shop_edit_tool.missing_shop": "没有可用商店!"
+  "message.fpsm.shop_edit_tool.missing_shop": "没有可用商店!",
+  "itemGroup.tab.fpsm": "FPSMatch",
+  "gui.fpsm.dummyAmmo": "虚拟弹药",
+  "gui.fpsm.name": "名称",
+  "gui.fpsm.price": "价格",
+  "gui.fpsm.group": "组ID",
+  "gui.fpsm.listener": "监听模块"
 }

@@ -5,6 +5,7 @@ import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.*;
+import com.phasetranscrystal.fpsmatch.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.*;
 import com.phasetranscrystal.fpsmatch.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.command.FPSMCommand;
@@ -63,6 +64,7 @@ public class FPSMatch {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
+        VanillaGuiRegister.CONTAINERS.register(modEventBus);
         FPSMItemRegister.ITEMS.register(modEventBus);
         FPSMItemRegister.TABS.register(modEventBus);
         FPSMSoundRegister.SOUNDS.register(modEventBus);
@@ -210,6 +212,8 @@ public class FPSMatch {
         public static void onClientSetup(FMLClientSetupEvent event)
         {
             TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
+            //注册原版GUI
+            VanillaGuiRegister.register();
         }
 
         @SubscribeEvent
