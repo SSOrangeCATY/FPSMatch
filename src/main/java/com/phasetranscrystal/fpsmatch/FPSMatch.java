@@ -5,7 +5,6 @@ import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.renderer.*;
-import com.phasetranscrystal.fpsmatch.client.screen.EditorShopScreen;
 import com.phasetranscrystal.fpsmatch.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.*;
 import com.phasetranscrystal.fpsmatch.client.tab.TabManager;
@@ -22,7 +21,6 @@ import com.phasetranscrystal.fpsmatch.net.*;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -215,7 +213,7 @@ public class FPSMatch {
         {
             TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
             //注册原版GUI
-            MenuScreens.register(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), EditorShopScreen::new);
+            VanillaGuiRegister.register();
         }
 
         @SubscribeEvent
