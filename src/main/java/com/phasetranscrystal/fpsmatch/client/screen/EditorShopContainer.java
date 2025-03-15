@@ -5,14 +5,23 @@ import com.phasetranscrystal.fpsmatch.core.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.item.ShopEditTool;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
+import net.minecraftforge.network.NetworkHooks;
+import org.jetbrains.annotations.NotNull;
 
 
 import java.util.*;
@@ -21,67 +30,93 @@ import java.util.stream.IntStream;
 
 public class EditorShopContainer extends AbstractContainerMenu {
     private static final int SLOT_SIZE = 18;
-    private static final int ROWS = 4;
-    private static final int COLS = 5;
+    private static final int ROWS = EditorShopCapabilityProvider.ROWS;
+    private static final int COLS = EditorShopCapabilityProvider.COLS;
     private static final int d = 10; // 设定间隔
-    private ItemStack guiItemStack; // 存储打开 GUI 的物品
+    public static final int PLAYER_INV_START = ROWS * COLS;
+    public static final int PLAYER_HOTBAR_END = ROWS * COLS + 36;
+    private static final int CUSTOM_CONTAINER_START = 0;
+    private static final int CUSTOM_CONTAINER_END = ROWS * COLS - 1;
+    private final ItemStack guiItemStack; // 存储打开 GUI 的物品
+    private final ItemStackHandler itemStackHandler;
 
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
         this.guiItemStack = stack;
+        this.itemStackHandler = stack.getCapability(ForgeCapabilities.ITEM_HANDLER)
+                .filter(h -> h instanceof ItemStackHandler) // 确保是 ItemStackHandler
+                .map(h -> (ItemStackHandler) h) // 强制转换
+                .orElse(new ItemStackHandler(5 * 5)); // 默认提供一个空的 25 格存储
 
-        int startX = (176 - (COLS * (SLOT_SIZE + 4 * d))) / 2; // 居中于默认 GUI 宽度
+        int startX = (176 - (COLS * (SLOT_SIZE + 4 * d) - d)) / 2; // 居中于默认 GUI 宽度 -d微调原理还不清楚
         int startY = 18;
 
-        // **创建 4×5 格子并加入间隔**
+        // 创建 5×5 格子并加入间隔
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
                 ItemStack slotItem = this.getAllSlots().get(col + row * COLS).process();
-                this.addSlot(new Slot(
-                                     playerInventory,
+                this.addSlot(new SlotItemHandler(
+                                     itemStackHandler,
                                      col + row * COLS,
                                      startX + col * (SLOT_SIZE + 4 * d), // **加上间隔 d**
                                      startY + row * (SLOT_SIZE + d)  // **加上间隔 d**
-                             ) {
-                                 @Override
-                                 public boolean mayPlace(ItemStack stack) {
-                                     return false;
-                                 }
-
-                                 @Override
-                                 public boolean mayPickup(Player player) {
-                                     return false;
-                                 }
-                             }
-                ).set(slotItem.isEmpty() ? slotItem : ItemStack.EMPTY)
+                             )
+                        )//从框架读取初值
+                        .set(slotItem.isEmpty() ? ItemStack.EMPTY : slotItem)
                 ;
             }
         }
 
-
+        // **玩家物品栏（下移，避免与 GUI 重叠）**
+        addPlayerInventory(playerInventory, (176 - 9 * SLOT_SIZE - 4 * d) / 2, 163);// 居中于默认 GUI 宽度 -4d微调原理还不清楚
     }
 
 
-    public EditorShopContainer(int id, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(id, playerInventory, buf.readItem()); // 从 `buf` 读取 ItemStack
+    private void addPlayerInventory(Inventory playerInventory, int x, int y) {
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, x + col * 18, y + row * 18));
+            }
+        }
+        for (int col = 0; col < 9; col++) {
+            this.addSlot(new Slot(playerInventory, col, x + col * 18, y + 58));
+        }
     }
 
-    public EditorShopContainer(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, ItemStack.EMPTY);
-
+    public ItemStackHandler getItemStackHandler() {
+        return itemStackHandler;
     }
-
-
-
 
     @Override
     public boolean stillValid(Player player) {
         return true;
     }
 
+    //打开二级菜单
+
     @Override
-    public ItemStack quickMoveStack(Player player, int i) {
+    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int i) {
         return ItemStack.EMPTY;
+    }
+
+    @Override
+    public void clicked(int slotIndex, int button, ClickType clickType, @NotNull Player player) {
+        boolean isCustomContainer = slotIndex >= CUSTOM_CONTAINER_START && slotIndex < CUSTOM_CONTAINER_END;
+        if (isCustomContainer) {
+            this.openSecondMenu(player,slotIndex);
+            return;
+        }
+        super.clicked(slotIndex, button, clickType, player);
+    }
+
+
+    //关闭GUI时数据保存
+    @Override
+    public void removed(Player pPlayer) {
+        super.removed(pPlayer);
+        if (pPlayer instanceof ServerPlayer) {
+            guiItemStack.getOrCreateTag().put("ShopItems", itemStackHandler.serializeNBT());
+        }
     }
 
     private FPSMShop getShop() {
@@ -111,4 +146,16 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 .toList();  // 转换成 List<ShopSlot>
     }
 
+    private void openSecondMenu(Player player,int slotIndex) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            NetworkHooks.openScreen(serverPlayer,
+                    new SimpleMenuProvider(
+                    (windowId, inv, p) -> new EditShopSlotMenu(windowId, inv,slotIndex),
+                    Component.translatable("gui.fpsm.edit_shop_slot.title")
+                    ),
+                    buf -> buf.writeInt(slotIndex)
+            );
+        }
+    }
+    ///WIP:数据同步 库存->框架
 }
