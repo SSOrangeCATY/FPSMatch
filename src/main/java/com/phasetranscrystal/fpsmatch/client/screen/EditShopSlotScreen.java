@@ -4,9 +4,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.Slot;
+
+import java.util.Map;
 
 
 public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu> {
@@ -28,38 +29,67 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         super.init();
         int centerX = this.leftPos + (this.imageWidth / 2);
         int startY = this.topPos + 10;
-        int slotX = this.leftPos + this.menu.getSlot(0).x;
-        int slotY = this.topPos + this.menu.getSlot(0).y + 20;
+        int slotX = this.leftPos + this.menu.getSlot(0).x - 10;
+        int slotY = this.topPos + this.menu.getSlot(0).y + 30;
         //虚拟弹药输入框
         this.ammoFiled = new EditBox(this.font, slotX, slotY, 40, 10, Component.translatable("gui.fpsm.dummy_ammo"));
+        this.ammoFiled.setValue(String.valueOf(menu.getAmmo()));
+        this.ammoFiled.setFilter(s -> s.matches("\\d+"));//只能输入0-9组成的数字，不能为空
+        //监听,所有输入框同理
+        this.ammoFiled.setResponder(
+                s -> this.menu.setAmmo(Integer.parseInt(s))
+        );
         this.addRenderableWidget(this.ammoFiled);
 
-        // 名字文本框
+        // 名字 文本框
         this.nameField = new EditBox(this.font, centerX, startY, 80, 10, Component.translatable("gui.fpsm.name"));
-        this.nameField.setValue("");
+        this.nameField.setValue(menu.getName());
+        this.nameField.setEditable(false);
         this.addRenderableWidget(this.nameField);
 
         // 价格输入框
         this.priceField = new EditBox(this.font, centerX, startY + 30, 40, 10, Component.translatable("gui.fpsm.price"));
         this.priceField.setValue(String.valueOf(menu.getPrice()));
+        this.priceField.setFilter(s -> s.matches("\\d+"));//只能输入0-9组成的数字，不能为空
+        this.priceField.setResponder(
+                s -> {
+                    this.menu.setPrice(Integer.parseInt(s));
+                    System.out.println("存在！" + this.menu.getPrice());
+                }
+        );
         this.addRenderableWidget(this.priceField);
 
-        // 分组 ID 文本框
+        // 分组 ID 输入框
         this.groupField = new EditBox(this.font, centerX + 50, startY + 30, 40, 10, Component.translatable("gui.fpsm.group"));
         this.groupField.setValue(String.valueOf(menu.getGroupId()));
+        this.groupField.setFilter(s -> s.matches("\\d+"));//只能输入0-9组成的数字，不能为空
+        this.groupField.setResponder(
+                s -> this.menu.setGroupId(Integer.parseInt(s))
+        );
         this.addRenderableWidget(this.groupField);
 
-        // 监听模块文本框
+        // 监听模块 文本框
         this.listenerField = new EditBox(this.font, centerX, startY + 60, 80, 10, Component.translatable("gui.fpsm.listener"));
-        this.listenerField.setValue(String.valueOf(menu.getListenerId()));
+        this.listenerField.setValue(String.valueOf(menu.getListeners()));
+        this.listenerField.setEditable(false);
         this.addRenderableWidget(this.listenerField);
+
+    }
+
+    private void drawLabel(GuiGraphics guiGraphics, Component text, EditBox field, int color) {
+        guiGraphics.drawString(this.font, text, field.getX() - this.leftPos, field.getY() - this.topPos - 10, color);
     }
 
     @Override
     protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-        //虚拟弹药
-        Slot slot = this.menu.getSlot(0);
-//        pGuiGraphics.drawString(this.font, "$"+ slotCost.get(0), x, y, 0xFFFFFF);
+        //二级菜单标题
+        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY - 15, 0x404040, false);
+        //各个输入框标签：
+        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.dummy_ammo"), ammoFiled, 0xFFFFFF);
+        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.name"), nameField, 0xFFFFFF);
+        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.price"), priceField, 0xFFFFFF);
+        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.group"), groupField, 0xFFFFFF);
+        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.listener"), listenerField, 0xFFFFFF);
         //物品栏标签
         int inventoryLabelY = this.imageHeight - 94 + 25; // +25下移
         pGuiGraphics.drawString(this.font, this.playerInventoryTitle, 8, inventoryLabelY, 0x404040, false);
