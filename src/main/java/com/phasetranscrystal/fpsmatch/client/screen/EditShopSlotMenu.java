@@ -1,7 +1,14 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import com.tacz.guns.api.item.IGun;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -9,28 +16,32 @@ import net.minecraft.world.item.ItemStack;
 
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import net.minecraftforge.network.NetworkHooks;
 
 
 public class EditShopSlotMenu extends AbstractContainerMenu {
     private final ContainerData data;
-    private final ItemStackHandler itemHandler;
-    private final int repoIndex;//itemStackHandler中的物品索引
+    private ItemStackHandler itemHandler;
+    private ShopSlot shopSlot;
 
-
-    public EditShopSlotMenu(int id, Inventory playerInventory, int repoIndex) {
-        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), repoIndex);
+    public EditShopSlotMenu(int id, Inventory playerInventory, ShopSlot shopSlot) {
+        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), shopSlot);
     }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), buf.readInt());
+        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3),
+                FPSMCodec.decodeShopSlotFromJson(new Gson().fromJson(buf.readUtf(), JsonElement.class)));
     }
 
-    public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, int repoIndex) {
+    public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot) {
         super(VanillaGuiRegister.EDIT_SHOP_SLOT_MENU.get(), id);
         this.itemHandler = handler;
         this.data = data;
-        this.repoIndex = repoIndex;
-
+        this.shopSlot = shopSlot;
+        this.setAmmo(shopSlot.getAmmoCount());
+        this.setPrice(shopSlot.getDefaultCost());
+        this.setGroupId(shopSlot.getGroupId());
+        this.itemHandler.setStackInSlot(0,this.shopSlot.process());
         // 左侧物品格子
         this.addSlot(new SlotItemHandler(itemHandler, 0, 20, 20));
 
@@ -52,7 +63,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         }
     }
 
-    //交互
+    //shift 交互忽略
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
         return null;
@@ -60,18 +71,66 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        //WIP 类型检验
         return true;
     }
 
-    public int getPrice() {
+    @Override
+    public void removed(Player pPlayer) {
+        super.removed(pPlayer);
+        if (pPlayer instanceof ServerPlayer serverPlayer) {
+            System.out.println("保存内容!");
+            //保存内容,先保存物品后设置内容
+            shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
+            ItemStack slotStack = shopSlot.process();
+            shopSlot.setDefaultCost(this.getPrice());
+            shopSlot.setGroupId(this.getGroupId());
+            if (slotStack.getItem() instanceof IGun iGun) {
+                FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
+            }
+            //WIP:不知道哪里寄了，求救，好像会有循环调用
+//            // 返回上级菜单
+//            NetworkHooks.openScreen(serverPlayer,
+//                    new SimpleMenuProvider(
+//                            (windowId, inv, p) -> {
+//                                return new EditorShopContainer(windowId, inv); // 创建容器并传递物品
+//                            },
+//                            Component.translatable("gui.fpsm.shop_editor.title")
+//                    )
+//            );
+        }
+    }
+
+    public String getListeners() {
+        return this.shopSlot.getListenerNames().toString();
+    }
+
+    public String getName() {
+        return this.shopSlot.process().getDisplayName().getString();
+    }
+
+    public int getAmmo() {
         return this.data.get(0);
     }
 
-    public int getGroupId() {
+    public int getPrice() {
         return this.data.get(1);
     }
 
-    public int getListenerId() {
+    public int getGroupId() {
         return this.data.get(2);
     }
+
+    public void setAmmo(int ammoCount) {
+        this.data.set(0, ammoCount);
+    }
+
+    public void setPrice(int price) {
+        this.data.set(1, price);
+    }
+
+    public void setGroupId(int groupId) {
+        this.data.set(2, groupId);
+    }
+
 }
