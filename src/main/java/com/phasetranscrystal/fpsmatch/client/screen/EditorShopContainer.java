@@ -1,12 +1,16 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
+import com.google.gson.Gson;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.item.ShopEditTool;
+import io.netty.buffer.Unpooled;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
@@ -39,6 +43,11 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private static final int CUSTOM_CONTAINER_END = ROWS * COLS - 1;
     private final ItemStack guiItemStack; // 存储打开 GUI 的物品
     private final ItemStackHandler itemStackHandler;
+    private List<ShopSlot> shopSlots = new ArrayList<>();
+
+    public EditorShopContainer(int containerId, Inventory playerInventory) {
+        this(containerId, playerInventory, playerInventory.player.getMainHandItem());
+    }
 
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
@@ -48,20 +57,21 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 .map(h -> (ItemStackHandler) h) // 强制转换
                 .orElse(new ItemStackHandler(5 * 5)); // 默认提供一个空的 25 格存储
 
+        this.shopSlots = this.getAllSlots();
         int startX = (176 - (COLS * (SLOT_SIZE + 4 * d) - d)) / 2; // 居中于默认 GUI 宽度 -d微调原理还不清楚
         int startY = 18;
 
         // 创建 5×5 格子并加入间隔
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
-                ItemStack slotItem = this.getAllSlots().get(col + row * COLS).process();
+                ItemStack slotItem = this.shopSlots.get(col + row * COLS).process();
                 this.addSlot(new SlotItemHandler(
-                                     itemStackHandler,
-                                     col + row * COLS,
-                                     startX + col * (SLOT_SIZE + 4 * d), // **加上间隔 d**
-                                     startY + row * (SLOT_SIZE + d)  // **加上间隔 d**
-                             )
-                        )//从框架读取初值
+                                        itemStackHandler,
+                                        col + row * COLS,
+                                        startX + col * (SLOT_SIZE + 4 * d), // **加上间隔 d**
+                                        startY + row * (SLOT_SIZE + d)  // **加上间隔 d**
+                                )
+                        )//从框架读取值
                         .set(slotItem.isEmpty() ? ItemStack.EMPTY : slotItem)
                 ;
             }
@@ -83,9 +93,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
         }
     }
 
-    public ItemStackHandler getItemStackHandler() {
-        return itemStackHandler;
-    }
 
     @Override
     public boolean stillValid(Player player) {
@@ -103,7 +110,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     public void clicked(int slotIndex, int button, ClickType clickType, @NotNull Player player) {
         boolean isCustomContainer = slotIndex >= CUSTOM_CONTAINER_START && slotIndex < CUSTOM_CONTAINER_END;
         if (isCustomContainer) {
-            this.openSecondMenu(player,slotIndex);
+            this.openSecondMenu(player, this.shopSlots.get(slotIndex), slotIndex);
             return;
         }
         super.clicked(slotIndex, button, clickType, player);
@@ -120,16 +127,15 @@ public class EditorShopContainer extends AbstractContainerMenu {
     }
 
     private FPSMShop getShop() {
-        BaseMap map = FPSMCore.getInstance().getAllMaps().values().iterator().next().get(0);
-        if (map instanceof ShopMap<?> shopMap) {
-            if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
+        if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
+            BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
+            if (map instanceof ShopMap<?> shopMap) {
                 return shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG));
             }
         }
         return null;
     }
 
-    //按行展开
     public List<ShopSlot> getAllSlots() {
         //遍历 0 到 maxRow - 1 的索引，模拟逐行读取数据
         return IntStream.range(0,
@@ -146,16 +152,27 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 .toList();  // 转换成 List<ShopSlot>
     }
 
-    private void openSecondMenu(Player player,int slotIndex) {
+    private void openSecondMenu(Player player, ShopSlot shopSlot, int repoIndex) {
         if (player instanceof ServerPlayer serverPlayer) {
+            System.out.println("原" + System.identityHashCode(shopSlot) +"index:"+repoIndex);
+//            //防止循环跳转
+//            this.removed(serverPlayer);
             NetworkHooks.openScreen(serverPlayer,
                     new SimpleMenuProvider(
-                    (windowId, inv, p) -> new EditShopSlotMenu(windowId, inv,slotIndex),
-                    Component.translatable("gui.fpsm.edit_shop_slot.title")
+                            (windowId, inv, p) -> {
+                                return new EditShopSlotMenu(windowId, inv, shopSlot, guiItemStack, repoIndex);
+                            },
+                            Component.translatable("gui.fpsm.edit_shop_slot.title")
                     ),
-                    buf -> buf.writeInt(slotIndex)
+                    buf -> {
+                        // 在服务器端通过 buf 写入数据，传递给客户端
+                        String json = new Gson().toJson(FPSMCodec.encodeShopSlotToJson(shopSlot));
+                        buf.writeUtf(json); // 写入 JSON 数据
+                        buf.writeItem(guiItemStack);
+                        buf.writeInt(repoIndex);
+                    }
             );
         }
     }
-    ///WIP:数据同步 库存->框架
+
 }
