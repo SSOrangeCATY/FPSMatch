@@ -45,6 +45,8 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
             int y = slot.y + SLOT_SIZE + TEXTBOX_HEIGHT - d / 2;
             pGuiGraphics.drawString(this.font, "$" + slotCost.get(i), x, y, 0xFFFFFF);
         }
+        //二级菜单标题
+        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX + 3 * d, this.titleLabelY, 0x404040, false);
         //物品栏标签
         pGuiGraphics.drawString(this.font, this.playerInventoryTitle,
                 this.menu.getSlot(EditorShopContainer.PLAYER_INV_START).x - 15, this.inventoryLabelY + 22, 0x404040, false);

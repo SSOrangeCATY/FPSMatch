@@ -141,7 +141,7 @@
   "message.fpsm.shop_edit_tool.missing_map": "没有可用地图！",
   "message.fpsm.shop_edit_tool.missing_shop": "没有可用商店!",
   "itemGroup.tab.fpsm": "FPSMatch",
-  "gui.fpsm.dummyAmmo": "虚拟弹药",
+  "gui.fpsm.dummy_ammo": "虚拟弹药",
   "gui.fpsm.name": "名称",
   "gui.fpsm.price": "价格",
   "gui.fpsm.group": "组ID",

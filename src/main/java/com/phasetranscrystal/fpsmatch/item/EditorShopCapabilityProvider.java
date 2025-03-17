@@ -11,16 +11,16 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+//仅作显示作用，方便后续拓展功能？暂时没用，交互在二级菜单。
 public class EditorShopCapabilityProvider implements ICapabilityProvider {
     public static final int ROWS = 5;
     public static final int COLS = 5;
     private final ItemStack shopEditToolStack;
     private final ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS) {
-        //填写内容变更时的处理
+        //填写内容变更时的处理，
         @Override
         protected void onContentsChanged(int slot) {
             super.onContentsChanged(slot);
-            save();
         }
     };
     private final LazyOptional<ItemStackHandler> lazyOptional = LazyOptional.of(() -> itemStackHandler);
@@ -39,9 +39,5 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
     }
 
 
-    public void save() {
-        CompoundTag tag = shopEditToolStack.getOrCreateTag();
-        tag.put("ShopItems", itemStackHandler.serializeNBT());
-    }
 
 }
