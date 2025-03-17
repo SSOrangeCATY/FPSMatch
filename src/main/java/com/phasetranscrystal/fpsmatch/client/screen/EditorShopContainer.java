@@ -44,9 +44,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private final ItemStack guiItemStack; // 存储打开 GUI 的物品
     private final ItemStackHandler itemStackHandler;
 
-    public EditorShopContainer(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, playerInventory.player.getMainHandItem());
-    }
 
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
