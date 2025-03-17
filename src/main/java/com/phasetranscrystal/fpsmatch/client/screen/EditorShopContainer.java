@@ -45,9 +45,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private final ItemStackHandler itemStackHandler;
     private List<ShopSlot> shopSlots = new ArrayList<>();
 
-    public EditorShopContainer(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, playerInventory.player.getMainHandItem());
-    }
 
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
