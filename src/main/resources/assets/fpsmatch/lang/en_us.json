@@ -141,7 +141,7 @@
   "message.fpsm.shop_edit_tool.missing_map": "No Map is available!",
   "message.fpsm.shop_edit_tool.missing_shop": "No Shop is available!",
   "itemGroup.tab.fpsm": "FPSMatch",
-  "gui.fpsm.dummyAmmo": "Dummy Ammo",
+  "gui.fpsm.dummy_ammo": "Dummy Ammo",
   "gui.fpsm.name": "Name",
   "gui.fpsm.price": "Price",
   "gui.fpsm.group": "GroupID",
