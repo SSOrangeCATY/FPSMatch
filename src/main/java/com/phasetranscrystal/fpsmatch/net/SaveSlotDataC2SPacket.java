@@ -1,10 +1,14 @@
 package com.phasetranscrystal.fpsmatch.net;
 
 import com.phasetranscrystal.fpsmatch.client.screen.EditShopSlotMenu;
+import com.phasetranscrystal.fpsmatch.client.screen.EditorShopContainer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkHooks;
 
 import java.util.function.Supplier;
 
@@ -45,7 +49,7 @@ public class SaveSlotDataC2SPacket {
     public static void handle(SaveSlotDataC2SPacket message, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();  // 获取当前玩家
-            if (player != null && player.containerMenu instanceof EditShopSlotMenu menu) {
+            if (player.containerMenu instanceof EditShopSlotMenu menu) {
                 // 将接收到的数据保存到 ContainerData 中
                 ContainerData data = menu.getData(); // 获取当前菜单的 ContainerData
                 data.set(0, message.ammoCount); // 设置 ammoCount
