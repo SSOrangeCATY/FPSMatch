@@ -123,7 +123,7 @@
   "commands.fpsm.mvp.success": "成功添加 %2$s Mvp 音乐给 %1$s 位玩家",
   "cs.game.winner.mvpNameSub": "取得回合胜利",
   "commands.fpsm.shop.modify.cost.success": "成功将%1$s商店槽位%2$s的价格修改为%3$s",
-  "commands.fpsm.shop.modify.failed.noSupport" : "地图不支持商店",
+  "commands.fpsm.shop.modify.failed.noSupport": "地图不支持商店",
   "commands.fpsm.shop.modify.item.success": "成功将%1$s商店槽位%2$s的物品修改为%3$s",
   "key.fpsm.hud.custom.desc": "自定义游戏UI",
   "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
@@ -145,5 +145,13 @@
   "gui.fpsm.name": "名称",
   "gui.fpsm.price": "价格",
   "gui.fpsm.group": "组ID",
-  "gui.fpsm.listener": "监听模块"
+  "gui.fpsm.listener": "监听模块",
+  "tooltip.fpsm.separator": "======================",
+  "tooltip.fpsm.selected_map": "当前选择地图",
+  "tooltip.fpsm.selected_shop": "当前选择商店",
+  "tooltip.fpsm.none": "无",
+  "tooltip.fpsm.usage_info": "使用方法：",
+  "tooltip.fpsm.switch_shop": "[SHIFT + 右键] 切换商店",
+  "tooltip.fpsm.switch_map": "[SHIFT + 左键] 切换地图",
+  "tooltip.fpsm.open_editor": "[右键] 打开商店编辑器"
 }

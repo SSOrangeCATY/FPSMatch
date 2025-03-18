@@ -189,5 +189,32 @@ public class ShopEditTool extends Item {
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
+
+        String selectedMap = getTag(pStack, MAP_TAG);
+        String selectedShop = getTag(pStack, SHOP_TAG);
+
+        // 添加分隔符
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+
+        // 当前选择的地图
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.selected_map")
+                .append(": ")
+                .append(Component.literal(selectedMap.isEmpty() ? Component.translatable("tooltip.fpsm.none").getString() : selectedMap)
+                        .withStyle(ChatFormatting.AQUA)));
+
+        // 当前选择的商店
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.selected_shop")
+                .append(": ")
+                .append(Component.literal(selectedShop.isEmpty() ? Component.translatable("tooltip.fpsm.none").getString() : selectedShop)
+                        .withStyle(ChatFormatting.AQUA)));
+
+        // 再次添加分隔符
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+
+        // 使用帮助提示
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.usage_info").withStyle(ChatFormatting.GRAY));
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.switch_shop").withStyle(ChatFormatting.YELLOW));
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.switch_map").withStyle(ChatFormatting.YELLOW));
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.open_editor").withStyle(ChatFormatting.YELLOW));
     }
 }
