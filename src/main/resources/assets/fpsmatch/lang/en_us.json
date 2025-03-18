@@ -145,5 +145,13 @@
   "gui.fpsm.name": "Name",
   "gui.fpsm.price": "Price",
   "gui.fpsm.group": "GroupID",
-  "gui.fpsm.listener": "Listening Module"
+  "gui.fpsm.listener": "Listening Module",
+  "tooltip.fpsm.separator": "======================",
+  "tooltip.fpsm.selected_map": "Current Selected Map",
+  "tooltip.fpsm.selected_shop": "Current Selected Shop",
+  "tooltip.fpsm.none": "N/A",
+  "tooltip.fpsm.usage_info": "Usage:",
+  "tooltip.fpsm.switch_shop": "[SHIFT + Right Click] Switch Shop",
+  "tooltip.fpsm.switch_map": "[SHIFT + Left Click] Switch Map",
+  "tooltip.fpsm.open_editor": "[Right Click] Open Shop Editor"
 }
