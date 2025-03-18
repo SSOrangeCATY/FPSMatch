@@ -9,8 +9,6 @@ import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.item.ShopEditTool;
-import io.netty.buffer.Unpooled;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
@@ -92,7 +90,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NotNull Player player) {
         return true;
     }
 
@@ -104,7 +102,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     }
 
     @Override
-    public void clicked(int slotIndex, int button, ClickType clickType, @NotNull Player player) {
+    public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
         boolean isCustomContainer = slotIndex >= CUSTOM_CONTAINER_START && slotIndex < CUSTOM_CONTAINER_END;
         if (isCustomContainer) {
             this.openSecondMenu(player, this.shopSlots.get(slotIndex), slotIndex);
@@ -116,7 +114,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     //关闭GUI时数据保存
     @Override
-    public void removed(Player pPlayer) {
+    public void removed(@NotNull Player pPlayer) {
         super.removed(pPlayer);
         if (pPlayer instanceof ServerPlayer) {
             guiItemStack.getOrCreateTag().put("ShopItems", itemStackHandler.serializeNBT());
@@ -151,9 +149,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     private void openSecondMenu(Player player, ShopSlot shopSlot, int repoIndex) {
         if (player instanceof ServerPlayer serverPlayer) {
-            System.out.println("原" + System.identityHashCode(shopSlot) +"index:"+repoIndex);
-//            //防止循环跳转
-//            this.removed(serverPlayer);
             NetworkHooks.openScreen(serverPlayer,
                     new SimpleMenuProvider(
                             (windowId, inv, p) -> {

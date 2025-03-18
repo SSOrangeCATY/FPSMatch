@@ -196,6 +196,12 @@ public class FPSMatch {
                 .decoder(FPSMusicStopS2CPacket::decode)
                 .consumerNetworkThread(FPSMusicStopS2CPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(SaveSlotDataC2SPacket.class, i.getAndIncrement())
+                .encoder(SaveSlotDataC2SPacket::encode)
+                .decoder(SaveSlotDataC2SPacket::decode)
+                .consumerNetworkThread(SaveSlotDataC2SPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
