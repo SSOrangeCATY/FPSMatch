@@ -145,13 +145,12 @@ public class ShopEditTool extends Item {
     //处理shift左键事件
     @SubscribeEvent
     public static void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event) {
-        mapList = FPSMCore.getInstance().getMapNames();
         String preSelectedMap, newMap;
         Player player = event.getEntity();
-
-        if (player.isShiftKeyDown()) {
+        if (player instanceof ServerPlayer serverPlayer && player.isShiftKeyDown()) {
             //设置选中的地图
             if (event.getItemStack().getItem() instanceof ShopEditTool iteractItem) {
+                mapList = FPSMCore.getInstance().getMapNames();
                 if (!mapList.isEmpty() && event.getItemStack().getOrCreateTag().contains(MAP_TAG)) {
                     preSelectedMap = iteractItem.getTag(event.getItemStack(), MAP_TAG);
                     int preIndex = mapList.indexOf(preSelectedMap);
