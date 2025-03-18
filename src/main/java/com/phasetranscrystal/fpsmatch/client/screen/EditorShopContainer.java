@@ -151,9 +151,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     private void openSecondMenu(Player player, ShopSlot shopSlot, int repoIndex) {
         if (player instanceof ServerPlayer serverPlayer) {
-            System.out.println("原" + System.identityHashCode(shopSlot) +"index:"+repoIndex);
-//            //防止循环跳转
-//            this.removed(serverPlayer);
             NetworkHooks.openScreen(serverPlayer,
                     new SimpleMenuProvider(
                             (windowId, inv, p) -> {

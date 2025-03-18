@@ -19,10 +19,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
-
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.NetworkHooks;
+
 
 
 public class EditShopSlotMenu extends AbstractContainerMenu {
@@ -31,6 +30,10 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     private ShopSlot shopSlot;
     private ItemStack guiItemStack;
     private int repoIndex;
+
+    public ItemStack getGuiItemStack() {
+        return guiItemStack;
+    }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, ShopSlot shopSlot, ItemStack guiItemStack, int repoIndex) {
         this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), shopSlot, guiItemStack, repoIndex);
@@ -87,42 +90,26 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player pPlayer) {
         super.removed(pPlayer);
-        if (pPlayer instanceof ServerPlayer serverPlayer) {
-            System.out.println("保存内容!:" + System.identityHashCode(this.shopSlot));
+    }
 
-            if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
-                BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
-                if (map instanceof ShopMap<?> shopMap) {
-                    FPSMShop shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG));
-
-                    //保存内容,先保存物品后设置内容
-                    shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
-                    ItemStack slotStack = shopSlot.process();
-                    shopSlot.setDefaultCost(this.getPrice());
-                    shopSlot.setGroupId(this.getGroupId());
-                    if (slotStack.getItem() instanceof IGun iGun) {
-                        FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
-                    }
-                    System.out.println("保存内容!:" + this.getPrice());
-                    shop.replaceDefaultShopData(ItemType.values()[this.repoIndex % 5], this.repoIndex / 5, shopSlot);
-                    //同步
-                    shop.syncShopData();
+    public void saveData(ServerPlayer serverPlayer) {
+        if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
+            BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
+            if (map instanceof ShopMap<?> shopMap) {
+                FPSMShop shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG));
+                //保存内容,先保存物品后设置内容
+                shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
+                ItemStack slotStack = shopSlot.process();
+                shopSlot.setDefaultCost(this.getPrice());
+                shopSlot.setGroupId(this.getGroupId());
+                if (slotStack.getItem() instanceof IGun iGun) {
+                    FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
                 }
-
+                shop.replaceDefaultShopData(ItemType.values()[this.repoIndex % 5], this.repoIndex / 5, shopSlot);
+                //同步
+                shop.syncShopData();
             }
-
-            //WIP:不知道哪里寄了，求救，好像会有循环调用
-//            // 返回上级菜单
-//            NetworkHooks.openScreen(serverPlayer,
-//                    new SimpleMenuProvider(
-//                            (windowId, inv, p) -> {
-//                                return new EditorShopContainer(windowId, inv); // 创建容器并传递物品
-//                            },
-//                            Component.translatable("gui.fpsm.shop_editor.title")
-//                    )
-//            );
         }
-
     }
 
     public String getListeners() {

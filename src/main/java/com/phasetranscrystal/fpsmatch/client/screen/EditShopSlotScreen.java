@@ -1,18 +1,24 @@
 package com.phasetranscrystal.fpsmatch.client.screen;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.net.SaveSlotDataC2SPacket;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.item.ItemStack;
 
-import java.util.Map;
 
 
 public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu> {
+    //省去S2C部分
     private final ContainerData data;
     //    private final ResourceLocation TEXTURE = new ResourceLocation("fpsm", "textures/gui/edit_shop_slot_screen.png");
     private EditBox ammoFiled;
@@ -23,9 +29,13 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
 
     public EditShopSlotScreen(EditShopSlotMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.data = this.menu.getData();
         this.imageWidth = 200; // GUI 宽度
         this.imageHeight = 160; // GUI 高度
+        this.data = new SimpleContainerData(3);
+        // 复制数据
+        for (int i = 0; i < this.menu.getData().getCount(); i++) {
+            data.set(i, this.menu.getData().get(i));
+        }
     }
 
     @Override
@@ -57,8 +67,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.priceField.setFilter(s -> s.matches("\\d+"));//只能输入0-9组成的数字，不能为空
         this.priceField.setResponder(
                 s -> {
-                    data.set(1, Integer.parseInt(s));
-                    System.out.println("存在！" + this.menu.getPrice());
+                    this.data.set(1, Integer.parseInt(s));
                 }
         );
         this.addRenderableWidget(this.priceField);
@@ -82,15 +91,27 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.shop_editor.save_button"), button -> {
             onSaveButtonClick();
         })
-                .pos(this.titleLabelX, this.imageHeight - 94 + 25)   // 设置按钮的位置
+                .pos(this.leftPos + this.titleLabelX, this.topPos + this.imageHeight - 94 + 25)   // 设置按钮的位置
                 .size(100, 18)                                      // 设置按钮的大小
-                .createNarration((Button.CreateNarration) null)      // 设置无障碍功能
                 .build());
     }
 
+
     // 处理保存按钮点击事件
     private void onSaveButtonClick() {
+        // 发送数据到服务器
+        FPSMatch.INSTANCE.sendToServer(new SaveSlotDataC2SPacket(this.data));
 
+        // 获取客户端玩家
+        LocalPlayer player = Minecraft.getInstance().player;
+
+        if (player != null) {
+            // 获取 GUI 物品堆
+            ItemStack guiItemStack = this.menu.getGuiItemStack();
+
+            // 返回上级菜单
+
+        }
     }
 
     private void drawLabel(GuiGraphics guiGraphics, Component text, EditBox field, int color) {
