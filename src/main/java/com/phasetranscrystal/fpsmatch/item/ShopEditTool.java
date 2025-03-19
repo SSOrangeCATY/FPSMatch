@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.net.EditToolSelectMapC2SPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -142,39 +143,19 @@ public class ShopEditTool extends Item {
         return InteractionResultHolder.success(pPlayer.getItemInHand(pUsedHand));
     }
 
-    //处理shift左键事件
+    //处理shift左键事件【客户端发包处理】
     @SubscribeEvent
     public static void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event) {
-        String preSelectedMap, newMap;
         Player player = event.getEntity();
-        if (player instanceof ServerPlayer serverPlayer && player.isShiftKeyDown()) {
-            //设置选中的地图
-            if (event.getItemStack().getItem() instanceof ShopEditTool iteractItem) {
-                mapList = FPSMCore.getInstance().getMapNames();
-                if (!mapList.isEmpty() && event.getItemStack().getOrCreateTag().contains(MAP_TAG)) {
-                    preSelectedMap = iteractItem.getTag(event.getItemStack(), MAP_TAG);
-                    int preIndex = mapList.indexOf(preSelectedMap);
-                    if (preIndex == mapList.size() - 1)
-                        newMap = mapList.get(0);
-                    else newMap = mapList.get(preIndex + 1);
-                    iteractItem.setTag(event.getItemStack(), MAP_TAG, newMap);
-                } else {
-                    //默认地图为空，不设置TAG
-                    if (mapList.isEmpty()) {
-                        player.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.missing_map").withStyle(ChatFormatting.RED));
-                        return;
-                    }
-                    //不存在MapTag取第一个地图
-                    newMap = mapList.get(0);
-                    iteractItem.setTag(event.getItemStack(), MAP_TAG, newMap);
-                }
-                player.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.all_maps").withStyle(ChatFormatting.BOLD)
-                        .append(mapList.toString()).withStyle(ChatFormatting.GREEN)
-                );
-                player.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.select_map").withStyle(ChatFormatting.BOLD)
-                        .append(newMap).withStyle(ChatFormatting.AQUA)
-                );
-            }
+
+        // 确保 Shift 被按下
+        if (!player.isShiftKeyDown()) {
+            return;
+        }
+
+        // 确保只在客户端执行，并发送封包到服务器处理
+        if (player.level().isClientSide()) {
+            FPSMatch.INSTANCE.sendToServer(new EditToolSelectMapC2SPacket());
         }
     }
 

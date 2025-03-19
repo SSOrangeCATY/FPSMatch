@@ -103,7 +103,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
-        boolean isCustomContainer = slotIndex >= CUSTOM_CONTAINER_START && slotIndex < CUSTOM_CONTAINER_END;
+        boolean isCustomContainer = slotIndex >= CUSTOM_CONTAINER_START && slotIndex <= CUSTOM_CONTAINER_END;
         if (isCustomContainer) {
             this.openSecondMenu(player, this.shopSlots.get(slotIndex), slotIndex);
             return;
