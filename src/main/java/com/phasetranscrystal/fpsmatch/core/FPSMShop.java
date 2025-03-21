@@ -271,8 +271,13 @@ public class FPSMShop {
     }
 
     public void resetPlayerData(List<UUID> uuids){
-        this.playersData.clear();
         uuids.forEach(this::getDefaultAndPutData);
+        this.syncShopData();
+        this.syncShopMoneyData();
+    }
+
+    public void resetPlayerData(){
+        this.playersData.keySet().forEach(this::getDefaultAndPutData);
         this.syncShopData();
         this.syncShopMoneyData();
     }

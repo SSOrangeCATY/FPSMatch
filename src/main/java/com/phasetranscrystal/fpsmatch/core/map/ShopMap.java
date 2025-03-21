@@ -96,4 +96,12 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
         });
     }
 
+    default void clearAndSyncShopData() {
+        this.getShops().forEach(shop -> {
+            shop.resetPlayerData();
+            shop.syncShopData();
+            shop.syncShopMoneyData();
+        });
+    }
+
 }
