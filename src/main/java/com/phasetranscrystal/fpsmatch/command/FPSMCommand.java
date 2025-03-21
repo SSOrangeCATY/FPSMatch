@@ -241,7 +241,7 @@ public class FPSMCommand {
         // TODO /fpsm sync shop <gameType> <gameName> <Player>
         FPSMCore.getInstance().getAllMaps().forEach((gameName,gameList)-> gameList.forEach(game->{
             if(game instanceof ShopMap<?> shopMap){
-                shopMap.syncShopData();
+                shopMap.clearAndSyncShopData();
             }
         }));
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.sync.success"), true);
