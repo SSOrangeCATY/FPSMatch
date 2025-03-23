@@ -107,7 +107,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
                 }
                 shop.replaceDefaultShopData(ItemType.values()[this.repoIndex % 5], this.repoIndex / 5, shopSlot);
                 //同步
-                shop.syncShopData();
+                shop.resetPlayerData();
             }
         }
     }

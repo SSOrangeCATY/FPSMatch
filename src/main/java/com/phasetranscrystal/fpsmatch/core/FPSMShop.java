@@ -271,6 +271,7 @@ public class FPSMShop {
     }
 
     public void resetPlayerData(List<UUID> uuids){
+        this.clearPlayerShopData();
         uuids.forEach(this::getDefaultAndPutData);
         this.syncShopData();
         this.syncShopMoneyData();
@@ -314,6 +315,7 @@ public class FPSMShop {
     public void setDefaultShopData(Map<ItemType, ArrayList<ShopSlot>> data) {
         this.defaultShopData.clear();
         this.defaultShopData.putAll(data);
+        this.resetPlayerData();
     }
 
     /**
@@ -325,6 +327,7 @@ public class FPSMShop {
      */
     public void replaceDefaultShopData(ItemType type, int index, ShopSlot shopSlot) {
         this.defaultShopData.get(type).set(index, shopSlot);
+        this.resetPlayerData();
     }
 
     /**
@@ -336,6 +339,7 @@ public class FPSMShop {
      */
     public void setDefaultShopDataGroupId(ItemType type, int index, int groupId) {
         this.defaultShopData.get(type).get(index).setGroupId(groupId);
+        this.resetPlayerData();
     }
 
     /**
@@ -347,6 +351,7 @@ public class FPSMShop {
      */
     public void addDefaultShopDataListenerModule(ItemType type, int index, ListenerModule listenerModule) {
         this.defaultShopData.get(type).get(index).addListener(listenerModule);
+        this.resetPlayerData();
     }
 
     /**
@@ -358,6 +363,7 @@ public class FPSMShop {
      */
     public void removeDefaultShopDataListenerModule(ItemType type, int index, String listenerModule) {
         this.defaultShopData.get(type).get(index).removeListenerModule(listenerModule);
+        this.resetPlayerData();
     }
 
     /**
@@ -369,6 +375,7 @@ public class FPSMShop {
      */
     public void setDefaultShopDataItemStack(ItemType type, int index, ItemStack itemStack) {
         this.defaultShopData.get(type).get(index).itemSupplier = itemStack::copy;
+        this.resetPlayerData();
     }
 
     /**
@@ -380,6 +387,7 @@ public class FPSMShop {
      */
     public void setDefaultShopDataCost(ItemType type, int index, int cost) {
         this.defaultShopData.get(type).get(index).setDefaultCost(cost);
+        this.resetPlayerData();
     }
 
     /**

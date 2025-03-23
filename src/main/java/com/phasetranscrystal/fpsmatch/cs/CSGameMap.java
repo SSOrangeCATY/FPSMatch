@@ -789,7 +789,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 this.getMapTeams().getTeams().forEach((team)-> atomicInteger.addAndGet(team.getScores()));
                 if(atomicInteger.get() == 12){
                     switchFlag = true;
-                    this.getMapTeams().switchAttackAndDefend("t","ct");
+                    MapTeams.switchAttackAndDefend(this,this.getCTTeam(),this.getTTeam());
                     this.syncShopData();
                 } else {
                     switchFlag = false;
@@ -802,7 +802,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             int check = total - 24 - 6 * this.overCount;
             if(check % 3 == 0 && check > 0){
                 switchFlag = true;
-                this.getMapTeams().switchAttackAndDefend("t","ct");
+                MapTeams.switchAttackAndDefend(this,this.getCTTeam(),this.getTTeam());
                 this.syncShopData();
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> this.setPlayerMoney(uuid, 10000)));
                 if (check == 6 && ctScore < 12 + 3 * this.overCount + 4 && tScore < 12 + 3 * this.overCount + 4 ) {
