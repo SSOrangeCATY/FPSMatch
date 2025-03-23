@@ -16,6 +16,7 @@ import net.minecraft.world.scores.PlayerTeam;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -157,8 +158,12 @@ public class MapTeams {
      * <p>
      * 遍历所有队伍，并调用队伍的随机出生点分配方法。
      */
-    public void setTeamsSpawnPoints(){
-            this.teams.forEach(((s, t) -> t.randomSpawnPoints()));
+    public boolean setTeamsSpawnPoints(){
+        AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+        this.teams.forEach(((s, t) -> {
+            if(atomicBoolean.get()) atomicBoolean.set(t.randomSpawnPoints());
+        }));
+        return atomicBoolean.get();
     }
 
     /**

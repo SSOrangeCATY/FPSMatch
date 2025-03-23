@@ -153,5 +153,8 @@
   "tooltip.fpsm.usage_info": "Usage:",
   "tooltip.fpsm.switch_shop": "[SHIFT + Right Click] Switch Shop",
   "tooltip.fpsm.switch_map": "[SHIFT + Left Click] Switch Map",
-  "tooltip.fpsm.open_editor": "[Right Click] Open Shop Editor"
+  "tooltip.fpsm.open_editor": "[Right Click] Open Shop Editor",
+  "message.fpsmatch.error.no_spawn_points": "No spawn points available.",
+  "message.fpsmatch.error.not_enough_spawn_points": "Not enough spawn points for all players.",
+  "fpsm.map.cs.spawn.error": "ERROR : Game start fail -> spawnpoint check failed"
 }

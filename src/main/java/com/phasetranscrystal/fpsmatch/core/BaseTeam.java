@@ -3,6 +3,8 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -285,15 +287,17 @@ public class BaseTeam {
     /**
      * 随机分配队伍的出生点。
      */
-    public void randomSpawnPoints() {
+    public boolean randomSpawnPoints() {
         Random random = new Random();
 
         if (this.spawnPointsData.isEmpty()) {
-            throw new RuntimeException(new IllegalStateException("No spawn points available."));
+            FPSMCore.getInstance().getServer().sendSystemMessage(Component.translatable("message.fpsmatch.error.no_spawn_points").append(Component.literal("error from -> " + this.name)).withStyle(ChatFormatting.RED));
+            return false;
         }
 
         if (this.spawnPointsData.size() < this.players.size()) {
-            throw new RuntimeException(new IllegalStateException("Not enough spawn points for all players."));
+            FPSMCore.getInstance().getServer().sendSystemMessage(Component.translatable("message.fpsmatch.error.not_enough_spawn_points").append(Component.literal("error from -> " + this.name)).withStyle(ChatFormatting.RED));
+            return false;
         }
 
         List<UUID> playerUUIDs = new ArrayList<>(this.players.keySet());
@@ -304,13 +308,14 @@ public class BaseTeam {
                 list.addAll(this.spawnPointsData);
             }
             if (this.spawnPointsData.isEmpty()) {
-                return;
+                return false;
             }
             int randomIndex = random.nextInt(list.size());
             SpawnPointData spawnPoint = list.get(randomIndex);
             list.remove(randomIndex);
             this.players.get(playerUUID).setSpawnPointsData(spawnPoint);
         }
+        return true;
     }
 
     /**
