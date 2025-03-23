@@ -394,8 +394,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.isShopLocked = false;
+        boolean spawnCheck = this.getMapTeams().setTeamsSpawnPoints();
+        if(!spawnCheck){
+            this.sendAllPlayerMessage(Component.translatable("fpsm.map.cs.spawn.error").withStyle(ChatFormatting.RED),false);
+            this.resetGame();
+            return;
+        }
         this.getMapTeams().startNewRound();
-        this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
@@ -947,7 +952,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.overCount = 0;
         this.isShopLocked = false;
         this.cleanupMap();
-        this.syncShopData();
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> {
             ServerPlayer player = this.getPlayerByUUID(uuid);
             if (player != null) {
@@ -1453,8 +1457,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     private void handleResetCommand(ServerPlayer serverPlayer) {
         if(this.voteObj == null && this.isStart){
-            this.startVote("reset",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("fpsm.cs.reset")),20,1f);
-            this.voteObj.addAgree(serverPlayer);
+           // this.startVote("reset",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("fpsm.cs.reset")),20,1f);
+           // this.voteObj.addAgree(serverPlayer);
         } else if (this.voteObj != null) {
             Component translation = Component.translatable("fpsm.cs." + this.voteObj.getVoteTitle());
             serverPlayer.displayClientMessage(Component.translatable("fpsm.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
@@ -1539,8 +1543,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     private void handleStartCommand(ServerPlayer serverPlayer) {
         if((!this.isStart && this.voteObj == null) || (!this.isStart && !this.voteObj.getVoteTitle().equals("start"))){
-            this.startVote("start",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("fpsm.cs.start")),20,1f);
-            this.voteObj.addAgree(serverPlayer);
+            // this.startVote("start",Component.translatable("fpsm.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("fpsm.cs.start")),20,1f);
+            // this.voteObj.addAgree(serverPlayer);
         }
     }
 
