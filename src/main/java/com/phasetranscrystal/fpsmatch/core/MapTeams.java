@@ -85,18 +85,16 @@ public class MapTeams {
      * 该方法会交换两个队伍的玩家数据、得分、连败次数、补偿因子以及暂停次数和状态。
      * 如果指定的攻击方或防守方队伍不存在，则不会执行任何操作。
      *
-     * @param attackTeamName 攻击方队伍名称
-     * @param defendTeamName 防守方队伍名称
+     * @param attackTeam 攻击方队伍
+     * @param defendTeam 防守方队伍
      */
-    public void switchAttackAndDefend(String attackTeamName, String defendTeamName) {
-        BaseTeam attackTeam = this.getTeamByName(attackTeamName);
-        BaseTeam defendTeam = this.getTeamByName(defendTeamName);
-        if(attackTeam == null || defendTeam == null) return;
+    public static void switchAttackAndDefend(BaseMap map ,BaseTeam attackTeam, BaseTeam defendTeam) {
+        if(map == null || attackTeam == null || defendTeam == null) return;
 
         //交换玩家
         Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
-        attackTeam.resetAllPlayers(this.level, defendTeam.getPlayers());
-        defendTeam.resetAllPlayers(this.level, tempPlayers);
+        attackTeam.resetAllPlayers(map.getServerLevel(), defendTeam.getPlayers());
+        defendTeam.resetAllPlayers(map.getServerLevel() , tempPlayers);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
@@ -116,7 +114,7 @@ public class MapTeams {
         defendTeam.setPauseTime(tempP);
         defendTeam.setNeedPause(tempN);
 
-        if(this.map instanceof ShopMap<?> shopMap){
+        if(map instanceof ShopMap<?> shopMap){
             FPSMShop attackShop = shopMap.getShop(attackTeam.name);
             FPSMShop defendShop = shopMap.getShop(defendTeam.name);
             if(attackShop != null){
