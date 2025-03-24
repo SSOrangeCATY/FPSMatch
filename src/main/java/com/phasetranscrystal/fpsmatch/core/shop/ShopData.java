@@ -285,7 +285,11 @@ public class ShopData {
             for (ShopSlot shopSlot : shopSlots) {
                 if (itemStack.isEmpty()) continue;
                 if (shopSlot.returningChecker.test(itemStack)) {
-                    shopSlot.lock();
+                    if(itemStack.getCount() >= shopSlot.getMaxBuyCount()){
+                        shopSlot.lock();
+                    }else{
+                        shopSlot.unlock(itemStack.getCount());
+                    }
                     checkFlag.put(shopSlot, false);
                 } else if (checkFlag.getOrDefault(shopSlot, true)) {
                     shopSlot.unlock();

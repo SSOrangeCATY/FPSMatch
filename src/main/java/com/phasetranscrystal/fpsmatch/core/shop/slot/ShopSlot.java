@@ -157,8 +157,8 @@ public class ShopSlot{
     }
 
     public void unlock(int count) {
-        this.boughtCount -= Math.max(this.boughtCount,count);
-        if(boughtCount == 0){
+        this.boughtCount -= Math.min(this.boughtCount,Math.max(0,count));
+        if(boughtCount < maxBuyCount){
             this.unlock();
         }
     }

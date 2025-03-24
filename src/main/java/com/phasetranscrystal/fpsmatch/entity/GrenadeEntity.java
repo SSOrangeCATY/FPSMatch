@@ -20,8 +20,8 @@ import org.jetbrains.annotations.NotNull;
 public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     // 配置参数
     private static final float EXPLOSION_RADIUS = 5.0f;
-    private static final int FUSE_TIME = 30; // 4秒（20 ticks/秒）
-    private static final float BASE_DAMAGE = 19.0f;
+    private static final int FUSE_TIME = 30; // 2.5秒（20 ticks/秒）
+    private static final float BASE_DAMAGE = 20.0f;
 
     public GrenadeEntity(EntityType<? extends GrenadeEntity> type, Level level) {
         super(type, level);
