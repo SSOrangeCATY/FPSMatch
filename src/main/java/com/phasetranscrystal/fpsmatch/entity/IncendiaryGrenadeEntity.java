@@ -96,7 +96,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     protected void onActiveTick() {
         handleParticleTiming();
         handleSmokeInteraction();
-        if(tickCount % 2 == 0){
+        if(tickCount % 4 == 0){
             applyFireEffect();
         }
     }

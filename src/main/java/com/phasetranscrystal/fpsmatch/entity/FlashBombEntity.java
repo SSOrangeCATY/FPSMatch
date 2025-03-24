@@ -79,7 +79,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         );
 
         if (effect.getEffect() instanceof FlashBlindnessMobEffect flashEffect) {
-            if(distance > 20){
+            if(distance >= 35){
                 flashEffect.setFullBlindnessTime(1);
                 flashEffect.setTotalAndTicker(10);
             }else{
@@ -115,7 +115,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         if (angle < 53) return new int[]{38, 98};
         if (angle < 72) return new int[]{9, 68};
         if (angle < 101) return new int[]{2, 39};
-        return new int[]{1, 10};
+        return new int[]{1, 6};
     }
 
 
