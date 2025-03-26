@@ -12,11 +12,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -27,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 
 public class CompositionC4Entity extends Entity implements TraceableEntity {
+    private ChunkPos currentChunkPos;
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_RADIUS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DEMOLITION_STATE = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
@@ -89,6 +92,43 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.entityData.define(DATA_EXPLOSION_INTERACTION, Level.ExplosionInteraction.NONE.ordinal());
     }
 
+
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+        if (!this.level().isClientSide) {
+            forceLoadChunk();
+        }
+    }
+
+    private void forceLoadChunk() {
+        ServerLevel serverLevel = (ServerLevel) this.level();
+        currentChunkPos = new ChunkPos(this.blockPosition());
+        serverLevel.getChunkSource().addRegionTicket(
+                FPSMatch.ENTITY_CHUNK_TICKET,
+                currentChunkPos,
+                0,
+                this.getUUID()
+        );
+    }
+    private void unForceLoadChunk() {
+        ServerLevel serverLevel = (ServerLevel) this.level();
+        serverLevel.getChunkSource().removeRegionTicket(
+                FPSMatch.ENTITY_CHUNK_TICKET,
+                currentChunkPos,
+                0,
+                this.getUUID()
+        );
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        super.onRemovedFromWorld();
+        if (!this.level().isClientSide) {
+            unForceLoadChunk();
+        }
+    }
+
     @Override
     protected void readAdditionalSaveData(CompoundTag pCompound) {
         this.setFuse(pCompound.getInt("Fuse"));
@@ -100,6 +140,15 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     public void tick() {
+        if (!this.level().isClientSide) {
+            ChunkPos newChunkPos = new ChunkPos(this.blockPosition());
+            if (!newChunkPos.equals(currentChunkPos)) {
+                unForceLoadChunk();
+                currentChunkPos = newChunkPos;
+                forceLoadChunk();
+            }
+        }
+
         if(this.getDeleteTime() >= 140){
             this.syncDemolitionProgress(0);
             this.discard();
