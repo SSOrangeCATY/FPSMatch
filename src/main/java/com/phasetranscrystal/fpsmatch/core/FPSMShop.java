@@ -1,7 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -13,8 +14,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.*;
 
@@ -26,7 +25,7 @@ import java.util.*;
  */
 public class FPSMShop {
     /**
-     * 商店的名称，通常与地图名称相关联。
+     * 商店的名称，通常与队伍名称相关联。
      */
     public final String name;
 
@@ -140,16 +139,13 @@ public class FPSMShop {
      * 遍历所有玩家的商店数据，并通过网络包发送给对应的玩家。
      */
     public void syncShopData() {
-        BaseMap map = FPSMCore.getInstance().getMapByName(name);
-        if (map != null) {
-            for (UUID uuid : playersData.keySet()) {
-                ServerPlayer player = map.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                if (player != null) {
-                    ShopData shopData = this.getPlayerShopData(uuid);
-                    for (ItemType type : ItemType.values()) {
+        for (UUID uuid : playersData.keySet()) {
+            ServerPlayer player = FPSMCore.getInstance().getServer().getPlayerList().getPlayer(uuid);
+            if (player != null) {
+                ShopData shopData = this.getPlayerShopData(uuid);
+                for (ItemType type : ItemType.values()) {
                         List<ShopSlot> slots = shopData.getShopSlotsByType(type);
                         slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot))));
-                    }
                 }
             }
         }
@@ -161,14 +157,11 @@ public class FPSMShop {
      * 遍历所有玩家的商店数据，并通过网络包发送金钱信息。
      */
     public void syncShopMoneyData() {
-        BaseMap map = FPSMCore.getInstance().getMapByName(name);
-        if (map != null) {
-            for (UUID uuid : playersData.keySet()) {
-                ServerPlayer player = map.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
-                if (player != null) {
-                    ShopData shopData = this.getPlayerShopData(uuid);
-                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
-                }
+        for (UUID uuid : playersData.keySet()) {
+            ServerPlayer player = FPSMCore.getInstance().getServer().getPlayerList().getPlayer(uuid);
+            if (player != null) {
+                ShopData shopData = this.getPlayerShopData(uuid);
+                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
             }
         }
     }
@@ -179,9 +172,8 @@ public class FPSMShop {
      * @param uuid 玩家的 UUID
      */
     public void syncShopMoneyData(UUID uuid) {
-        BaseMap map = FPSMCore.getInstance().getMapByName(name);
-        if (map != null && playersData.containsKey(uuid)) {
-            ServerPlayer player = (ServerPlayer) map.getServerLevel().getPlayerByUUID(uuid);
+        if (playersData.containsKey(uuid)) {
+            ServerPlayer player = FPSMCore.getInstance().getServer().getPlayerList().getPlayer(uuid);
             if (player != null) {
                 ShopData shopData = this.getPlayerShopData(uuid);
                 FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
@@ -195,8 +187,7 @@ public class FPSMShop {
      * @param player 玩家对象
      */
     public void syncShopMoneyData(@NotNull ServerPlayer player) {
-        BaseMap map = FPSMCore.getInstance().getMapByName(name);
-        if (map != null && playersData.containsKey(player.getUUID())) {
+        if (playersData.containsKey(player.getUUID())) {
             ShopData shopData = this.getPlayerShopData(player.getUUID());
             FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(player.getUUID(), shopData.getMoney()));
         }
