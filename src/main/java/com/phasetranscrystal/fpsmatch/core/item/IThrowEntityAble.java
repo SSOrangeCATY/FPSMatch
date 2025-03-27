@@ -1,8 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.item;
 
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
-import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -12,14 +10,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-
-import java.util.function.BiFunction;
+import net.minecraft.world.phys.Vec3;
 
 public interface IThrowEntityAble {
-    default ItemStack shoot(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy){
+
+    default void shoot(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy){
             ItemStack itemstack = pPlayer.getItemInHand(pHand);
             if(pPlayer.getCooldowns().isOnCooldown((Item) this)){
-                return itemstack;
+                return;
             }
             pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), this.getThrowVoice(), SoundSource.PLAYERS, 0.5F, 1);
             pPlayer.getCooldowns().addCooldown((Item) this, 20);
@@ -27,6 +25,13 @@ public interface IThrowEntityAble {
                 BaseProjectileEntity shell = this.getEntity(pPlayer, pLevel);
                 shell.setItem(itemstack);
                 shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, velocity, inaccuracy);
+                Vec3 playerVelocity = pPlayer.getDeltaMovement();
+                Vec3 adjustedMovement = new Vec3(
+                        playerVelocity.x,
+                        Math.max(playerVelocity.y, 0),
+                        playerVelocity.z
+                );
+                shell.setDeltaMovement(shell.getDeltaMovement().add(adjustedMovement));
                 pLevel.addFreshEntity(shell);
             }
 
@@ -34,7 +39,6 @@ public interface IThrowEntityAble {
             if (!pPlayer.getAbilities().instabuild) {
                 itemstack.shrink(1);
             }
-            return itemstack;
     };
      BaseProjectileEntity getEntity(Player pPlayer, Level pLevel);
 
