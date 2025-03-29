@@ -49,6 +49,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.blocksBuilding = true;
+        this.noCulling = true;
         this.setDemolitionProgress(0);
         this.setDeleteTime(0);
     }
