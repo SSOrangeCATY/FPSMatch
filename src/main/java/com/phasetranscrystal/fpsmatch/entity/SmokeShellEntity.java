@@ -33,6 +33,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
 
     public SmokeShellEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.SMOKE_SHELL.get(), shooter, level);
+        this.noCulling = true;
         setTimeLeft(MAX_LIFETIME);
         setTimeoutTicks(-1);
         if(this.getOwner() instanceof Player player){
