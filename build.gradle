@@ -19,7 +19,7 @@ plugins {
 apply plugin: 'org.spongepowered.mixin'
 
 group = mod_group_id
-file_version = file_version + "-" + mod_version
+file_version =  minecraft_version + "-" + file_version + "-" + mod_version
 version = file_version
 
 base {
