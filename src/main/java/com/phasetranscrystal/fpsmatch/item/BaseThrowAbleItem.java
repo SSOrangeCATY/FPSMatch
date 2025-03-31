@@ -44,7 +44,7 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
         return UseAnim.BOW;
     }
 
-    public void releaseUsing(ItemStack pStack, Level level, LivingEntity pEntityLiving, int pTimeLeft) {
+    public void releaseUsing(@NotNull ItemStack pStack, Level level, @NotNull LivingEntity pEntityLiving, int pTimeLeft) {
         if(level.isClientSide){
             if (isLeftPressed && isRightPressed) {
                 handleThrow(level, ThrowType.MID);
@@ -58,11 +58,11 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
         }
     }
 
-    public int getUseDuration(ItemStack pStack) {
+    public int getUseDuration(@NotNull ItemStack pStack) {
         return 72000;
     }
 
-    public void inventoryTick(ItemStack itemStack, Level level, Entity entity, int slotId, boolean isSelected) {
+    public void inventoryTick(@NotNull ItemStack itemStack, Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
         if (level.isClientSide) {
             Minecraft minecraft = Minecraft.getInstance();
             LocalPlayer player = minecraft.player;
@@ -92,7 +92,7 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
         }
     }
 
-    public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level pLevel, Player pPlayer, @NotNull InteractionHand pHand) {
         ItemStack itemstack = pPlayer.getItemInHand(pHand);
         pPlayer.startUsingItem(pHand);
         return InteractionResultHolder.consume(itemstack);
