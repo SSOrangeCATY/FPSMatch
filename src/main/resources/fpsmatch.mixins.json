@@ -6,11 +6,10 @@
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "MixinDustParticleOptionsBase",
-    "MixinFilePackTexture",
-    "MixinItemEntity",
-    "MixinZipPackTexture"
+    "MixinItemEntity"
   ],
   "client": [
+    "LocalPlayerMixin",
     "MixinMinecraft",
     "MixinPlayerTabOverlay"
   ],

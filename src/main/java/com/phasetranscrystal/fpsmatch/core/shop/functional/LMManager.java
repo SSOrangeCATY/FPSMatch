@@ -30,7 +30,7 @@ public class LMManager {
     /**
      * 构造函数，初始化监听模块管理器。
      * <p>
-     * 该方法会触发 {@link RegisterListenerModuleEvent}，允许其他模块注册监听模块。
+     * 该方法会触发 {@link RegisterListenerModuleEvent}，允许其他监听模块注册。
      */
     public LMManager() {
         MinecraftForge.EVENT_BUS.post(new RegisterListenerModuleEvent(this));

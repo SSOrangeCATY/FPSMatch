@@ -61,7 +61,6 @@ public class FPSMCommand {
                                 .then(Commands.argument("sound", ResourceLocationArgument.id())
                                         .suggests(SuggestionProviders.AVAILABLE_SOUNDS)
                                         .executes(FPSMCommand::handleMvp))))
-                .then(Commands.literal("loadOld").executes(FPSMCommand::handleLoadOld))
                 .then(Commands.literal("save").executes(FPSMCommand::handleSave))
                 .then(Commands.literal("sync").executes(FPSMCommand::handleSync))
                 .then(Commands.literal("reload").executes(FPSMCommand::handleReLoad))

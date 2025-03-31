@@ -42,7 +42,7 @@ public abstract class BaseMap {
     public boolean isStart = false;
     // 是否处于调试模式
     private boolean isDebug = false;
-    // 服务器级别
+    // 服务器世界
     private final ServerLevel serverLevel;
     // 地图团队
     private final MapTeams mapTeams;
