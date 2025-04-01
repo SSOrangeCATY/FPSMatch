@@ -656,24 +656,29 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void startNewRound() {
-        this.isStart = true;
-        this.isWaiting = true;
-        this.isWaitingWinner = false;
-        this.cleanupMap();
-        this.getMapTeams().startNewRound();
-        this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
-            if(serverPlayer != null){
-                serverPlayer.removeAllEffects();
-                serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
-                this.teleportPlayerToReSpawnPoint(serverPlayer);
-            }
-        }));
-        syncNormalRoundStartMessage();
-        this.giveBlastTeamBomb();
-        this.getShops().forEach(FPSMShop::syncShopData);
-        this.getShops().forEach(FPSMShop::syncShopData);
-        this.checkMatchPoint();
+        boolean check = this.getMapTeams().setTeamsSpawnPoints();
+        if(!check){
+            this.resetGame();
+        }else{
+            this.isStart = true;
+            this.isWaiting = true;
+            this.isWaitingWinner = false;
+            this.cleanupMap();
+            this.getMapTeams().startNewRound();
+            this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
+                ServerPlayer serverPlayer = this.getPlayerByUUID(uuid);
+                if(serverPlayer != null){
+                    serverPlayer.removeAllEffects();
+                    serverPlayer.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
+                    this.teleportPlayerToReSpawnPoint(serverPlayer);
+                }
+            }));
+            syncNormalRoundStartMessage();
+            this.giveBlastTeamBomb();
+            this.getShops().forEach(FPSMShop::syncShopData);
+            this.getShops().forEach(FPSMShop::syncShopData);
+            this.checkMatchPoint();
+        }
     }
 
     public void checkMatchPoint(){
@@ -821,7 +826,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.setExploded(false);
         this.currentRoundTime = 0;
         this.isShopLocked = false;
-        this.getMapTeams().setTeamsSpawnPoints();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
             ServerPlayer player = this.getPlayerByUUID(uuid);
             if(player != null){
