@@ -74,7 +74,8 @@ public class FPSMatch {
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
-        context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
+        context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
+        context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
         if(FPSMBukkit.isBukkitEnvironment()){
             FPSMBukkit.register();
         }

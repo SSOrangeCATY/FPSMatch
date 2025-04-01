@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -271,19 +272,19 @@ public class MatchDropEntity extends Entity {
     public enum DropType {
         MAIN_WEAPON((player -> {
            int i = player.getInventory().clearOrCountMatchingItems(MAIN_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-           return i == 0;
+           return i < FPSMConfig.common.mainWeaponCount.get();
         })),
         SECONDARY_WEAPON((player -> {
             int i = player.getInventory().clearOrCountMatchingItems(SECONDARY_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-            return i == 0;
-        })),
-        THROW((player -> {
-            int i = player.getInventory().clearOrCountMatchingItems(THROW_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-            return i < 4;
+            return i < FPSMConfig.common.secondaryWeaponCount.get();
         })),
         THIRD_WEAPON((player -> {
             int i = player.getInventory().clearOrCountMatchingItems(THIRD_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-            return i < 2;
+            return i < FPSMConfig.common.thirdWeaponCount.get();
+        })),
+        THROW((player -> {
+            int i = player.getInventory().clearOrCountMatchingItems(THROW_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
+            return i < FPSMConfig.common.throwableCount.get();
         })),
         MISC((player -> true));
 

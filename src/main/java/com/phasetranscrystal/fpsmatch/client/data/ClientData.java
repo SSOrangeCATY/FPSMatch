@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.client.data;
 
 import com.mojang.datafixers.util.Pair;
-import com.phasetranscrystal.fpsmatch.Config;
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.fpsmatch.client.screen.hud.MVPHud;
 import com.phasetranscrystal.fpsmatch.client.shop.ClientShopSlot;
@@ -68,7 +68,7 @@ public class ClientData {
     public static void handleLoginMessage(){
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            if(Config.client.showLogin.get()){
+            if(FPSMConfig.client.showLogin.get()){
                 player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm").withStyle(ChatFormatting.GRAY), false);
                 player.displayClientMessage(Component.translatable("fpsm.screen.scale.warm.tips").withStyle(ChatFormatting.GRAY), false);
                 player.displayClientMessage(Component.translatable("fpsm.login.message.closeable").withStyle(ChatFormatting.GRAY), false);

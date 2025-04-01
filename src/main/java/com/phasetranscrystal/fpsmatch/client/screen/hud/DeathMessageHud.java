@@ -1,14 +1,12 @@
 package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.Config;
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -49,7 +47,7 @@ public class DeathMessageHud implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (Config.client.hudEnabled.get() && !messageQueue.isEmpty()) {
+        if (FPSMConfig.client.hudEnabled.get() && !messageQueue.isEmpty()) {
             if (minecraft.player != null) {
                 renderKillTips(gui,guiGraphics,partialTick,screenWidth,screenHeight);
             }
@@ -63,7 +61,7 @@ public class DeathMessageHud implements IGuiOverlay {
         synchronized(queueLock) {
             // 移除过期消息
             messageQueue.removeIf(messageData ->
-                    currentTime - messageData.displayStartTime >= Config.client.messageShowTime.get() * 1000);
+                    currentTime - messageData.displayStartTime >= FPSMConfig.client.messageShowTime.get() * 1000);
 
             // 渲染剩余消息
             for (MessageData messageData : messageQueue) {
@@ -88,10 +86,10 @@ public class DeathMessageHud implements IGuiOverlay {
             
             // 移除过期消息
             messageQueue.removeIf(messageData -> 
-                currentTime - messageData.displayStartTime >= Config.client.messageShowTime.get() * 1000);
+                currentTime - messageData.displayStartTime >= FPSMConfig.client.messageShowTime.get() * 1000);
             
             // 如果队列已满，移除最旧的消息
-            if (messageQueue.size() >= Config.client.maxShowCount.get()) {
+            if (messageQueue.size() >= FPSMConfig.client.maxShowCount.get()) {
                 messageQueue.removeFirst();
             }
             
@@ -101,14 +99,14 @@ public class DeathMessageHud implements IGuiOverlay {
     }
 
     private int getHudPositionYOffset() {
-        return switch (Config.client.hudPosition.get()) {
+        return switch (FPSMConfig.client.hudPosition.get()) {
             case 1, 2 -> 10;
             default -> minecraft.getWindow().getGuiScaledHeight() - 10 * 5;
         };
     }
 
     private int getHudPositionXOffset(int stringWidth) {
-        return switch (Config.client.hudPosition.get()) {
+        return switch (FPSMConfig.client.hudPosition.get()) {
             case 2, 4 -> minecraft.getWindow().getGuiScaledWidth() - 10 - stringWidth;
             default -> 10;
         };
