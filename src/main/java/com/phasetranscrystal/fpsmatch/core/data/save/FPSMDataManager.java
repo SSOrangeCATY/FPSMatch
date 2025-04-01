@@ -1,12 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core.data.save;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.datafixers.util.Pair;
-import com.phasetranscrystal.fpsmatch.Config;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
-import net.minecraft.client.renderer.blockentity.EnchantTableRenderer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLLoader;
 

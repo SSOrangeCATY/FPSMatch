@@ -107,7 +107,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private boolean autoStartFirstMessageFlag = false;
     private final BaseTeam ctTeam;
     private final BaseTeam tTeam;
-    private UUID c4EntityUUID = null;
 
     /**
      * 构造函数：创建CS地图实例
