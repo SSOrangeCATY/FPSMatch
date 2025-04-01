@@ -94,8 +94,8 @@ public class MapTeams {
 
         //交换玩家
         Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
-        attackTeam.resetAllPlayers(map.getServerLevel(), defendTeam.getPlayers());
-        defendTeam.resetAllPlayers(map.getServerLevel() , tempPlayers);
+        attackTeam.resetAllPlayers(defendTeam.getPlayers());
+        defendTeam.resetAllPlayers(tempPlayers);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
@@ -114,6 +114,9 @@ public class MapTeams {
         attackTeam.setNeedPause(defendTeam.needPause());
         defendTeam.setPauseTime(tempP);
         defendTeam.setNeedPause(tempN);
+
+        attackTeam.randomSpawnPoints();
+        defendTeam.randomSpawnPoints();
 
         if(map instanceof ShopMap<?> shopMap){
             FPSMShop attackShop = shopMap.getShop(attackTeam.name);

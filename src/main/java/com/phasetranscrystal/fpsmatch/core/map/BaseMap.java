@@ -348,7 +348,7 @@ public abstract class BaseMap {
     }
 
     @Nullable public ServerPlayer getPlayerByUUID(UUID uuid){
-        return this.getServerLevel().getServer().getPlayerList().getPlayer(uuid);
+        return FPSMCore.getInstance().getPlayerByUUID(uuid);
     }
     /**
      * 玩家登录事件处理
