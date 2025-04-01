@@ -238,4 +238,8 @@ public class FPSMCore {
         return server;
     }
 
+    @Nullable public ServerPlayer getPlayerByUUID(UUID uuid){
+        return this.server.getPlayerList().getPlayer(uuid);
+    }
+
 }

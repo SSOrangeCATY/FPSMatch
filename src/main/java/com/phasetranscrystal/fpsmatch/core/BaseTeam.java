@@ -5,7 +5,6 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
@@ -456,15 +455,13 @@ public class BaseTeam {
 
     /**
      * 重置队伍的所有玩家数据。
-     * @param serverLevel 服务器层级
      * @param players 新的玩家数据 Map
      */
-    public void resetAllPlayers(ServerLevel serverLevel, Map<UUID, PlayerData> players) {
+    public void resetAllPlayers( Map<UUID, PlayerData> players) {
         this.players.clear();
         this.players.putAll(players);
-
         players.keySet().forEach(uuid -> {
-            ServerPlayer serverPlayer = (ServerPlayer) serverLevel.getPlayerByUUID(uuid);
+            ServerPlayer serverPlayer = FPSMCore.getInstance().getPlayerByUUID(uuid);
             if (serverPlayer != null) {
                 serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), this.getPlayerTeam());
             } else {
