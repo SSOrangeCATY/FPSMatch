@@ -153,7 +153,14 @@ public class FPSMCore {
     }
 
     public void onServerTick(){
-        this.GAMES.forEach((type,mapList) -> mapList.forEach(BaseMap::mapTick));
+        this.GAMES.forEach((type,mapList) -> mapList.forEach((map)->{
+            try{
+                map.mapTick();
+            }catch(Exception e){
+                FPSMatch.LOGGER.error(map.getMapName() +" map error: ", e);
+                map.resetGame();
+            }
+        }));
     }
 
     protected void clearData(){
