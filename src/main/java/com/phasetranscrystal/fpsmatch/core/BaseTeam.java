@@ -457,7 +457,7 @@ public class BaseTeam {
      * 重置队伍的所有玩家数据。
      * @param players 新的玩家数据 Map
      */
-    public void resetAllPlayers( Map<UUID, PlayerData> players) {
+    public void resetAllPlayers(Map<UUID, PlayerData> players) {
         this.players.clear();
         this.players.putAll(players);
         players.keySet().forEach(uuid -> {

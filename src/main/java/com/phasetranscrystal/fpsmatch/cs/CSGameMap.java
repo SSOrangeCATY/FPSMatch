@@ -880,7 +880,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(uuid!= null){
                 ServerPlayer player = this.getPlayerByUUID(uuid);
                 if(player != null){
-                    player.getInventory().setItem(10,FPSMItemRegister.C4.get().getDefaultInstance());
+                    player.getInventory().add(FPSMItemRegister.C4.get().getDefaultInstance());
                     player.inventoryMenu.broadcastChanges();
                     player.inventoryMenu.slotsChanged(player.getInventory());
                 }

@@ -76,10 +76,7 @@ public class FPSMatch {
         FPSMatchRule.init();
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
-        if(FPSMBukkit.isBukkitEnvironment()){
-            FPSMBukkit.register();
-        }
-        // context.registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
+        FPSMBukkit.register();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
