@@ -162,7 +162,7 @@ public class CompositionC4 extends Item {
 					map.getMapTeams().getJoinedPlayers().forEach(uuid -> {
 						ServerPlayer serverPlayer = (ServerPlayer) pLevel.getPlayerByUUID(uuid);
 						if (serverPlayer != null) {
-							pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), FPSMSoundRegister.planted.get(), SoundSource.PLAYERS, 3.0F, 0.9F);
+							pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), FPSMSoundRegister.planted.get(), SoundSource.PLAYERS, 3.0F, 1F);
 							serverPlayer.displayClientMessage(Component.translatable("fpsm.item.c4.planted").withStyle(ChatFormatting.RED),true);
 						}
 					});
