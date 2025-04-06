@@ -157,5 +157,8 @@
   "message.fpsmatch.error.no_spawn_points": "没有出生点来开始游戏.",
   "message.fpsmatch.error.not_enough_spawn_points": "没有足够的出生点来分配给玩家.",
   "fpsm.map.cs.spawn.error": "错误 : 游戏开始失败 -> 出生点检查失败.",
-  "key.fpsm.switch_previous_item.desc": "切换到上一次物品"
+  "key.fpsm.switch_previous_item.desc": "切换到上一次物品",
+  "commands.fpsm.modify.spawn.set.success": "为团队 %2$s 添加了 %1$d 个出生点.",
+  "commands.fpsm.modify.spawn.set.missing_args": "缺少位置参数",
+  "commands.fpsm.modify.spawn.set.over_flow": "错误：区域超出允许的最大大小"
 }

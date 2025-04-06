@@ -157,5 +157,8 @@
   "message.fpsmatch.error.no_spawn_points": "No spawn points available.",
   "message.fpsmatch.error.not_enough_spawn_points": "Not enough spawn points for all players.",
   "fpsm.map.cs.spawn.error": "ERROR : Game start fail -> spawnpoint check failed",
-  "key.fpsm.switch_previous_item.desc": "Switch Previous Item"
+  "key.fpsm.switch_previous_item.desc": "Switch Previous Item",
+  "commands.fpsm.modify.spawn.set.success": "%1$d spawn points are added for team %2$s.",
+  "commands.fpsm.modify.spawn.set.missing_args": "Missing pos args",
+  "commands.fpsm.modify.spawn.set.over_flow": "Error: The area exceeds the maximum allowed size"
 }
