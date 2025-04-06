@@ -1,4 +1,37 @@
 # FPSM Command Help
+Syntax Tree:
+```plaintext
+fpsm
+├── mvp <targets> <sound>
+├── save
+├── sync
+├── reload
+├── listenerModule add changeItemModule <changedCost> <defaultCost>
+├── shop <gameType> <mapName>
+│   ├── modify set <shopName> <shopType> <shopSlot>
+│   │   ├── listenerModule add <listenerModule>
+│   │   ├── listenerModule remove <listenerModule>
+│   │   ├── groupID <groupID>
+│   │   ├── cost <cost>
+│   │   ├── item <item>
+│   │   ├── dummyAmmoAmount <dummyAmmoAmount>
+├── map
+│   ├── create <gameType> <mapName> <from> <to>
+│   ├── modify <mapName>
+│   │   ├── matchEndTeleportPoint <point>
+│   │   ├── bombArea add <from> <to>
+│   │   ├── debug <action>
+│   │   ├── team
+│   │   │   ├── join <targets>
+│   │   │   ├── leave <targets>
+│   │   │   ├── teams
+│   │   │   │   ├── spectator players <targets> <action>
+│   │   │   │   ├── <teamName> kits <action>
+│   │   │   │   │   ├── dummyAmmoAmount <dummyAmmoAmount>
+│   │   │   │   │   ├── item <item> <amount>
+│   │   │   │   ├── spawnpoints <action> <from> <to>
+│   │   │   │   ├── players <targets> <action>
+```
 
 ## 1. /fpsm loadOld
 **Description:** Load old map data.  
@@ -98,3 +131,6 @@
     - `<item>`: Item.  
       **Example:** `/fpsm map modify map1 team team1 kits add diamond_sword`  
       **Explanation:** This command adds starting equipment to the specified team.
+- `modify <mapName> team <teamName> teams <action>`
+  - `<action>`: Action type, such as add, clear, clearAll, set. 
+    - `set`: This command sets spawn points for a specified team within a designated area on the map. It can be used to set spawn points for a team, with the ability to specify a rectangular area using two diagonal coordinates. By default, all spawn points within the area are saved with the y coordinate based on the player's position when issuing the command, and the spawn points are aligned to the direction the player is facing. You need to provide extra Vec2 args `<from> <to>`.

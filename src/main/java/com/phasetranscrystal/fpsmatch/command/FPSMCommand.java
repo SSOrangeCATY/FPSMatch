@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -37,6 +38,7 @@ import net.minecraft.commands.arguments.coordinates.Vec2Argument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -402,6 +404,60 @@ public class FPSMCommand {
         return data;
     }
 
+    // 粒子效果将沿着立方体的12条棱渲染
+    private static void generateCubeEdgesParticles(CommandSourceStack source, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        // 定义所有12条棱的端点坐标，依次为每条棱的两个端点
+        BlockPos[] edges = new BlockPos[]{
+                // Front face edges
+                new BlockPos(minX, minY, minZ), new BlockPos(maxX, minY, minZ), // Bottom front
+                new BlockPos(minX, minY, minZ), new BlockPos(minX, maxY, minZ), // Left front
+                new BlockPos(maxX, minY, minZ), new BlockPos(maxX, maxY, minZ), // Right front
+                new BlockPos(minX, maxY, minZ), new BlockPos(maxX, maxY, minZ), // Top front
+
+                // Back face edges
+                new BlockPos(minX, minY, maxZ), new BlockPos(maxX, minY, maxZ), // Bottom back
+                new BlockPos(minX, minY, maxZ), new BlockPos(minX, maxY, maxZ), // Left back
+                new BlockPos(maxX, minY, maxZ), new BlockPos(maxX, maxY, maxZ), // Right back
+                new BlockPos(minX, maxY, maxZ), new BlockPos(maxX, maxY, maxZ), // Top back
+
+                // Connecting edges between front and back
+                new BlockPos(minX, minY, minZ), new BlockPos(minX, minY, maxZ), // Left vertical
+                new BlockPos(maxX, minY, minZ), new BlockPos(maxX, minY, maxZ), // Right vertical
+                new BlockPos(minX, maxY, minZ), new BlockPos(minX, maxY, maxZ), // Left vertical top
+                new BlockPos(maxX, maxY, minZ), new BlockPos(maxX, maxY, maxZ), // Right vertical top
+        };
+
+        // 执行粒子命令
+        for (int i = 0; i < edges.length; i += 2) {
+            BlockPos start = edges[i];
+            BlockPos end = edges[i + 1];
+            // 在每条棱上生成粒子效果
+            spawnParticlesAlongEdge(source, start, end);
+        }
+    }
+
+    // 在一条棱上生成粒子效果
+    private static void spawnParticlesAlongEdge(CommandSourceStack source, BlockPos start, BlockPos end) {
+        double x1 = start.getX(), y1 = start.getY(), z1 = start.getZ();
+        double x2 = end.getX(), y2 = end.getY(), z2 = end.getZ();
+
+        // 计算每个坐标之间的步长
+        double step = 0.1; // 每步的间隔，调整粒子效果的密度
+
+        // 循环沿棱的路径生成粒子
+        for (double t = 0; t <= 1; t += step) {
+            double dx = x2 - x1;
+            double dy = y2 - y1;
+            double dz = z2 - z1;
+            double x = x1 + dx * t;
+            double y = y1 + dy * t;
+            double z = z1 + dz * t;
+
+            if(source.getPlayer() != null){
+                source.getLevel().sendParticles(source.getPlayer(),ParticleTypes.FLAME,false, x, y, z, 0, dx, dy, dz, 0.0001);
+            }
+        }
+    }
 
     private static int handleModifyCost(CommandContext<CommandSourceStack> context) {
         String shopName = StringArgumentType.getString(context, "shopName");
@@ -842,6 +898,9 @@ public class FPSMCommand {
                                 }
                             }
                         }
+                        //视觉效果
+                        // 生成粒子效果沿着立方体的12条棱
+                        generateCubeEdgesParticles(context.getSource(), minX, y, minZ, maxX + 1, y + 1, maxZ + 1);
                         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.spawn.set.success", airBlocks.size(), team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
