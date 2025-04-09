@@ -1281,12 +1281,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
                 }
             }
+        }else{
+            // TODO 处理非玩家击杀
         }
+
         if(this.isStart) {
             MapTeams teams = this.getMapTeams();
             BaseTeam deadPlayerTeam = teams.getTeamByPlayer(player);
             if (deadPlayerTeam != null) {
-                this.getShop(deadPlayerTeam.name).clearPlayerShopData(player.getUUID());
+                this.getShop(deadPlayerTeam.name).getDefaultAndPutData(player.getUUID());
                 this.sendPacketToJoinedPlayer(player,new ShopStatesS2CPacket(false),true);
                 PlayerData data = deadPlayerTeam.getPlayerData(player.getUUID());
                 if (data == null) return;
