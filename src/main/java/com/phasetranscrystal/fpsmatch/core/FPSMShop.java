@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.event.PlayerGetShopDataEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -12,6 +13,7 @@ import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopMoneyS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -275,21 +277,6 @@ public class FPSMShop {
     }
 
     /**
-     * 清空指定玩家的商店数据。
-     * <p>
-     * 如果玩家的商店数据不存在，则会创建一个新的默认商店数据。
-     *
-     * @param uuid 玩家的 UUID
-     */
-    public void clearPlayerShopData(UUID uuid) {
-        if (this.playersData.containsKey(uuid)) {
-            this.playersData.get(uuid).setDoneData(this.defaultShopData);
-        } else {
-            this.playersData.put(uuid, this.getDefaultShopData());
-        }
-    }
-
-    /**
      * 获取所有玩家的商店数据。
      *
      * @return 玩家商店数据的 Map
@@ -391,10 +378,21 @@ public class FPSMShop {
         return new ShopData(map, this.startMoney);
     }
 
-    public ShopData getDefaultAndPutData(UUID uuid){
-        ShopData data = this.getDefaultShopData();
-        this.playersData.put(uuid, data);
-        return data;
+    public ShopData getDefaultAndPutData(UUID uuid) {
+        Map<ItemType, List<ShopSlot>> modifiableMap = new HashMap<>(this.defaultShopData);
+
+        Map<ItemType, List<ShopSlot>> protectedMap = new HashMap<>();
+        for (Map.Entry<ItemType, List<ShopSlot>> entry : modifiableMap.entrySet()) {
+            List<ShopSlot> innerList = List.copyOf(entry.getValue());
+            protectedMap.put(entry.getKey(), innerList);
+        }
+
+        PlayerGetShopDataEvent event = new PlayerGetShopDataEvent(protectedMap, uuid);
+        MinecraftForge.EVENT_BUS.post(event);
+
+        ShopData finalData = new ShopData(event.getData(), this.startMoney);
+        this.playersData.put(uuid, finalData);
+        return finalData;
     }
 
     /**
