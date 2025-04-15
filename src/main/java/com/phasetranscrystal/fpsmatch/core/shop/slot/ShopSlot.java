@@ -380,7 +380,6 @@ public class ShopSlot{
     /**
      * 返回物品
      * @param player 玩家
-     * @return 返回后剩余物品数量
      */
     public void returnItem(Player player) {
         returnItem(player, 1);
@@ -388,17 +387,16 @@ public class ShopSlot{
 
     /**
      * 返回指定数量的物品
+     *
      * @param player 玩家
-     * @param count 返回数量
-     * @return 返回后剩余物品数量
+     * @param count  返回数量
      */
-    public int returnItem(Player player, int count) {
+    public void returnItem(Player player, int count) {
         count = Math.min(boughtCount, count);
         player.getInventory().clearOrCountMatchingItems(returningChecker, count, player.inventoryMenu.getCraftSlots());
         player.getInventory().setChanged();
         player.inventoryMenu.broadcastChanges();
         boughtCount -= count;
-        return count;
     }
 
 

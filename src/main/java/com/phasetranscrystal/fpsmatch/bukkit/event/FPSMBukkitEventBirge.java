@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.bukkit.event;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.core.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
@@ -7,11 +8,22 @@ import com.phasetranscrystal.fpsmatch.core.event.PlayerGetMvpEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 public class FPSMBukkitEventBirge {
+
+    protected FPSMBukkitEventBirge(){}
+
+    public static void register(){
+        if(FPSMBukkit.isBukkitEnvironment()){
+            MinecraftForge.EVENT_BUS.register(new FPSMBukkitEventBirge());
+            FPSMatch.LOGGER.info("FPSMatch : Bukkit API checked, successfully registered event bridge!");
+        }
+    }
+
     @SubscribeEvent
     public void onForgeKillEvent(PlayerKillOnMapEvent event) {
         if(!FPSMBukkit.isBukkitEnvironment()) return;
