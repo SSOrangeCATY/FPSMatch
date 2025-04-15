@@ -59,6 +59,11 @@ public class FPSMatch {
     );
     public static LMManager listenerModuleManager;
 
+    @Deprecated(forRemoval = true, since = "1.21.1")
+    public FPSMatch(){
+        this(FMLJavaModLoadingContext.get());
+    }
+
     public FPSMatch(FMLJavaModLoadingContext context)
     {
         IEventBus modEventBus = context.getModEventBus();
