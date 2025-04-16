@@ -3,9 +3,11 @@ package com.phasetranscrystal.fpsmatch.core.data.save;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLLoader;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -22,7 +24,7 @@ public class FPSMDataManager {
     /**
      * 数据注册表，用于存储已注册的数据类型及其对应的保存逻辑。
      */
-    private final Map<Class<? extends ISavedData<?>>, Pair<String, ISavedData<?>>> REGISTRY = new HashMap<>();
+    private final Map<Class<?>, Pair<String, ISavePort<?>>> REGISTRY = new HashMap<>();
 
     /**
      * 数据写入逻辑列表，用于在保存数据时调用。
@@ -146,20 +148,11 @@ public class FPSMDataManager {
         return dataFile;
     }
 
-    /**
-     * 注册数据保存逻辑。
-     * <p>
-     * 该方法将数据类型与其保存逻辑关联起来，并创建相应的数据目录。
-     *
-     * @param clazz 数据类的类型
-     * @param folderName 数据目录的名称
-     * @param iSavedData 数据保存逻辑
-     */
-    public <T extends ISavedData<T>> void registerData(Class<T> clazz, String folderName, SaveHolder<T> iSavedData) {
+    public <T> void registerData(Class<T> clazz, String folderName, SaveHolder<T> saveHolder) {
         folderName = fixName(folderName);
-        this.REGISTRY.put(clazz, Pair.of(folderName, iSavedData));
-        this.DATA.add(iSavedData.writeHandler());
-        File dataFolder = new File(iSavedData.isGlobal() ? globalData : levelData, folderName);
+        this.REGISTRY.put(clazz, Pair.of(folderName, saveHolder));
+        this.DATA.add(saveHolder.writeHandler());
+        File dataFolder = new File(saveHolder.isGlobal() ? globalData : levelData, folderName);
         if (!dataFolder.exists()) {
             if (!dataFolder.mkdirs()) throw new RuntimeException("error : can't create " + dataFolder + " folder.");
         }
@@ -169,27 +162,78 @@ public class FPSMDataManager {
      * 获取数据保存目录。
      * @param savedData 数据对象
      * */
-    public <T extends ISavedData<?>> File getSaveFolder(T savedData) {
-        Pair<String, ISavedData<?>> pair = REGISTRY.getOrDefault(savedData.getClass(), null);
-        if (pair == null) throw new RuntimeException("error : " + savedData.getClass().getName() + " data is not registered.");
+    @Nullable
+    public <T> File getSaveFolder(T savedData) {
+        Pair<String, ISavePort<?>> pair = REGISTRY.getOrDefault(savedData.getClass(), null);
+        if (pair == null) {
+            FPSMatch.LOGGER.error("error : " + savedData.getClass().getName() + " data is not registered.");
+            return null;
+        }
         return new File(pair.getSecond().isGlobal() ? globalData : levelData, pair.getFirst());
     }
 
     /**
-     * 保存单个数据对象。
-     * <p>
-     * 该方法会根据数据类型找到对应的保存逻辑，并将数据写入文件。
-     *
+     * 保存单个数据对象
      * @param data 待保存的数据对象
-     * @param fileName 文件名（不包含扩展名）
+     * @param fileName 文件名
+     * @param overwrite 是否覆盖
      */
-    public <T extends ISavedData<?>> void saveData(T data, String fileName) {
+    public <T> void saveData(T data, String fileName, boolean overwrite) {
         fileName = fixName(fileName);
-        Pair<String, ISavedData<?>> pair = REGISTRY.getOrDefault(data.getClass(), null);
+        Pair<String, ISavePort<?>> pair = REGISTRY.getOrDefault(data.getClass(), null);
         if (pair == null) throw new RuntimeException("error : " + data.getClass().getName() + " data is not registered.");
-        ISavedData<T> iSavedData = (ISavedData<T>) pair.getSecond();
-        iSavedData.getWriter(data, fileName).accept(new File(iSavedData.isGlobal() ? globalData : levelData, pair.getFirst()));
+        @SuppressWarnings("unchecked")
+        ISavePort<T> iSavedData = (ISavePort<T>) pair.getSecond();
+        iSavedData.getWriter(data, fileName, overwrite).accept(new File(iSavedData.isGlobal() ? globalData : levelData, pair.getFirst()));
     }
+
+
+    public <T> void saveData(T data, String fileName) {
+        saveData(data, fileName, false);
+    }
+
+    /**
+     * 读取特定文件名的数据。
+     *
+     * @param clazz 数据类型
+     * @param fileName 文件名（不包含扩展名）
+     * @return 读取到的数据，如果文件不存在或读取失败则返回null
+     */
+    @Nullable
+    public <T extends ISavePort<?>> T readSpecificData(Class<T> clazz, String fileName) {
+        fileName = fixName(fileName);
+        Pair<String, ISavePort<?>> pair = REGISTRY.getOrDefault(clazz, null);
+        if (pair == null) {
+            throw new RuntimeException("error : " + clazz.getName() + " data is not registered.");
+        }
+
+        @SuppressWarnings("unchecked")
+        ISavePort<T> iSavedData = (ISavePort<T>) pair.getSecond();
+        File dataFolder = new File(iSavedData.isGlobal() ? globalData : levelData, pair.getFirst());
+        return iSavedData.readSpecificFile(dataFolder, fileName);
+    }
+
+    /**
+     * 创建新的数据文件并写入初始数据。
+     *
+     * @param clazz 数据类型
+     * @param fileName 文件名（不包含扩展名）
+     * @param initialData 初始数据
+     * @return 是否创建成功
+     */
+    public <T> boolean createNewDataFile(Class<T> clazz, String fileName, T initialData) {
+        fileName = fixName(fileName);
+        Pair<String, ISavePort<?>> pair = REGISTRY.getOrDefault(clazz, null);
+        if (pair == null) {
+            throw new RuntimeException("error : " + clazz.getName() + " data is not registered.");
+        }
+
+        @SuppressWarnings("unchecked")
+        ISavePort<T> iSavedData = (ISavePort<T>) pair.getSecond();
+        File dataFolder = new File(iSavedData.isGlobal() ? globalData : levelData, pair.getFirst());
+        return iSavedData.createNewDataFile(dataFolder, fileName, initialData);
+    }
+
 
     /**
      * 保存所有注册的数据。
@@ -197,7 +241,7 @@ public class FPSMDataManager {
      * 该方法会调用所有注册的数据写入逻辑，将数据保存到对应的文件中。
      */
     public void saveData() {
-        if (checkOrCreateFile(levelData)) {
+        if (checkOrCreateFile(levelData) && checkOrCreateFile(globalData)) {
             this.DATA.forEach(consumer -> consumer.accept(this));
         }
     }

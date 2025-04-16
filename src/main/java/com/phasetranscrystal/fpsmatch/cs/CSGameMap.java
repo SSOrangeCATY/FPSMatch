@@ -8,7 +8,6 @@ import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.*;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerGetMvpEvent;
@@ -72,7 +71,7 @@ import java.util.function.Consumer;
  * 继承自 BaseMap 并实现爆炸模式、商店、初始装备等接口
  */
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap> , ISavedData<CSGameMap>, IConfigureMap<CSGameMap> {
+public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap>, IConfigureMap<CSGameMap> {
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
     private static final Map<String, Consumer<CSGameMap>> VOTE_ACTION = registerVoteAction();
     private final ArrayList<Setting<?>> settings = new ArrayList<>();
@@ -1433,10 +1432,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return gameMap;
     }));
 
-    @Override
-    public Codec<CSGameMap> codec() {
-        return CODEC;
-    }
     public @NotNull BaseTeam getTTeam(){
         return this.tTeam;
     }

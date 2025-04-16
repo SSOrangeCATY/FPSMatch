@@ -18,11 +18,10 @@ public class MapRegister {
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event){
         event.registerData(CSGameMap.class,"CSGameMaps",
-                new SaveHolder<>(
-                        CSGameMap.CODEC,
-                        CSGameMap::read,
-                        CSGameMap::write
-                        )
+                new SaveHolder.Builder<>(CSGameMap.CODEC)
+                        .withReadHandler(CSGameMap::read)
+                        .withWriteHandler(CSGameMap::write)
+                        .build()
         );
     }
 }

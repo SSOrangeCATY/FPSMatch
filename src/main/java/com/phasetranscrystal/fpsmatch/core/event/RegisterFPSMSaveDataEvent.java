@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import net.minecraftforge.eventbus.api.Event;
 
@@ -22,7 +21,7 @@ public class RegisterFPSMSaveDataEvent extends Event {
      * @param folderName 数据将被保存的文件夹名称
      * @param iSavedData 包装后的数据处理层
      */
-    public <T extends ISavedData<T>> void registerData(Class<T> clazz, String folderName, SaveHolder<T> iSavedData) {
+    public <T> void registerData(Class<T> clazz, String folderName, SaveHolder<T> iSavedData) {
         this.dataManager.registerData(clazz, folderName, iSavedData);
     }
 

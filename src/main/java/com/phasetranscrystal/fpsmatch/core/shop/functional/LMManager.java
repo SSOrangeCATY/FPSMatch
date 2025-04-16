@@ -71,14 +71,18 @@ public class LMManager {
         return registry;
     }
 
+
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
-        event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder<>(ChangeShopItemModule.CODEC, ChangeShopItemModule::read, (manager) -> {
-            FPSMatch.listenerModuleManager.getRegistry().forEach((name, module) -> {
-                if (module instanceof ChangeShopItemModule cSIM) {
-                    manager.saveData(cSIM, cSIM.getName());
+        event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
+                .withReadHandler(ChangeShopItemModule::read)
+                .withWriteHandler((manager) -> {
+                    FPSMatch.listenerModuleManager.getRegistry().forEach((name, module) -> {
+                        if (module instanceof ChangeShopItemModule cSIM) {
+                            manager.saveData(cSIM, cSIM.getName());
+                        }
+                    });
                 }
-            });
-        }, false));
+                ).build());
     }
 }

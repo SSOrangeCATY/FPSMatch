@@ -8,7 +8,7 @@ import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
+import com.phasetranscrystal.fpsmatch.core.data.save.ISavePort;
 
 import java.io.File;
 import java.io.FileReader;
@@ -89,17 +89,20 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
     /**
      * 获取当前地图的配置文件路径。
      * <p>
-     * 如果地图实现了 {@link ISavedData} 接口，则根据地图名称生成配置文件路径。
+     * 如果地图实现了 {@link ISavePort} 接口，则根据地图名称生成配置文件路径。
      * 如果地图未实现该接口，则记录错误日志并返回 null。
      *
      * @return 配置文件路径，或 null（如果地图未实现 ISavedData 接口）。
      */
     default File getConfigFile() {
-        if (this.getMap() instanceof ISavedData<?> data) {
-            return new File(FPSMDataManager.getInstance().getSaveFolder(data), this.getMap().getMapName() + ".cfg");
+        File file = FPSMDataManager.getInstance().getSaveFolder(this.getMap());
+        if(file == null){
+            FPSMatch.LOGGER.error("Failed to get config file for map " + this.getMap().getMapName() + " because ：Map is not implement ISavedData interface.");
+            return null;
+        } else {
+            return new File(file, this.getMap().getMapName() + ".cfg");
         }
-        FPSMatch.LOGGER.error("Failed to get config file for map " + this.getMap().getMapName() + " because ：Map is not implement ISavedData interface.");
-        return null;
+
     }
 
     /**

@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * 它使用 {@link Codec} 来实现数据的编解码，并通过 Gson 进行 JSON 操作。
  * 实现该接口的类需要提供一个具体的 {@link Codec} 实例，用于定义数据的编解码逻辑。
  */
-public interface ISavedData<T> {
+public interface ISavePort<T> {
     /**
      * 获取当前数据类型的编解码器。
      * <p>
@@ -71,6 +71,71 @@ public interface ISavedData<T> {
         });
     }
 
+
+    /**
+     * 从指定文件中读取特定文件名的数据。
+     *
+     * @param directory 数据目录
+     * @param fileName 文件名（不包含扩展名）
+     * @return 读取到的数据，如果文件不存在则返回null
+     */
+    default T readSpecificFile(File directory, String fileName) {
+        if (!directory.exists() || !directory.isDirectory()) {
+            return null;
+        }
+
+        File file = new File(directory, fileName + "." + this.getFileType());
+        if (!file.exists() || !file.isFile()) {
+            return null;
+        }
+
+        try (FileReader reader = new FileReader(file)) {
+            JsonElement element = new Gson().fromJson(reader, JsonElement.class);
+            return this.decodeFromJson(element);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 创建新的数据文件并写入初始数据。
+     *
+     * @param directory 数据目录
+     * @param fileName 文件名（不包含扩展名）
+     * @param initialData 初始数据
+     * @return 是否创建成功
+     */
+    default boolean createNewDataFile(File directory, String fileName, T initialData) {
+        if (!directory.exists() && !directory.mkdirs()) {
+            return false;
+        }
+
+        File file = new File(directory, fileName + "." + this.getFileType());
+        if (file.exists()) {
+            return false;
+        }
+
+        try {
+            if (!file.createNewFile()) {
+                return false;
+            }
+
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String jsonStr = gson.toJson(this.encodeToJson(initialData));
+
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(jsonStr);
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+
     /**
      * 获取目录读取器。
      * <p>
@@ -118,7 +183,15 @@ public interface ISavedData<T> {
      * @param fileName 文件名（不包含扩展名）
      * @return 文件写入器
      */
-    default Consumer<File> getWriter(T data, String fileName) {
+    /**
+     * 获取文件写入器。
+     *
+     * @param data 待写入的数据
+     * @param fileName 文件名（不包含扩展名）
+     * @param overwrite 是否覆盖现有文件内容（true为覆盖，false为合并）
+     * @return 文件写入器
+     */
+    default Consumer<File> getWriter(T data, String fileName, boolean overwrite) {
         return (directory) -> {
             if (!directory.exists()) {
                 if (!directory.mkdirs()) throw new RuntimeException("error : can't create " + directory.getName() + " data folder.");
@@ -129,13 +202,18 @@ public interface ISavedData<T> {
                     if (!file.exists()) {
                         if (!file.createNewFile()) throw new RuntimeException("error : can't create " + fileName + " data file.");
                     }
-                    FileReader reader = new FileReader(file);
-                    JsonElement element = new Gson().fromJson(reader, JsonElement.class);
+
                     T merged = data;
-                    if(element != null){
-                        T old = this.decodeFromJson(element);
-                        merged = this.mergeHandler(old, data);
+                    if (!overwrite && file.length() > 0) {
+                        try (FileReader reader = new FileReader(file)) {
+                            JsonElement element = new Gson().fromJson(reader, JsonElement.class);
+                            if (element != null) {
+                                T old = this.decodeFromJson(element);
+                                merged = this.mergeHandler(old, data);
+                            }
+                        }
                     }
+
                     Gson gson = new GsonBuilder().setPrettyPrinting().create();
                     String jsonStr = gson.toJson(this.encodeToJson(merged));
                     try (FileWriter writer = new FileWriter(file)) {

@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import net.minecraft.resources.ResourceLocation;
@@ -15,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class MVPMusicManager implements ISavedData<MVPMusicManager> {
+public class MVPMusicManager{
     public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC).xmap(MVPMusicManager::new,
             (manager)-> manager.mvpMusicMap);
     private static MVPMusicManager INSTANCE;
@@ -52,23 +51,17 @@ public class MVPMusicManager implements ISavedData<MVPMusicManager> {
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event){
         event.registerData(MVPMusicManager.class,"MvpMusicData",
-                new SaveHolder<>(
-                        MVPMusicManager.CODEC,
-                        MVPMusicManager::read,
-                        MVPMusicManager::write,
-                        MVPMusicManager::merge,
-                        true
-                )
+                new SaveHolder.Builder<>(CODEC)
+                        .withReadHandler(MVPMusicManager::read)
+                        .withWriteHandler(MVPMusicManager::write)
+                        .withMergeHandler(MVPMusicManager::merge)
+                        .isGlobal(true)
+                        .build()
         );
     }
 
     private void read() {
         INSTANCE = this;
-    }
-
-    @Override
-    public Codec<MVPMusicManager> codec() {
-        return CODEC;
     }
 
     public static void write(FPSMDataManager manager){

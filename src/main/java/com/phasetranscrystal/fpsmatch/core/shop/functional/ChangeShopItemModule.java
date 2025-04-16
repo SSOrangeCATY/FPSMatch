@@ -3,7 +3,6 @@ package com.phasetranscrystal.fpsmatch.core.shop.functional;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavedData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -15,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
  * 该模块用于在商店槽位变更事件中动态修改槽位的物品和价格。
  * 支持在购买时替换物品和价格，并在退回时恢复默认设置。
  */
-public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule, ISavedData<ChangeShopItemModule> {
+public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule {
     /**
      * 该模块的编解码器，用于序列化和反序列化。
      */
@@ -25,16 +24,6 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
             ItemStack.CODEC.fieldOf("changedItem").forGetter(ChangeShopItemModule::changedItem),
             Codec.INT.fieldOf("changedCost").forGetter(ChangeShopItemModule::changedCost)
     ).apply(instance, ChangeShopItemModule::new));
-
-    /**
-     * 获取该模块的编解码器。
-     *
-     * @return 编解码器
-     */
-    @Override
-    public Codec<ChangeShopItemModule> codec() {
-        return CODEC;
-    }
 
     /**
      * 注册该模块到监听模块管理器。
