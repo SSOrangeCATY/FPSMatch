@@ -1,9 +1,10 @@
 package com.phasetranscrystal.fpsmatch.client.screen.hud;
 
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.*;
 import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.DeathMessage;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -152,12 +153,12 @@ public class DeathMessageHud implements IGuiOverlay {
         ResourceLocation weaponIcon = message.getWeaponIcon();
         if (weaponIcon != null) {
             poseStack.pushPose();
-            float scale = 14.0f / 44.0f;
+            float scale = 0.32f;
             float weaponWidth = 117 * scale;
 
             poseStack.translate(currentX, y + (16 - 14) / 2f, 0);
             poseStack.scale(scale, scale, 1.0f);
-            renderIcon(guiGraphics, weaponIcon, 0, 0, 117, 44);
+            renderWeaponIcon(guiGraphics, weaponIcon);
             poseStack.popPose();
 
             currentX += (int)weaponWidth + 2; // 间距调整为2px
@@ -187,6 +188,10 @@ public class DeathMessageHud implements IGuiOverlay {
     
     private void renderIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y, int width, int height) {
         guiGraphics.blit(icon, x, y, 0, 0, width, height, width, height);
+    }
+
+    private void renderWeaponIcon(GuiGraphics guiGraphics, ResourceLocation icon) {
+        RenderUtil.renderReverseTexture(guiGraphics,icon, 0, 0, 117, 44);
     }
 
     private int calculateMessageWidth(DeathMessage message) {

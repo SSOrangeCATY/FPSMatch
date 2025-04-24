@@ -23,6 +23,7 @@ import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -43,6 +44,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Mod(FPSMatch.MODID)
@@ -50,7 +52,7 @@ public class FPSMatch {
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LogUtils.getLogger();
     private static final String PROTOCOL_VERSION = "1";
-
+    public static final TicketType<UUID> ENTITY_CHUNK_TICKET = TicketType.create("fpsm_chunk_ticket", (a, b) -> 0);
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation("fpsmatch", "main"),
             () -> PROTOCOL_VERSION,
@@ -58,11 +60,6 @@ public class FPSMatch {
             PROTOCOL_VERSION::equals
     );
     public static LMManager listenerModuleManager;
-
-    @Deprecated(forRemoval = true, since = "1.21.1")
-    public FPSMatch(){
-        this(FMLJavaModLoadingContext.get());
-    }
 
     public FPSMatch(FMLJavaModLoadingContext context)
     {
@@ -76,7 +73,7 @@ public class FPSMatch {
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
-        context.registerConfig(ModConfig.Type.CLIENT, Config.clientSpec);
+        context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         if(FPSMBukkit.isBukkitEnvironment()){
             FPSMBukkit.register();
         }
