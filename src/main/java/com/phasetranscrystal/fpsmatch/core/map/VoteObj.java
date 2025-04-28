@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core;
+package com.phasetranscrystal.fpsmatch.core.map;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

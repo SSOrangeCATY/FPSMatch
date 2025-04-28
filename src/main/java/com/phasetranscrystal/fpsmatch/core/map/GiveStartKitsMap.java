@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
-import com.phasetranscrystal.fpsmatch.core.BaseTeam;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;

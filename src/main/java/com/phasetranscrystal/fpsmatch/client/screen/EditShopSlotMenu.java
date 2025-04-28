@@ -4,7 +4,7 @@ package com.phasetranscrystal.fpsmatch.client.screen;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -26,10 +26,10 @@ import net.minecraftforge.items.SlotItemHandler;
 
 public class EditShopSlotMenu extends AbstractContainerMenu {
     private final ContainerData data;
-    private ItemStackHandler itemHandler;
-    private ShopSlot shopSlot;
-    private ItemStack guiItemStack;
-    private int repoIndex;
+    private final ItemStackHandler itemHandler;
+    private final ShopSlot shopSlot;
+    private final ItemStack guiItemStack;
+    private final int repoIndex;
 
     public ItemStack getGuiItemStack() {
         return guiItemStack;

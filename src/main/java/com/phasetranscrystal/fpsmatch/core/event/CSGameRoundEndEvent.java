@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
-import com.phasetranscrystal.fpsmatch.core.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import net.minecraftforge.eventbus.api.Event;

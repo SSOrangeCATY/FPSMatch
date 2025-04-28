@@ -2,25 +2,10 @@ package com.phasetranscrystal.fpsmatch.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.phasetranscrystal.fpsmatch.client.data.ClientTaczTextureData;
-import com.tacz.guns.client.resource_legacy.texture.FilePackTexture;
-import com.tacz.guns.client.resource_legacy.texture.ZipPackTexture;
-import icyllis.modernui.graphics.BitmapFactory;
-import icyllis.modernui.graphics.Image;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class RenderUtil {
     public static int color(int r,int g,int b){
@@ -34,14 +19,14 @@ public class RenderUtil {
 
     public static void renderReverseTexture(GuiGraphics guiGraphics, ResourceLocation icon,
                                             int x, int y, int width, int height){
-        renderIcon(guiGraphics,icon,x,y,width,height,true,false);
+        renderTexture(guiGraphics,icon,x,y,width,height,true,false);
     }
 
-    public static void renderIcon(GuiGraphics guiGraphics, ResourceLocation icon,
-                                  int x, int y, int width, int height,
-                                  boolean flipHorizontal, boolean flipVertical) {
+    public static void renderTexture(GuiGraphics guiGraphics, ResourceLocation texture,
+                                     int x, int y, int width, int height,
+                                     boolean flipHorizontal, boolean flipVertical) {
         if (!flipHorizontal && !flipVertical) {
-            guiGraphics.blit(icon, x, y, 0, 0, width, height, width, height);
+            guiGraphics.blit(texture, x, y, 0, 0, width, height, width, height);
             return;
         }
 
@@ -64,7 +49,7 @@ public class RenderUtil {
         }
 
         PoseStack poseStack = guiGraphics.pose();
-        RenderSystem.setShaderTexture(0, icon);
+        RenderSystem.setShaderTexture(0, texture);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
 
         Matrix4f matrix = poseStack.last().pose();

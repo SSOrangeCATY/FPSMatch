@@ -1,12 +1,10 @@
-package com.phasetranscrystal.fpsmatch.core;
+package com.phasetranscrystal.fpsmatch.core.shop;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerGetShopDataEvent;
-import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
-import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
-import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     // 配置参数
-    private static final float EXPLOSION_RADIUS = 5.0f;
+    private static final float EXPLOSION_RADIUS = 3.0f;
     private static final int FUSE_TIME = 30; // 2.5秒（20 ticks/秒）
     private static final float BASE_DAMAGE = 20.0f;
 
@@ -59,11 +59,15 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
 
     private void applyStopSmokeShell(){
         AABB smokeCheckArea = getBoundingBox().inflate(EXPLOSION_RADIUS);
-        level().getEntitiesOfClass(SmokeShellEntity.class, smokeCheckArea)
+
+        SmokeShellEntity[] a = level().getEntitiesOfClass(SmokeShellEntity.class, smokeCheckArea)
                 .stream()
                 .filter(smoke -> smoke.getState() == 2)
-                .findFirst()
-                .ifPresent(smoke -> smoke.setParticleCoolDown(30));
+                .toArray(SmokeShellEntity[]::new);
+
+        for (SmokeShellEntity smokeShellEntity : a) {
+            smokeShellEntity.setParticleCoolDown(30);
+        }
     }
 
     private void spawnExplosionParticles() {

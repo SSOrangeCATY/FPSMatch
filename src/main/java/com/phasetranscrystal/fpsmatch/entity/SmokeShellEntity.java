@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
@@ -85,7 +85,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
     }
 
     public void setParticleCoolDown(int particleCoolDown) {
-        entityData.set(Particle_COOLDOWN,particleCoolDown);
+        entityData.set(Particle_COOLDOWN, particleCoolDown);
     }
 
     public ParticleOptions getParticleOptions(){

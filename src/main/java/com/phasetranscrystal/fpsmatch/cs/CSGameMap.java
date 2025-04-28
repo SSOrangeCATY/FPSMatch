@@ -13,6 +13,7 @@ import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerGetMvpEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
+import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
@@ -1275,13 +1276,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(fromPlayer);
             if (fromMap != null && fromMap.equals(this)) {
                 from = fromPlayer;
+                DeathMessage message;
                 if(fromPlayer.getMainHandItem().isEmpty()){
-                    DeathMessage message = new DeathMessage.Builder(player,fromPlayer, ItemStack.EMPTY).setArg("hand").build();
-                    this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
+                    message = new DeathMessage.Builder(player,fromPlayer, ItemStack.EMPTY).setArg("hand").build();
+                }else{
+                    message = new DeathMessage.Builder(player,fromPlayer, fromPlayer.getMainHandItem()).build();
                 }
+                this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
             }
-        }else{
-            // TODO 处理非玩家击杀
         }
 
         if(this.isStart) {

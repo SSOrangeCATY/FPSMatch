@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
-import com.phasetranscrystal.fpsmatch.core.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
