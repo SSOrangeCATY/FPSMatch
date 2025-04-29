@@ -157,7 +157,7 @@ public class CompositionC4 extends Item {
 							shopMap.addPlayerMoney(uuid, 300);
 						}));
 					}
-					CompositionC4Entity entityC4 = new CompositionC4Entity(pLevel, player.getX(), player.getBlockY(), player.getZ(), player, blastModeMap);
+					CompositionC4Entity entityC4 = new CompositionC4Entity(pLevel, player.getX(), player.getY() + 0.25F, player.getZ(), player, blastModeMap);
 					pLevel.addFreshEntity(entityC4);
 					map.getMapTeams().getJoinedPlayers().forEach(uuid -> {
 						ServerPlayer serverPlayer = (ServerPlayer) pLevel.getPlayerByUUID(uuid);
