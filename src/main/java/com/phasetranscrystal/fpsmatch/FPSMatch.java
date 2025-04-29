@@ -204,6 +204,12 @@ public class FPSMatch {
                 .decoder(SaveSlotDataC2SPacket::decode)
                 .consumerNetworkThread(SaveSlotDataC2SPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(EditToolSelectMapC2SPacket.class, i.getAndIncrement())
+                .encoder(EditToolSelectMapC2SPacket::encode)
+                .decoder(EditToolSelectMapC2SPacket::decode)
+                .consumerNetworkThread(EditToolSelectMapC2SPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
