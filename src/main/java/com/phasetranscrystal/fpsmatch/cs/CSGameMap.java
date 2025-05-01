@@ -1279,10 +1279,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 DeathMessage message;
                 if(fromPlayer.getMainHandItem().isEmpty()){
                     message = new DeathMessage.Builder(player,fromPlayer, ItemStack.EMPTY).setArg("hand").build();
-                }else{
-                    message = new DeathMessage.Builder(player,fromPlayer, fromPlayer.getMainHandItem()).build();
+                    this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
                 }
-                this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
             }
         }
 
