@@ -154,5 +154,5 @@
   "tooltip.fpsm.switch_shop": "[SHIFT + 右键] 切换商店",
   "tooltip.fpsm.switch_map": "[SHIFT + 左键] 切换地图",
   "tooltip.fpsm.open_editor": "[右键] 打开商店编辑器",
-  "fpsm.map.cs.reward.money": "回合结算 %1$s 金钱 ( %2$s )"
+  "fpsm.map.cs.reward.money": "回合结算 %1$s 货币 ( %2$s )"
 }
