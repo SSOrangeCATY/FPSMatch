@@ -153,5 +153,6 @@
   "tooltip.fpsm.usage_info": "Usage:",
   "tooltip.fpsm.switch_shop": "[SHIFT + Right Click] Switch Shop",
   "tooltip.fpsm.switch_map": "[SHIFT + Left Click] Switch Map",
-  "tooltip.fpsm.open_editor": "[Right Click] Open Shop Editor"
+  "tooltip.fpsm.open_editor": "[Right Click] Open Shop Editor",
+  "fpsm.map.cs.reward.money": "Received %1$s money ( %2$s )"
 }

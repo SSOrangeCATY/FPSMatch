@@ -607,51 +607,57 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         // 处理胜利经济奖励
         int reward = reason.winMoney;
 
+        // 检查连败情况
+        this.checkLoseStreaks(winnerTeam);
         // 遍历所有玩家，更新经济
-        this.getMapTeams().getJoinedPlayers().forEach(uuid -> {
-            // 如果是胜利队伍的玩家
-            if (winnerTeam.getPlayerList().contains(uuid)) {
-                this.addPlayerMoney(uuid, reward);
-            } else { // 失败队伍的玩家
-                lostTeams.forEach((lostTeam)->{
-                    if (lostTeam.getPlayerList().contains(uuid)) {
+        this.getMapTeams().getTeams().forEach(team -> {
+            if(team.equals(winnerTeam)){
+                team.getPlayerList().forEach(uuid -> {
+                    ServerPlayer player = this.getPlayerByUUID(uuid);
+                    if(player != null){
+                        this.addPlayerMoney(uuid, reward);
+                        player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", reward, reason.name()));
+                    }
+                });
+            }else{
+                team.getPlayerList().forEach(uuid -> {
+                    ServerPlayer player = this.getPlayerByUUID(uuid);
+                    if(player != null){
                         int defaultEconomy = 1400;
                         int compensation = 500;
-                        int compensationFactor = lostTeam.getCompensationFactor();
+                        int compensationFactor = team.getCompensationFactor();
                         // 计算失败补偿
                         int loss = defaultEconomy + compensation * compensationFactor;
                         // 如果玩家没有活着，则给予失败补偿
-                        if(!Objects.requireNonNull(lostTeam.getPlayerData(uuid)).getTabData().isLiving()){
+                        if(reason != WinnerReason.TIME_OUT){
                             this.addPlayerMoney(uuid, loss);
+                            player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, defaultEconomy + " + " + compensation + " * " + compensationFactor));
+                        }else{
+                            if(!Objects.requireNonNull(team.getPlayerData(uuid)).getTabData().isLiving()){
+                                this.addPlayerMoney(uuid, loss);
+                                player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, defaultEconomy + " + " + compensation + " * " + compensationFactor));
+                            }else{
+                                player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", 0, "timeout living"));
+                            }
                         }
                     }
                 });
             }
         });
         // 检查连败情况
-        this.checkLoseStreaks(winnerTeam.name);
         // 同步商店金钱数据
         this.getShops().forEach(FPSMShop::syncShopMoneyData);
     }
 
-    private void checkLoseStreaks(String winnerTeam) {
+    private void checkLoseStreaks(BaseTeam winnerTeam) {
         // 遍历所有队伍，检查连败情况
         this.getMapTeams().getTeams().forEach(team -> {
-            if (team.name.equals(winnerTeam)) {
-                // 胜利，连败次数减1
-                team.setLoseStreak(Math.max(team.getLoseStreak() - 1,0));
-            } else {
-                // 失败，连败次数加1
-                team.setLoseStreak(team.getLoseStreak() + 1);
-            }
-
-            // 更新补偿因数
             int compensationFactor = team.getCompensationFactor();
-            if (team.getLoseStreak() > 0) {
-                // 连败，补偿因数加1
-                compensationFactor = Math.min(compensationFactor + 1, 4);
+            if (team.equals(winnerTeam)) {
+                team.setCompensationFactor(Math.max(compensationFactor - 1, 0));
+            } else {
+                team.setCompensationFactor(Math.min(compensationFactor + 1, 4));
             }
-            team.setCompensationFactor(compensationFactor);
         });
     }
 

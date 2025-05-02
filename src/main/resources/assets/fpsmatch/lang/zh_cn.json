@@ -120,14 +120,14 @@
   "fpsmatch.tab.header.damage": "伤害",
   "fpsmatch.tab.header.money": "金钱",
   "fpsmatch.tab.header.headshot": "爆头率",
+  "key.fpsm.hud.custom.desc": "自定义游戏UI",
+  "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
+  "key.fpsm.hud.custom.off": "自定义游戏UI 关闭",
   "commands.fpsm.mvp.success": "成功添加 %2$s Mvp 音乐给 %1$s 位玩家",
   "cs.game.winner.mvpNameSub": "取得回合胜利",
   "commands.fpsm.shop.modify.cost.success": "成功将%1$s商店槽位%2$s的价格修改为%3$s",
   "commands.fpsm.shop.modify.failed.noSupport": "地图不支持商店",
   "commands.fpsm.shop.modify.item.success": "成功将%1$s商店槽位%2$s的物品修改为%3$s",
-  "key.fpsm.hud.custom.desc": "自定义游戏UI",
-  "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
-  "key.fpsm.hud.custom.off": "自定义游戏UI 关闭",
   "gui.fpsm.shop_editor.title": "商店内容编辑器",
   "gui.fpsm.edit_shop_slot.title": "编辑当前槽位",
   "gui.fpsm.shop_editor.save_button": "确认并保存",
@@ -153,5 +153,6 @@
   "tooltip.fpsm.usage_info": "使用方法：",
   "tooltip.fpsm.switch_shop": "[SHIFT + 右键] 切换商店",
   "tooltip.fpsm.switch_map": "[SHIFT + 左键] 切换地图",
-  "tooltip.fpsm.open_editor": "[右键] 打开商店编辑器"
+  "tooltip.fpsm.open_editor": "[右键] 打开商店编辑器",
+  "fpsm.map.cs.reward.money": "回合结算 %1$s 金钱 ( %2$s )"
 }

@@ -101,10 +101,8 @@ public class MapTeams {
         attackTeam.setScores(defendTeam.getScores());
         defendTeam.setScores(tempScore);
 
-        attackTeam.setLoseStreak(0);
         attackTeam.setCompensationFactor(0);
         defendTeam.setCompensationFactor(0);
-        defendTeam.setLoseStreak(0);
 
         // 交换暂停次数
         int tempP = attackTeam.getPauseTime();
@@ -471,7 +469,6 @@ public class MapTeams {
         this.teams.forEach((name, team) -> {
             team.setScores(0);
             team.getPlayers().clear();
-            team.setLoseStreak(0);
             team.setCompensationFactor(0);
             team.setPauseTime(0);
         });

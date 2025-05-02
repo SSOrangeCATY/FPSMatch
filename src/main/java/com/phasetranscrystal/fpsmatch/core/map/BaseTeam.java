@@ -71,10 +71,6 @@ public class BaseTeam {
      */
     public final List<UUID> teamUnableToSwitch = new ArrayList<>();
 
-    /**
-     * 队伍的连败次数。
-     */
-    private int loseStreak;
 
     /**
      * 队伍的连败补偿因数。
@@ -395,22 +391,6 @@ public class BaseTeam {
      */
     public String getFixedName() {
         return this.gameType + "_" + this.mapName + "_" + this.name;
-    }
-
-    /**
-     * 获取队伍的连败次数。
-     * @return 连败次数
-     */
-    public int getLoseStreak() {
-        return loseStreak;
-    }
-
-    /**
-     * 设置队伍的连败次数。
-     * @param loseStreak 新连败次数
-     */
-    public void setLoseStreak(int loseStreak) {
-        this.loseStreak = loseStreak;
     }
 
     /**
