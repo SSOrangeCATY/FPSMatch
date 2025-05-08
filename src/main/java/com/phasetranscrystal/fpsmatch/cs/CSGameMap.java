@@ -287,6 +287,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     @Override
     public void join(String teamName, ServerPlayer player) {
+        FPSMCore.checkAndLeaveTeam(player);
         MapTeams mapTeams = this.getMapTeams();
         mapTeams.joinTeam(teamName, player);
         // 同步游戏类型和地图信息
@@ -305,6 +306,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     });
             setBystander(player);
         }
+    }
+
+    @Override
+    public void pullGameInfo(ServerPlayer player){
+        this.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
+            super.pullGameInfo(player);
+            this.getShop(team.name).syncShopData(player);
+        });
     }
 
     @Override
@@ -353,8 +362,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     private void checkErrorPlayerTeam() {
         this.getMapTeams().getTeams().forEach(team->{
-            team.getPlayerList().forEach(uuid->{
-                //TODO 离线玩家处理
+            team.teamUnableToSwitch.forEach(uuid -> {
+                this.getPlayerByUUID(uuid).ifPresent(player -> {
+                    player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
+                    team.teamUnableToSwitch.remove(uuid);
+                });
             });
         });
     }
@@ -540,13 +552,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public void sendAllPlayerTitle(Component title,@Nullable Component subtitle){
         ServerLevel level = this.getServerLevel();
         this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
-            ServerPlayer serverPlayer = level.getServer().getPlayerList().getPlayer(uuid);
-            if(serverPlayer != null){
-                serverPlayer.connection.send(new ClientboundSetTitleTextPacket(title));
+            this.getPlayerByUUID(uuid).ifPresent(player -> {
+                player.connection.send(new ClientboundSetTitleTextPacket(title));
                 if(subtitle != null){
-                    serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
+                    player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
                 }
-            }
+            });
+
         }));
     }
 
@@ -831,7 +843,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 }else{
                     this.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
                         team.getPlayerData(uuid).ifPresent(data->{
-                            if(data.isLiving()){
+                            if(!data.isLiving()){
                                 this.clearPlayerInventory(player);
                                 this.givePlayerKits(player);
                             }else{

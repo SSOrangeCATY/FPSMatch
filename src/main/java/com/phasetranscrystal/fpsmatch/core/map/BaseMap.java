@@ -180,11 +180,11 @@ public abstract class BaseMap {
      */
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
+        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
         this.getMapTeams().getTeamByName(teamName)
                 .flatMap(team -> team.getPlayerData(player.getUUID()))
                 .ifPresent(playerData -> {
-                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), playerData, teamName));
+                    this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(), playerData, teamName));
                 });
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
@@ -364,6 +364,13 @@ public abstract class BaseMap {
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.ADVENTURE);
                 }
+            }else{
+                map.getMapTeams().getTeamByPlayer(player)
+                        .flatMap(team -> team.getPlayerData(player.getUUID()))
+                        .ifPresent(playerData -> {
+                            playerData.setLiving(false);
+                            player.setGameMode(GameType.SPECTATOR);
+                        });
             }
         }
     }
@@ -404,4 +411,9 @@ public abstract class BaseMap {
             }
         }
     }
+
+    public void pullGameInfo(ServerPlayer player){
+        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+    }
+
 }

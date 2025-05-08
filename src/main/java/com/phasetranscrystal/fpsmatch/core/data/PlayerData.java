@@ -99,7 +99,7 @@ public class PlayerData{
     }
 
     public boolean isLiving() {
-        return isLiving;
+        return isLiving && this.isOnline();
     }
 
     public void setMvpCount(int mvpCount) {

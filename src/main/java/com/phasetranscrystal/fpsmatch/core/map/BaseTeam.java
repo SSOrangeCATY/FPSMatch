@@ -57,11 +57,6 @@ public class BaseTeam {
     private final Map<UUID, PlayerData> players = new HashMap<>();
 
     /**
-     * 队伍玩家的临时数据，用于保存玩家的 TabData。
-     */
-    private final Map<UUID, TabData> playerDataTemp = new HashMap<>();
-
-    /**
      * 队伍的出生点数据列表。
      */
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
@@ -70,7 +65,6 @@ public class BaseTeam {
      * 无法切换队伍的玩家 UUID 列表。
      */
     public final List<UUID> teamUnableToSwitch = new ArrayList<>();
-
 
     /**
      * 队伍的连败补偿因数。

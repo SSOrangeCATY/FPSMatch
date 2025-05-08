@@ -211,6 +211,12 @@ public class FPSMatch {
                 .decoder(EditToolSelectMapC2SPacket::decode)
                 .consumerNetworkThread(EditToolSelectMapC2SPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(PullGameInfoC2SPacket.class, i.getAndIncrement())
+                .encoder(PullGameInfoC2SPacket::encode)
+                .decoder(PullGameInfoC2SPacket::decode)
+                .consumerNetworkThread(PullGameInfoC2SPacket::handle)
+                .add();
     }
 
     @SubscribeEvent
@@ -256,14 +262,18 @@ public class FPSMatch {
     public static class ClientEvents {
         @SubscribeEvent
         public static void onEvent(TickEvent.ClientTickEvent event) {
+            LocalPlayer player = Minecraft.getInstance().player;
+            if(player == null) return;
             if((ClientData.isWaiting || ClientData.isPause) && (!ClientData.currentMap.equals("fpsm_none") && !ClientData.currentTeam.equals("spectator"))){
-                if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().options.keyUp.setDown(false);
-                    Minecraft.getInstance().options.keyLeft.setDown(false);
-                    Minecraft.getInstance().options.keyDown.setDown(false);
-                    Minecraft.getInstance().options.keyRight.setDown(false);
-                    Minecraft.getInstance().options.keyJump.setDown(false);
-                }
+                Minecraft.getInstance().options.keyUp.setDown(false);
+                Minecraft.getInstance().options.keyLeft.setDown(false);
+                Minecraft.getInstance().options.keyDown.setDown(false);
+                Minecraft.getInstance().options.keyRight.setDown(false);
+                Minecraft.getInstance().options.keyJump.setDown(false);
+            }
+
+            if(ClientData.isStart && (ClientData.currentMap.equals("fpsm_none") || ClientData.currentGameType.equals("none"))){
+                FPSMatch.INSTANCE.sendToServer(new PullGameInfoC2SPacket());
             }
         }
 
