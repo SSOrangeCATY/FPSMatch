@@ -3,46 +3,55 @@ package com.phasetranscrystal.fpsmatch.net;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public class CSGameTabStatsS2CPacket {
     private final UUID uuid;
-    private final TabData tabData;
+    private final int kills;
+    private final int deaths;
+    private final int assists;
+    private final float damage;
+    private final boolean isLiving;
+    private final int headshotKills;
     private final String team;
 
-    public CSGameTabStatsS2CPacket(UUID uuid, TabData tabData,String team) {
+    public CSGameTabStatsS2CPacket(UUID uuid, PlayerData data, String team) {
         this.uuid = uuid;
-        this.tabData = tabData;
+        this.kills = data.getKills();
+        this.deaths = data.getDeaths();
+        this.assists = data.getAssists();
+        this.damage = data.getDamage();
+        this.isLiving = data.isLiving();
+        this.headshotKills = data.getHeadshotKills();
         this.team = team;
     }
 
     public CSGameTabStatsS2CPacket(FriendlyByteBuf buf) {
         this.uuid = buf.readUUID();
-        this.tabData = new TabData(uuid);
-        this.tabData.setKills(buf.readInt());
-        this.tabData.setDeaths(buf.readInt());
-        this.tabData.setAssists(buf.readInt());
-        this.tabData.setDamage(buf.readFloat());
-        this.tabData.setLiving(buf.readBoolean());
-        this.tabData.setHeadshotKills(buf.readInt());
+        this.kills = buf.readInt();
+        this.deaths = buf.readInt();
+        this.assists = buf.readInt();
+        this.damage = buf.readFloat();
+        this.isLiving = buf.readBoolean();
+        this.headshotKills = buf.readInt();
         this.team = buf.readUtf();
     }
 
     public static void encode(CSGameTabStatsS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUUID(packet.uuid);
-        buf.writeInt(packet.tabData.getKills());
-        buf.writeInt(packet.tabData.getDeaths());
-        buf.writeInt(packet.tabData.getAssists());
-        buf.writeFloat(packet.tabData.getDamage());
-        buf.writeBoolean(packet.tabData.isLiving());
-        buf.writeInt(packet.tabData.getHeadshotKills());
+        buf.writeInt(packet.kills);
+        buf.writeInt(packet.deaths);
+        buf.writeInt(packet.assists);
+        buf.writeFloat(packet.damage);
+        buf.writeBoolean(packet.isLiving);
+        buf.writeInt(packet.headshotKills);
         buf.writeUtf(packet.team);
     }
 
@@ -52,13 +61,13 @@ public class CSGameTabStatsS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            if(uuid.equals(Minecraft.getInstance().player.getUUID())){
-                if(!ClientData.currentTeam.equals(team)){
+            if (Minecraft.getInstance().player != null && uuid.equals(Minecraft.getInstance().player.getUUID())) {
+                if (!ClientData.currentTeam.equals(team)) {
                     ClientData.currentTeam = team;
                     CSGameShopScreen.refreshFlag = true;
                 };
             }
-            ClientData.tabData.put(uuid,new Pair<>(team,tabData));
+            ClientData.tabData.put(uuid,new Pair<>(team, new TabData(this.kills,this.deaths,this.assists,this.damage,this.isLiving,this.headshotKills)));
         });
         ctx.get().setPacketHandled(true);
     }

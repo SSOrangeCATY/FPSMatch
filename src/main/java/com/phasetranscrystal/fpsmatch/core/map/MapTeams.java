@@ -261,15 +261,15 @@ public class MapTeams {
      * @param player 玩家对象
      * @return 玩家所属的队伍，如果未找到则返回 null
      */
-    @Nullable
-    public BaseTeam getTeamByPlayer(Player player) {
-        AtomicReference<BaseTeam> baseTeamAtomicReference = new AtomicReference<>();
-        this.teams.forEach(((s, team) -> {
-            if (team.hasPlayer(player.getUUID())) {
-                baseTeamAtomicReference.set(team);
-            };
-        }));
-        return baseTeamAtomicReference.get();
+    public Optional<BaseTeam> getTeamByPlayer(Player player) {
+        BaseTeam team = null;
+        for (BaseTeam baseTeam : this.teams.values()) {
+            if(baseTeam.hasPlayer(player.getUUID())){
+                team = baseTeam;
+                break;
+            }
+        }
+        return Optional.ofNullable(team);
     }
 
     /**
@@ -427,15 +427,13 @@ public class MapTeams {
     /**
      * 根据队伍名称获取队伍对象。
      * <p>
-     * 如果队伍不存在，则返回 null。
+
      *
      * @param teamName 队伍名称
-     * @return 队伍对象，如果未找到则返回 null
+     * @return 队伍对象
      */
-    @Nullable
-    public BaseTeam getTeamByName(String teamName) {
-        if (checkTeam(teamName)) return this.teams.get(teamName);
-        return null;
+    public Optional<BaseTeam> getTeamByName(String teamName) {
+        return Optional.ofNullable(teams.getOrDefault(teamName,null));
     }
 
     /**
@@ -464,7 +462,6 @@ public class MapTeams {
      * 包括重置所有队伍的伤害数据、存活状态、得分、玩家列表、连败次数、补偿因子和暂停时间。
      */
     public void reset() {
-        this.resetAllHurtData();
         this.resetLivingPlayers();
         this.teams.forEach((name, team) -> {
             team.setScores(0);
@@ -508,45 +505,6 @@ public class MapTeams {
         return teamsLiving;
     }
 
-    /**
-     * 根据玩家 UUID 获取其 Tab 数据。
-     * <p>
-     * 遍历所有队伍，查找包含该玩家的队伍并获取其 Tab 数据。
-     * 如果玩家未加入任何队伍，则返回 null。
-     *
-     * @param player 玩家 UUID
-     * @return 玩家的 Tab 数据，如果未找到则返回 null
-     */
-    @Nullable
-    public TabData getTabData(UUID player) {
-        AtomicReference<TabData> data = new AtomicReference<>();
-        teams.values().forEach((team) -> {
-            if (team.hasPlayer(player)) {
-                data.set(team.getPlayerTabData(player));
-            }
-        });
-        return data.get();
-    }
-
-    /**
-     * 根据玩家对象获取其 Tab 数据。
-     * <p>
-     * 通过玩家 UUID 获取其所属队伍的 Tab 数据。
-     * 如果玩家未加入任何队伍，则返回 null。
-     *
-     * @param player 玩家对象
-     * @return 玩家的 Tab 数据，如果未找到则返回 null
-     */
-    @Nullable
-    public TabData getTabData(Player player) {
-        BaseTeam team = getTeamByPlayer(player);
-        if (team != null) {
-            if (team.hasPlayer(player.getUUID())) {
-                return team.getPlayerTabData(player.getUUID());
-            }
-        }
-        return null;
-    }
 
     /**
      * 获取与玩家同队的所有玩家 UUID 列表。
@@ -557,13 +515,10 @@ public class MapTeams {
      * @return 同队玩家的 UUID 列表
      */
     public List<UUID> getSameTeamPlayerUUIDs(Player player) {
-        BaseTeam team = getTeamByPlayer(player);
         List<UUID> uuids = new ArrayList<>();
-        if (team != null) {
-            if (team.hasPlayer(player.getUUID())) {
-                uuids.addAll(team.getPlayerList());
-            }
-        }
+        getTeamByPlayer(player).ifPresent(t->{
+            uuids.addAll(t.getPlayerList());
+        });
         return uuids;
     }
 
@@ -578,13 +533,11 @@ public class MapTeams {
      * @param damage 伤害值
      */
     public void addHurtData(Player attackerId, UUID targetId, float damage) {
-        BaseTeam team = getTeamByPlayer(attackerId);
-        if (team != null) {
-            TabData data = team.getPlayerTabData(attackerId.getUUID());
-            if (data != null) {
-                data.addDamageData(targetId, damage);
-            }
-        }
+        getTeamByPlayer(attackerId)
+                .flatMap(t -> t.getPlayerData(attackerId.getUUID()))
+                .ifPresent(p -> {
+                    p.addDamageData(targetId, damage);
+                });
     }
 
     /**
@@ -597,9 +550,7 @@ public class MapTeams {
      */
     @Nullable
     public UUID getDamageMvp() {
-        Map<UUID, Float> damageMap = new HashMap<>();
-
-        this.getLivingHurtData().forEach((attackerId, attackerDamageMap) -> attackerDamageMap.forEach((targetId, damage) -> damageMap.merge(attackerId, damage, Float::sum)));
+        Map<UUID, Float> damageMap = this.getLivingHurtData();
 
         UUID mvpId = null;
         float highestDamage = 0;
@@ -611,19 +562,6 @@ public class MapTeams {
             }
         }
         return mvpId;
-    }
-
-    /**
-     * 获取所有玩家的 Tab 数据。
-     * <p>
-     * 返回一个 Map，键为玩家 UUID，值为对应的 Tab 数据。
-     *
-     * @return 包含所有玩家 Tab 数据的 Map
-     */
-    public Map<UUID, TabData> getAllTabData() {
-        Map<UUID, TabData> data = new HashMap<>();
-        this.teams.forEach((s, t) -> t.getPlayersTabData().forEach((tab) -> data.put(tab.getOwner(), tab)));
-        return data;
     }
 
     /**
@@ -639,16 +577,18 @@ public class MapTeams {
         UUID mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
-        for (TabData tabData : winnerTeam.getPlayerDataTemp()) {
-            int kills = tabData.getKills() * 2;
-            int assists = tabData.getAssists();
+        for (PlayerData data : winnerTeam.getPlayersData()) {
+            int kills = data._kills() * 2;
+            kills += data._kills() * 2;
+            int assists = data._assists();
+            assists += data._assists();
             int score = kills + assists;
-            if (tabData.getOwner().equals(damageMvpId)) {
+            if (data.getOwner().equals(damageMvpId)) {
                 score += 2;
             }
 
             if (mvpId == null || score > highestScore) {
-                mvpId = tabData.getOwner();
+                mvpId = data.getOwner();
                 highestScore = score;
             }
         }
@@ -662,9 +602,7 @@ public class MapTeams {
      * 重置所有玩家的伤害数据和存活状态，并保存队伍的临时数据。
      */
     public void startNewRound() {
-        this.resetAllHurtData();
         this.resetLivingPlayers();
-        this.teams.values().forEach(BaseTeam::saveTemp);
     }
 
     /**
@@ -699,10 +637,9 @@ public class MapTeams {
             mvpId = this.getGameMvp(winnerTeam);
         } else {
             for (PlayerData data : winnerTeam.getPlayersData()) {
-                TabData temp = winnerTeam.getPlayerTabTemp(data.getOwner());
-                int kills = data.getTabData().getKills() - temp.getKills();
-                int assists = data.getTabData().getAssists() - temp.getAssists();
-                int score = kills * 2 + assists;
+                int kills = data._kills() * 2;
+                int assists = data._assists();
+                int score = kills + assists;
                 if (data.getOwner().equals(damageMvpId)) {
                     score += 2;
                 }
@@ -715,12 +652,9 @@ public class MapTeams {
         }
 
         if (mvpId != null) {
-            PlayerData data = winnerTeam.getPlayerData(mvpId.uuid());
-            if (data != null) {
-                data.getTabData().addMvpCount(1);
-            } else {
-                System.out.println("error : MVP Player Data is null -> " + mvpId.uuid.toString());
-            }
+            winnerTeam.getPlayerData(mvpId.uuid()).ifPresent(data ->{
+                data.addMvpCount(1);
+            });
         }
 
         return mvpId;
@@ -733,22 +667,17 @@ public class MapTeams {
      *
      * @return 包含所有存活玩家伤害数据的 Map
      */
-    public Map<UUID, Map<UUID, Float>> getLivingHurtData() {
-        Map<UUID,Map<UUID,Float>> hurtData = new HashMap<>();
-        teams.values().forEach((t)-> t.getPlayersTabData().forEach((data)-> hurtData.put(data.getOwner(),data.getDamageData())));
+    public Map<UUID,  Float> getLivingHurtData() {
+        Map<UUID,Float> hurtData = new HashMap<>();
+        teams.values().forEach((t)-> t.getPlayersData().forEach((data)-> hurtData.put(data.getOwner(),data._damage())));
         return hurtData;
     }
 
-    /**
-     * 重置所有玩家的伤害数据。
-     * <p>
-     * 遍历所有队伍，调用队伍的 Tab 数据清理方法，清空玩家的伤害记录。
-     */
-    public void resetAllHurtData() {
-        this.teams.values().forEach((t) -> t.getPlayersTabData().forEach(TabData::clearDamageData));
+    public Map<UUID, Map<UUID, Float>> getDamageMap() {
+        Map<UUID, Map<UUID, Float>> hurtData = new HashMap<>();
+        teams.values().forEach((t) -> t.getPlayersData().forEach((data) -> hurtData.put(data.getOwner(), data.getDamageData())));
+        return hurtData;
     }
-
-
     /**
      * 用于表示 MVP 数据的记录类。
      * <p>

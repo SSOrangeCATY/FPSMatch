@@ -82,7 +82,7 @@ public class UpdateShopSlotPacket {
             if (player == null) return;
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if(map instanceof ShopMap<?> shop) {
-                BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
+                BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);
                 if (team != null) {
                     FPSMShop playerShop = shop.getShop(team.name);
                     if(playerShop != null){

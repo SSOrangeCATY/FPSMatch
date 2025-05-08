@@ -552,7 +552,9 @@ public class FPSMCommand {
                             iGun.setDummyAmmoAmount(itemStack, dummyAmmoAmount);
                             iGun.setCurrentAmmoCount(itemStack, gunData.getAmmoAmount());
                         }
-                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
+                        map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                            startKitMap.addKits(t,itemStack);
+                        });
                         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
@@ -560,7 +562,9 @@ public class FPSMCommand {
                     break;
                 case "clear":
                     if (map.getMapTeams().checkTeam(team)) {
-                        startKitMap.clearTeamKits(map.getMapTeams().getTeamByName(team));
+                        map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                            startKitMap.clearTeamKits(t);
+                        });
                         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
@@ -705,33 +709,33 @@ public class FPSMCommand {
         String action = StringArgumentType.getString(context, "action");
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
-            BaseTeam team = map.getMapTeams().getTeamByName(teamName);
-            switch (action) {
-                case "join":
-                    if (team != null && team.getRemainingLimit() - players.size() >= 0) {
-                        for (ServerPlayer player : players) {
-                            map.join(teamName, player);
-                            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
+            map.getMapTeams().getTeamByName(teamName).ifPresent(team->{
+                switch (action) {
+                    case "join":
+                        if (team.getRemainingLimit() - players.size() >= 0) {
+                            for (ServerPlayer player : players) {
+                                map.join(teamName, player);
+                                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), team.getFixedName()), true);
+                            }
+                        } else {
+                            // 翻译文本
+                            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
                         }
-                    } else {
-                        // 翻译文本
-                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.join.failure", team));
-                    }
-                    break;
-                case "leave":
-                    if (team != null) {
-                        for (ServerPlayer player : players) {
-                            map.leave(player);
-                            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
+                        break;
+                    case "leave":
+                        if (team != null) {
+                            for (ServerPlayer player : players) {
+                                map.leave(player);
+                                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.team.leave.success", player.getDisplayName()), true);
+                            }
+                        } else {
+                            context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", teamName));
                         }
-                    } else {
-                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.leave.failure", teamName));
-                    }
-                    break;
-                default:
-                    context.getSource().sendFailure(Component.translatable("commands.fpsm.team.invalidAction"));
-                    return 0;
-            }
+                        break;
+                    default:
+                        context.getSource().sendFailure(Component.translatable("commands.fpsm.team.invalidAction"));
+                }
+            });
         } else {
             context.getSource().sendFailure(Component.translatable("commands.fpsm.map.notFound"));
             return 0;
@@ -750,7 +754,9 @@ public class FPSMCommand {
                 case "add":
                     if (map.getMapTeams().checkTeam(team)) {
                         ItemStack itemStack = player.getMainHandItem().copy();
-                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
+                        map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                            startKitMap.addKits(t, itemStack);
+                        });
                         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
@@ -758,7 +764,9 @@ public class FPSMCommand {
                     break;
                 case "clear":
                     if (map.getMapTeams().checkTeam(team)) {
-                        startKitMap.clearTeamKits(map.getMapTeams().getTeamByName(team));
+                        map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                            startKitMap.clearTeamKits(t);
+                        });
                         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
@@ -789,7 +797,9 @@ public class FPSMCommand {
             switch (action) {
                 case "add":
                     if (map.getMapTeams().checkTeam(team)) {
-                        startKitMap.addKits(map.getMapTeams().getTeamByName(team), itemStack);
+                        map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                            startKitMap.addKits(t, itemStack);
+                        });
                         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success", itemStack.getDisplayName(), team), true);
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
@@ -797,12 +807,14 @@ public class FPSMCommand {
                     break;
                 case "clear":
                     if (map.getMapTeams().checkTeam(team)) {
-                        boolean flag = startKitMap.removeItem(map.getMapTeams().getTeamByName(team), itemStack);
-                        if (flag) {
-                            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
-                        } else {
-                            context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.clear.failed"));
-                        }
+                        map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                            boolean flag = startKitMap.removeItem(t, itemStack);
+                            if (flag) {
+                                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success", team), true);
+                            } else {
+                                context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.clear.failed"));
+                            }
+                        });
                     } else {
                         context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
                     }
@@ -823,11 +835,13 @@ public class FPSMCommand {
 
     private static void handleKitsListAction(CommandContext<CommandSourceStack> context, String team, BaseMap map, GiveStartKitsMap<?> startKitMap) {
         if (map.getMapTeams().checkTeam(team)) {
-            List<ItemStack> itemStacks = startKitMap.getKits(map.getMapTeams().getTeamByName(team));
-            for (ItemStack itemStack1 : itemStacks) {
-                context.getSource().sendSuccess(itemStack1::getDisplayName, true);
-            }
-            context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.list.success", team, itemStacks.size()), true);
+            map.getMapTeams().getTeamByName(team).ifPresent(t->{
+                List<ItemStack> itemStacks = startKitMap.getKits(t);
+                for (ItemStack itemStack1 : itemStacks) {
+                    context.getSource().sendSuccess(itemStack1::getDisplayName, true);
+                }
+                context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.list.success", team, itemStacks.size()), true);
+            });
         } else {
             context.getSource().sendFailure(Component.translatable("commands.fpsm.team.notFound"));
         }

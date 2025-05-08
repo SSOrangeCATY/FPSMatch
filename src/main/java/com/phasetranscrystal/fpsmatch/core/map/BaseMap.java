@@ -181,7 +181,11 @@ public abstract class BaseMap {
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()));
-        FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), Objects.requireNonNull(Objects.requireNonNull(this.getMapTeams().getTeamByName(teamName)).getPlayerData(player.getUUID())).getTabData(), teamName));
+        this.getMapTeams().getTeamByName(teamName)
+                .flatMap(team -> team.getPlayerData(player.getUUID()))
+                .ifPresent(playerData -> {
+                    FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new CSGameTabStatsS2CPacket(player.getUUID(), playerData, teamName));
+                });
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
             FPSMShop shop = shopMap.getShop(teamName);
@@ -200,10 +204,12 @@ public abstract class BaseMap {
 
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
-        BaseTeam team = this.getMapTeams().getTeamByPlayer(player);
-        if (team == null) return;
-        SpawnPointData data = Objects.requireNonNull(team.getPlayerData(player.getUUID())).getSpawnPointsData();
-        teleportToPoint(player, data);
+        this.getMapTeams().getTeamByPlayer(player)
+                .flatMap(t -> t.getPlayerData(player.getUUID()))
+                .ifPresent(playerData -> {
+                    teleportToPoint(player, playerData.getSpawnPointsData());
+        });
+
     }
 
     public void teleportToPoint(ServerPlayer player, SpawnPointData data) {
@@ -317,12 +323,9 @@ public abstract class BaseMap {
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
         this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid -> {
-            ServerPlayer player = this.getPlayerByUUID(uuid);
-            if (player != null) {
+            this.getPlayerByUUID(uuid).ifPresent(player->{
                 this.sendPacketToJoinedPlayer(player, packet, true);
-            } else {
-                FPSMatch.LOGGER.error(this.getMapTeams().playerName.getOrDefault(uuid, Component.literal(uuid.toString())).getString() + " is not found in online world");
-            }
+            });
         });
     }
 
@@ -345,7 +348,7 @@ public abstract class BaseMap {
         }
     }
 
-    @Nullable public ServerPlayer getPlayerByUUID(UUID uuid){
+    public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
         return FPSMCore.getInstance().getPlayerByUUID(uuid);
     }
     /**
@@ -356,15 +359,7 @@ public abstract class BaseMap {
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map != null) {
-                MapTeams teams = map.getMapTeams();
-                BaseTeam playerTeam = teams.getTeamByPlayer(player);
-                if (playerTeam != null) {
-                    PlayerData data = playerTeam.getPlayerData(player.getUUID());
-                    if (data == null) return;
-                    data.setOffline(false);
-                }
-            } else {
+            if (map == null) {
                 if (!player.isCreative()) {
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.ADVENTURE);

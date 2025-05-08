@@ -137,7 +137,7 @@ public class BaseTeam {
      * @param player 玩家对象
      */
     public void createPlayerData(ServerPlayer player) {
-        this.players.put(player.getUUID(), new PlayerData(player.getUUID()));
+        this.players.put(player.getUUID(), new PlayerData(player));
     }
 
     /**
@@ -148,7 +148,6 @@ public class BaseTeam {
         UUID uuid = player.getUUID();
         PlayerData playerData = players.get(uuid);
         playerData.setLiving(false);
-        playerData.setOffline(true);
         player.heal(player.getMaxHealth());
         player.setGameMode(GameType.SPECTATOR);
     }
@@ -158,23 +157,11 @@ public class BaseTeam {
      */
     public void resetLiving() {
         this.players.values().forEach(data -> {
-            if (!data.isOffline()) {
+            if (data.isOnline()) {
                 data.setLiving(true);
+                data.save();
             }
         });
-    }
-
-    /**
-     * 获取玩家的 TabData。
-     * @param uuid 玩家 UUID
-     * @return 玩家的 TabData，如果未找到则返回 null
-     */
-    @Nullable
-    public TabData getPlayerTabData(UUID uuid) {
-        if (this.players.containsKey(uuid)) {
-            return this.players.get(uuid).getTabData();
-        }
-        return null;
     }
 
     /**
@@ -182,12 +169,8 @@ public class BaseTeam {
      * @param uuid 玩家 UUID
      * @return 玩家的 PlayerData，如果未找到则返回 null
      */
-    @Nullable
-    public PlayerData getPlayerData(UUID uuid) {
-        if (this.players.containsKey(uuid)) {
-            return this.players.get(uuid);
-        }
-        return null;
+    public Optional<PlayerData> getPlayerData(UUID uuid) {
+        return Optional.ofNullable(this.players.getOrDefault(uuid,null));
     }
 
     /**
@@ -196,43 +179,6 @@ public class BaseTeam {
      */
     public List<PlayerData> getPlayersData() {
         return this.players.values().stream().toList();
-    }
-
-    /**
-     * 获取队伍中所有玩家的 TabData 列表。
-     * @return 玩家 TabData 列表
-     */
-    public List<TabData> getPlayersTabData() {
-        List<TabData> tabDataList = new ArrayList<>();
-        this.players.values().forEach(data -> tabDataList.add(data.getTabData()));
-        return tabDataList;
-    }
-
-    /**
-     * 保存队伍中所有玩家的临时数据。
-     */
-    public void saveTemp() {
-        this.playerDataTemp.clear();
-        for (Map.Entry<UUID, PlayerData> entry : this.players.entrySet()) {
-            this.playerDataTemp.put(entry.getKey(), entry.getValue().getTabData().copy());
-        }
-    }
-
-    /**
-     * 获取队伍中所有玩家的临时 TabData 列表。
-     * @return 临时 TabData 列表
-     */
-    public List<TabData> getPlayerDataTemp() {
-        return this.playerDataTemp.values().stream().toList();
-    }
-
-    /**
-     * 获取玩家的临时 TabData。
-     * @param uuid 玩家 UUID
-     * @return 玩家的临时 TabData，如果未找到则返回一个新的 TabData
-     */
-    public TabData getPlayerTabTemp(UUID uuid) {
-        return this.playerDataTemp.getOrDefault(uuid, new TabData(uuid));
     }
 
     /**
@@ -250,7 +196,7 @@ public class BaseTeam {
     public List<UUID> getOfflinePlayers() {
         List<UUID> offlinePlayers = new ArrayList<>();
         this.players.values().forEach(data -> {
-            if (data.isOffline()) {
+            if (!data.isOnline()) {
                 offlinePlayers.add(data.getOwner());
             }
         });
@@ -264,7 +210,7 @@ public class BaseTeam {
     public List<UUID> getLivingPlayers() {
         List<UUID> uuids = new ArrayList<>();
         this.players.values().forEach(data -> {
-            if (data.getTabData().isLiving()) {
+            if (data.isLiving()) {
                 uuids.add(data.getOwner());
             }
         });
@@ -442,12 +388,11 @@ public class BaseTeam {
         this.players.clear();
         this.players.putAll(players);
         players.keySet().forEach(uuid -> {
-            ServerPlayer serverPlayer = FPSMCore.getInstance().getPlayerByUUID(uuid);
-            if (serverPlayer != null) {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresentOrElse(serverPlayer -> {
                 serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), this.getPlayerTeam());
-            } else {
+            },()->{
                 teamUnableToSwitch.add(uuid);
-            }
+            });
         });
     }
 

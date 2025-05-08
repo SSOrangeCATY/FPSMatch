@@ -140,14 +140,14 @@ public class FPSMShop {
      */
     public void syncShopData() {
         for (UUID uuid : playersData.keySet()) {
-            ServerPlayer player = FPSMCore.getInstance().getServer().getPlayerList().getPlayer(uuid);
-            if (player != null) {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player->{
                 ShopData shopData = this.getPlayerShopData(uuid);
                 for (ItemType type : ItemType.values()) {
-                        List<ShopSlot> slots = shopData.getShopSlotsByType(type);
-                        slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot))));
+                    List<ShopSlot> slots = shopData.getShopSlotsByType(type);
+                    slots.forEach((shopSlot -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot))));
                 }
-            }
+            });
+
         }
     }
 
@@ -158,11 +158,10 @@ public class FPSMShop {
      */
     public void syncShopMoneyData() {
         for (UUID uuid : playersData.keySet()) {
-            ServerPlayer player = FPSMCore.getInstance().getServer().getPlayerList().getPlayer(uuid);
-            if (player != null) {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player->{
                 ShopData shopData = this.getPlayerShopData(uuid);
                 FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
-            }
+            });
         }
     }
 
@@ -173,11 +172,10 @@ public class FPSMShop {
      */
     public void syncShopMoneyData(UUID uuid) {
         if (playersData.containsKey(uuid)) {
-            ServerPlayer player = FPSMCore.getInstance().getServer().getPlayerList().getPlayer(uuid);
-            if (player != null) {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player->{
                 ShopData shopData = this.getPlayerShopData(uuid);
                 FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
-            }
+            });
         }
     }
 
@@ -387,8 +385,13 @@ public class FPSMShop {
 
         PlayerGetShopDataEvent event = new PlayerGetShopDataEvent(protectedMap, uuid);
         MinecraftForge.EVENT_BUS.post(event);
+        ShopData finalData;
+        if(this.playersData.containsKey(uuid)){
+            finalData = new ShopData(event.getData(), this.playersData.get(uuid).getMoney());
+        }else{
+            finalData = new ShopData(event.getData(), this.startMoney);
+        }
 
-        ShopData finalData = new ShopData(event.getData(), this.startMoney);
         this.playersData.put(uuid, finalData);
         return finalData;
     }

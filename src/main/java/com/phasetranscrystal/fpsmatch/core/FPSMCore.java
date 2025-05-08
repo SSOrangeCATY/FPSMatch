@@ -202,8 +202,7 @@ public class FPSMCore {
     public static void playerDeadDropWeapon(ServerPlayer serverPlayer){
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
         if(map != null){
-            BaseTeam team = map.getMapTeams().getTeamByPlayer(serverPlayer);
-            if(team != null){
+            map.getMapTeams().getTeamByPlayer(serverPlayer).ifPresent(team->{
                 ItemStack itemStack = ItemStack.EMPTY;
                 for(MatchDropEntity.DropType type : MatchDropEntity.DropType.values()){
                     if(type == MatchDropEntity.DropType.MISC){
@@ -231,7 +230,7 @@ public class FPSMCore {
                 if(!itemStack.isEmpty()){
                     playerDropMatchItem(serverPlayer,itemStack);
                 }
-            }
+            });
         }
     }
 
@@ -239,8 +238,8 @@ public class FPSMCore {
         return server;
     }
 
-    @Nullable public ServerPlayer getPlayerByUUID(UUID uuid){
-        return this.server.getPlayerList().getPlayer(uuid);
+    public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
+        return Optional.ofNullable(this.server.getPlayerList().getPlayer(uuid));
     }
 
 }

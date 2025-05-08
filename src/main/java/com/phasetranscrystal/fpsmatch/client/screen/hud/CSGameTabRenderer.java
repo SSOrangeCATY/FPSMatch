@@ -144,7 +144,7 @@ public class CSGameTabRenderer implements TabRenderer {
         Comparator<PlayerInfo> damageComparator = (p1, p2) -> {
             TabData t1 = ClientData.getTabDataByUUID(p1.getProfile().getId());
             TabData t2 = ClientData.getTabDataByUUID(p2.getProfile().getId());
-            return Float.compare(t2.getDamage(), t1.getDamage());
+            return Float.compare(t2.damage(), t1.damage());
         };
 
         teamPlayers.get("ct").sort(damageComparator);
@@ -227,26 +227,26 @@ public class CSGameTabRenderer implements TabRenderer {
         
         // K/D/A（与表头对齐）
         int kdaX = moneyX + moneyWidth;
-        String kills = String.valueOf(tabData.getKills());
+        String kills = String.valueOf(tabData.kills());
         guiGraphics.drawString(minecraft.font, kills, 
             kdaX + (killWidth - minecraft.font.width(kills)) / 2, textY, textColor);
         
         int deathsX = kdaX + killWidth;
         guiGraphics.fill(deathsX, y, deathsX + deathWidth, y + height, 0x20FFFFFF);
-        String deaths = String.valueOf(tabData.getDeaths());
+        String deaths = String.valueOf(tabData.deaths());
         guiGraphics.drawString(minecraft.font, deaths, 
             deathsX + (deathWidth - minecraft.font.width(deaths)) / 2, textY, textColor);
         
         int assistsX = deathsX + deathWidth;
-        String assists = String.valueOf(tabData.getAssists());
+        String assists = String.valueOf(tabData.assists());
         guiGraphics.drawString(minecraft.font, assists, 
             assistsX + (assistWidth - minecraft.font.width(assists)) / 2, textY, textColor);
         
         // 爆头率（与表头对齐）
         int headshotX = assistsX + assistWidth;
         guiGraphics.fill(headshotX, y, headshotX + headshotWidth, y + height, 0x20FFFFFF);
-        String headshotPercentage = tabData.getKills() > 0 
-            ? String.format("%.0f%%", (float)tabData.getHeadshotKills() / tabData.getKills() * 100)
+        String headshotPercentage = tabData.kills() > 0
+            ? String.format("%.0f%%", (float)tabData.headshotKills() / tabData.kills() * 100)
             : "0%";
         guiGraphics.drawString(minecraft.font, headshotPercentage, 
             headshotX + (headshotWidth - minecraft.font.width(headshotPercentage)) / 2, textY, textColor);
@@ -254,7 +254,7 @@ public class CSGameTabRenderer implements TabRenderer {
         // 伤害（与表头对齐）
         int damageX = x + width - damageWidth;
         guiGraphics.fill(damageX, y, damageX + damageWidth, y + height, 0x40FFFFFF);
-        String damage = String.valueOf(Math.round(tabData.getDamage()));
+        String damage = String.valueOf(Math.round(tabData.damage()));
         guiGraphics.drawString(minecraft.font, damage, 
             damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, textColor);
 

@@ -203,18 +203,18 @@ public class MatchDropEntity extends Entity {
                     this.discard();
                     BaseMap map = FPSMCore.getInstance().getMapByPlayer(pEntity);
                     if (map instanceof ShopMap<?> shopMap) {
-                        BaseTeam team = map.getMapTeams().getTeamByPlayer(pEntity);
-                        if(team == null) return;
-                        FPSMShop shop = shopMap.getShop(team.name);
-                        if (shop == null) return;
+                        map.getMapTeams().getTeamByPlayer(pEntity).ifPresent(team->{
+                            FPSMShop shop = shopMap.getShop(team.name);
+                            if (shop == null) return;
 
-                        ShopData shopData = shop.getPlayerShopData(pEntity.getUUID());
-                        Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
-                        if(pair != null){
-                            ShopSlot slot = pair.getSecond();
-                            slot.lock(copy.getCount());
-                            shop.syncShopData((ServerPlayer) pEntity,pair.getFirst(),slot);
-                        }
+                            ShopData shopData = shop.getPlayerShopData(pEntity.getUUID());
+                            Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
+                            if(pair != null){
+                                ShopSlot slot = pair.getSecond();
+                                slot.lock(copy.getCount());
+                                shop.syncShopData((ServerPlayer) pEntity,pair.getFirst(),slot);
+                            }
+                        });
                     }
                     pEntity.addItem(copy);
                     pEntity.level().playSound(pEntity,getOnPos(), SoundEvents.ITEM_PICKUP,pEntity.getSoundSource(),1,1);

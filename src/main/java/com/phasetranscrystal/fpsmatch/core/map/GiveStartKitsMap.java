@@ -106,8 +106,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      */
     default void givePlayerKits(ServerPlayer player) {
         BaseMap map = this.getMap();
-        BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
-        if (team != null) {
+        map.getMapTeams().getTeamByPlayer(player).ifPresentOrElse(team->{
             ArrayList<ItemStack> items = this.getKits(team);
             player.getInventory().clearContent();
             items.forEach(itemStack -> {
@@ -115,9 +114,9 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             });
-        } else {
+        },()->{
             System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString());
-        }
+        });
     }
 
     /**
@@ -147,10 +146,8 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
     default void giveAllPlayersKits() {
         BaseMap map = this.getMap();
         for (UUID uuid : this.getMap().getMapTeams().getJoinedPlayers()) {
-            Player player = map.getServerLevel().getPlayerByUUID(uuid);
-            if (player != null) {
-                BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
-                if (team != null) {
+            map.getPlayerByUUID(uuid).ifPresent(player->{
+                map.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
                     ArrayList<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
                     items.forEach(itemStack -> {
@@ -158,12 +155,8 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                     });
                     player.inventoryMenu.broadcastChanges();
                     player.inventoryMenu.slotsChanged(player.getInventory());
-                } else {
-                    System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString());
-                }
-            } else {
-                System.out.println("givePlayerKits: player not found ->" + uuid);
-            }
+                });
+            });
         }
     }
 

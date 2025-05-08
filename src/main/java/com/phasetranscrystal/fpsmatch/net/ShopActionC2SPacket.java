@@ -47,7 +47,7 @@ public class ShopActionC2SPacket {
         ctx.get().enqueueWork(() -> {
             BaseMap map = FPSMCore.getInstance().getMapByName(name);
             if(map instanceof ShopMap<?> shopMap){
-                BaseTeam team = map.getMapTeams().getTeamByPlayer(ctx.get().getSender());
+                BaseTeam team = map.getMapTeams().getTeamByPlayer(ctx.get().getSender()).orElse(null);;
                 FPSMShop shop = null;
                 if (team != null) {
                     shop = shopMap.getShop(team.name);

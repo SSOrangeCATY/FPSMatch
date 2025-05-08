@@ -29,7 +29,7 @@ public abstract class MixinItemEntity {
                     ci.cancel();
                     return;
                 }
-                BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
+                BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);;
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
                     if(!blastModeMap.checkCanPlacingBombs(team.getFixedName())){
                         ci.cancel();
@@ -45,7 +45,7 @@ public abstract class MixinItemEntity {
                     ci.cancel();
                     return;
                 }
-                BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
+                BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);;
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
                     if(!blastModeMap.checkCanPlacingBombs(team.getFixedName())){
                         int i = player.getInventory().countItem(FPSMItemRegister.BOMB_DISPOSAL_KIT.get());

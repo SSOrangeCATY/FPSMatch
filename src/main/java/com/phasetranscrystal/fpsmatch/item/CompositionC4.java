@@ -96,7 +96,7 @@ public class CompositionC4 extends Item {
                 player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.map.notStart"), true);
                 return InteractionResultHolder.pass(itemstack);
             }
-            BaseTeam team = baseMap.getMapTeams().getTeamByPlayer(player);
+            BaseTeam team = baseMap.getMapTeams().getTeamByPlayer(player).orElse(null);
             if(team == null) {
                 player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.team.notInTeam"), true);
                 return InteractionResultHolder.pass(itemstack);
@@ -151,7 +151,7 @@ public class CompositionC4 extends Item {
 					player.displayClientMessage(Component.translatable("fpsm.item.c4.use.fail.notInArea"), true);
 					return pStack;
 				} else {
-					BaseTeam team = map.getMapTeams().getTeamByPlayer(player);
+					BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);
 					if (team != null && map instanceof ShopMap<?> shopMap) {
 						team.getPlayerList().forEach((uuid -> {
 							shopMap.addPlayerMoney(uuid, 300);

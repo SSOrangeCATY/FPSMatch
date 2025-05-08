@@ -39,10 +39,9 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         if(this.getOwner() instanceof Player player){
             BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);
             if(baseMap instanceof CSGameMap csGameMap){
-                BaseTeam baseTeam = csGameMap.getMapTeams().getTeamByPlayer(player);
-                if(baseTeam != null){
-                    this.setParticleOptions(new DustParticleOptions(baseTeam.name.equals("ct") ? CT : T , 10F));
-                }
+                csGameMap.getMapTeams().getTeamByPlayer(player).ifPresent(t->{
+                    this.setParticleOptions(new DustParticleOptions(t.name.equals("ct") ? CT : T , 10F));
+                });
             }
         }
     }

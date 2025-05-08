@@ -97,7 +97,7 @@ public class ShopEditTool extends Item {
                         serverPlayer.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.all_shops").withStyle(ChatFormatting.BOLD)
                                 .append(shopList.toString()).withStyle(ChatFormatting.GREEN)
                         );
-                        BaseTeam team = map.getMapTeams().getTeamByName(newShop);
+                        BaseTeam team = map.getMapTeams().getTeamByName(newShop).orElse(null);;
                         //加入队伍尝试
                         if (team != null && team.getRemainingLimit() >= 1) {
                             map.join(newShop, serverPlayer);
