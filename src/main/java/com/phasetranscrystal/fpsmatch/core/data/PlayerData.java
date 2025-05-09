@@ -176,6 +176,7 @@ public class PlayerData{
 
     public void addMvpCount(int mvpCount){
         this.mvpCount += mvpCount;
+        addScore(4);
     }
 
     public PlayerData copy(Player other){
@@ -215,9 +216,15 @@ public class PlayerData{
 
     public void save() {
         this.deaths += this._deaths;
+        this._deaths = 0;
         this.assists += this._assists;
+        addScore(this._assists);
+        this._assists = 0;
         this.damage += this._damage;
+        this._damage = 0;
         this.kills += this._kills;
+        addScore(this._kills * 2);
+        this._kills = 0;
         this.damageData.clear();
     }
 }

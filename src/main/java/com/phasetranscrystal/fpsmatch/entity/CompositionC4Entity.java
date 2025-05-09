@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.net.BombActionS2CPacket;
@@ -38,7 +39,6 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_INTERACTION = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final int DEFAULT_FUSE_TIME = 800; // 40秒
     private static final int DEFAULT_EXPLOSION_RADIUS = 60;
-    @Nullable
     private Player owner;
     @Nullable
     private Player demolisher;
@@ -54,26 +54,26 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.setDeleteTime(0);
     }
 
-    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, @Nullable Player pOwner, @NotNull BlastModeMap<?> map) {
+    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, Player pOwner, @NotNull BlastModeMap<?> map) {
         this(EntityRegister.C4.get(), pLevel);
         this.setFuse(DEFAULT_FUSE_TIME);
         this.setExplosionRadius(DEFAULT_EXPLOSION_RADIUS);
         this.setPos(pX, pY, pZ);
         this.owner = pOwner;
         this.map = map;
-        map.setBlasting(1);
+        map.setBlasting(this);
     }
 
-    public CompositionC4Entity(Level pLevel, Vec3 pos, @Nullable Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius) {
+    public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius) {
         this(EntityRegister.C4.get(), pLevel);
         this.setFuse(fuseTime);
         this.setExplosionRadius(explosionRadius);
         this.setPos(pos);
         this.owner = pOwner;
         this.map = map;
-        map.setBlasting(1);
+        map.setBlasting(this);
     }
-    public CompositionC4Entity(Level pLevel, Vec3 pos, @Nullable Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
+    public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
         this(EntityRegister.C4.get(), pLevel);
         this.setExplosionInteraction(explosionInteraction);
         this.setFuse(fuseTime);
@@ -81,8 +81,13 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
         this.setPos(pos);
         this.owner = pOwner;
         this.map = map;
-        map.setBlasting(1);
+        map.setBlasting(this);
     }
+
+    public boolean isDeleting(){
+        return this.deleting;
+    }
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_FUSE_ID, DEFAULT_FUSE_TIME);
@@ -208,7 +213,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
 
             if(this.getDemolitionProgress() >= j){
                 this.deleting = true;
-                map.setBlasting(2);
+                map.setBlasting(this);
                 this.playDefusedSound();
                 return;
             }

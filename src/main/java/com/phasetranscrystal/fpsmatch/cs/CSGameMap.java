@@ -394,7 +394,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isStart = true;
         this.isWaiting = true;
         this.isWaitingWinner = false;
-        this.setBlasting(0);
+        this.setBlasting(null);
         this.setExploded(false);
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
@@ -617,15 +617,20 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getTeams().forEach(team -> {
             if(team.equals(winnerTeam)){
                 team.getPlayerList().forEach(uuid -> {
-                    this.getPlayerByUUID(uuid).ifPresent(player->{
+                    this.getPlayerByUUID(uuid).ifPresentOrElse(player->{
                         this.addPlayerMoney(uuid, reward);
                         player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", reward, reason.name()));
+                    },()->{
+                        this.addPlayerMoney(uuid, reward);
                     });
                 });
             }else{
                 team.getPlayerList().forEach(uuid -> {
                     this.getPlayerByUUID(uuid).ifPresent(player->{
                         int defaultEconomy = 1400;
+                        if(this.checkCanPlacingBombs(team.getFixedName()) && reason == WinnerReason.DEFUSE_BOMB){
+                            defaultEconomy += 600;
+                        }
                         int compensation = 500;
                         int compensationFactor = team.getCompensationFactor();
                         // 计算失败补偿
@@ -635,10 +640,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                             this.addPlayerMoney(uuid, loss);
                             player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, defaultEconomy + " + " + compensation + " * " + compensationFactor));
                         }else{
+                            int finalDefaultEconomy = defaultEconomy;
                             team.getPlayerData(uuid).ifPresent(data->{
-                                if(data.isLiving()){
+                                if(!data.isLiving()){
                                     this.addPlayerMoney(uuid, loss);
-                                    player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, defaultEconomy + " + " + compensation + " * " + compensationFactor));
+                                    player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, finalDefaultEconomy + " + " + compensation + " * " + compensationFactor));
                                 }else{
                                     player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", 0, "timeout living"));
                                 }
@@ -657,7 +663,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getTeams().forEach(team -> {
             int compensationFactor = team.getCompensationFactor();
             if (team.equals(winnerTeam)) {
-                team.setCompensationFactor(Math.max(compensationFactor - 1, 0));
+                team.setCompensationFactor(Math.max(compensationFactor - 2, 0));
             } else {
                 team.setCompensationFactor(Math.min(compensationFactor + 1, 4));
             }
@@ -795,7 +801,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             // 发起加时赛投票
             if (ctScore == 12 && tScore == 12) {
                 this.startOvertimeVote();
-                this.setBlasting(0);
+                this.setBlasting(null);
                 this.setExploded(false);
                 this.currentRoundTime = 0;
                 this.isPause = true;
@@ -828,7 +834,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.currentPauseTime = 0;
         }
 
-        this.setBlasting(0);
+        this.setBlasting(null);
         this.setExploded(false);
         this.currentRoundTime = 0;
         this.isShopLocked = false;
@@ -1049,8 +1055,23 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public List<AreaData> getBombAreaData() {
         return bombAreaData;
     }
-    public void setBlasting(int blasting) {
-        isBlasting = blasting;
+    public void setBlasting(CompositionC4Entity c4) {
+        if(c4 == null) {
+            isBlasting = 0;
+            return;
+        }
+        if(c4.isDeleting()){
+            isBlasting = 2;
+            if (c4.getOwner() != null) {
+                this.removePlayerMoney(c4.getOwner().getUUID(), 300);
+            }
+            if(c4.getDemolisher() != null){
+                this.addPlayerMoney(c4.getDemolisher().getUUID(), 300);
+
+            }
+        }else{
+            isBlasting = 1;
+        }
     }
     public void setExploded(boolean exploded) {
         isExploded = exploded;
@@ -1121,23 +1142,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.matchEndTeleportPoint = matchEndTeleportPoint;
     }
 
-    @SubscribeEvent
-    public static void onPlayerKillOnMap(PlayerKillOnMapEvent event){
-        if(event.getBaseMap() instanceof CSGameMap csGameMap){
-            BaseTeam killerTeam = csGameMap.getMapTeams().getTeamByPlayer(event.getKiller()).orElse(null);
-            BaseTeam deadTeam = csGameMap.getMapTeams().getTeamByPlayer(event.getDead()).orElse(null);
-            if(killerTeam == null || deadTeam == null) return;
-            if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
-                csGameMap.removePlayerMoney(event.getKiller().getUUID(),300);
-                csGameMap.getShop(killerTeam.name).syncShopMoneyData(event.getKiller().getUUID());
-                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.teammate",300),false);
-            }else{
-                csGameMap.addPlayerMoney(event.getKiller().getUUID(),300);
-                csGameMap.getShop(killerTeam.name).syncShopMoneyData(event.getKiller().getUUID());
-                event.getKiller().displayClientMessage(Component.translatable("fpsm.kill.message.enemy",300),false);
-            }
-        }
-    }
 
     @SubscribeEvent
     public static void onChat(ServerChatEvent event){
@@ -1154,10 +1158,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map instanceof CSGameMap csGameMap){
+            if(map instanceof CSGameMap){
                 dropC4(player);
                 player.getInventory().clearContent();
-                csGameMap.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
             }
         }
     }
@@ -1235,18 +1238,30 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(event.getLogicalSide() == LogicalSide.SERVER){
             if (event.getKilledEntity() instanceof ServerPlayer player) {
                 BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map instanceof CSGameMap && map.checkGameHasPlayer(player)) {
-                    if(event.getAttacker() instanceof ServerPlayer fromPlayer){
+                if (map instanceof CSGameMap cs && map.checkGameHasPlayer(player)) {
+                    if(event.getAttacker() instanceof ServerPlayer attacker){
                         BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
                         if (fromMap instanceof CSGameMap csGameMap && csGameMap.equals(map)) {
-                            if(fromPlayer.getMainHandItem().getItem() instanceof IGun) {
-                                csGameMap.getMapTeams().getTeamByPlayer(fromPlayer).ifPresent(team->{
+                            BaseTeam killerTeam = map.getMapTeams().getTeamByPlayer(attacker).orElse(null);
+                            BaseTeam deadTeam = map.getMapTeams().getTeamByPlayer(player).orElse(null);
+                            if(killerTeam == null || deadTeam == null) return;
+                            if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
+                                cs.removePlayerMoney(attacker.getUUID(),300);
+                                attacker.displayClientMessage(Component.translatable("fpsm.kill.message.teammate",300),false);
+                            }else{
+                                int reward = cs.gerRewardByGunId(event.getGunId());
+                                cs.addPlayerMoney(attacker.getUUID(),reward);
+                                attacker.displayClientMessage(Component.translatable("fpsm.kill.message.enemy",reward),false);
+                            }
+
+                            if(attacker.getMainHandItem().getItem() instanceof IGun) {
+                                csGameMap.getMapTeams().getTeamByPlayer(attacker).ifPresent(team->{
                                     if(event.isHeadShot()){
-                                        team.getPlayerData(fromPlayer.getUUID()).ifPresent(PlayerData::addHeadshotKill);
+                                        team.getPlayerData(attacker.getUUID()).ifPresent(PlayerData::addHeadshotKill);
                                     }
                                 });
 
-                                DeathMessage deathMessage = new DeathMessage.Builder(fromPlayer, player, fromPlayer.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
+                                DeathMessage deathMessage = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
                                 csGameMap.sendPacketToAllPlayer(killMessageS2CPacket);
                             }
@@ -1582,6 +1597,31 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }));
     }
 
+    private final List<ItemStack> SNIPER = MatchDropEntity.getSniper();
+    private final List<ItemStack> SHOTGUN = MatchDropEntity.getShotGun();
+    private final List<ItemStack> SMG = MatchDropEntity.getSMG();
+
+    public int gerRewardByGunId(ResourceLocation gunId){
+        for (ItemStack stack : SHOTGUN) {
+            if(stack.getItem() instanceof IGun iGun && gunId.equals(iGun.getGunId(stack))){
+                return 900;
+            }
+        }
+        for (ItemStack stack : SMG) {
+            if(stack.getItem() instanceof IGun iGun && gunId.equals(iGun.getGunId(stack))){
+                return 600;
+            }
+        }
+
+        for (ItemStack stack : SNIPER) {
+            if(stack.getItem() instanceof IGun iGun && gunId.equals(iGun.getGunId(stack))){
+                return 100;
+            }
+        }
+
+        return 300;
+    }
+
     public enum WinnerReason{
         TIME_OUT(3250),
         ACED(3250),
@@ -1593,4 +1633,5 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.winMoney = winMoney;
         }
     }
+
 }

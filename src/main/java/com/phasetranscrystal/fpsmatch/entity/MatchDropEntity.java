@@ -59,6 +59,26 @@ public class MatchDropEntity extends Entity {
         return itemStacks;
     }
 
+    public static List<ItemStack> getRifle(){
+         return AbstractGunItem.fillItemCategory(GunTabType.RIFLE);
+    }
+
+    public static List<ItemStack> getSniper(){
+        return AbstractGunItem.fillItemCategory(GunTabType.SNIPER);
+    }
+
+    public static List<ItemStack> getShotGun(){
+        return AbstractGunItem.fillItemCategory(GunTabType.SHOTGUN);
+    }
+
+    public static List<ItemStack> getSMG(){
+        return AbstractGunItem.fillItemCategory(GunTabType.SMG);
+    }
+
+    public static List<ItemStack> getMG(){
+        return AbstractGunItem.fillItemCategory(GunTabType.MG);
+    }
+
     public static final EntityDataAccessor<Integer> DATA_TYPE = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.ITEM_STACK);
     private int pickupDelay;
