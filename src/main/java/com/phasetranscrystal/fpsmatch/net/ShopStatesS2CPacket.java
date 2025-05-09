@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.net;
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.mc.MuiScreen;
 import icyllis.modernui.mc.forge.ModernUIForge;
 import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.client.Minecraft;
@@ -31,7 +32,7 @@ public class ShopStatesS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            if (ClientData.canOpenShop != this.canOpenShop && Minecraft.getInstance().player != null) {
+            if (!this.canOpenShop && Minecraft.getInstance().player != null && Minecraft.getInstance().screen instanceof MuiScreen) {
                 Minecraft.getInstance().setScreen(null);
             }
             ClientData.canOpenShop = this.canOpenShop;
