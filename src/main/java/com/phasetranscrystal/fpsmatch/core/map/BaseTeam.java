@@ -69,7 +69,7 @@ public class BaseTeam {
     /**
      * 队伍的连败补偿因数。
      */
-    private int compensationFactor;
+    private int compensationFactor = 0;
 
     /**
      * 队伍的暂停时间。

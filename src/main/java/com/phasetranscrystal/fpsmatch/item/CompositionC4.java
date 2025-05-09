@@ -153,9 +153,7 @@ public class CompositionC4 extends Item {
 				} else {
 					BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);
 					if (team != null && map instanceof ShopMap<?> shopMap) {
-						team.getPlayerList().forEach((uuid -> {
-							shopMap.addPlayerMoney(uuid, 300);
-						}));
+						shopMap.addPlayerMoney(player.getUUID(), 300);
 					}
 					CompositionC4Entity entityC4 = new CompositionC4Entity(pLevel, player.getX(), player.getY() + 0.25F, player.getZ(), player, blastModeMap);
 					pLevel.addFreshEntity(entityC4);

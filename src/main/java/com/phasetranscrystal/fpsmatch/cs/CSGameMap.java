@@ -626,21 +626,22 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 });
             }else{
                 team.getPlayerList().forEach(uuid -> {
+                    int defaultEconomy = 1400;
+                    if(this.checkCanPlacingBombs(team.getFixedName()) && reason == WinnerReason.DEFUSE_BOMB){
+                        defaultEconomy += 600;
+                    }
+                    int compensation = 500;
+                    int compensationFactor = team.getCompensationFactor();
+                    // 计算失败补偿
+                    int loss = defaultEconomy + compensation * compensationFactor;
+
+                    int finalDefaultEconomy = defaultEconomy;
                     this.getPlayerByUUID(uuid).ifPresent(player->{
-                        int defaultEconomy = 1400;
-                        if(this.checkCanPlacingBombs(team.getFixedName()) && reason == WinnerReason.DEFUSE_BOMB){
-                            defaultEconomy += 600;
-                        }
-                        int compensation = 500;
-                        int compensationFactor = team.getCompensationFactor();
-                        // 计算失败补偿
-                        int loss = defaultEconomy + compensation * compensationFactor;
                         // 如果玩家没有活着，则给予失败补偿
                         if(reason != WinnerReason.TIME_OUT){
                             this.addPlayerMoney(uuid, loss);
-                            player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, defaultEconomy + " + " + compensation + " * " + compensationFactor));
+                            player.sendSystemMessage(Component.translatable("fpsm.map.cs.reward.money", loss, finalDefaultEconomy + " + " + compensation + " * " + compensationFactor));
                         }else{
-                            int finalDefaultEconomy = defaultEconomy;
                             team.getPlayerData(uuid).ifPresent(data->{
                                 if(!data.isLiving()){
                                     this.addPlayerMoney(uuid, loss);
@@ -1067,7 +1068,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
             if(c4.getDemolisher() != null){
                 this.addPlayerMoney(c4.getDemolisher().getUUID(), 300);
-
             }
         }else{
             isBlasting = 1;
