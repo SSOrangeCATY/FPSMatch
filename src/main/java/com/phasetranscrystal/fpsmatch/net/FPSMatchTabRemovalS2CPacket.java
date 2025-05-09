@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.net;
 
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 

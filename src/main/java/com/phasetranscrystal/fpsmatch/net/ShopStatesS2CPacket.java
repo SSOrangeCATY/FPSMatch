@@ -1,14 +1,8 @@
 package com.phasetranscrystal.fpsmatch.net;
 
 import com.phasetranscrystal.fpsmatch.client.data.ClientData;
-import com.phasetranscrystal.fpsmatch.client.screen.CSGameShopScreen;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.mc.MuiScreen;
-import icyllis.modernui.mc.forge.ModernUIForge;
-import icyllis.modernui.mc.forge.MuiForgeApi;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 

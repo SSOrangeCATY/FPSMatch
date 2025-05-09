@@ -207,7 +207,9 @@ public abstract class BaseMap {
         this.getMapTeams().getTeamByPlayer(player)
                 .flatMap(t -> t.getPlayerData(player.getUUID()))
                 .ifPresent(playerData -> {
-                    teleportToPoint(player, playerData.getSpawnPointsData());
+                    SpawnPointData data = playerData.getSpawnPointsData();
+                    player.setRespawnPosition(data.getDimension(),data.getPosition(),0,true,false);
+                    teleportToPoint(player, data);
         });
 
     }

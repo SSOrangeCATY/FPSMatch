@@ -217,6 +217,12 @@ public class FPSMatch {
                 .decoder(PullGameInfoC2SPacket::decode)
                 .consumerNetworkThread(PullGameInfoC2SPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(FPSMatchRespawnS2CPacket.class, i.getAndIncrement())
+                .encoder(FPSMatchRespawnS2CPacket::encode)
+                .decoder(FPSMatchRespawnS2CPacket::decode)
+                .consumerNetworkThread(FPSMatchRespawnS2CPacket::handle)
+                .add();
     }
 
     @SubscribeEvent

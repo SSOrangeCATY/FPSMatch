@@ -1282,6 +1282,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof CSGameMap csGameMap && map.checkGameHasPlayer(player)) {
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
+                csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
                 event.setCanceled(true);
             }
         }
@@ -1328,6 +1329,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     player.getInventory().clearContent();
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.SPECTATOR);
+                    player.setRespawnPosition(player.level().dimension(),player.getOnPos().above(),0,true,false);
                     this.setBystander(player);
                 });
             });
