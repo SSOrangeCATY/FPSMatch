@@ -744,8 +744,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 isVictory.set(true);
                 boolean flag = team.name.equals("t");
                 MinecraftForge.EVENT_BUS.post(new GameWinnerEvent(this,
-                        flag ? this.getTTeam().getPlayerList(): this.getCTTeam().getPlayerList(),
-                        flag ? this.getCTTeam().getPlayerList() : this.getTTeam().getPlayerList(),
+                        flag ? this.getTTeam(): this.getCTTeam(),
+                        flag ? this.getCTTeam() : this.getTTeam(),
                         this.getServerLevel()));
                 this.getMapTeams().getJoinedPlayers().forEach((uuid -> {
                     this.getPlayerByUUID(uuid).ifPresent(player->{

@@ -227,4 +227,15 @@ public class PlayerData{
         this._kills = 0;
         this.damageData.clear();
     }
+
+    public String info(){
+        return "{\"owner\":\"" + this.owner.toString() + "\"," +
+               "\"scores\":" + this.scores + "," +
+               "\"kills\":" + this.kills + "," +
+               "\"deaths\":" + this.deaths + "," +
+               "\"assists\":" + this.assists + "," +
+               "\"damage\":" + this.damage + "," +
+               "\"headshotKills\":" + this.headshotKills + "," +
+               "\"mvpCount\":" + this.mvpCount + "}";
+    }
 }

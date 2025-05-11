@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventListenerHelper;
@@ -10,10 +11,10 @@ import java.util.UUID;
 
 public class GameWinnerEvent extends Event {
     BaseMap map;
-    List<UUID> winner;
-    List<UUID> loser;
+    BaseTeam winner;
+    BaseTeam loser;
     ServerLevel level;
-    public GameWinnerEvent(BaseMap map, List<UUID> winner, List<UUID> loser, ServerLevel level) {
+    public GameWinnerEvent(BaseMap map, BaseTeam winner, BaseTeam loser, ServerLevel level) {
         this.map = map;
         this.winner = winner;
         this.loser = loser;
@@ -24,11 +25,11 @@ public class GameWinnerEvent extends Event {
         return map;
     }
 
-    public List<UUID> getLoser() {
+    public BaseTeam getLoser() {
         return loser;
     }
 
-    public List<UUID> getWinner() {
+    public BaseTeam getWinner() {
         return winner;
     }
 

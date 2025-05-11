@@ -3,8 +3,10 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -17,7 +19,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
@@ -174,11 +178,17 @@ public class FPSMCore {
             map.leave(player);
         }
     }
+    @SubscribeEvent
+    public static void onServerStoppingEvent(ServerStoppingEvent event){
+        FPSMDataManager.getInstance().saveData();
+    }
 
     @SubscribeEvent
-    public static void onServerStartingEvent(ServerStartingEvent event) {
-         FPSMCore.setInstance(event.getServer().getWorldData().getLevelName(),event.getServer());
-         MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
+    public static void onServerStartedEvent(ServerStartedEvent event) {
+        FPSMatch.listenerModuleManager = new LMManager();
+        FPSMDataManager.getInstance().setLevelData(FPSMCore.getInstance().archiveName);
+        FPSMCore.setInstance(event.getServer().getWorldData().getLevelName(),event.getServer());
+        MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
     }
 
     public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){

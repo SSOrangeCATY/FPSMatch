@@ -13,7 +13,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.FileHelper;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.core.map.GiveStartKitsMap;
@@ -39,14 +38,12 @@ import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -328,50 +325,6 @@ public class FPSMCommand {
 
     private static int handleSave(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         FPSMDataManager.getInstance().saveData();
-        commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
-        return 1;
-    }
-
-    private static int handleLoadOld(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
-        List<FileHelper.RawMapData> rawMapDataList = FileHelper.loadMaps(FPSMCore.getInstance().archiveName);
-        for (FileHelper.RawMapData rawMapData : rawMapDataList) {
-            String mapType = rawMapData.mapRL.getNamespace();
-            String mapName = rawMapData.mapRL.getPath();
-            Function3<ServerLevel, String, AreaData, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(mapType);
-            Map<String, List<SpawnPointData>> data = rawMapData.teamsData;
-            if (!data.isEmpty()) {
-                ResourceKey<Level> level = rawMapData.levelResourceKey;
-                if (game != null) {
-                    BaseMap map = FPSMCore.getInstance().registerMap(mapType, game.apply(commandSourceStackCommandContext.getSource().getServer().getLevel(level), mapName, rawMapData.areaData));
-                    if (map != null) {
-                        map.getMapTeams().putAllSpawnPoints(data);
-
-                        if (map instanceof ShopMap<?> shopMap && rawMapData.shop != null) {
-                            rawMapData.shop.forEach((k, v) -> {
-                                // TODO ERROR BUG????
-                                shopMap.getShop(k).setDefaultShopData(v);
-                            });
-                        }
-
-                        if (map instanceof BlastModeMap<?> blastModeMap) {
-                            if (rawMapData.blastAreaDataList != null) {
-                                rawMapData.blastAreaDataList.forEach(blastModeMap::addBombArea);
-                            }
-                        }
-
-                        if (map instanceof GiveStartKitsMap<?> startKitsMap && rawMapData.startKits != null) {
-                            startKitsMap.setStartKits(rawMapData.startKits);
-                        }
-
-                        if (map instanceof CSGameMap csGameMap && rawMapData.matchEndTeleportPoint != null) {
-                            csGameMap.setMatchEndTeleportPoint(rawMapData.matchEndTeleportPoint);
-                        }
-
-                    }
-                }
-            }
-        }
-
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
         return 1;
     }

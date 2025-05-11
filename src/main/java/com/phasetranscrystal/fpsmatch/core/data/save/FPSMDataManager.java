@@ -262,7 +262,7 @@ public class FPSMDataManager {
      * @param file 文件或目录
      * @return 如果文件或目录存在或创建成功，返回 true；否则返回 false
      */
-    public static boolean checkOrCreateFile(File file) {
+    public static boolean checkOrCreateFile(File file){
         if (!file.exists()) {
             return file.mkdirs();
         }

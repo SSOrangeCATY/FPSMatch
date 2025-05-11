@@ -11,9 +11,11 @@ import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -34,17 +36,6 @@ public class FPSMEvents {
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchStatsResetS2CPacket());
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new FPSMatchLoginMessageS2CPacket());
         }
-    }
-
-    @SubscribeEvent
-    public static void onServerStoppingEvent(ServerStoppingEvent event){
-        FPSMDataManager.getInstance().saveData();
-    }
-
-    @SubscribeEvent
-    public static void onServerStartedEvent(ServerStartedEvent event) {
-        FPSMatch.listenerModuleManager = new LMManager();
-        FPSMDataManager.getInstance().setLevelData(FPSMCore.getInstance().archiveName);
     }
 
     @SubscribeEvent
