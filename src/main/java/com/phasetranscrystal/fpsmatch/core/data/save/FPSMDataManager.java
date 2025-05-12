@@ -47,26 +47,15 @@ public class FPSMDataManager {
      * 该方法会注册全局数据目录，并触发 {@link RegisterFPSMSaveDataEvent} 事件，允许其他模块注册数据保存逻辑。
      */
     public FPSMDataManager(String levelName) {
-        this.setLevelData(levelName);
-        this.globalData = this.getGlobalData();
-        RegisterFPSMSaveDataEvent event = new RegisterFPSMSaveDataEvent(this);
-        MinecraftForge.EVENT_BUS.post(event);
-    }
-
-    /**
-     * 设置当前层级的数据目录。
-     * <p>
-     * 如果层级数据目录不存在，则会尝试创建该目录。
-     *
-     * @param levelName 当前层级的名称
-     */
-    public void setLevelData(String levelName) {
         levelName = fixName(levelName);
         this.levelData = new File(new File(FMLLoader.getGamePath().toFile(), "fpsmatch"), levelName);
+        this.globalData = this.getGlobalData();
         if (!globalData.exists()) {
             if (!globalData.mkdirs()) throw new RuntimeException("error : can't create " + globalData + " folder.");
         }
         this.readData();
+        RegisterFPSMSaveDataEvent event = new RegisterFPSMSaveDataEvent(this);
+        MinecraftForge.EVENT_BUS.post(event);
     }
 
     /**
