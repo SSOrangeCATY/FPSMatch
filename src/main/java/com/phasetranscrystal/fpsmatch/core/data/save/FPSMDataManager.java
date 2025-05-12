@@ -5,7 +5,6 @@ import com.google.gson.reflect.TypeToken;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +33,7 @@ public class FPSMDataManager {
     /**
      * 当前层级的数据目录。
      */
-    private File levelData;
+    private final File levelData;
 
     /**
      * 全局数据目录。
@@ -53,9 +52,6 @@ public class FPSMDataManager {
         if (!globalData.exists()) {
             if (!globalData.mkdirs()) throw new RuntimeException("error : can't create " + globalData + " folder.");
         }
-        this.readData();
-        RegisterFPSMSaveDataEvent event = new RegisterFPSMSaveDataEvent(this);
-        MinecraftForge.EVENT_BUS.post(event);
     }
 
     /**
@@ -113,7 +109,7 @@ public class FPSMDataManager {
             }
         } catch (Exception e) {
             // 异常处理：打印错误并返回安全默认值
-            e.printStackTrace();
+            e.fillInStackTrace();
             dataFile = new File(configDir, "global");
         }
         return dataFile;
@@ -137,7 +133,7 @@ public class FPSMDataManager {
     public <T> File getSaveFolder(T savedData) {
         Pair<String, ISavePort<?>> pair = REGISTRY.getOrDefault(savedData.getClass(), null);
         if (pair == null) {
-            FPSMatch.LOGGER.error("error : " + savedData.getClass().getName() + " data is not registered.");
+            FPSMatch.LOGGER.error("error : {} data is not registered.", savedData.getClass().getName());
             return null;
         }
         return new File(pair.getSecond().isGlobal() ? globalData : levelData, pair.getFirst());

@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
@@ -44,6 +45,9 @@ public class FPSMCore {
     private FPSMCore(String archiveName) {
         this.archiveName = archiveName;
         this.fpsmDataManager = new FPSMDataManager(archiveName);
+        RegisterFPSMSaveDataEvent event = new RegisterFPSMSaveDataEvent(this.fpsmDataManager);
+        MinecraftForge.EVENT_BUS.post(event);
+        this.fpsmDataManager.readData();
         this.listenerModuleManager = new LMManager();
     }
 
