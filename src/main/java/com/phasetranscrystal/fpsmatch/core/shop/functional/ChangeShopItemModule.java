@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.shop.functional;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -29,7 +30,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
      * 注册该模块到监听模块管理器。
      */
     public void read() {
-        FPSMatch.listenerModuleManager.addListenerType(this);
+        FPSMCore.getInstance().getListenerModuleManager().addListenerType(this);
     }
 
     /**

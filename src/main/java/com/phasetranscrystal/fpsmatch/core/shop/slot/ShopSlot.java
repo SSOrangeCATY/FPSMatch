@@ -35,7 +35,7 @@ public class ShopSlot{
     ).apply(instance, (itemstack,dC,mBC,gId,fL) -> {
         ShopSlot shopSlot = new ShopSlot(itemstack,dC,mBC,gId);
         fL.forEach(name->{
-            ListenerModule lm = FPSMatch.listenerModuleManager.getListenerModule(name);
+            ListenerModule lm = FPSMCore.getInstance().getListenerModuleManager().getListenerModule(name);
             if(lm != null){
                 shopSlot.addListener(lm);
             }else{

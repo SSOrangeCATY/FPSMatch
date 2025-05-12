@@ -13,7 +13,6 @@ public class RegisterListenerModuleEvent extends Event {
         this.manager = lMManager;
     }
 
-
     /**
      * 注册硬编码的监听模块
      * */

@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
@@ -77,7 +78,7 @@ public class LMManager {
         event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
                 .withReadHandler(ChangeShopItemModule::read)
                 .withWriteHandler((manager) -> {
-                    FPSMatch.listenerModuleManager.getRegistry().forEach((name, module) -> {
+                    FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
                         if (module instanceof ChangeShopItemModule cSIM) {
                             manager.saveData(cSIM, cSIM.getName());
                         }

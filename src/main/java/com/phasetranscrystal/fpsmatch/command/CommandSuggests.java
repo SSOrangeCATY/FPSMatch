@@ -66,7 +66,7 @@ public class CommandSuggests {
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map instanceof ShopMap<?> shopMap) {
-            List<String> stringList = FPSMatch.listenerModuleManager.getListenerModules();
+            List<String> stringList = FPSMCore.getInstance().getListenerModuleManager().getListenerModules();
             stringList.removeAll(shopMap.getShop(shopName).getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames());
             return CommandSuggests.getSuggestions(b, stringList);
         }

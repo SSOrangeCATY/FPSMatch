@@ -59,7 +59,6 @@ public class FPSMatch {
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
     );
-    public static LMManager listenerModuleManager;
 
     public FPSMatch(FMLJavaModLoadingContext context)
     {

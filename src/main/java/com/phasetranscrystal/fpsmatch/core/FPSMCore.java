@@ -20,10 +20,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -34,14 +34,17 @@ import java.util.function.Predicate;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     private static FPSMCore INSTANCE;
-    private final MinecraftServer server;
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private final Map<String, Function3<ServerLevel,String,AreaData,BaseMap>> REGISTRY = new HashMap<>();
     private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
-    private FPSMCore(String archiveName, MinecraftServer server) {
+    private final FPSMDataManager fpsmDataManager;
+    private final LMManager listenerModuleManager;
+
+    private FPSMCore(String archiveName) {
         this.archiveName = archiveName;
-        this.server = server;
+        this.fpsmDataManager = new FPSMDataManager(archiveName);
+        this.listenerModuleManager = new LMManager();
     }
 
     public static FPSMCore getInstance(){
@@ -49,8 +52,9 @@ public class FPSMCore {
         return INSTANCE;
     }
 
-    protected static void setInstance(String archiveName, MinecraftServer server){
-        INSTANCE = new FPSMCore(archiveName,server);
+    protected static void setInstance(String archiveName){
+        INSTANCE = new FPSMCore(archiveName);
+        MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(INSTANCE));
     }
 
     @Nullable public BaseMap getMapByPlayer(Player player){
@@ -73,19 +77,17 @@ public class FPSMCore {
         return map.get();
     }
 
-    public BaseMap registerMap(String type, BaseMap map){
+    public void registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
             if(getMapNames(type).contains(map.getMapName())){
                 FPSMatch.LOGGER.error("error : has same map name -> " + map.getMapName());
-                return null;
+                return;
             }
             List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
             maps.add(map);
             GAMES.put(type,maps);
-            return map;
         }else{
             FPSMatch.LOGGER.error("error : unregister game type " + type);
-            return null;
         }
     }
 
@@ -180,15 +182,12 @@ public class FPSMCore {
     }
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        FPSMDataManager.getInstance().saveData();
+        FPSMCore.getInstance().fpsmDataManager.saveData();
     }
 
     @SubscribeEvent
     public static void onServerStartedEvent(ServerStartedEvent event) {
-        FPSMatch.listenerModuleManager = new LMManager();
-        FPSMDataManager.getInstance().setLevelData(FPSMCore.getInstance().archiveName);
-        FPSMCore.setInstance(event.getServer().getWorldData().getLevelName(),event.getServer());
-        MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(FPSMCore.getInstance()));
+        FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
     }
 
     public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
@@ -244,11 +243,19 @@ public class FPSMCore {
     }
 
     public MinecraftServer getServer() {
-        return server;
+        return ServerLifecycleHooks.getCurrentServer();
     }
 
     public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
-        return Optional.ofNullable(this.server.getPlayerList().getPlayer(uuid));
+        return Optional.ofNullable(this.getServer().getPlayerList().getPlayer(uuid));
     }
 
+
+    public FPSMDataManager getFPSMDataManager() {
+        return fpsmDataManager;
+    }
+
+    public LMManager getListenerModuleManager(){
+        return listenerModuleManager;
+    }
 }

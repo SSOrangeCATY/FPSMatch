@@ -292,7 +292,7 @@ public class FPSMCommand {
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         ItemType shopType = ItemType.valueOf(StringArgumentType.getString(commandSourceStackCommandContext, "shopType").toUpperCase(Locale.ROOT));
         int slotNum = IntegerArgumentType.getInteger(commandSourceStackCommandContext, "shopSlot") - 1;
-        LMManager manager = FPSMatch.listenerModuleManager;
+        LMManager manager = FPSMCore.getInstance().getListenerModuleManager();
         if (map instanceof ShopMap<?> shopMap) {
             ListenerModule module = manager.getListenerModule(moduleName);
             shopMap.getShop(shopName).addDefaultShopDataListenerModule(shopType, slotNum, module);
@@ -311,20 +311,19 @@ public class FPSMCommand {
         ItemStack changedItem = player.getMainHandItem().copy();
         ItemStack defaultItem = player.getOffhandItem().copy();
         ChangeShopItemModule module = new ChangeShopItemModule(defaultItem, defaultCost, changedItem, changedCost);
-        FPSMatch.listenerModuleManager.addListenerType(module);
+        FPSMCore.getInstance().getListenerModuleManager().addListenerType(module);
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.listener.add.success", module.getName()), true);
         return 1;
     }
 
     private static int handleReLoad(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
-        FPSMatch.listenerModuleManager = new LMManager();
         //TODO MORE
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.reload.success"), true);
         return 1;
     }
 
     private static int handleSave(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
-        FPSMDataManager.getInstance().saveData();
+        FPSMCore.getInstance().getFPSMDataManager().saveData();
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.save.success"), true);
         return 1;
     }

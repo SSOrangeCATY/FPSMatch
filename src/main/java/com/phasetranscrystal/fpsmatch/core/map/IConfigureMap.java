@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.data.save.ISavePort;
@@ -95,7 +96,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 配置文件路径，或 null（如果地图未实现 ISavedData 接口）。
      */
     default File getConfigFile() {
-        File file = FPSMDataManager.getInstance().getSaveFolder(this.getMap());
+        File file = FPSMCore.getInstance().getFPSMDataManager().getSaveFolder(this.getMap());
         if(file == null){
             FPSMatch.LOGGER.error("Failed to get config file for map " + this.getMap().getMapName() + " because ：Map is not implement ISavedData interface.");
             return null;

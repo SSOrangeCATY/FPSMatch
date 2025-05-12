@@ -42,30 +42,12 @@ public class FPSMDataManager {
     private final File globalData;
 
     /**
-     * 数据管理器的全局实例。
-     */
-    private static FPSMDataManager INSTANCE;
-
-    /**
-     * 获取 FPSMDataManager 的全局实例。
-     * <p>
-     * 如果实例尚未初始化，则会自动创建一个新实例。
-     *
-     * @return FPSMDataManager 的全局实例
-     */
-    public static FPSMDataManager getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new FPSMDataManager();
-        }
-        return INSTANCE;
-    }
-
-    /**
      * 构造函数，初始化数据管理器。
      * <p>
      * 该方法会注册全局数据目录，并触发 {@link RegisterFPSMSaveDataEvent} 事件，允许其他模块注册数据保存逻辑。
      */
-    public FPSMDataManager() {
+    public FPSMDataManager(String levelName) {
+        this.setLevelData(levelName);
         this.globalData = this.getGlobalData();
         RegisterFPSMSaveDataEvent event = new RegisterFPSMSaveDataEvent(this);
         MinecraftForge.EVENT_BUS.post(event);
