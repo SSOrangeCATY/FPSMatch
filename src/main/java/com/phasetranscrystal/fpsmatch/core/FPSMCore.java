@@ -45,20 +45,12 @@ public class FPSMCore {
     private FPSMCore(String archiveName) {
         this.archiveName = archiveName;
         this.fpsmDataManager = new FPSMDataManager(archiveName);
-        RegisterFPSMSaveDataEvent event = new RegisterFPSMSaveDataEvent(this.fpsmDataManager);
-        MinecraftForge.EVENT_BUS.post(event);
-        this.fpsmDataManager.readData();
         this.listenerModuleManager = new LMManager();
     }
 
     public static FPSMCore getInstance(){
         if(INSTANCE == null) throw new RuntimeException("error : fpsm not install.");
         return INSTANCE;
-    }
-
-    protected static void setInstance(String archiveName){
-        INSTANCE = new FPSMCore(archiveName);
-        MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(INSTANCE));
     }
 
     @Nullable public BaseMap getMapByPlayer(Player player){
@@ -191,7 +183,14 @@ public class FPSMCore {
 
     @SubscribeEvent
     public static void onServerStartedEvent(ServerStartedEvent event) {
-        FPSMCore.setInstance(event.getServer().getWorldData().getLevelName());
+        // 设置实例
+        INSTANCE = new FPSMCore(event.getServer().getWorldData().getLevelName());
+        // 注册地图
+        MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(INSTANCE));
+        // 注册数据
+        MinecraftForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(INSTANCE.fpsmDataManager));
+        // 读取数据
+        INSTANCE.fpsmDataManager.readData();
     }
 
     public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
