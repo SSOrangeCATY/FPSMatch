@@ -33,6 +33,16 @@ public class SpawnPointData {
         return pYaw;
     }
 
+    public int getX(){
+        return position.getX();
+    }
+    public int getY(){
+        return position.getY();
+    }
+    public int getZ(){
+        return position.getZ();
+    }
+
     @Override
     public String toString() {
         return dimension.location().getPath() + " " + position.toString();

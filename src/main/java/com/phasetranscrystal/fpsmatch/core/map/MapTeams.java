@@ -205,7 +205,7 @@ public class MapTeams {
 
     public BaseTeam addTeam(String teamName,int limit, boolean addToSystem){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
-        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
+        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayerTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
         BaseTeam team = new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam);
         if(addToSystem) this.teams.put(teamName, team);
         return team;

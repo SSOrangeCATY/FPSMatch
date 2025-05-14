@@ -379,11 +379,10 @@ public class FPSMShop {
 
         Map<ItemType, List<ShopSlot>> protectedMap = new HashMap<>();
         for (Map.Entry<ItemType, List<ShopSlot>> entry : modifiableMap.entrySet()) {
-            List<ShopSlot> innerList = List.copyOf(entry.getValue());
-            protectedMap.put(entry.getKey(), innerList);
+            protectedMap.put(entry.getKey(), List.copyOf(entry.getValue()));
         }
 
-        PlayerGetShopDataEvent event = new PlayerGetShopDataEvent(protectedMap, uuid);
+        PlayerGetShopDataEvent event = new PlayerGetShopDataEvent(uuid,this,protectedMap);
         MinecraftForge.EVENT_BUS.post(event);
         ShopData finalData;
         if(this.playersData.containsKey(uuid)){

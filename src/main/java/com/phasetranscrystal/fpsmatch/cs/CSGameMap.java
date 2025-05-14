@@ -636,7 +636,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     int loss = defaultEconomy + compensation * compensationFactor;
 
                     int finalDefaultEconomy = defaultEconomy;
-                    this.getPlayerByUUID(uuid).ifPresent(player->{
+                    this.getPlayerByUUID(uuid).ifPresentOrElse(player->{
                         // 如果玩家没有活着，则给予失败补偿
                         if(reason != WinnerReason.TIME_OUT){
                             this.addPlayerMoney(uuid, loss);
@@ -651,6 +651,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                                 }
                             });
                         }
+                    },()->{
+                        this.addPlayerMoney(uuid, loss);
                     });
                 });
             }
@@ -1313,9 +1315,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 this.sendPacketToJoinedPlayer(player,new ShopStatesS2CPacket(false),true);
                 deadPlayerTeam.getPlayerData(player.getUUID()).ifPresent(data->{
                     data.addDeaths();
-                    if(data.isLiving()){
-                        data.setLiving(false);
-                    }
+                    data.setLiving(false);
                     // 清除c4,并掉落c4
                     dropC4(player);
 

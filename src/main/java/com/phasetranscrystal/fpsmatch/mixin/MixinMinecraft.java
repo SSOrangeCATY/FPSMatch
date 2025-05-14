@@ -41,7 +41,6 @@ public abstract class MixinMinecraft {
 
     @Shadow protected abstract void startUseItem();
 
-
     @Shadow private int rightClickDelay;
 
     @Shadow @Nullable public MultiPlayerGameMode gameMode;
