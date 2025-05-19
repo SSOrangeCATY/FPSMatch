@@ -37,7 +37,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     public IncendiaryGrenadeEntity(LivingEntity shooter, Level level, int effectRadius, IHolder<Item> defaultItem) {
         super(EntityRegister.INCENDIARY_GRENADE.get(), shooter, level);
         setTimeoutTicks(FPSMConfig.common.incendiaryGrenadeOutTime.get());
-        setTimeLeft(FPSMConfig.common.incendiaryGrenadeLiveTime.get());
+        setTimeLeft(FPSMConfig.common.incendiaryGrenadeLivingTime.get());
         this.effectRadius = effectRadius;
         this.setSyncItem(defaultItem.get());
         this.setActivateOnGroundHit(true);

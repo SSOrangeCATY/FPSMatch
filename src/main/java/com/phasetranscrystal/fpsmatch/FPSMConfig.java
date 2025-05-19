@@ -41,10 +41,10 @@ public class FPSMConfig {
         public final ForgeConfigSpec.IntValue grenadeDamage;
         // Incendiary Grenade
         public final ForgeConfigSpec.IntValue incendiaryGrenadeOutTime;
-        public final ForgeConfigSpec.IntValue incendiaryGrenadeLiveTime;
+        public final ForgeConfigSpec.IntValue incendiaryGrenadeLivingTime;
         public final ForgeConfigSpec.IntValue incendiaryGrenadeDamage;
         // SmokeShell
-        public final ForgeConfigSpec.IntValue smokeShellLiveTime;
+        public final ForgeConfigSpec.IntValue smokeShellLivingTime;
 
         private Common(ForgeConfigSpec.Builder builder) {
             builder.push("drops");
@@ -97,22 +97,22 @@ public class FPSMConfig {
                         "20 ticks = 1 second"
                 ).defineInRange("IncendiaryGrenadeOutTime", 40, 0, 200);
 
-                incendiaryGrenadeLiveTime = builder.comment(
+                incendiaryGrenadeLivingTime = builder.comment(
                         "燃烧弹激活后的存活时间 (tick)",
                         "Survival time after activation of incendiary grenade (ticks)",
                         "20 ticks = 1 second"
-                ).defineInRange("IncendiaryGrenadeLiveTime", 140, 0, 400);
+                ).defineInRange("IncendiaryGrenadeLivingTime", 140, 0, 400);
 
                 incendiaryGrenadeDamage = builder.comment(
                         "燃烧弹的伤害",
                         "Damage value of incendiary grenades"
                 ).defineInRange("IncendiaryGrenadeDamage", 2, 0, 9999);
 
-                smokeShellLiveTime = builder.comment(
+                smokeShellLivingTime = builder.comment(
                         "烟雾弹激活后的存活时间 (tick)",
                         "Survival time after smoke bomb activation (ticks)",
                         "20 ticks = 1 second"
-                ).defineInRange("SmokeShellLiveTime", 20, 0, 100);
+                ).defineInRange("SmokeShellLivingTime", 300, 0, 900);
             }
             builder.pop();
         }

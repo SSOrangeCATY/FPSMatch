@@ -35,7 +35,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
     public SmokeShellEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.SMOKE_SHELL.get(), shooter, level);
         this.noCulling = true;
-        setTimeLeft(FPSMConfig.common.smokeShellLiveTime.get());
+        setTimeLeft(FPSMConfig.common.smokeShellLivingTime.get());
         setTimeoutTicks(-1);
         if(this.getOwner() instanceof Player player){
             BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);
