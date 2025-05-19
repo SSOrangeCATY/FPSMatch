@@ -1,4 +1,4 @@
-# FPSMatch
+# FPSMatch [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/FPSMacth)
 [点击此处跳转到命令帮助](CommandHelper.md)
 
 ### 📌 版本信息
