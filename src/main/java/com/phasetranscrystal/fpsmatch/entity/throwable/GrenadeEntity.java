@@ -1,6 +1,8 @@
-package com.phasetranscrystal.fpsmatch.entity;
+package com.phasetranscrystal.fpsmatch.entity.throwable;
 
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
+import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import net.minecraft.core.particles.ParticleTypes;
@@ -19,9 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     // 配置参数
-    private static final float EXPLOSION_RADIUS = 3.0f;
-    private static final int FUSE_TIME = 30; // 2.5秒（20 ticks/秒）
-    private static final float BASE_DAMAGE = 20.0f;
+    private final int explosionRadius = FPSMConfig.common.grenadeRadius.get();
+    private final int damage = FPSMConfig.common.grenadeDamage.get();
 
     public GrenadeEntity(EntityType<? extends GrenadeEntity> type, Level level) {
         super(type, level);
@@ -30,7 +31,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     public GrenadeEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.GRENADE.get(), shooter, level);
         this.setTimeLeft(1);
-        this.setTimeoutTicks(FUSE_TIME);
+        this.setTimeoutTicks(FPSMConfig.common.grenadeFuseTime.get());
         this.setVerticalReduction(0.1F);
     }
 
@@ -58,7 +59,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     private void applyStopSmokeShell(){
-        AABB smokeCheckArea = getBoundingBox().inflate(EXPLOSION_RADIUS);
+        AABB smokeCheckArea = getBoundingBox().inflate(explosionRadius);
 
         SmokeShellEntity[] a = level().getEntitiesOfClass(SmokeShellEntity.class, smokeCheckArea)
                 .stream()
@@ -85,10 +86,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     private void applyExplosionDamage() {
-        AABB explosionArea = new AABB(
-                getX() - EXPLOSION_RADIUS, getY() - EXPLOSION_RADIUS, getZ() - EXPLOSION_RADIUS,
-                getX() + EXPLOSION_RADIUS, getY() + EXPLOSION_RADIUS, getZ() + EXPLOSION_RADIUS
-        );
+        AABB explosionArea = getBoundingBox().inflate(explosionRadius);
 
         for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, explosionArea)) {
             if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
@@ -96,10 +94,10 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
             }
             // 计算距离
             double distance = distanceTo(entity);
-            if (distance > EXPLOSION_RADIUS) continue;
+            if (distance > explosionRadius) continue;
 
             // 计算伤害衰减
-            float damage = BASE_DAMAGE * (1 - (float)(distance / EXPLOSION_RADIUS));
+            float damage = this.damage * (1 - (float)(distance / explosionRadius));
 
             // 视线检测
             if (!hasClearLineOfSight(entity)) {

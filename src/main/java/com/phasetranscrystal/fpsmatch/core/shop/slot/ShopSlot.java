@@ -3,13 +3,12 @@ package com.phasetranscrystal.fpsmatch.core.shop.slot;
 import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
-import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.NonNullList;
@@ -346,10 +345,10 @@ public class ShopSlot{
     public int buy(Player player, int money) {
         boughtCount++;
         ItemStack itemStack = process();
-        MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
+        DropType type = DropType.getItemDropType(itemStack);
         if(!type.playerPredicate.test(player)){
-            if(type != MatchDropEntity.DropType.MISC){
-                Predicate<ItemStack> test = MatchDropEntity.getPredicateByDropType(type);
+            if(type != DropType.MISC){
+                Predicate<ItemStack> test = DropType.getPredicateByDropType(type);
                 List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
                 for(List<ItemStack> itemStackList : items ){
                     for(ItemStack itemStack1 : itemStackList){

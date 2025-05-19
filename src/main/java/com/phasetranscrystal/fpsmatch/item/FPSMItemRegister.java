@@ -1,10 +1,10 @@
 package com.phasetranscrystal.fpsmatch.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.entity.FlashBombEntity;
-import com.phasetranscrystal.fpsmatch.entity.GrenadeEntity;
-import com.phasetranscrystal.fpsmatch.entity.IncendiaryGrenadeEntity;
-import com.phasetranscrystal.fpsmatch.entity.SmokeShellEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.FlashBombEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.GrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.IncendiaryGrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.SmokeShellEntity;
 import com.phasetranscrystal.fpsmatch.test.TestItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;

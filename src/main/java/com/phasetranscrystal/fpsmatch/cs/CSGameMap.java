@@ -19,13 +19,16 @@ import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
-import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.net.*;
+import com.phasetranscrystal.fpsmatch.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
+import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
@@ -860,7 +863,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                             }
                         });
                         this.getShop(Objects.requireNonNull(this.getMapTeams().getTeamByPlayer(uuid)).name).getPlayerShopData(uuid).lockShopSlots(player);
-
                     });
                 }
             });
@@ -1226,12 +1228,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             }
         }
 
-        MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
-        if(map instanceof CSGameMap && !event.isCanceled() && type != MatchDropEntity.DropType.MISC){
+        DropType type = DropType.getItemDropType(itemStack);
+        if(map instanceof CSGameMap && !event.isCanceled() && type != DropType.MISC){
             FPSMCore.playerDropMatchItem((ServerPlayer) event.getPlayer(),itemStack);
             event.setCanceled(true);
         }
-
     }
 
 
@@ -1467,10 +1468,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         commands.put("a",CSGameMap::handleAgreeCommand);
         commands.put("disagree",CSGameMap::handleDisagreeCommand);
         commands.put("da",CSGameMap::handleDisagreeCommand);
-        /*
-        commands.put("start",CSGameMap::handleStartCommand);
-        commands.put("reset",CSGameMap::handleResetCommand);
-        commands.put("log",CSGameMap::handleLogCommand);*/
         return commands;
     }
 
@@ -1493,43 +1490,43 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 Component.literal("[" + this.getMapName() + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
 
         serverPlayer.displayClientMessage(Component.literal("| isStart ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isStart)), false);
+                RenderUtil.formatBoolean(this.isStart)), false);
         serverPlayer.displayClientMessage(Component.literal("| isPause ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isPause)), false);
+                RenderUtil.formatBoolean(this.isPause)), false);
         serverPlayer.displayClientMessage(Component.literal("| isWaiting ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isWaiting)), false);
+                RenderUtil.formatBoolean(this.isWaiting)), false);
         serverPlayer.displayClientMessage(Component.literal("| isWaitingWinner ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isWaitingWinner)), false);
+                RenderUtil.formatBoolean(this.isWaitingWinner)), false);
 
         serverPlayer.displayClientMessage(Component.literal("| isBlasting ").withStyle(ChatFormatting.GRAY).append(
                 Component.literal("[" + this.isBlasting + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
         serverPlayer.displayClientMessage(Component.literal("| isExploded ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isExploded)), false);
+                RenderUtil.formatBoolean(this.isExploded)), false);
         serverPlayer.displayClientMessage(Component.literal("| isOvertime ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isOvertime)), false);
+                RenderUtil.formatBoolean(this.isOvertime)), false);
         serverPlayer.displayClientMessage(Component.literal("| overCount ").withStyle(ChatFormatting.GRAY).append(
                 Component.literal("[" + this.overCount + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
 
         serverPlayer.displayClientMessage(Component.literal("| isWaitingOverTimeVote ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isWaitingOverTimeVote)), false);
+                RenderUtil.formatBoolean(this.isWaitingOverTimeVote)), false);
         serverPlayer.displayClientMessage(Component.literal("| currentPauseTime ").withStyle(ChatFormatting.GRAY).append(
                 Component.literal("[" + this.currentPauseTime + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
         serverPlayer.displayClientMessage(Component.literal("| autoStartTimer ").withStyle(ChatFormatting.GRAY).append(
                 Component.literal("[" + this.autoStartTimer + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
 
         serverPlayer.displayClientMessage(Component.literal("| autoStartFirstMessageFlag ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.autoStartFirstMessageFlag)), false);
+                RenderUtil.formatBoolean(this.autoStartFirstMessageFlag)), false);
         serverPlayer.displayClientMessage(Component.literal("| waitingTime ").withStyle(ChatFormatting.GRAY).append(
                 Component.literal("[" + this.waitingTime + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
         serverPlayer.displayClientMessage(Component.literal("| currentRoundTime ").withStyle(ChatFormatting.GRAY).append(
                 Component.literal("[" + this.currentRoundTime + "]").withStyle(ChatFormatting.DARK_AQUA)), false);
 
         serverPlayer.displayClientMessage(Component.literal("| isShopLocked ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isShopLocked)), false);
+                RenderUtil.formatBoolean(this.isShopLocked)), false);
         serverPlayer.displayClientMessage(Component.literal("| isWarmTime ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isWarmTime)), false);
+                RenderUtil.formatBoolean(this.isWarmTime)), false);
         serverPlayer.displayClientMessage(Component.literal("| isError ").withStyle(ChatFormatting.GRAY).append(
-                formatBoolean(this.isError)), false);
+                RenderUtil.formatBoolean(this.isError)), false);
 
         for (BaseTeam team : this.getMapTeams().getTeams()) {
             serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
@@ -1548,17 +1545,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                         .append(Component.literal("[" + tabData.getDamage() + "]").withStyle(ChatFormatting.DARK_AQUA));
 
                 MutableComponent isLivingComponent = Component.literal(" | isLiving :").withStyle(ChatFormatting.GRAY)
-                        .append(formatBoolean(tabData.isLiving()));
+                        .append(RenderUtil.formatBoolean(tabData.isLiving()));
 
                 serverPlayer.displayClientMessage(playerNameComponent.append(tabDataComponent).append(damagesComponent).append(isLivingComponent), false);
             }
             serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
         }
     }
-
-     private Component formatBoolean(boolean value){
-        return Component.literal(String.valueOf(value)).withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
-     }
 
     private void handleStartCommand(ServerPlayer serverPlayer) {
         if((!this.isStart && this.voteObj == null) || (!this.isStart && !this.voteObj.getVoteTitle().equals("start"))){
@@ -1599,29 +1592,26 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }));
     }
 
-    private final List<ItemStack> SNIPER = MatchDropEntity.getSniper();
-    private final List<ItemStack> SHOTGUN = MatchDropEntity.getShotGun();
-    private final List<ItemStack> SMG = MatchDropEntity.getSMG();
-
     public int gerRewardByGunId(ResourceLocation gunId){
-        for (ItemStack stack : SHOTGUN) {
-            if(stack.getItem() instanceof IGun iGun && gunId.equals(iGun.getGunId(stack))){
-                return 900;
+        Optional<GunTabType> optional = FPSMUtil.getGunTypeByGunId(gunId);
+        if(optional.isPresent()){
+            switch(optional.get()){
+                case SHOTGUN -> {
+                    return 900;
+                }
+                case SMG -> {
+                    return 600;
+                }
+                case SNIPER -> {
+                    return 100;
+                }
+                default -> {
+                    return 300;
+                }
             }
+        }else{
+            return 300;
         }
-        for (ItemStack stack : SMG) {
-            if(stack.getItem() instanceof IGun iGun && gunId.equals(iGun.getGunId(stack))){
-                return 600;
-            }
-        }
-
-        for (ItemStack stack : SNIPER) {
-            if(stack.getItem() instanceof IGun iGun && gunId.equals(iGun.getGunId(stack))){
-                return 100;
-            }
-        }
-
-        return 300;
     }
 
     public enum WinnerReason{

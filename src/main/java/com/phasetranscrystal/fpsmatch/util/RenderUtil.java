@@ -2,8 +2,10 @@ package com.phasetranscrystal.fpsmatch.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
@@ -16,6 +18,9 @@ public class RenderUtil {
         return (((a) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF)));
     }
 
+    public static Component formatBoolean(boolean value){
+        return Component.literal(String.valueOf(value)).withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
+    }
 
     public static void renderReverseTexture(GuiGraphics guiGraphics, ResourceLocation icon,
                                             int x, int y, int width, int height){

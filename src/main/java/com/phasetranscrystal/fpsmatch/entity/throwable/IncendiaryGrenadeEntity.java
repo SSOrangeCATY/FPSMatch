@@ -1,7 +1,9 @@
-package com.phasetranscrystal.fpsmatch.entity;
+package com.phasetranscrystal.fpsmatch.entity.throwable;
 
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.core.function.IHolder;
+import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -26,20 +28,16 @@ import java.util.Random;
 public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     private static final EntityDataAccessor<ItemStack> ITEM = SynchedEntityData.defineId(IncendiaryGrenadeEntity.class, EntityDataSerializers.ITEM_STACK);
     private final int effectRadius;
-    private static final int ACTIVATE_TIMEOUT = 20 * 2; // 2秒未激活自动删除
-    private static final int ACTIVE_DURATION = 140;      // 激活后存活时间
-    private static final float DAMAGE = 2.0f;
+    private final int damage = FPSMConfig.common.incendiaryGrenadeDamage.get();
     public IncendiaryGrenadeEntity(EntityType<? extends IncendiaryGrenadeEntity> type, Level level) {
         super(type, level);
-        setTimeoutTicks(ACTIVATE_TIMEOUT);
-        setTimeLeft(ACTIVE_DURATION);
         this.effectRadius = 3;
     }
 
     public IncendiaryGrenadeEntity(LivingEntity shooter, Level level, int effectRadius, IHolder<Item> defaultItem) {
         super(EntityRegister.INCENDIARY_GRENADE.get(), shooter, level);
-        setTimeoutTicks(ACTIVATE_TIMEOUT);
-        setTimeLeft(ACTIVE_DURATION);
+        setTimeoutTicks(FPSMConfig.common.incendiaryGrenadeOutTime.get());
+        setTimeLeft(FPSMConfig.common.incendiaryGrenadeLiveTime.get());
         this.effectRadius = effectRadius;
         this.setSyncItem(defaultItem.get());
         this.setActivateOnGroundHit(true);
@@ -68,7 +66,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
         if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
             return;
         }
-        entity.hurt(source, DAMAGE);
+        entity.hurt(source, damage);
     }
 
     private void handleParticleTiming() {

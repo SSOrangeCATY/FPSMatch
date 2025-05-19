@@ -1,8 +1,10 @@
-package com.phasetranscrystal.fpsmatch.entity;
+package com.phasetranscrystal.fpsmatch.entity.throwable;
 
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.effect.FlashBlindnessMobEffect;
+import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMSoundRegister;
 import net.minecraft.core.Holder;
@@ -24,14 +26,16 @@ import org.jetbrains.annotations.NotNull;
 
 public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
     // 配置参数
-    private static final int EFFECT_RADIUS = 40;
+    private final int radius;
 
     public FlashBombEntity(EntityType<? extends FlashBombEntity> type, Level level) {
         super(type, level);
+        this.radius = 0;
     }
 
     public FlashBombEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.FLASH_BOMB.get(), shooter, level);
+        this.radius = FPSMConfig.common.flashBombRadius.get();
         setTimeLeft(1);
         setTimeoutTicks(20);
     }
@@ -47,11 +51,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
 
 
     private void applyFlashEffect() {
-        AABB area = new AABB(
-                getX() - EFFECT_RADIUS, getY() - EFFECT_RADIUS, getZ() - EFFECT_RADIUS,
-                getX() + EFFECT_RADIUS, getY() + EFFECT_RADIUS, getZ() + EFFECT_RADIUS
-        );
-
+        AABB area = getBoundingBox().inflate(radius);
         for (Entity entity : level().getEntitiesOfClass(Entity.class, area)) {
             if (entity instanceof LivingEntity living) {
                 if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
@@ -79,7 +79,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         );
 
         if (effect.getEffect() instanceof FlashBlindnessMobEffect flashEffect) {
-            if(distance >= 35){
+            if(distance >= radius){
                 flashEffect.setFullBlindnessTime(1);
                 flashEffect.setTotalAndTicker(10);
             }else{

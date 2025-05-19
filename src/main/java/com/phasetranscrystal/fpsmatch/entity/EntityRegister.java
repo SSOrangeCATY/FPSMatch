@@ -1,6 +1,11 @@
 package com.phasetranscrystal.fpsmatch.entity;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.entity.drop.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.FlashBombEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.GrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.IncendiaryGrenadeEntity;
+import com.phasetranscrystal.fpsmatch.entity.throwable.SmokeShellEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.registries.DeferredRegister;

@@ -8,7 +8,8 @@ import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
-import com.phasetranscrystal.fpsmatch.entity.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.entity.drop.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.entity.drop.DropType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -195,7 +196,7 @@ public class FPSMCore {
 
     public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
         RandomSource random = player.getRandom();
-        MatchDropEntity.DropType type = MatchDropEntity.getItemType(itemStack);
+        DropType type = DropType.getItemDropType(itemStack);
         MatchDropEntity dropEntity = new MatchDropEntity(player.level(),itemStack,type);
         double d0 = player.getEyeY() - (double)0.3F;
         Vec3 pos = new Vec3(player.getX(), d0, player.getZ());
@@ -215,14 +216,14 @@ public class FPSMCore {
         if(map != null){
             map.getMapTeams().getTeamByPlayer(serverPlayer).ifPresent(team->{
                 ItemStack itemStack = ItemStack.EMPTY;
-                for(MatchDropEntity.DropType type : MatchDropEntity.DropType.values()){
-                    if(type == MatchDropEntity.DropType.MISC){
+                for(DropType type : DropType.values()){
+                    if(type == DropType.MISC){
                         break;
                     }
                     if(!itemStack.isEmpty()){
                         break;
                     }
-                    Predicate<ItemStack> predicate = MatchDropEntity.getPredicateByDropType(type);
+                    Predicate<ItemStack> predicate = DropType.getPredicateByDropType(type);
                     Inventory inventory = serverPlayer.getInventory();
                     List<List<ItemStack>> itemStackList = new ArrayList<>();
                     itemStackList.add(inventory.items);

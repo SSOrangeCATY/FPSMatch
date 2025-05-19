@@ -1,19 +1,14 @@
-package com.phasetranscrystal.fpsmatch.entity;
+package com.phasetranscrystal.fpsmatch.entity.drop;
 
 import com.mojang.datafixers.util.Pair;
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.api.item.gun.AbstractGunItem;
+import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -26,59 +21,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Predicate;
-
 public class MatchDropEntity extends Entity {
-    public static final List<ItemStack> mainWeapon = mainWeapon();
-    public static final List<Item> throwable = throwable();
-
-    public static List<Item> throwable(){
-        List<Item> itemList = new ArrayList<>();
-        itemList.add(FPSMItemRegister.GRENADE.get());
-        itemList.add(FPSMItemRegister.CT_INCENDIARY_GRENADE.get());
-        itemList.add(FPSMItemRegister.T_INCENDIARY_GRENADE.get());
-        itemList.add(FPSMItemRegister.FLASH_BOMB.get());
-        itemList.add(FPSMItemRegister.SMOKE_SHELL.get());
-        return itemList;
-    }
-    public static List<ItemStack> mainWeapon(){
-        List<ItemStack> itemStacks = new ArrayList<>();
-        itemStacks.addAll(AbstractGunItem.fillItemCategory(GunTabType.RIFLE));
-        itemStacks.addAll(AbstractGunItem.fillItemCategory(GunTabType.SNIPER));
-        itemStacks.addAll(AbstractGunItem.fillItemCategory(GunTabType.SHOTGUN));
-        itemStacks.addAll(AbstractGunItem.fillItemCategory(GunTabType.SMG));
-        itemStacks.addAll(AbstractGunItem.fillItemCategory(GunTabType.MG));
-        return itemStacks;
-    }
-
-    public static List<ItemStack> getRifle(){
-         return AbstractGunItem.fillItemCategory(GunTabType.RIFLE);
-    }
-
-    public static List<ItemStack> getSniper(){
-        return AbstractGunItem.fillItemCategory(GunTabType.SNIPER);
-    }
-
-    public static List<ItemStack> getShotGun(){
-        return AbstractGunItem.fillItemCategory(GunTabType.SHOTGUN);
-    }
-
-    public static List<ItemStack> getSMG(){
-        return AbstractGunItem.fillItemCategory(GunTabType.SMG);
-    }
-
-    public static List<ItemStack> getMG(){
-        return AbstractGunItem.fillItemCategory(GunTabType.MG);
-    }
-
     public static final EntityDataAccessor<Integer> DATA_TYPE = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.ITEM_STACK);
     private int pickupDelay;
@@ -96,7 +44,7 @@ public class MatchDropEntity extends Entity {
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(DATA_TYPE, 3); //misc
+        this.entityData.define(DATA_TYPE, 3);
         this.entityData.define(DATA_ITEM, ItemStack.EMPTY);
     }
 
@@ -243,106 +191,6 @@ public class MatchDropEntity extends Entity {
                 }
             }
         }
-    }
-
-
-    public static final Predicate<ItemStack> MAIN_WEAPON_PREDICATE = (itemStack -> {
-        boolean checker = false;
-        if(itemStack.getItem() instanceof IGun gun){
-            for (ItemStack itemStack1 : mainWeapon){
-                if (gun.getGunId(itemStack1).equals(gun.getGunId(itemStack))){
-                    checker = true;
-                    break;
-                }
-            };
-        };
-        return checker;
-    });
-
-    public static final Predicate<ItemStack> SECONDARY_WEAPON_PREDICATE = (itemStack -> {
-        boolean checker = false;
-        if(itemStack.getItem() instanceof IGun gun){
-            for (ItemStack itemStack1 : AbstractGunItem.fillItemCategory(GunTabType.PISTOL)){
-                if (itemStack1.getItem() instanceof IGun iGun && iGun.getGunId(itemStack1).equals(gun.getGunId(itemStack))){
-                    checker = true;
-                    break;
-                }
-            };
-        };
-        return checker;
-    });
-    public static final Predicate<ItemStack> THIRD_WEAPON_PREDICATE = (itemStack -> {
-        boolean checker = false;
-        if(itemStack.getItem() instanceof IGun gun){
-            for (ItemStack itemStack1 : AbstractGunItem.fillItemCategory(GunTabType.RPG)){
-                if (itemStack1.getItem() instanceof IGun iGun && iGun.getGunId(itemStack1).equals(gun.getGunId(itemStack))){
-                    checker = true;
-                    break;
-                }
-            };
-        };
-        return checker;
-    });
-
-    public static final Predicate<ItemStack> THROW_PREDICATE = (itemStack -> throwable.contains(itemStack.getItem()));
-
-    public static final Predicate<ItemStack> MISC_PREDICATE = (itemStack -> true);
-
-
-    public enum DropType {
-        MAIN_WEAPON((player -> {
-           int i = player.getInventory().clearOrCountMatchingItems(MAIN_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-           return i < FPSMConfig.common.mainWeaponCount.get();
-        })),
-        SECONDARY_WEAPON((player -> {
-            int i = player.getInventory().clearOrCountMatchingItems(SECONDARY_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-            return i < FPSMConfig.common.secondaryWeaponCount.get();
-        })),
-        THIRD_WEAPON((player -> {
-            int i = player.getInventory().clearOrCountMatchingItems(THIRD_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-            return i < FPSMConfig.common.thirdWeaponCount.get();
-        })),
-        THROW((player -> {
-            int i = player.getInventory().clearOrCountMatchingItems(THROW_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
-            return i < FPSMConfig.common.throwableCount.get();
-        })),
-        MISC((player -> true));
-
-        public final Predicate<Player> playerPredicate;
-
-        DropType(Predicate<Player> playerPredicate) {
-            this.playerPredicate = playerPredicate;
-        }
-    }
-
-    public static Predicate<ItemStack> getPredicateByDropType(DropType type){
-        return switch (type) {
-            case MAIN_WEAPON -> MAIN_WEAPON_PREDICATE;
-            case SECONDARY_WEAPON -> SECONDARY_WEAPON_PREDICATE;
-            case THIRD_WEAPON -> THIRD_WEAPON_PREDICATE;
-            case THROW -> THROW_PREDICATE;
-            case MISC -> MISC_PREDICATE;
-        };
-    }
-
-    public static DropType getItemType(ItemStack itemStack){
-        for (ItemStack itemStack1 : AbstractGunItem.fillItemCategory(GunTabType.PISTOL)){
-            if (itemStack1.getItem() instanceof IGun iGun && iGun.getGunId(itemStack1).equals(iGun.getGunId(itemStack))){
-                return DropType.SECONDARY_WEAPON;
-            }
-        };
-
-        if(throwable.contains(itemStack.getItem())){
-            return DropType.THROW;
-        }
-
-        for (ItemStack itemStack1 : mainWeapon){
-            if (itemStack1.getItem() instanceof IGun iGun && iGun.getGunId(itemStack1).equals(iGun.getGunId(itemStack))){
-                return DropType.MAIN_WEAPON;
-            }
-        };
-
-        return DropType.MISC;
     }
 
 }

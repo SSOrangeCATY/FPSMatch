@@ -1,10 +1,11 @@
-package com.phasetranscrystal.fpsmatch.entity;
+package com.phasetranscrystal.fpsmatch.entity.throwable;
 
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.cs.CSGameMap;
+import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
@@ -24,17 +25,17 @@ import org.joml.Vector3f;
 public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
     private static final EntityDataAccessor<ParticleOptions> PARTICLE_OPTIONS = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.PARTICLE);
     private static final EntityDataAccessor<Integer> Particle_COOLDOWN = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
-    public static final int MAX_LIFETIME = 300;
     private static final Vector3f T = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT = new Vector3f(0.25f, 0.55f, 1);
     public SmokeShellEntity(EntityType<? extends SmokeShellEntity> type, Level level) {
         super(type, level);
+        this.noCulling = true;
     }
 
     public SmokeShellEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.SMOKE_SHELL.get(), shooter, level);
         this.noCulling = true;
-        setTimeLeft(MAX_LIFETIME);
+        setTimeLeft(FPSMConfig.common.smokeShellLiveTime.get());
         setTimeoutTicks(-1);
         if(this.getOwner() instanceof Player player){
             BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);

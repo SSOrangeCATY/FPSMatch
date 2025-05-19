@@ -1,12 +1,14 @@
 package com.phasetranscrystal.fpsmatch.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.entity.SmokeShellEntity;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.entity.throwable.SmokeShellEntity;
 import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -15,10 +17,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEntity> {
 
     @Override
@@ -99,7 +106,7 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
 
             private void removeAllParticle(SmokeShellEntity entity){
                 if (this.particleMap.containsKey(entity)) {
-                    this.particleMap.get(entity).forEach(particle -> particle.remove());
+                    this.particleMap.get(entity).forEach(Particle::remove);
                     this.particleMap.get(entity).clear();
                 }
             }

@@ -1,8 +1,7 @@
 package com.phasetranscrystal.fpsmatch.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.fpsmatch.entity.IncendiaryGrenadeEntity;
-import com.phasetranscrystal.fpsmatch.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.entity.throwable.IncendiaryGrenadeEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
