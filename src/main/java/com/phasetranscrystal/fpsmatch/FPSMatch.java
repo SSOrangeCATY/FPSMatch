@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FPSMatch {
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "1.1.10";
     public static final TicketType<UUID> ENTITY_CHUNK_TICKET = TicketType.create("fpsm_chunk_ticket", (a, b) -> 0);
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation("fpsmatch", "main"),
