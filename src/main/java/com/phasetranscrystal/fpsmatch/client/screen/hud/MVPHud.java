@@ -393,9 +393,7 @@ public class MVPHud implements IGuiOverlay {
         player = null;
     }
     public PlayerInfo getPlayerInfoByUUID(UUID uuid) {
-        Optional<PlayerInfo> playerInfo = this.minecraft.player.connection.getListedOnlinePlayers().stream().filter((playerInfo1 -> {
-            return playerInfo1.getProfile().getId().equals(uuid);
-        })).findFirst();
+        Optional<PlayerInfo> playerInfo = this.minecraft.player.connection.getListedOnlinePlayers().stream().filter((playerInfo1 -> playerInfo1.getProfile().getId().equals(uuid))).findFirst();
         return playerInfo.orElse(null);
     }
 }

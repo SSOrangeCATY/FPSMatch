@@ -88,6 +88,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Setting<Integer> waitingTime = this.addSetting("waitingTime",300);
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
     private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
+    private final Setting<Integer> closeShopTime = this.addSetting("closeShopTime",200);
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
     private boolean isError = false;
@@ -180,6 +181,22 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public List<String> getShopNames() {
         return this.shop.keySet().stream().toList();
+    }
+
+    public void syncShopInfo(boolean enable, int closeTime){
+        for (BaseTeam team : this.getMapTeams().getTeams()){
+            int next = this.getNextRoundMinMoney(team);
+            var packet = new ShopStatesS2CPacket(enable,next,closeTime);
+            this.sendPacketToTeamLivingPlayer(team,packet);
+        }
+    }
+
+    public int getNextRoundMinMoney(BaseTeam team){
+        int defaultEconomy = 1400;
+        int compensation = 500;
+        int compensationFactor = Math.min(4, team.getCompensationFactor() + 1);
+        // 计算失败补偿
+        return defaultEconomy + compensation * compensationFactor;
     }
 
     /**
@@ -312,6 +329,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
+    public void leave(ServerPlayer player) {
+        this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
+        super.leave(player);
+    }
+
+    @Override
     public void pullGameInfo(ServerPlayer player){
         this.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
             super.pullGameInfo(player);
@@ -420,6 +443,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 this.teleportPlayerToReSpawnPoint(player);
             });
         }));
+        syncShopInfo(true,getShopCloseTime());
         syncNormalRoundStartMessage();
         this.giveAllPlayersKits();
         this.giveBlastTeamBomb();
@@ -538,12 +562,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(this.currentRoundTime < this.roundTimeLimit.get()){
             this.currentRoundTime++;
         }
-        if((this.currentRoundTime >= 200 || this.currentRoundTime == -1 ) && !this.isShopLocked){
-            var packet = new ShopStatesS2CPacket(false);
-            this.sendPacketToAllPlayer(packet);
+        if(this.isClosedShop()){
             this.isShopLocked = true;
+            this.syncShopInfo(false,0);
         }
         return this.currentRoundTime >= this.roundTimeLimit.get();
+    }
+
+    public boolean isClosedShop(){
+        return (this.currentRoundTime >= this.closeShopTime.get() || this.currentRoundTime == -1 ) && !this.isShopLocked;
+    }
+
+    public int getShopCloseTime(){
+        int closeTime = (this.closeShopTime.get() - this.currentRoundTime);
+        if (closeTime < 0) return 0;
+        if(this.isWaiting){
+            closeTime += this.waitingTime.get() - this.currentPauseTime;
+        }
+        return closeTime / 20;
     }
 
     /**
@@ -693,9 +729,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     this.teleportPlayerToReSpawnPoint(player);
                 });
             }));
+            syncShopInfo(true,getShopCloseTime());
             syncNormalRoundStartMessage();
             this.giveBlastTeamBomb();
-            this.getShops().forEach(FPSMShop::syncShopData);
             this.getShops().forEach(FPSMShop::syncShopData);
             this.checkMatchPoint();
         }
@@ -718,14 +754,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     private void syncNormalRoundStartMessage() {
-        var shopStatesPacket = new ShopStatesS2CPacket(true);
         var mvpHUDClosePacket = new MvpHUDCloseS2CPacket();
         var fpsMusicStopPacket = new FPSMusicStopS2CPacket();
         var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
 
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> {
             this.getPlayerByUUID(uuid).ifPresent(player->{
-                this.sendPacketToJoinedPlayer(player, shopStatesPacket, true);
                 this.sendPacketToJoinedPlayer(player, mvpHUDClosePacket,true);
                 this.sendPacketToJoinedPlayer(player, fpsMusicStopPacket,true);
                 this.sendPacketToJoinedPlayer(player, bombResetPacket, true);
@@ -1089,6 +1123,26 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return isExploded;
     }
 
+    public int getClientTime(){
+        int time;
+        if(this.isPause){
+            time = pauseTime.get() - this.currentPauseTime;
+        }else {
+            if (this.isWaiting) {
+                time = waitingTime.get() - this.currentPauseTime;
+            } else if (this.isWarmTime) {
+                time = warmUpTime.get() - this.currentPauseTime;
+            } else if (this.isWaitingWinner) {
+                time = winnerWaitingTime.get() - this.currentPauseTime;
+            } else if (this.isStart) {
+                time = roundTimeLimit.get() - this.currentRoundTime;
+            } else {
+                time = 0;
+            }
+        }
+        return time;
+    }
+
     /**
      * 同步游戏设置到客户端（比分/时间等）
      * @see CSGameSettingsS2CPacket
@@ -1098,8 +1152,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         BaseTeam t = this.getTTeam();
         CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(
                 ct.getScores(),t.getScores(),
-                this.currentPauseTime,
-                this.currentRoundTime,
+                this.getClientTime(),
                 this.isDebug(),
                 this.isStart,
                 this.isError,
@@ -1121,6 +1174,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     }
             }
         }));
+
+        if(!isShopLocked){
+            this.syncShopInfo(true,getShopCloseTime());
+        }
     }
 
     public void resetPlayerClientData(ServerPlayer serverPlayer){
@@ -1313,7 +1370,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(player).ifPresent(deadPlayerTeam->{
                 this.getShop(deadPlayerTeam.name).getDefaultAndPutData(player.getUUID());
-                this.sendPacketToJoinedPlayer(player,new ShopStatesS2CPacket(false),true);
+                this.sendPacketToJoinedPlayer(player,new ShopStatesS2CPacket(false,0,0),true);
                 deadPlayerTeam.getPlayerData(player.getUUID()).ifPresent(data->{
                     data.addDeaths();
                     data.setLiving(false);

@@ -18,11 +18,6 @@ import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public class CSGameOverlay implements IGuiOverlay {
     private static final ResourceLocation GUI_BARS_LOCATION = new ResourceLocation("textures/gui/bars.png");
-    public static final int PAUSE_TIME = 60;
-    public static final int WINNER_WAITING_TIME = 8;
-    public static final int WARM_UP_TIME = 60;
-    public static final int WAITING_TIME = 15;
-    public static final int ROUND_TIME_LIMIT = 115;
     public static int textCTWinnerRoundsColor = color(182, 210, 240);
     public static int textTWinnerRoundsColor = color(253,217,141);
     public static int noColor = color(0,0,0,0);
@@ -238,7 +233,7 @@ public class CSGameOverlay implements IGuiOverlay {
     }
 
     private String getRoundTimeString() {
-        if(ClientData.roundTime == -1 && !ClientData.isWaitingWinner) {
+        if(ClientData.time == -1 && !ClientData.isWaitingWinner) {
             textRoundTimeColor = color(240,40,40);
             return "--:--";
         }
@@ -287,39 +282,19 @@ public class CSGameOverlay implements IGuiOverlay {
     }
 
     public static String getCSGameTime(){
-        String time;
-        if(ClientData.isPause){
-            time = formatTime(PAUSE_TIME,ClientData.pauseTime / 20);
-        }else{
-            if(ClientData.isWaiting){
-                time = formatTime(WAITING_TIME,ClientData.pauseTime / 20);
-            }else if (ClientData.isWarmTime) {
-                time = formatTime(WARM_UP_TIME,ClientData.pauseTime / 20);
-            }else if (ClientData.isWaitingWinner){
-                time = formatTime(WINNER_WAITING_TIME,ClientData.pauseTime / 20);
-            } else if(ClientData.isStart){
-                time = formatTime(ROUND_TIME_LIMIT,ClientData.roundTime / 20);
-            }else{
-                time = "00:00";
-            }
-        }
-        return time;
+        return formatTime(ClientData.time / 20);
     }
 
     /**
      * 将总秒数和过去秒数转换为分钟和秒的字符串表示。
      *
      * @param totalSeconds 总秒数
-     * @param passedSeconds 过去秒数
      * @return 格式化的时间字符串，如 "01:00"
      */
-    public static String formatTime(int totalSeconds, int passedSeconds) {
-        // 计算剩余的总秒数
-        int remainingSeconds = totalSeconds - passedSeconds;
-
+    public static String formatTime(int totalSeconds) {
         // 计算剩余的分钟和秒
-        int remainingMinutes = remainingSeconds / 60;
-        int remainingSecondsPart = remainingSeconds % 60;
+        int remainingMinutes = totalSeconds / 60;
+        int remainingSecondsPart = totalSeconds % 60;
 
         if(remainingMinutes == 0 && remainingSecondsPart <= 10){
             textRoundTimeColor = color(240,40,40);

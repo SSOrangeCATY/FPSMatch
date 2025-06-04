@@ -78,7 +78,6 @@ public class FPSMUtil {
         }
     }
 
-
     public static int getTotalDummyAmmo(ItemStack itemStack, IGun iGun){
         Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(commonGunIndexOptional.isPresent()){
@@ -133,6 +132,5 @@ public class FPSMUtil {
             }
         }));
     }
-
 
 }

@@ -9,8 +9,7 @@ import java.util.function.Supplier;
 public class CSGameSettingsS2CPacket {
     private final int cTWinnerRounds;
     private final int tWinnerRounds;
-    private final int pauseTime;
-    private final int roundTime;
+    private final int time;
     private final boolean isDebug;
     private final boolean isStart;
     private final boolean isError;
@@ -21,8 +20,7 @@ public class CSGameSettingsS2CPacket {
 
     public CSGameSettingsS2CPacket(int cTWinnerRounds,
                                    int tWinnerRounds,
-                                   int pauseTime,
-                                   int roundTime,
+                                   int time,
                                    boolean isDebug,
                                    boolean isStart,
                                    boolean isError,
@@ -31,8 +29,7 @@ public class CSGameSettingsS2CPacket {
                                    boolean isWaitingWinner) {
         this.cTWinnerRounds = cTWinnerRounds;
         this.tWinnerRounds = tWinnerRounds;
-        this.pauseTime = pauseTime;
-        this.roundTime = roundTime;
+        this.time = time;
         this.isDebug = isDebug;
         this.isStart = isStart;
         this.isError = isError;
@@ -44,8 +41,7 @@ public class CSGameSettingsS2CPacket {
     public static void encode(CSGameSettingsS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.cTWinnerRounds);
         buf.writeInt(packet.tWinnerRounds);
-        buf.writeInt(packet.pauseTime);
-        buf.writeInt(packet.roundTime);
+        buf.writeInt(packet.time);
         buf.writeBoolean(packet.isDebug);
         buf.writeBoolean(packet.isStart);
         buf.writeBoolean(packet.isError);
@@ -56,7 +52,6 @@ public class CSGameSettingsS2CPacket {
 
     public static CSGameSettingsS2CPacket decode(FriendlyByteBuf buf) {
         return new CSGameSettingsS2CPacket(
-                buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
@@ -73,8 +68,7 @@ public class CSGameSettingsS2CPacket {
         ctx.get().enqueueWork(() -> {
             ClientData.cTWinnerRounds = this.cTWinnerRounds;
             ClientData.tWinnerRounds = this.tWinnerRounds;
-            ClientData.pauseTime = this.pauseTime;
-            ClientData.roundTime = this.roundTime;
+            ClientData.time = this.time;
             ClientData.isDebug = this.isDebug;
             ClientData.isStart = this.isStart;
             ClientData.isError = this.isError;

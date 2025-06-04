@@ -10,18 +10,25 @@ import java.util.function.Supplier;
 
 public class ShopStatesS2CPacket {
     boolean canOpenShop;
+    int nextRoundMoney;
+    int closeTime;
 
-    public ShopStatesS2CPacket(boolean canOpenShop){
+    public ShopStatesS2CPacket(boolean canOpenShop, int nextRoundMoney, int closeTime) {
         this.canOpenShop = canOpenShop;
+        this.nextRoundMoney = nextRoundMoney;
+        this.closeTime = closeTime;
     }
     public static void encode(ShopStatesS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeBoolean(packet.canOpenShop);
-
+        buf.writeInt(packet.nextRoundMoney);
+        buf.writeInt(packet.closeTime);
     }
 
     public static ShopStatesS2CPacket decode(FriendlyByteBuf buf) {
         return new ShopStatesS2CPacket(
-                buf.readBoolean());
+                buf.readBoolean(),
+                buf.readInt(),
+                buf.readInt());
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
@@ -30,6 +37,8 @@ public class ShopStatesS2CPacket {
                 Minecraft.getInstance().setScreen(null);
             }
             ClientData.canOpenShop = this.canOpenShop;
+            ClientData.nextRoundMoney = this.nextRoundMoney;
+            ClientData.shopCloseTime = this.closeTime;
         });
         ctx.get().setPacketHandled(true);
     }

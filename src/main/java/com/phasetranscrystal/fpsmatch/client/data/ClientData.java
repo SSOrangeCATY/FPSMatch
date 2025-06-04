@@ -22,13 +22,11 @@ public class ClientData {
     public static String currentTeam = "ct";
     public static boolean currentMapSupportShop = true;
     public static final Map<ItemType, List<ClientShopSlot>> clientShopData = getDefaultShopSlotData();
-    public static int nextRoundMoney = 0;
     public static final Map<UUID, Pair<String,TabData>> tabData = new HashMap<>();
     public static final Map<UUID,Integer> playerMoney = new HashMap<>();
     public static int cTWinnerRounds = 0;
     public static int tWinnerRounds = 0;
-    public static int pauseTime = 0;
-    public static int roundTime = 0;
+    public static int time = 0;
     public static boolean isDebug = false;
     public static boolean isStart = false;
     public static boolean isError = false;
@@ -37,6 +35,8 @@ public class ClientData {
     public static boolean isWarmTime = false;
     public static boolean isWaitingWinner = false;
     public static boolean canOpenShop = false;
+    public static int shopCloseTime = 0;
+    public static int nextRoundMoney = 0;
     public static float dismantleBombProgress = 0;
     public static boolean customTab = true;
 
@@ -91,8 +91,7 @@ public class ClientData {
         playerMoney.clear();
         cTWinnerRounds = 0;
         tWinnerRounds = 0;
-        pauseTime = 0;
-        roundTime = 0;
+        time = 0;
         isDebug = false;
         isStart = false;
         isError = false;

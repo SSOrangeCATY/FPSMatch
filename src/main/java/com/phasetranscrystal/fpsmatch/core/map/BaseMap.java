@@ -331,6 +331,20 @@ public abstract class BaseMap {
         });
     }
 
+    public <MSG> void sendPacketToTeamPlayer(BaseTeam team ,MSG packet,boolean living){
+        team.getPlayersData().forEach(data -> {
+            data.getPlayer().ifPresent(player->{
+                if (data.isLiving() == living) {
+                    this.sendPacketToJoinedPlayer(player, packet, true);
+                }
+            });
+        });
+    }
+
+    public <MSG> void sendPacketToTeamLivingPlayer(BaseTeam team ,MSG packet){
+        this.sendPacketToTeamPlayer(team,packet,true);
+    }
+
     /**
      * 发送数据包给加入游戏的玩家
      * @param player 玩家对象
