@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.entity.EntityRegister;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -165,10 +166,10 @@ public class MatchDropEntity extends Entity {
         if (!this.level().isClientSide) {
             if(this.pickupDelay == 0 && this.getDropType().playerPredicate.test(pEntity)){
                 ItemStack itemStack = this.getItem();
-                ItemStack copy = itemStack.copy();
-                copy.setCount(1);
-                if (!copy.isEmpty()) {
-                    this.discard();
+                if (!itemStack.isEmpty()) {
+                    itemStack.shrink(1);
+                    ItemStack copy = itemStack.copy();
+                    copy.setCount(1);
                     BaseMap map = FPSMCore.getInstance().getMapByPlayer(pEntity);
                     if (map instanceof ShopMap<?> shopMap) {
                         map.getMapTeams().getTeamByPlayer(pEntity).ifPresent(team->{
@@ -185,6 +186,7 @@ public class MatchDropEntity extends Entity {
                         });
                     }
                     pEntity.addItem(copy);
+                    FPSMUtil.sortPlayerInventory(pEntity);
                     pEntity.level().playSound(pEntity,getOnPos(), SoundEvents.ITEM_PICKUP,pEntity.getSoundSource(),1,1);
                 }else{
                     this.discard();

@@ -16,11 +16,13 @@ import com.tacz.guns.client.resource.pojo.display.gun.AmmoCountStyle;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import com.tacz.guns.util.AttachmentDataUtils;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -38,11 +40,11 @@ public class CSGameHud implements IHudRenderer {
     private static final int MOVE_DURATION = 500; // 移动动画时长（毫秒）
     private static final int FADE_DURATION = 500; // 淡出动画时长（毫秒）
     private static final int SELECTED_BG_COLOR = RenderUtil.color(255,255,255,65); // 选中时的背景颜色（半透明白）
-    private final Animation[] slotAnimations = new Animation[7]; // 扩展到7个槽位
+    private final Animation[] slotAnimations = new Animation[9]; // 扩展到7个槽位
     private KillAnimator killAnimator = new EnderKillAnimator();
     private boolean isStarted = false;
     public CSGameHud(){
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 9; i++) {
             slotAnimations[i] = new Animation();
         }
     }
@@ -281,12 +283,12 @@ public class CSGameHud implements IHudRenderer {
                     bgColor, TEXT_COLOR);
         }
 
-        // ========== 渲染4-7号物品栏 ==========
+        // ========== 渲染4-9号物品栏 ==========
         int squareAreaY = anchorY + totalRectHeight + SPACING;
-        int totalSquareWidth = 4 * SQUARE_SIZE + 3 * 3;
+        int totalSquareWidth = 6 * SQUARE_SIZE + 3 * 3;
         int squareAnchorX = screenW - MARGIN_RIGHT - totalSquareWidth;
 
-        for (int i = 3; i < 7; i++) {
+        for (int i = 3; i < 9; i++) {
             Animation anim = slotAnimations[i];
             boolean isSelected = (selectedSlot == i);
             int indexInRow = i - 3;
@@ -356,11 +358,11 @@ public class CSGameHud implements IHudRenderer {
         guiGraphics.renderItem(inv.player, stack, itemX, itemY, slotIndex);
         guiGraphics.renderItemDecorations(font, stack, itemX, itemY);
 
+        // 槽位编号
+        KeyMapping keyMapping = Minecraft.getInstance().options.keyHotbarSlots[slotIndex];
+        Component key = keyMapping.getKey().getDisplayName();
+        guiGraphics.drawString(font, key, x + width - font.width(key) - 1, y + 1, textColor, true);
         if(slotIndex + 1 <= 3){
-            // 槽位编号
-            String slotNumber = String.valueOf(slotIndex + 1);
-            guiGraphics.drawString(font, slotNumber, x + width - font.width(slotNumber) - 2, y + 2, textColor, true);
-
             // 渲染名称
             if(!stack.isEmpty() && inv.selected == slotIndex) {
                 String itemName = stack.getHoverName().getString();

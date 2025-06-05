@@ -1,7 +1,10 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -145,16 +148,19 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      */
     default void giveAllPlayersKits() {
         BaseMap map = this.getMap();
-        for (UUID uuid : this.getMap().getMapTeams().getJoinedPlayers()) {
-            map.getPlayerByUUID(uuid).ifPresent(player->{
+        for (PlayerData data : this.getMap().getMapTeams().getJoinedPlayers()) {
+            data.getPlayer().ifPresent(player->{
                 map.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
                     ArrayList<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
                     items.forEach(itemStack -> {
-                        player.getInventory().add(itemStack.copy());
+                        if(itemStack.getItem() instanceof ArmorItem armorItem){
+                            player.setItemSlot(armorItem.getEquipmentSlot(),itemStack);
+                        }else{
+                            player.getInventory().add(itemStack);
+                        }
                     });
-                    player.inventoryMenu.broadcastChanges();
-                    player.inventoryMenu.slotsChanged(player.getInventory());
+                    FPSMUtil.sortPlayerInventory(player);
                 });
             });
         }

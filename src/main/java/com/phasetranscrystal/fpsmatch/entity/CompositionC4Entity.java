@@ -269,16 +269,15 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     public void syncDemolitionProgress(float progress){
         BaseMap map = (BaseMap) this.map;
         if(map != null){
-            map.getMapTeams().getJoinedPlayers().forEach((pUUID)->{
-                ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
-                if(receiver != null){
+            map.getMapTeams().getJoinedPlayers().forEach((data)->{
+                data.getPlayer().ifPresent(receiver->{
                     map.getMapTeams().getTeamByPlayer(receiver).ifPresent(team->{
                         boolean flag = this.map.checkCanPlacingBombs(team.getFixedName());
                         if(!flag){
                             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
                         }
                     });
-                }
+                });
             });
 
             map.getMapTeams().getSpecPlayers().forEach((pUUID)-> {

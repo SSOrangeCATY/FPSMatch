@@ -365,9 +365,8 @@ public class ShopSlot{
             player.setItemSlot(armorItem.getEquipmentSlot(),itemStack);
         }else{
             player.getInventory().add(itemStack);
+            FPSMUtil.sortPlayerInventory(player);
         }
-        player.getInventory().setChanged();
-        player.inventoryMenu.broadcastChanges();
         return money - cost;
     }
 

@@ -125,7 +125,8 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
-    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6069384")
+    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6518539")
+    implementation fg.deobf("curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599")
     compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
 
     //implementation fileTree(dir: 'libs', include: '**/*.jar')

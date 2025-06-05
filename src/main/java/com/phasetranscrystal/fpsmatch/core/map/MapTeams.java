@@ -297,10 +297,10 @@ public class MapTeams {
      *
      * @return 包含所有可进行游戏的玩家 UUID 的列表
      */
-    public List<UUID> getJoinedPlayers() {
-        List<UUID> uuids = new ArrayList<>();
-        this.teams.values().forEach((t) -> uuids.addAll(t.getPlayerList()));
-        return uuids;
+    public List<PlayerData> getJoinedPlayers() {
+        List<PlayerData> data = new ArrayList<>();
+        this.teams.values().forEach((t) -> data.addAll(t.getPlayersData()));
+        return data;
     }
 
     /**
