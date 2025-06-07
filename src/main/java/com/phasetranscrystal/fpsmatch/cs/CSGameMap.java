@@ -30,6 +30,7 @@ import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.entity.EntityKineticBullet;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -1376,7 +1377,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     data.setLiving(false);
                     // 清除c4,并掉落c4
                     dropC4(player);
-
+                    // 清除玩家所属子弹
+                    this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class,mapArea.getAABB())
+                            .stream()
+                            .filter(entityKineticBullet -> entityKineticBullet.getOwner() != null && entityKineticBullet.getOwner().getUUID().equals(player.getUUID()))
+                            .toList()
+                            .forEach(Entity::discard);
                     // 清除拆弹工具,并掉落拆弹工具
                     int ik = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, player.inventoryMenu.getCraftSlots());
                     if (ik > 0) {

@@ -118,17 +118,18 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
                     dp(950 * scale),
                     dp(550 * scale));
-            shopWindowParams.setMargins(dp(240 * scale), dp(210 * scale), 0, 0);
-
+            shopWindowParams.setMargins(0, dp(210 * scale), 0, 0);
+            shopWindowParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
             RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
                     dp(950 * scale),
                     dp(550 * scale));
-            shopWindowBackGroundParams.setMargins(dp(240 * scale), dp(208 * scale), 0, 0);
-
+            shopWindowBackGroundParams.setMargins(0, dp(208 * scale), 0, 0);
+            shopWindowBackGroundParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
             // HEAD BAR START
             headBar = new RelativeLayout(getContext());
             RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scale *950), dp(scale*38));
-            titleBarParams.setMargins(dp(scale *240), dp(scale*170), 0, 0);
+            titleBarParams.setMargins(0,dp(scale * 190), 0, 0);
+            titleBarParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
             ImageView titleBarBackground = new ImageView(getContext());
             titleBarBackground.setImageDrawable(imageDrawable);
@@ -176,31 +177,34 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
 
         @Override
         protected void onSizeChanged(int width, int height, int prevWidth, int prevHeight) {
-                scale = calculateScaleFactor(width, height);
+            scale = calculateScaleFactor(width, height);
 
-                RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams shopWindowParams = new RelativeLayout.LayoutParams(
                         dp(950 * scale),
                         dp(550 * scale));
-                shopWindowParams.setMargins(dp(240 * scale),dp(210 * scale), 0, 0);
+            shopWindowParams.setMargins(0,dp(210 * scale), 0, 0);
+            shopWindowParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
-                RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
-                        dp(950 * scale),
-                        dp(550 * scale));
-                shopWindowBackGroundParams.setMargins(dp(240 * scale), dp(208 * scale), 0, 0);
+            RelativeLayout.LayoutParams shopWindowBackGroundParams = new RelativeLayout.LayoutParams(
+                    dp(950 * scale),
+                    dp(550 * scale));
+            shopWindowBackGroundParams.setMargins(0, dp(208 * scale), 0, 0);
+            shopWindowBackGroundParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
-                this.content.setLayoutParams(shopWindowParams);
-                this.background.setLayoutParams(shopWindowBackGroundParams);
+            this.content.setLayoutParams(shopWindowParams);
+            this.background.setLayoutParams(shopWindowBackGroundParams);
 
-                RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scale*950), dp(scale*38));
-                titleBarParams.setMargins(dp(scale * 240), dp(scale * 170), 0, 0);
-                this.headBar.setLayoutParams(titleBarParams);
+            RelativeLayout.LayoutParams titleBarParams = new RelativeLayout.LayoutParams(dp(scale*950), dp(scale*38));
+            titleBarParams.setMargins(0, dp(scale * 170), 0, 0);
+            titleBarParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+            this.headBar.setLayoutParams(titleBarParams);
 
-                RelativeLayout.LayoutParams minmoneyText = new RelativeLayout.LayoutParams(
-                        WRAP_CONTENT,
-                        WRAP_CONTENT);
-                minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
-                minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                minmoneyText.setMargins(0,0, (int) (20 * scale),0);
+            RelativeLayout.LayoutParams minmoneyText = new RelativeLayout.LayoutParams(
+                    WRAP_CONTENT,
+                    WRAP_CONTENT);
+            minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
+            minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            minmoneyText.setMargins(0,0, (int) (20 * scale),0);
                 nextRoundMinMoneyText.setLayoutParams(minmoneyText);
                 nextRoundMinMoneyText.setTextSize(15 * scale);
 
