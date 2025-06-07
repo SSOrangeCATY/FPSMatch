@@ -421,8 +421,10 @@ public abstract class BaseMap {
                     attacker = null;
                 }
 
-                if (attacker != null && !attacker.getUUID().equals(hurt.getUUID())) {
+                if (attacker != null && !attacker.getUUID().equals(hurt.getUUID()) && !attacker.isDeadOrDying()) {
                     map.getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
+                }else{
+                    event.setCanceled(true);
                 }
             }
         }
