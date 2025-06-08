@@ -96,7 +96,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
             BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
             if (map instanceof ShopMap<?> shopMap) {
-                FPSMShop shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG));
+                FPSMShop shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
+                if (shop == null) return;
                 //保存内容,先保存物品后设置内容
                 shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
                 ItemStack slotStack = shopSlot.process();

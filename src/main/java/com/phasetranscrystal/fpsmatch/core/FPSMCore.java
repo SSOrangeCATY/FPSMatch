@@ -77,14 +77,14 @@ public class FPSMCore {
     public void registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
             if(getMapNames(type).contains(map.getMapName())){
-                FPSMatch.LOGGER.error("error : has same map name -> " + map.getMapName());
+                FPSMatch.LOGGER.error("error : has same map name -> {}", map.getMapName());
                 return;
             }
             List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
             maps.add(map);
             GAMES.put(type,maps);
         }else{
-            FPSMatch.LOGGER.error("error : unregister game type " + type);
+            FPSMatch.LOGGER.error("error : unregister game type {}", type);
         }
     }
 
@@ -100,13 +100,13 @@ public class FPSMCore {
 
     public <T> List<T> getMapByClass(Class<T> clazz){
         ArrayList<T> list = new ArrayList<>();
-        this.GAMES.values().forEach(mapList -> {
-            mapList.forEach(map -> {
+        for (List<BaseMap> maps : GAMES.values()) {
+            for (BaseMap map : maps) {
                 if (clazz.isInstance(map)){
                     list.add((T) map);
                 }
-            });
-        });
+            }
+        }
         return list;
     }
 
@@ -160,7 +160,7 @@ public class FPSMCore {
             try{
                 map.mapTick();
             }catch(Exception e){
-                FPSMatch.LOGGER.error(map.getMapName() +" map error: ", e);
+                FPSMatch.LOGGER.error("{} map error: ", map.getMapName(), e);
                 map.resetGame();
             }
         }));

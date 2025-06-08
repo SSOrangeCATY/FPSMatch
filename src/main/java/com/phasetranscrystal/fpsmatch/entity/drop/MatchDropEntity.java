@@ -172,10 +172,7 @@ public class MatchDropEntity extends Entity {
                     copy.setCount(1);
                     BaseMap map = FPSMCore.getInstance().getMapByPlayer(pEntity);
                     if (map instanceof ShopMap<?> shopMap) {
-                        map.getMapTeams().getTeamByPlayer(pEntity).ifPresent(team->{
-                            FPSMShop shop = shopMap.getShop(team.name);
-                            if (shop == null) return;
-
+                        shopMap.getShop(pEntity).ifPresent(shop -> {
                             ShopData shopData = shop.getPlayerShopData(pEntity.getUUID());
                             Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
                             if(pair != null){

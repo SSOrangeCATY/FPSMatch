@@ -25,7 +25,6 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -114,7 +113,20 @@ public abstract class BaseMap {
      * @return 是否在游戏中
      */
     public boolean checkGameHasPlayer(Player player) {
-        return this.getMapTeams().getJoinedPlayers().contains(player.getUUID());
+        return this.checkGameHasPlayer(player.getUUID());
+    }
+
+    /**
+     * 检查玩家是否在游戏中
+     *
+     * @param player 玩家对象
+     * @return 是否在游戏中
+     */
+    public boolean checkGameHasPlayer(UUID player) {
+        return this.getMapTeams()
+                .getJoinedPlayers()
+                .stream()
+                .anyMatch(playerData -> playerData.getOwner().equals(player));
     }
 
     public boolean checkSpecHasPlayer(Player player) {
@@ -180,7 +192,7 @@ public abstract class BaseMap {
      */
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
-        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+        this.pullGameInfo(player);
         this.getMapTeams().getTeamByName(teamName)
                 .flatMap(team -> team.getPlayerData(player.getUUID()))
                 .ifPresent(playerData -> {
@@ -188,16 +200,14 @@ public abstract class BaseMap {
                 });
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
-            FPSMShop shop = shopMap.getShop(teamName);
-            if(shop == null) return;
-            shop.syncShopData(player);
+            shopMap.getShop(player).ifPresent(shop -> {shop.syncShopData(player);});
         }
     }
 
     public void joinSpec(ServerPlayer player){
         FPSMCore.checkAndLeaveTeam(player);
         player.setGameMode(GameType.SPECTATOR);
-        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+        this.pullGameInfo(player);
         this.getMapTeams().getSpectatorTeam().join(player);
         this.getMapTeams().getSpectatorTeam().getSpawnPointsData().stream().findAny().ifPresent(data -> this.teleportToPoint(player, data));
     }
@@ -360,7 +370,7 @@ public abstract class BaseMap {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
         } else {
-            FPSMatch.LOGGER.error(player.getDisplayName().getString() + " is not join " + this.getGameType() + ":" + this.getMapName());
+            FPSMatch.LOGGER.error("{} is not join {}:{}", player.getDisplayName().getString(), this.getGameType(), this.getMapName());
         }
     }
 

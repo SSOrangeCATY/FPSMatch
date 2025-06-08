@@ -259,7 +259,7 @@ public class FPSMCommand {
         ItemType shopType = ItemType.valueOf(shopTypeS);
         int slotNum = IntegerArgumentType.getInteger(commandSourceStackCommandContext, "shopSlot") - 1;
         if (map instanceof ShopMap<?> shopMap) {
-            shopMap.getShop(shopName).setDefaultShopDataGroupId(shopType, slotNum, groupID);
+            shopMap.getShop(shopName).get().setDefaultShopDataGroupId(shopType, slotNum, groupID);
             commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.slot.modify.group.success", shopType, slotNum, groupID), true);
             return 1;
         } else {
@@ -276,7 +276,7 @@ public class FPSMCommand {
         ItemType shopType = ItemType.valueOf(StringArgumentType.getString(commandSourceStackCommandContext, "shopType").toUpperCase(Locale.ROOT));
         int slotNum = IntegerArgumentType.getInteger(commandSourceStackCommandContext, "shopSlot") - 1;
         if (map instanceof ShopMap<?> shopMap) {
-            shopMap.getShop(shopName).removeDefaultShopDataListenerModule(shopType, slotNum, moduleName);
+            shopMap.getShop(shopName).get().removeDefaultShopDataListenerModule(shopType, slotNum, moduleName);
             commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.slot.listener.remove.success", moduleName), true);
             return 1;
         } else {
@@ -295,7 +295,7 @@ public class FPSMCommand {
         LMManager manager = FPSMCore.getInstance().getListenerModuleManager();
         if (map instanceof ShopMap<?> shopMap) {
             ListenerModule module = manager.getListenerModule(moduleName);
-            shopMap.getShop(shopName).addDefaultShopDataListenerModule(shopType, slotNum, module);
+            shopMap.getShop(shopName).get().addDefaultShopDataListenerModule(shopType, slotNum, module);
             commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.listener.add.success", moduleName), true);
             return 1;
         } else {
@@ -420,7 +420,7 @@ public class FPSMCommand {
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
             if (map instanceof ShopMap<?> shopMap) {
-                shopMap.getShop(shopName).setDefaultShopDataCost(itemType, slotNum, cost);
+                shopMap.getShop(shopName).get().setDefaultShopDataCost(itemType, slotNum, cost);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.cost.success", shopType, slotNum, cost), true);
                 return 1;
             } else {
@@ -446,7 +446,7 @@ public class FPSMCommand {
                 if (itemStack.getItem() instanceof IGun iGun) {
                     FPSMUtil.fixGunItem(itemStack, iGun);
                 }
-                shopMap.getShop(shopName).setDefaultShopDataItemStack(itemType, slotNum, itemStack);
+                shopMap.getShop(shopName).get().setDefaultShopDataItemStack(itemType, slotNum, itemStack);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success", shopType, slotNum, itemStack.getDisplayName()), true);
                 return 1;
             } else {
@@ -472,7 +472,7 @@ public class FPSMCommand {
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
             if (map instanceof ShopMap<?> shopMap) {
-                shopMap.getShop(shopName).setDefaultShopDataItemStack(itemType, slotNum, itemStack);
+                shopMap.getShop(shopName).get().setDefaultShopDataItemStack(itemType, slotNum, itemStack);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.item.success", shopType, slotNum, itemStack.getDisplayName()), true);
                 return 1;
             } else {
@@ -546,7 +546,7 @@ public class FPSMCommand {
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map != null) {
             if (map instanceof ShopMap<?> shopMap) {
-                ItemStack itemStack = shopMap.getShop(shopName).getDefaultShopDataMap().get(itemType).get(slotNum).process();
+                ItemStack itemStack = shopMap.getShop(shopName).get().getDefaultShopDataMap().get(itemType).get(slotNum).process();
                 if (itemStack.getItem() instanceof IGun iGun && TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).isPresent()) {
                     GunData gunData = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).get().getGunData();
                     iGun.useDummyAmmo(itemStack);
@@ -554,7 +554,7 @@ public class FPSMCommand {
                     iGun.setDummyAmmoAmount(itemStack, dummyAmmoAmount);
                     iGun.setCurrentAmmoCount(itemStack, gunData.getAmmoAmount());
                 }
-                shopMap.getShop(shopName).setDefaultShopDataItemStack(itemType, slotNum, itemStack);
+                shopMap.getShop(shopName).get().setDefaultShopDataItemStack(itemType, slotNum, itemStack);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.shop.modify.gun.success", shopType, slotNum, itemStack.getDisplayName(), dummyAmmoAmount), true);
                 return 1;
             } else {

@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.net.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.net.ShopMoneyS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
@@ -250,6 +251,18 @@ public class FPSMShop {
         }else{
             return this.getDefaultAndPutData(uuid);
         }
+    }
+
+    /**
+     * 获取玩家的商店数据。
+     * <p>
+     * 如果玩家的商店数据不存在，则会创建一个新的默认商店数据。
+     *
+     * @param player 玩家
+     * @return 玩家的商店数据
+     */
+    public ShopData getPlayerShopData(Player player) {
+        return this.getPlayerShopData(player.getUUID());
     }
 
     /**

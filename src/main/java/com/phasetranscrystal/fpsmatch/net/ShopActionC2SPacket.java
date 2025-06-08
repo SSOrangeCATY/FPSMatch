@@ -50,7 +50,7 @@ public class ShopActionC2SPacket {
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(ctx.get().getSender()).orElse(null);;
                 FPSMShop shop = null;
                 if (team != null) {
-                    shop = shopMap.getShop(team.name);
+                    shop = shopMap.getShop(team.name).orElse(null);
                 }
                 ServerPlayer serverPlayer = ctx.get().getSender();
                 if (shop == null || serverPlayer == null) {

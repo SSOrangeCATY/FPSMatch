@@ -241,11 +241,7 @@ public class BaseTeam {
         List<SpawnPointData> list = new ArrayList<>(this.spawnPointsData);
         for (UUID playerUUID : playerUUIDs) {
             if (list.isEmpty()) {
-                // 出生点不够多就会这样
                 list.addAll(this.spawnPointsData);
-            }
-            if (this.spawnPointsData.isEmpty()) {
-                return false;
             }
             int randomIndex = random.nextInt(list.size());
             SpawnPointData spawnPoint = list.get(randomIndex);

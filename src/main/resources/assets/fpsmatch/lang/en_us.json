@@ -154,5 +154,7 @@
   "tooltip.fpsm.switch_shop": "[SHIFT + Right Click] Switch Shop",
   "tooltip.fpsm.switch_map": "[SHIFT + Left Click] Switch Map",
   "tooltip.fpsm.open_editor": "[Right Click] Open Shop Editor",
-  "fpsm.map.cs.reward.money": "Received %1$s money ( %2$s )"
+  "fpsm.map.cs.reward.money": "Received %1$s money ( %2$s )",
+  "message.fpsmatch.error.no_spawn_points": "There is no spawn-points for the game to start",
+  "message.fpsmatch.error.not_enough_spawn_points": "There are not enough spawn-points for the game to start"
 }

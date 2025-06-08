@@ -6,10 +6,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -66,9 +67,12 @@ public class CommandSuggests {
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map instanceof ShopMap<?> shopMap) {
-            List<String> stringList = FPSMCore.getInstance().getListenerModuleManager().getListenerModules();
-            stringList.removeAll(shopMap.getShop(shopName).getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames());
-            return CommandSuggests.getSuggestions(b, stringList);
+            Optional<FPSMShop> optionalShop = shopMap.getShop(shopName);
+            if (optionalShop.isPresent()) {
+                List<String> stringList = FPSMCore.getInstance().getListenerModuleManager().getListenerModules();
+                stringList.removeAll(optionalShop.get().getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames());
+                return CommandSuggests.getSuggestions(b, stringList);
+            }
         }
         return CommandSuggests.getSuggestions(b, new ArrayList<>());
     });
@@ -81,8 +85,11 @@ public class CommandSuggests {
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map instanceof ShopMap<?> shopMap) {
-            List<String> stringList = shopMap.getShop(shopName).getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames();
-            return CommandSuggests.getSuggestions(b, stringList);
+            Optional<FPSMShop> optionalShop = shopMap.getShop(shopName);
+            if (optionalShop.isPresent()) {
+                List<String> stringList = optionalShop.get().getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames();
+                return CommandSuggests.getSuggestions(b, stringList);
+            }
         }
         return CommandSuggests.getSuggestions(b, new ArrayList<>());});
 

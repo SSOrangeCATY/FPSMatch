@@ -124,7 +124,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
         if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
             BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
             if (map instanceof ShopMap<?> shopMap) {
-                return shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG));
+                return shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
             }
         }
         return null;

@@ -2,8 +2,6 @@ package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.data.TabData;
-import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -116,14 +114,8 @@ public class MapTeams {
         defendTeam.randomSpawnPoints();
 
         if(map instanceof ShopMap<?> shopMap){
-            FPSMShop attackShop = shopMap.getShop(attackTeam.name);
-            FPSMShop defendShop = shopMap.getShop(defendTeam.name);
-            if(attackShop != null){
-                attackShop.resetPlayerData(attackTeam.getPlayerList());
-            }
-            if(defendShop != null){
-                defendShop.resetPlayerData(defendTeam.getPlayerList());
-            }
+            shopMap.getShop(attackTeam.name).ifPresent(shop -> shop.resetPlayerData(attackTeam.getPlayerList()));
+            shopMap.getShop(defendTeam.name).ifPresent(shop -> shop.resetPlayerData(defendTeam.getPlayerList()));
         }
     }
 

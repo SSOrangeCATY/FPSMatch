@@ -1,9 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -19,7 +22,9 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
      * @param shopName 商店名称
      * @return 商店实例
      */
-    @Nullable FPSMShop getShop(String shopName);
+    Optional<FPSMShop> getShop(String shopName);
+
+    Optional<FPSMShop> getShop(Player player);
 
     /**
      * 获取地图中所有商店的列表。
@@ -46,9 +51,26 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
     default void addPlayerMoney(UUID uuid, int money) {
         BaseTeam team = this.getMap().getMapTeams().getTeamByPlayer(uuid);
         if (team != null) {
-            this.getShop(team.name).getPlayerShopData(uuid).addMoney(money);
-            this.getShop(team.name).syncShopMoneyData(uuid);
+            this.getShop(team.name).ifPresent(shop -> {
+                shop.getPlayerShopData(uuid).addMoney(money);
+                shop.syncShopMoneyData(uuid);
+            });
         }
+    }
+
+    /**
+     * 处理玩家击杀经济奖励/惩罚。
+     * <p>
+     * 根据玩家所属队伍，为其商店数据中的金钱进行增加或减少操作，并同步到客户端。
+     *
+     * @param player 玩家
+     * @param money 金额变化量（可正负）
+     */
+    default void addPlayerMoney(ServerPlayer player, int money) {
+        this.getShop(player).ifPresent(shop -> {
+            shop.getPlayerShopData(player).addMoney(money);
+            shop.syncShopMoneyData(player);
+        });
     }
 
     /**
@@ -62,8 +84,10 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
     default void removePlayerMoney(UUID uuid, int money) {
         BaseTeam team = this.getMap().getMapTeams().getTeamByPlayer(uuid);
         if (team != null) {
-            this.getShop(team.name).getPlayerShopData(uuid).reduceMoney(money);
-            this.getShop(team.name).syncShopMoneyData(uuid);
+            this.getShop(team.name).ifPresent(shop -> {
+                shop.getPlayerShopData(uuid).reduceMoney(money);
+                shop.syncShopMoneyData(uuid);
+            });
         }
     }
 
@@ -78,8 +102,10 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
     default void setPlayerMoney(UUID uuid, int money) {
         BaseTeam team = this.getMap().getMapTeams().getTeamByPlayer(uuid);
         if (team != null) {
-            this.getShop(team.name).getPlayerShopData(uuid).setMoney(money);
-            this.getShop(team.name).syncShopMoneyData(uuid);
+            this.getShop(team.name).ifPresent(shop -> {
+                shop.getPlayerShopData(uuid).setMoney(money);
+                shop.syncShopMoneyData(uuid);
+            });
         }
     }
 
