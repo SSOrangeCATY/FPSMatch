@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.sound;
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
@@ -17,15 +18,7 @@ import java.util.Map;
 public class MVPMusicManager{
     public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC).xmap(MVPMusicManager::new,
             (manager)-> manager.mvpMusicMap);
-    private static MVPMusicManager INSTANCE;
     private final Map<String, ResourceLocation> mvpMusicMap;
-
-    public static MVPMusicManager getInstance() {
-        if(INSTANCE == null){
-            INSTANCE = new MVPMusicManager();
-        }
-        return INSTANCE;
-    }
 
     public MVPMusicManager(){
         mvpMusicMap = Maps.newHashMap();
@@ -61,18 +54,22 @@ public class MVPMusicManager{
     }
 
     private void read() {
-        INSTANCE = this;
+        FPSMCore.getInstance().getMvpMusicManager().read(this);
+    }
+
+    private void read(MVPMusicManager mvpMusicManager) {
+        this.mvpMusicMap.putAll(mvpMusicManager.mvpMusicMap);
     }
 
     public static void write(FPSMDataManager manager){
-        manager.saveData(MVPMusicManager.getInstance(),"data");
+        manager.saveData(FPSMCore.getInstance().getMvpMusicManager(),"data");
     }
 
     public static MVPMusicManager merge(@Nullable MVPMusicManager old, MVPMusicManager newer){
         if(old == null){
             return newer;
         }else{
-            old.mvpMusicMap.putAll(newer.mvpMusicMap);
+            old.read(newer);
             return old;
         }
     }

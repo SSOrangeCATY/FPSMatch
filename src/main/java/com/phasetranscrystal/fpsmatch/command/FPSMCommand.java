@@ -176,7 +176,7 @@ public class FPSMCommand {
     private static int handleMvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation sound = ResourceLocationArgument.getId(context, "sound");
-        players.forEach(player -> MVPMusicManager.getInstance().addMvpMusic(player.getUUID().toString(), sound));
+        players.forEach(player -> FPSMCore.getInstance().getMvpMusicManager().addMvpMusic(player.getUUID().toString(), sound));
         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.mvp.success", players.size(), sound), true);
         return 1;
     }

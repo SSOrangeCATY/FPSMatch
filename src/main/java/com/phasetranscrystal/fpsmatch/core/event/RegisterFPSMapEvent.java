@@ -17,8 +17,8 @@ public class RegisterFPSMapEvent extends Event {
     {
         return false;
     }
-    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map, boolean enableShop) {
-        this.fpsmCore.registerGameType(typeName,map,enableShop);
+    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map) {
+        this.fpsmCore.registerGameType(typeName,map);
     }
 
 }

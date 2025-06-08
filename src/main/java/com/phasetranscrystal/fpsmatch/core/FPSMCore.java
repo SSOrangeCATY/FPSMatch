@@ -7,7 +7,9 @@ import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
+import com.phasetranscrystal.fpsmatch.core.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.entity.drop.DropType;
 import net.minecraft.resources.ResourceLocation;
@@ -31,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
@@ -39,14 +42,15 @@ public class FPSMCore {
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private final Map<String, Function3<ServerLevel,String,AreaData,BaseMap>> REGISTRY = new HashMap<>();
-    private final Map<String, Boolean> GAMES_SHOP = new HashMap<>();
     private final FPSMDataManager fpsmDataManager;
     private final LMManager listenerModuleManager;
+    private final MVPMusicManager mvpMusicManager;
 
     private FPSMCore(String archiveName) {
         this.archiveName = archiveName;
-        this.fpsmDataManager = new FPSMDataManager(archiveName);
+        this.mvpMusicManager = new MVPMusicManager();
         this.listenerModuleManager = new LMManager();
+        this.fpsmDataManager = new FPSMDataManager(archiveName);
     }
 
     public static FPSMCore getInstance(){
@@ -132,18 +136,21 @@ public class FPSMCore {
          return null;
     }
 
-    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData,BaseMap> map, boolean enableShop){
+    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData,BaseMap> map){
         ResourceLocation.isValidResourceLocation(typeName);
         REGISTRY.put(typeName,map);
-        GAMES_SHOP.put(typeName,enableShop);
     }
 
     public boolean checkGameIsEnableShop(String gameType){
-        return GAMES_SHOP.getOrDefault(gameType,false);
+        return GAMES.containsKey(gameType) && !GAMES.get(gameType).isEmpty() && GAMES.get(gameType).get(0) instanceof ShopMap<?>;
     }
 
     public List<String> getEnableShopGames(){
-        return GAMES_SHOP.keySet().stream().filter((type)-> GAMES_SHOP.getOrDefault(type,false)).toList();
+        return GAMES.values().stream()
+                .flatMap(List::stream)
+                .filter(baseMap -> baseMap instanceof ShopMap<?>)
+                .map(BaseMap::getMapName)
+                .collect(Collectors.toList());
     }
 
     public List<String> getGameTypes(){
@@ -168,7 +175,6 @@ public class FPSMCore {
 
     protected void clearData(){
         GAMES.clear();
-        GAMES_SHOP.clear();
     }
 
     public static void checkAndLeaveTeam(ServerPlayer player){
@@ -261,5 +267,9 @@ public class FPSMCore {
 
     public LMManager getListenerModuleManager(){
         return listenerModuleManager;
+    }
+
+    public MVPMusicManager getMvpMusicManager() {
+        return mvpMusicManager;
     }
 }

@@ -637,8 +637,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 MinecraftForge.EVENT_BUS.post(event);
                 mvpReason = event.getReason();
 
-                if(MVPMusicManager.getInstance().playerHasMvpMusic(mvpData.uuid().toString())){
-                    this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(MVPMusicManager.getInstance().getMvpMusic(mvpData.uuid().toString())));
+                if(FPSMCore.getInstance().getMvpMusicManager().playerHasMvpMusic(mvpData.uuid().toString())){
+                    this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(FPSMCore.getInstance().getMvpMusicManager().getMvpMusic(mvpData.uuid().toString())));
                 }
             }
         }
