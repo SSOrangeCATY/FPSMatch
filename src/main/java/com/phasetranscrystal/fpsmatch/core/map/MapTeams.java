@@ -273,15 +273,14 @@ public class MapTeams {
      * @param player 玩家 UUID
      * @return 玩家所属的队伍，如果未找到则返回 null
      */
-    @Nullable
-    public BaseTeam getTeamByPlayer(UUID player) {
+    public Optional<BaseTeam> getTeamByPlayer(UUID player) {
         AtomicReference<BaseTeam> baseTeamAtomicReference = new AtomicReference<>();
         this.teams.forEach(((s, team) -> {
             if (team.hasPlayer(player)) {
                 baseTeamAtomicReference.set(team);
             };
         }));
-        return baseTeamAtomicReference.get();
+        return Optional.ofNullable(baseTeamAtomicReference.get());
     }
 
     /**

@@ -623,25 +623,31 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         // 设置为等待胜利者状态
         this.isWaitingWinner = true;
         MapTeams.RawMVPData mvpData = this.getMapTeams().getRoundMvpPlayer(winnerTeam);
-        MvpReason mvpReason;
+        MvpReason mvpReason = null;
 
         if(mvpData != null){
-            PlayerGetMvpEvent event = new PlayerGetMvpEvent(this.getServerLevel().getPlayerByUUID(mvpData.uuid()),this,
-                    new MvpReason.Builder(mvpData.uuid())
-                    .setMvpReason(Component.literal(mvpData.reason()))
-                    .setPlayerName(this.getMapTeams().playerName.get(mvpData.uuid()))
-                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build());
-            MinecraftForge.EVENT_BUS.post(event);
-            mvpReason = event.getReason();
-            boolean flag = MVPMusicManager.getInstance().playerHasMvpMusic(mvpData.uuid().toString());
-            if(flag){
-                this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(MVPMusicManager.getInstance().getMvpMusic(mvpData.uuid().toString())));
+            Optional<ServerPlayer> player = this.getPlayerByUUID(mvpData.uuid());
+            if (player.isPresent()) {
+                PlayerGetMvpEvent event = new PlayerGetMvpEvent(player.get(),this,
+                        new MvpReason.Builder(mvpData.uuid())
+                                .setMvpReason(Component.literal(mvpData.reason()))
+                                .setPlayerName(this.getMapTeams().playerName.get(mvpData.uuid()))
+                                .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build());
+                MinecraftForge.EVENT_BUS.post(event);
+                mvpReason = event.getReason();
+
+                if(MVPMusicManager.getInstance().playerHasMvpMusic(mvpData.uuid().toString())){
+                    this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(MVPMusicManager.getInstance().getMvpMusic(mvpData.uuid().toString())));
+                }
             }
-        }else{
+        }
+
+        if(mvpReason == null){
             mvpReason = new MvpReason.Builder(UUID.randomUUID())
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
         }
         this.sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
+
         MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this,winnerTeam,reason));
         int currentScore = winnerTeam.getScores();
         int target = currentScore + 1;
@@ -1168,18 +1174,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 this.isWaitingWinner
         );
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> {
-            ServerPlayer player = (ServerPlayer) this.getServerLevel().getPlayerByUUID(uuid);
-            if(player != null){
+            this.getPlayerByUUID(uuid).ifPresent(player->{
                 this.sendPacketToJoinedPlayer(player,packet,true);
-                    for (BaseTeam team : this.getMapTeams().getTeamsWithSpec()) {
-                        for (UUID existingPlayerId : team.getPlayers().keySet()) {
-                            team.getPlayerData(existingPlayerId).ifPresent(playerData -> {
-                                var p1 = new CSGameTabStatsS2CPacket(existingPlayerId, playerData, team.name);
-                                this.sendPacketToJoinedPlayer(player,p1,true);
-                            });
-                        }
+                for (BaseTeam team : this.getMapTeams().getTeamsWithSpec()) {
+                    for (UUID existingPlayerId : team.getPlayers().keySet()) {
+                        team.getPlayerData(existingPlayerId).ifPresent(playerData -> {
+                            var p1 = new CSGameTabStatsS2CPacket(existingPlayerId, playerData, team.name);
+                            this.sendPacketToJoinedPlayer(player,p1,true);
+                        });
                     }
-            }
+                }
+            });
         }));
 
         if(!isShopLocked){
@@ -1415,16 +1420,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
                 for (Map.Entry<UUID, Float> sortedDamageEntry : sortedDamageEntries) {
                     UUID assistId = sortedDamageEntry.getKey();
-                    ServerPlayer assist = (ServerPlayer) this.getServerLevel().getPlayerByUUID(assistId);
-                    if (assist != null && this.checkGameHasPlayer(assistId)) {
-                        // 如果是击杀者就不添加助攻
-                        teams.getTeamByPlayer(assist)
-                                .flatMap(assistPlayerTeam -> assistPlayerTeam.getPlayerData(assistId))
-                                .ifPresent(assistData -> {
-                                    if (from != null && from.getUUID().equals(assistId)) return;
-                                    assistData.addAssist();
-                                });
-                    }
+                    teams.getTeamByPlayer(assistId)
+                            .flatMap(assistPlayerTeam -> assistPlayerTeam.getPlayerData(assistId))
+                            .ifPresent(assistData -> {
+                                if (from != null && from.getUUID().equals(assistId)) return;
+                                assistData.addAssist();
+                            });
                 }
             }
 
