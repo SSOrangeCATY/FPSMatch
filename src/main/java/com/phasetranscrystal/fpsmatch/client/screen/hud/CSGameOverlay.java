@@ -88,8 +88,8 @@ public class CSGameOverlay implements IGuiOverlay {
         guiGraphics.pose().pushPose();
         float numberScale = scaleFactor * 1.5f;
         guiGraphics.pose().translate(
-            ctBoxX + boxWidth/2,
-            startY + backgroundHeight/2 - 6 * scaleFactor, // 从-2改为-6，向上移动4px
+            ctBoxX + (float) boxWidth /2,
+            startY + (float) backgroundHeight /2 - 6 * scaleFactor, // 从-2改为-6，向上移动4px
             0
         );
         guiGraphics.pose().scale(numberScale, numberScale, 1.0f);
@@ -108,8 +108,8 @@ public class CSGameOverlay implements IGuiOverlay {
         
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
-            ctBoxX + boxWidth/2,
-            startY + backgroundHeight/2 + 2 * scaleFactor,
+            ctBoxX + (float) boxWidth /2,
+            startY + (float) backgroundHeight /2 + 2 * scaleFactor,
             0
         );
         guiGraphics.pose().scale(smallScale, smallScale, 1.0f); // 使用smallScale
@@ -147,8 +147,8 @@ public class CSGameOverlay implements IGuiOverlay {
         // T存活数字
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
-            tBoxX + boxWidth/2,
-            startY + backgroundHeight/2 - 6 * scaleFactor, // 从-2改为-6
+            tBoxX + (float) boxWidth /2,
+            startY + (float) backgroundHeight /2 - 6 * scaleFactor, // 从-2改为-6
             0
         );
         guiGraphics.pose().scale(numberScale, numberScale, 1.0f);
@@ -163,8 +163,8 @@ public class CSGameOverlay implements IGuiOverlay {
         // T "存活" 文字
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
-            tBoxX + boxWidth/2,
-            startY + backgroundHeight/2 + 2 * scaleFactor,
+            tBoxX + (float) boxWidth /2,
+            startY + (float) backgroundHeight /2 + 2 * scaleFactor,
             0
         );
         guiGraphics.pose().scale(smallScale, smallScale, 1.0f); // 使用smallScale
@@ -179,7 +179,7 @@ public class CSGameOverlay implements IGuiOverlay {
         String roundTime = getRoundTimeString();
         float timeScale = scaleFactor * 1.2f;
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, startY + timeBarHeight/2, 0);
+        guiGraphics.pose().translate(centerX, startY + (float) timeBarHeight /2, 0);
         guiGraphics.pose().scale(timeScale, timeScale, 1.0f);
         guiGraphics.drawString(font, roundTime, 
             -font.width(roundTime) / 2,
@@ -195,8 +195,8 @@ public class CSGameOverlay implements IGuiOverlay {
         String ctScore = String.valueOf(ClientData.cTWinnerRounds);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
-            centerX - timeAreaWidth/2 - scaleFactor, // 左侧分数栏中心，向左偏移1px
-            startY + timeBarHeight + gap + scoreBarHeight/2,
+            centerX - (float) timeAreaWidth /2 - scaleFactor, // 左侧分数栏中心，向左偏移1px
+            startY + timeBarHeight + gap + (float) scoreBarHeight /2,
             0
         );
         guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);
@@ -212,8 +212,8 @@ public class CSGameOverlay implements IGuiOverlay {
         String tScore = String.valueOf(ClientData.tWinnerRounds);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
-            centerX + timeAreaWidth/2 + scaleFactor, // 右侧分数栏中心，向右偏移1px
-            startY + timeBarHeight + gap + scoreBarHeight/2,
+            centerX + (float) timeAreaWidth /2 + scaleFactor, // 右侧分数栏中心，向右偏移1px
+            startY + timeBarHeight + gap + (float) scoreBarHeight /2,
             0
         );
         guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);

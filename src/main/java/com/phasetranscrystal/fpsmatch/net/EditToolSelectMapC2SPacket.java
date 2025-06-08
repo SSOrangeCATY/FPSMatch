@@ -20,7 +20,7 @@ public class EditToolSelectMapC2SPacket {
         return new EditToolSelectMapC2SPacket();
     }
 
-    public static void handle(EditToolSelectMapC2SPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player != null) {

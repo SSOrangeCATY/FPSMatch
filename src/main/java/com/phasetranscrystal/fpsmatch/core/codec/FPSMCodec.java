@@ -43,9 +43,7 @@ public class FPSMCodec {
 
     public static JsonElement encodeShopDataMapToJson(Map<ItemType, ImmutableList<ShopSlot>> itemTypeListMap) {
         Map<String, List<ShopSlot>> data = new HashMap<>();
-        itemTypeListMap.forEach((t,l)->{
-            data.put(t.name(),l.stream().toList());
-        });
+        itemTypeListMap.forEach((t,l)->data.put(t.name(),l.stream().toList()));
 
         return ITEM_TYPE_TO_SHOP_SLOT_LIST_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> {
             throw new RuntimeException(e);

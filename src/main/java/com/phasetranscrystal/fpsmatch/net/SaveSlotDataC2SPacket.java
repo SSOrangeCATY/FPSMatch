@@ -46,15 +46,15 @@ public class SaveSlotDataC2SPacket {
     }
 
     // 处理包的逻辑（在服务端执行）
-    public static void handle(SaveSlotDataC2SPacket message, Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();  // 获取当前玩家
-            if (player.containerMenu instanceof EditShopSlotMenu menu) {
+            if (player != null && player.containerMenu instanceof EditShopSlotMenu menu) {
                 // 将接收到的数据保存到 ContainerData 中
                 ContainerData data = menu.getData(); // 获取当前菜单的 ContainerData
-                data.set(0, message.ammoCount); // 设置 ammoCount
-                data.set(1, message.defaultCost); // 设置 defaultCost
-                data.set(2, message.groupId); // 设置 groupId
+                data.set(0, ammoCount); // 设置 ammoCount
+                data.set(1, defaultCost); // 设置 defaultCost
+                data.set(2, groupId); // 设置 groupId
                 menu.saveData(player); // 调用保存方法保存数据
             }
         });

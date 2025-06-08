@@ -1238,7 +1238,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private static void dropC4(ServerPlayer player) {
         int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
         if (im > 0) {
-            player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false).setGlowingTag(true);;
+            player.drop(new ItemStack(FPSMItemRegister.C4.get(), 1), false, false).setGlowingTag(true);
             player.getInventory().setChanged();
         }
     }
@@ -1396,7 +1396,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     // 清除拆弹工具,并掉落拆弹工具
                     int ik = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, player.inventoryMenu.getCraftSlots());
                     if (ik > 0) {
-                        player.drop(new ItemStack(FPSMItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);;
+                        player.drop(new ItemStack(FPSMItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);
                         player.getInventory().setChanged();
                     }
                     FPSMCore.playerDeadDropWeapon(player);

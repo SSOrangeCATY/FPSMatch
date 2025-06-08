@@ -19,7 +19,7 @@ public class TestItem extends Item {
             try{
                icyllis.modernui.mc.forge.MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
             }catch (Exception e){
-                e.printStackTrace();
+                e.fillInStackTrace();
             }
         }
         return super.use(pLevel,pPlayer,pUsedHand);

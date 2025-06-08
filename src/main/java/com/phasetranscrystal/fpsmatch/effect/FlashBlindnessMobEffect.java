@@ -71,7 +71,7 @@ public class FlashBlindnessMobEffect extends MobEffect {
                             event.player.removeEffect(FPSMEffectRegister.FLASH_BLINDNESS.get());
                         }
                     }
-                };
+                }
             }
         }
     }

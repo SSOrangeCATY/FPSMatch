@@ -25,6 +25,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import net.minecraftforge.network.NetworkHooks;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -35,8 +36,6 @@ import java.util.List;
 public class ShopEditTool extends Item {
     public static final String MAP_TAG = "SelectedMap";
     public static final String SHOP_TAG = "SelectedShop";
-    private static List<String> mapList = new ArrayList<>();
-    private static List<String> shopList = new ArrayList<>();
 
     public ShopEditTool(Properties pProperties) {
         super(pProperties);
@@ -59,12 +58,12 @@ public class ShopEditTool extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pUsedHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, @NotNull InteractionHand pUsedHand) {
         ItemStack itemInHand = pPlayer.getItemInHand(pUsedHand);
         if (!pLevel.isClientSide && pPlayer instanceof ServerPlayer serverPlayer) {
             //shift 右键
             if (serverPlayer.isShiftKeyDown()) {
-                mapList = FPSMCore.getInstance().getMapNames();
+                List<String> mapList = FPSMCore.getInstance().getMapNames();
                 String preSelectedMap, preSelectedShop, newShop;
                 //设置选中的商店
                 if (!mapList.isEmpty() && itemInHand.getItem() instanceof ShopEditTool iteractItem) {
@@ -75,7 +74,7 @@ public class ShopEditTool extends Item {
                     preSelectedMap = iteractItem.getTag(itemInHand, MAP_TAG);
                     BaseMap map = FPSMCore.getInstance().getMapByName(preSelectedMap);
                     if (map instanceof ShopMap<?> shopMap) {
-                        shopList = shopMap.getShopNames();
+                        List<String> shopList = shopMap.getShopNames();
                         if (!shopList.isEmpty() && itemInHand.getOrCreateTag().contains(SHOP_TAG)) {
                             preSelectedShop = iteractItem.getTag(itemInHand, SHOP_TAG);
 
@@ -97,7 +96,7 @@ public class ShopEditTool extends Item {
                         serverPlayer.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.all_shops").withStyle(ChatFormatting.BOLD)
                                 .append(shopList.toString()).withStyle(ChatFormatting.GREEN)
                         );
-                        BaseTeam team = map.getMapTeams().getTeamByName(newShop).orElse(null);;
+                        BaseTeam team = map.getMapTeams().getTeamByName(newShop).orElse(null);
                         //加入队伍尝试
                         if (team != null && team.getRemainingLimit() >= 1) {
                             map.join(newShop, serverPlayer);
@@ -106,8 +105,6 @@ public class ShopEditTool extends Item {
                             );
                         } else
                             serverPlayer.sendSystemMessage(Component.translatable("commands.fpsm.team.join.failure", team));
-
-                        ;
                     }
 
                 } else //默认地图为空
@@ -163,7 +160,7 @@ public class ShopEditTool extends Item {
 
     //显示选择信息
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
 
         String selectedMap = getTag(pStack, MAP_TAG);

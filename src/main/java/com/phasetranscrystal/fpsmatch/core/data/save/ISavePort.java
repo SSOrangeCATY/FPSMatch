@@ -93,7 +93,7 @@ public interface ISavePort<T> {
             JsonElement element = new Gson().fromJson(reader, JsonElement.class);
             return this.decodeFromJson(element);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
             return null;
         }
     }
@@ -129,7 +129,7 @@ public interface ISavePort<T> {
                 return true;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
             return false;
         }
     }
@@ -160,7 +160,7 @@ public interface ISavePort<T> {
                             T data = this.decodeFromJson(element);
                             this.readHandler().accept(data);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            e.fillInStackTrace();
                         }
                     }
                 }
@@ -222,7 +222,7 @@ public interface ISavePort<T> {
                         throw new RuntimeException(e);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    e.fillInStackTrace();
                 }
             } else {
                 System.out.println("error : " + directory.getName() + " data folder is not a directory or doesn't exist.");

@@ -45,7 +45,7 @@ public class FlashBombAddonS2CPacket {
                     flashBlindnessMobEffect.setFullBlindnessTime(fullBlindnessTime);
                     flashBlindnessMobEffect.setTotalBlindnessTime(totalBlindnessTime);
                     flashBlindnessMobEffect.setTicker(ticker);
-                };
+                }
             }
         });
         ctx.get().setPacketHandled(true);

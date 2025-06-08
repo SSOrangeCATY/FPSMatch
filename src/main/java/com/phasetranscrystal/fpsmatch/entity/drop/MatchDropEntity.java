@@ -94,7 +94,7 @@ public class MatchDropEntity extends Entity {
                     f1 = this.level().getBlockState(groundPos).getFriction(level(), groundPos, this) * 0.98F;
                 }
 
-                this.setDeltaMovement(this.getDeltaMovement().multiply((double)f1, 0.98D, (double)f1));
+                this.setDeltaMovement(this.getDeltaMovement().multiply(f1, 0.98D, f1));
                 if (this.onGround()) {
                     Vec3 vec31 = this.getDeltaMovement();
                     if (vec31.y < 0.0D) {

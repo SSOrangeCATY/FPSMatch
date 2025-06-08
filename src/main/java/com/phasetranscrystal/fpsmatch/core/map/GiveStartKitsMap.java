@@ -117,9 +117,9 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             });
-        },()->{
-            System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString());
-        });
+        },()->
+            System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString())
+        );
     }
 
     /**
@@ -134,9 +134,9 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
             if (player != null) {
                 ArrayList<ItemStack> items = this.getKits(team);
                 player.getInventory().clearContent();
-                items.forEach(itemStack -> {
-                    player.getInventory().add(itemStack.copy());
-                });
+                items.forEach(itemStack ->
+                    player.getInventory().add(itemStack.copy())
+                );
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             }
@@ -149,7 +149,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
     default void giveAllPlayersKits() {
         BaseMap map = this.getMap();
         for (PlayerData data : this.getMap().getMapTeams().getJoinedPlayers()) {
-            data.getPlayer().ifPresent(player->{
+            data.getPlayer().ifPresent(player->
                 map.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
                     ArrayList<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
@@ -161,8 +161,8 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                         }
                     });
                     FPSMUtil.sortPlayerInventory(player);
-                });
-            });
+                })
+            );
         }
     }
 

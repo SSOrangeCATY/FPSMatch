@@ -15,7 +15,7 @@ public class MatchDropRenderer implements EntityRendererProvider<MatchDropEntity
     public @NotNull EntityRenderer<MatchDropEntity> create(Context pContext) {
         return new EntityRenderer<>(pContext) {
 
-            ItemEntityRenderer itemRender = new ItemEntityRenderer(pContext);
+            final ItemEntityRenderer itemRender = new ItemEntityRenderer(pContext);
             ItemEntity item = null;
 
             @Override

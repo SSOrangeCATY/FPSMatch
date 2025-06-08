@@ -66,9 +66,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.priceField.setValue(String.valueOf(menu.getPrice()));
         this.priceField.setFilter(s -> s.matches("\\d+"));//只能输入0-9组成的数字，不能为空
         this.priceField.setResponder(
-                s -> {
-                    this.data.set(1, Integer.parseInt(s));
-                }
+                s -> this.data.set(1, Integer.parseInt(s))
         );
         this.addRenderableWidget(this.priceField);
 
@@ -88,9 +86,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.addRenderableWidget(this.listenerField);
 
         //保存按钮
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.shop_editor.save_button"), button -> {
-            onSaveButtonClick();
-        })
+        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.shop_editor.save_button"), button -> onSaveButtonClick())
                 .pos(this.leftPos + this.titleLabelX, this.topPos + this.imageHeight - 94 + 25)   // 设置按钮的位置
                 .size(100, 18)                                      // 设置按钮的大小
                 .build());

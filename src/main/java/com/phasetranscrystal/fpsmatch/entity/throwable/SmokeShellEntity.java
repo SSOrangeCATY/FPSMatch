@@ -70,7 +70,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         if(this.getParticleCoolDown() > 0){
             this.setParticleCoolDown(this.getParticleCoolDown() - 1);
         }
-    };
+    }
 
     private void spawnExpireParticles() {
         if (level() instanceof ServerLevel serverLevel) {

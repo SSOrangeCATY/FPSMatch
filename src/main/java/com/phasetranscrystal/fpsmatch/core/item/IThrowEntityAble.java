@@ -39,10 +39,10 @@ public interface IThrowEntityAble {
             if (!pPlayer.getAbilities().instabuild) {
                 itemstack.shrink(1);
             }
-    };
+    }
      BaseProjectileEntity getEntity(Player pPlayer, Level pLevel);
 
      default SoundEvent getThrowVoice(){
          return SoundEvents.SNOWBALL_THROW;
-     };
+     }
 }

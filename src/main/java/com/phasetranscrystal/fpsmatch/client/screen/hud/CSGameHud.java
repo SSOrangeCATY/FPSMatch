@@ -89,9 +89,9 @@ public class CSGameHud implements IHudRenderer {
         for (int x = -lineWidth / 2; x <= lineWidth / 2; x++) {
             int alpha = 255;
             if (x < -lineWidth / 2 + fadeWidth) {
-                alpha = (int) (255 * (x + lineWidth / 2) / (float) fadeWidth);
+                alpha = (int) (255 * (x + (float) lineWidth / 2) / (float) fadeWidth);
             } else if (x > lineWidth / 2 - fadeWidth) {
-                alpha = (int) (255 * (lineWidth / 2 - x) / (float) fadeWidth);
+                alpha = (int) (255 * ((float) lineWidth / 2 - x) / (float) fadeWidth);
             }
             int color = (alpha << 24) | 0xFFFFFF;
             guiGraphics.fill(centerX + x, y, centerX + x + 1, y + lineHeight, color);

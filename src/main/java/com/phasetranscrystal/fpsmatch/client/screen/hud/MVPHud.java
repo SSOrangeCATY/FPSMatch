@@ -68,7 +68,7 @@ public class MVPHud implements IGuiOverlay {
 
     public void triggerAnimation(MvpReason reason) {
         this.player = reason.uuid;
-        this.currentTeamName = ((MutableComponent) reason.getTeamName()).append(Component.translatable("cs.game.winner.mvpNameSub"));;
+        this.currentTeamName = ((MutableComponent) reason.getTeamName()).append(Component.translatable("cs.game.winner.mvpNameSub"));
         this.currentPlayerName = reason.getPlayerName();
         this.mvpReason = reason.getMvpReason();
         this.extraInfo1 = reason.getExtraInfo1();
@@ -284,7 +284,6 @@ public class MVPHud implements IGuiOverlay {
         PlayerInfo info = getPlayerInfoByUUID(this.player);
         if(info != null){
             PlayerFaceRenderer.draw(guiGraphics, info.getSkinLocation(), x, y, scaledSize);
-            return;
         }else{
             guiGraphics.blit(avatarTexture, x, y, scaledSize, scaledSize, 0, 0, 64, 64, 64, 64);
         }
@@ -393,7 +392,7 @@ public class MVPHud implements IGuiOverlay {
         player = null;
     }
     public PlayerInfo getPlayerInfoByUUID(UUID uuid) {
-        Optional<PlayerInfo> playerInfo = this.minecraft.player.connection.getListedOnlinePlayers().stream().filter((playerInfo1 -> playerInfo1.getProfile().getId().equals(uuid))).findFirst();
+        Optional<PlayerInfo> playerInfo = minecraft.player.connection.getListedOnlinePlayers().stream().filter((playerInfo1 -> playerInfo1.getProfile().getId().equals(uuid))).findFirst();
         return playerInfo.orElse(null);
     }
 }

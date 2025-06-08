@@ -37,7 +37,7 @@ public class FlashBombHud implements IGuiOverlay {
                         guiGraphics.fill(0, 0, screenWidth, screenHeight, colorWithAlpha);
                     }
                 }
-            };
+            }
         }
     }
 

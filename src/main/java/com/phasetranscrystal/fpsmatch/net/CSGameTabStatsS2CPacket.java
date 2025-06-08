@@ -65,7 +65,7 @@ public class CSGameTabStatsS2CPacket {
                 if (!ClientData.currentTeam.equals(team)) {
                     ClientData.currentTeam = team;
                     CSGameShopScreen.refreshFlag = true;
-                };
+                }
             }
             ClientData.tabData.put(uuid,new Pair<>(team, new TabData(this.kills,this.deaths,this.assists,this.damage,this.isLiving,this.headshotKills)));
         });

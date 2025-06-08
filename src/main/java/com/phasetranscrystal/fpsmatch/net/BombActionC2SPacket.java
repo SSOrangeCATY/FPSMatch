@@ -35,7 +35,7 @@ public record BombActionC2SPacket(boolean action) {
             ctx.get().setPacketHandled(true);
             return;
         }
-        BaseTeam team = map.getMapTeams().getTeamByPlayer(sender).orElse(null);;
+        BaseTeam team = map.getMapTeams().getTeamByPlayer(sender).orElse(null);
         if (team == null) {
             ctx.get().setPacketHandled(true);
             return;

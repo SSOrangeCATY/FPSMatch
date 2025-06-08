@@ -49,13 +49,12 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
      * @param money 金额变化量（可正负）
      */
     default void addPlayerMoney(UUID uuid, int money) {
-        BaseTeam team = this.getMap().getMapTeams().getTeamByPlayer(uuid);
-        if (team != null) {
-            this.getShop(team.name).ifPresent(shop -> {
-                shop.getPlayerShopData(uuid).addMoney(money);
-                shop.syncShopMoneyData(uuid);
-            });
-        }
+        this.getMap().getMapTeams().getTeamByPlayer(uuid)
+                .flatMap(team -> this.getShop(team.name))
+                .ifPresent(shop -> {
+                    shop.getPlayerShopData(uuid).addMoney(money);
+                    shop.syncShopMoneyData(uuid);
+                });
     }
 
     /**
@@ -82,13 +81,27 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
      * @param money 减少的金额
      */
     default void removePlayerMoney(UUID uuid, int money) {
-        BaseTeam team = this.getMap().getMapTeams().getTeamByPlayer(uuid);
-        if (team != null) {
-            this.getShop(team.name).ifPresent(shop -> {
-                shop.getPlayerShopData(uuid).reduceMoney(money);
-                shop.syncShopMoneyData(uuid);
-            });
-        }
+        this.getMap().getMapTeams().getTeamByPlayer(uuid)
+                .flatMap(team -> this.getShop(team.name))
+                .ifPresent(shop -> {
+                    shop.getPlayerShopData(uuid).reduceMoney(money);
+                    shop.syncShopMoneyData(uuid);
+                });
+    }
+
+    /**
+     * 减少玩家的金钱。
+     * <p>
+     * 根据玩家所属队伍，为其商店数据中的金钱进行减少操作，并同步到客户端。
+     *
+     * @param player 玩家
+     * @param money 减少的金额
+     */
+    default void removePlayerMoney(ServerPlayer player, int money) {
+        this.getShop(player).ifPresent(shop -> {
+            shop.getPlayerShopData(player).reduceMoney(money);
+            shop.syncShopMoneyData(player);
+        });
     }
 
     /**
@@ -100,15 +113,29 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
      * @param money 设置的金钱数量
      */
     default void setPlayerMoney(UUID uuid, int money) {
-        BaseTeam team = this.getMap().getMapTeams().getTeamByPlayer(uuid);
-        if (team != null) {
-            this.getShop(team.name).ifPresent(shop -> {
-                shop.getPlayerShopData(uuid).setMoney(money);
-                shop.syncShopMoneyData(uuid);
-            });
-        }
+        this.getMap().getMapTeams().getTeamByPlayer(uuid)
+                .flatMap(team -> this.getShop(team.name))
+                .ifPresent(shop -> {
+                    shop.getPlayerShopData(uuid).setMoney(money);
+                    shop.syncShopMoneyData(uuid);
+                });
     }
 
+
+    /**
+     * 设置玩家的金钱数量。
+     * <p>
+     * 根据玩家所属队伍，直接设置其商店数据中的金钱数量，并同步到客户端。
+     *
+     * @param player 玩家
+     * @param money 设置的金钱数量
+     */
+    default void setPlayerMoney(ServerPlayer player, int money) {
+        this.getShop(player).ifPresent(shop -> {
+            shop.getPlayerShopData(player).setMoney(money);
+            shop.syncShopMoneyData(player);
+        });
+    }
     /**
      * 同步所有商店的数据和金钱信息。
      * <p>

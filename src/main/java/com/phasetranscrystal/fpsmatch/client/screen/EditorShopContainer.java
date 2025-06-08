@@ -150,9 +150,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
         if (player instanceof ServerPlayer serverPlayer) {
             NetworkHooks.openScreen(serverPlayer,
                     new SimpleMenuProvider(
-                            (windowId, inv, p) -> {
-                                return new EditShopSlotMenu(windowId, inv, shopSlot, guiItemStack, repoIndex);
-                            },
+                            (windowId, inv, p) -> new EditShopSlotMenu(windowId, inv, shopSlot, guiItemStack, repoIndex),
                             Component.translatable("gui.fpsm.edit_shop_slot.title")
                     ),
                     buf -> {

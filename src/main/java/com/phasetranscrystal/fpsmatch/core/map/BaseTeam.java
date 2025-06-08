@@ -378,13 +378,13 @@ public class BaseTeam {
     public void resetAllPlayers(Map<UUID, PlayerData> players) {
         this.players.clear();
         this.players.putAll(players);
-        players.keySet().forEach(uuid -> {
-            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresentOrElse(serverPlayer -> {
-                serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), this.getPlayerTeam());
-            },()->{
-                teamUnableToSwitch.add(uuid);
-            });
-        });
+        players.keySet().forEach(uuid ->
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresentOrElse(serverPlayer ->
+                serverPlayer.getScoreboard().addPlayerToTeam(serverPlayer.getScoreboardName(), this.getPlayerTeam())
+            ,()->
+                teamUnableToSwitch.add(uuid)
+            )
+        );
     }
 
     /**

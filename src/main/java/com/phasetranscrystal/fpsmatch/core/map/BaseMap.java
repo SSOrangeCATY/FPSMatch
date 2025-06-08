@@ -195,12 +195,10 @@ public abstract class BaseMap {
         this.pullGameInfo(player);
         this.getMapTeams().getTeamByName(teamName)
                 .flatMap(team -> team.getPlayerData(player.getUUID()))
-                .ifPresent(playerData -> {
-                    this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(), playerData, teamName));
-                });
+                .ifPresent(playerData -> this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(), playerData, teamName)));
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
-            shopMap.getShop(player).ifPresent(shop -> {shop.syncShopData(player);});
+            shopMap.getShop(player).ifPresent(shop -> shop.syncShopData(player));
         }
     }
 
@@ -334,21 +332,21 @@ public abstract class BaseMap {
      * @param <MSG> 数据包类型
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid -> {
-            this.getPlayerByUUID(uuid).ifPresent(player->{
-                this.sendPacketToJoinedPlayer(player, packet, true);
-            });
-        });
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid ->
+            this.getPlayerByUUID(uuid).ifPresent(player ->
+                this.sendPacketToJoinedPlayer(player, packet, true)
+            )
+        );
     }
 
     public <MSG> void sendPacketToTeamPlayer(BaseTeam team ,MSG packet,boolean living){
-        team.getPlayersData().forEach(data -> {
+        team.getPlayersData().forEach(data ->
             data.getPlayer().ifPresent(player->{
                 if (data.isLiving() == living) {
                     this.sendPacketToJoinedPlayer(player, packet, true);
                 }
-            });
-        });
+            })
+        );
     }
 
     public <MSG> void sendPacketToTeamLivingPlayer(BaseTeam team ,MSG packet){

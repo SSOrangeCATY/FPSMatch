@@ -38,7 +38,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     @Override
     protected void onTimeOut(){
         explode();
-    };
+    }
 
     @Override
     protected void onActivated() {

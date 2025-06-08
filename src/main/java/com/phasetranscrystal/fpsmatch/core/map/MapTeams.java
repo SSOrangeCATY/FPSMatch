@@ -278,7 +278,7 @@ public class MapTeams {
         this.teams.forEach(((s, team) -> {
             if (team.hasPlayer(player)) {
                 baseTeamAtomicReference.set(team);
-            };
+            }
         }));
         return Optional.ofNullable(baseTeamAtomicReference.get());
     }

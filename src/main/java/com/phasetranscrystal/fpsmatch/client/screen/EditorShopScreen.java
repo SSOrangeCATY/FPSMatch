@@ -12,7 +12,7 @@ import java.util.List;
 
 
 public class EditorShopScreen extends AbstractContainerScreen<EditorShopContainer> {
-    private List<Integer> slotCost = new ArrayList<>();
+    private final List<Integer> slotCost = new ArrayList<>();
     private static final int SLOT_SIZE = 18;
     private static final int d = 10; // **Slot 之间的间隔**
     private static final int TEXTBOX_HEIGHT = Math.max(1, (int) (d * 0.618)); // **文本框高度**

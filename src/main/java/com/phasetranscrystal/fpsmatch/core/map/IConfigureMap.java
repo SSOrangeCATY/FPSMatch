@@ -82,7 +82,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
             if (jsonObject.has(setting.getConfigName())) {
                 setting.fromJson(jsonObject.get(setting.getConfigName()));
             } else {
-                FPSMatch.LOGGER.warn("Setting " + setting.getConfigName() + " not found in config file.");
+                FPSMatch.LOGGER.warn("Setting {} not found in config file.", setting.getConfigName());
             }
         }
     }
@@ -98,7 +98,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
     default File getConfigFile() {
         File file = FPSMCore.getInstance().getFPSMDataManager().getSaveFolder(this.getMap());
         if(file == null){
-            FPSMatch.LOGGER.error("Failed to get config file for map " + this.getMap().getMapName() + " because ：Map is not implement ISavedData interface.");
+            FPSMatch.LOGGER.error("Failed to get config file for map {} because ：Map is not implement ISavedData interface.", this.getMap().getMapName());
             return null;
         } else {
             return new File(file, this.getMap().getMapName() + ".cfg");
@@ -123,7 +123,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
                 reader.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
         }
     }
 
@@ -138,15 +138,15 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
         File dataFile = getConfigFile();
         if (dataFile == null) return;
         try {
-            if (!dataFile.exists()) {
-                dataFile.createNewFile();
+            if (!dataFile.exists() && !dataFile.createNewFile()) {
+                return;
             }
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             FileWriter writer = new FileWriter(dataFile);
             gson.toJson(this.configToJson(), writer);
             writer.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
         }
     }
 

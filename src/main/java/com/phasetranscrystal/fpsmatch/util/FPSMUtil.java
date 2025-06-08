@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class FPSMUtil {
-    public static final List<GunTabType> MAIN_WEAPON = ImmutableList.of(GunTabType.RIFLE,GunTabType.SNIPER,GunTabType.SHOTGUN,GunTabType.SMG,GunTabType.MG);;
+    public static final List<GunTabType> MAIN_WEAPON = ImmutableList.of(GunTabType.RIFLE,GunTabType.SNIPER,GunTabType.SHOTGUN,GunTabType.SMG,GunTabType.MG);
     public static final Predicate<ItemStack> MAIN_WEAPON_PREDICATE = (itemStack -> {
         if(itemStack.getItem() instanceof IGun gun){
             return isMainWeapon(gun.getGunId(itemStack));
