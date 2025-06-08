@@ -271,6 +271,9 @@ public class FPSMShop {
     public void clearPlayerShopData() {
         this.playersData.clear();
     }
+    public void clearPlayerShopData(UUID uuid) {
+        this.playersData.remove(uuid);
+    }
 
     public void resetPlayerData(List<UUID> uuids){
         this.clearPlayerShopData();

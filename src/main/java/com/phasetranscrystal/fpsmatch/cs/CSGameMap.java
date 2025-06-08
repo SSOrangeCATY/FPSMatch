@@ -343,6 +343,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public void leave(ServerPlayer player) {
         this.sendPacketToAllPlayer(new FPSMatchTabRemovalS2CPacket(player.getUUID()));
+        this.getShop(player).ifPresent(shop -> shop.clearPlayerShopData(player.getUUID()));
         super.leave(player);
     }
 
