@@ -307,7 +307,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     private void setBystander(ServerPlayer player) {
         List<UUID> uuids = this.getMapTeams().getSameTeamPlayerUUIDs(player);
-        uuids.remove(player.getUUID());
         Entity entity = null;
         if (uuids.size() > 1) {
             Random random = new Random();

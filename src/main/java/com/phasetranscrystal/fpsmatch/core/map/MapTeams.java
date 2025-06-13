@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.ChatFormatting;
@@ -294,6 +295,12 @@ public class MapTeams {
         return data;
     }
 
+    public List<UUID> getJoinedUUID() {
+        List<UUID> data = new ArrayList<>();
+        this.teams.values().forEach((t) -> data.addAll(t.getPlayerList()));
+        return data;
+    }
+
     /**
      * 获取所有已加入队伍的玩家 UUID 列表。
      * <p>
@@ -342,7 +349,7 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void joinTeam(String teamName, ServerPlayer player) {
-        leaveTeam(player);
+        FPSMCore.checkAndLeaveTeam(player);
         if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
             this.playerJoin(player, teamName);
             this.playerName.put(player.getUUID(), player.getDisplayName());
@@ -509,6 +516,7 @@ public class MapTeams {
         List<UUID> uuids = new ArrayList<>();
         getTeamByPlayer(player).ifPresent(t->{
             uuids.addAll(t.getPlayerList());
+            uuids.remove(player.getUUID());
         });
         return uuids;
     }

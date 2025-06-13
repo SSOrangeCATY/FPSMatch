@@ -124,9 +124,7 @@ public abstract class BaseMap {
      */
     public boolean checkGameHasPlayer(UUID player) {
         return this.getMapTeams()
-                .getJoinedPlayers()
-                .stream()
-                .anyMatch(playerData -> playerData.getOwner().equals(player));
+                .getJoinedUUID().contains(player);
     }
 
     public boolean checkSpecHasPlayer(Player player) {
