@@ -613,7 +613,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
      * 处理回合胜利逻辑
      * @param winnerTeam 获胜队伍
      * @param reason 胜利原因（如炸弹拆除/爆炸）
-     * @see #checkLoseStreaks 计算经济奖励
+     * @see #checkLoseStreaks(BaseTeam) 计算经济奖励
      * @see #checkMatchPoint() 检查赛点状态
      * @see MVPMusicManager MVP音乐播放逻辑
      */
@@ -1348,7 +1348,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map instanceof CSGameMap csGameMap && map.checkGameHasPlayer(player)) {
+            if (map instanceof CSGameMap csGameMap) {
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
                 csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
                 event.setCanceled(true);

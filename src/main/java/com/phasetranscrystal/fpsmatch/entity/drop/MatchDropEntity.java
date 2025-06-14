@@ -167,9 +167,9 @@ public class MatchDropEntity extends Entity {
             if(this.pickupDelay == 0 && this.getDropType().playerPredicate.test(pEntity)){
                 ItemStack itemStack = this.getItem();
                 if (!itemStack.isEmpty()) {
-                    itemStack.shrink(1);
                     ItemStack copy = itemStack.copy();
                     copy.setCount(1);
+                    itemStack.shrink(1);
                     BaseMap map = FPSMCore.getInstance().getMapByPlayer(pEntity);
                     if (map instanceof ShopMap<?> shopMap) {
                         shopMap.getShop(pEntity).ifPresent(shop -> {

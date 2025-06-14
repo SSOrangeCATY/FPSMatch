@@ -117,6 +117,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             });
+            FPSMUtil.sortPlayerInventory(player);
         },()->
             System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString())
         );
@@ -154,10 +155,11 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                     ArrayList<ItemStack> items = this.getKits(team);
                     player.getInventory().clearContent();
                     items.forEach(itemStack -> {
-                        if(itemStack.getItem() instanceof ArmorItem armorItem){
-                            player.setItemSlot(armorItem.getEquipmentSlot(),itemStack);
+                        ItemStack copy = itemStack.copy();
+                        if(copy.getItem() instanceof ArmorItem armorItem){
+                            player.setItemSlot(armorItem.getEquipmentSlot(),copy);
                         }else{
-                            player.getInventory().add(itemStack);
+                            player.getInventory().add(copy);
                         }
                     });
                     FPSMUtil.sortPlayerInventory(player);
