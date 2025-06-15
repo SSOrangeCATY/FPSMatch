@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 
-import com.phasetranscrystal.fpsmatch.item.BaseThrowAbleItem;
+import com.phasetranscrystal.fpsmatch.common.item.BaseThrowAbleItem;
 import net.minecraft.client.*;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.toasts.TutorialToast;

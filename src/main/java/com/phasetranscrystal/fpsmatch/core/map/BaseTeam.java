@@ -1,10 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.data.TabData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

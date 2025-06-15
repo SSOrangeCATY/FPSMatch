@@ -10,8 +10,8 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.sound.MVPMusicManager;
-import com.phasetranscrystal.fpsmatch.entity.drop.MatchDropEntity;
-import com.phasetranscrystal.fpsmatch.entity.drop.DropType;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -59,23 +59,21 @@ public class FPSMCore {
     }
 
     @Nullable public BaseMap getMapByPlayer(Player player){
-        AtomicReference<BaseMap> map = new AtomicReference<>();
-        GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
-            if(baseMap.checkGameHasPlayer(player)) map.set(baseMap);
-        })));
-         return map.get();
+        for (List<BaseMap> list : GAMES.values()) {
+            for (BaseMap map : list){
+                if(map.checkGameHasPlayer(player)) return map;
+            }
+        }
+        return null;
     }
 
     @Nullable public BaseMap getMapByPlayerWithSpec(Player player){
-        AtomicReference<BaseMap> map = new AtomicReference<>();
-        GAMES.values().forEach((baseMapList -> baseMapList.forEach((baseMap)->{
-            if(baseMap.checkGameHasPlayer(player)){
-                map.set(baseMap);
-            }else if (baseMap.checkSpecHasPlayer(player)){
-                map.set(baseMap);
+        for (List<BaseMap> list : GAMES.values()) {
+            for (BaseMap map : list){
+                if(map.checkGameHasPlayer(player) || map.checkSpecHasPlayer(player)) return map;
             }
-        })));
-        return map.get();
+        }
+        return null;
     }
 
     public void registerMap(String type, BaseMap map){

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.entity.CompositionC4Entity;
+import com.phasetranscrystal.fpsmatch.common.entity.CompositionC4Entity;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;

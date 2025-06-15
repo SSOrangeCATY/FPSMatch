@@ -353,9 +353,9 @@ public class MapTeams {
         if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
             this.playerJoin(player, teamName);
             this.playerName.put(player.getUUID(), player.getDisplayName());
-            player.displayClientMessage(Component.translatable("fpsm.map.cs.join.team", teamName).withStyle(ChatFormatting.GREEN), false);
+            player.displayClientMessage(Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), teamName).withStyle(ChatFormatting.GREEN), false);
         } else {
-            player.sendSystemMessage(Component.literal("[FPSM] 队伍已满或未找到目标队伍，当前队伍已离队!"));
+            player.displayClientMessage(Component.translatable("commands.fpsm.team.leave.success",player.getDisplayName()).withStyle(ChatFormatting.RED), false);
         }
     }
 
@@ -479,8 +479,11 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void leaveTeam(ServerPlayer player) {
-        this.spectatorTeam.leave(player);
-        this.teams.values().forEach((t) -> t.leave(player));
+        if(this.getSpectatorTeam().hasPlayer(player.getUUID())){
+            this.spectatorTeam.leave(player);
+        }else{
+            this.teams.values().forEach((t) -> t.leave(player));
+        }
         this.playerName.remove(player.getUUID());
     }
 

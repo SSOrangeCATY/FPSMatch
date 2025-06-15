@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.jetbrains.annotations.Nullable;
 
@@ -252,5 +253,12 @@ public class FPSMDataManager {
         }
         // 返回处理后的文件名
         return fileName;
+    }
+
+    public static File getLocalCacheFile(String filename, String type) {
+        File cacheDir = new File(new File(new File(FMLLoader.getGamePath().toFile(), "fpsmatch"), "cache"), type);
+        cacheDir.mkdirs();
+        String suffix = "."+type;
+        return new File(cacheDir, fixName(filename) + suffix);
     }
 }

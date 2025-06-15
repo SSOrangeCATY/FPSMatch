@@ -2,15 +2,12 @@ package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.net.CSGameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchGameTypeS2CPacket;
-import com.phasetranscrystal.fpsmatch.net.FPSMatchStatsResetS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.FPSMatchGameTypeS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.FPSMatchStatsResetS2CPacket;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;

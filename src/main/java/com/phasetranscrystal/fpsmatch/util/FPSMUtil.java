@@ -2,9 +2,9 @@ package com.phasetranscrystal.fpsmatch.util;
 
 import com.google.common.collect.ImmutableList;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
-import com.phasetranscrystal.fpsmatch.gamerule.FPSMatchRule;
+import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
-import com.phasetranscrystal.fpsmatch.item.CompositionC4;
+import com.phasetranscrystal.fpsmatch.common.item.CompositionC4;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;

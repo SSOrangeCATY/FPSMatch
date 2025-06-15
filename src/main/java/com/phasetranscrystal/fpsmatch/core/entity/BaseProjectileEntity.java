@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.entity;
 
-import com.phasetranscrystal.fpsmatch.gamerule.FPSMatchRule;
+import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;

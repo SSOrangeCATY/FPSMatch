@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import com.phasetranscrystal.fpsmatch.effect.FPSMEffectRegister;
+import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
