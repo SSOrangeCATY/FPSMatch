@@ -1,17 +1,16 @@
 package com.phasetranscrystal.fpsmatch.common.cs.event;
 
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap;
+import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import net.minecraftforge.eventbus.api.Event;
 
 public class CSGameRoundEndEvent extends Event {
-    private final BaseMap map;
+    private final CSGameMap map;
     private final BaseTeam winner;
     private final CSGameMap.WinnerReason reason;
     private int winnerMoney;
 
-    public CSGameRoundEndEvent(BaseMap map ,BaseTeam winner, CSGameMap.WinnerReason reason) {
+    public CSGameRoundEndEvent(CSGameMap map , BaseTeam winner, CSGameMap.WinnerReason reason) {
         this.map = map;
         this.winner = winner;
         this.reason = reason;
@@ -39,7 +38,7 @@ public class CSGameRoundEndEvent extends Event {
         return false;
     }
 
-    public BaseMap getMap() {
+    public CSGameMap getMap() {
         return map;
     }
 

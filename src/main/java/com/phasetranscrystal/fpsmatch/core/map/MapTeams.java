@@ -87,7 +87,7 @@ public class MapTeams {
      * @param attackTeam 攻击方队伍
      * @param defendTeam 防守方队伍
      */
-    public static void switchAttackAndDefend(BaseMap map ,BaseTeam attackTeam, BaseTeam defendTeam) {
+    public static void switchAttackAndDefend(BaseMap map , BaseTeam attackTeam, BaseTeam defendTeam) {
         if(map == null || attackTeam == null || defendTeam == null) return;
 
         //交换玩家
@@ -348,14 +348,16 @@ public class MapTeams {
      * @param teamName 队伍名称
      * @param player 玩家对象
      */
-    public void joinTeam(String teamName, ServerPlayer player) {
+    public boolean joinTeam(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
             this.playerJoin(player, teamName);
             this.playerName.put(player.getUUID(), player.getDisplayName());
             player.displayClientMessage(Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), teamName).withStyle(ChatFormatting.GREEN), false);
+            return true;
         } else {
             player.displayClientMessage(Component.translatable("commands.fpsm.team.leave.success",player.getDisplayName()).withStyle(ChatFormatting.RED), false);
+            return false;
         }
     }
 

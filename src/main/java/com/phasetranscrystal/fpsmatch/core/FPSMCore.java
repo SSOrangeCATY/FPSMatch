@@ -41,7 +41,7 @@ public class FPSMCore {
     private static FPSMCore INSTANCE;
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
-    private final Map<String, Function3<ServerLevel,String,AreaData,BaseMap>> REGISTRY = new HashMap<>();
+    private final Map<String, Function3<ServerLevel,String,AreaData, BaseMap>> REGISTRY = new HashMap<>();
     private final FPSMDataManager fpsmDataManager;
     private final LMManager listenerModuleManager;
     private final MVPMusicManager mvpMusicManager;
@@ -129,12 +129,12 @@ public class FPSMCore {
        return REGISTRY.containsKey(mapType);
     }
 
-    @Nullable public Function3<ServerLevel,String, AreaData,BaseMap> getPreBuildGame(String mapType){
+    @Nullable public Function3<ServerLevel,String, AreaData, BaseMap> getPreBuildGame(String mapType){
          if(checkGameType(mapType)) return REGISTRY.get(mapType);
          return null;
     }
 
-    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData,BaseMap> map){
+    public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map){
         ResourceLocation.isValidResourceLocation(typeName);
         REGISTRY.put(typeName,map);
     }

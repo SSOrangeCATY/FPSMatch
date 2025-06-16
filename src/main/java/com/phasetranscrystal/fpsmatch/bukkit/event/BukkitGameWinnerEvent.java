@@ -5,8 +5,6 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import java.util.List;
-import java.util.UUID;
 
 public class BukkitGameWinnerEvent extends Event {
     private static final HandlerList handlers = new HandlerList();

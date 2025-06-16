@@ -4,243 +4,239 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import okhttp3.*;
-import org.jetbrains.annotations.NotNull;
+import io.netty.util.internal.UnstableApi;
+import org.jetbrains.annotations.ApiStatus;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
- * 请求构建器，提供链式API配置请求参数
+ * 基于Java HttpClient的请求构建器
  */
 public class RequestBuilder<T> {
-    private final OkHttpClient client;
-    private String url = "";
+    private final NetworkModule module;
+    private final Codec<T> codec;
+    private String baseUrl;
+    private String path = "";
     private RequestMethod method = RequestMethod.GET;
     private final Map<String, String> headers = new HashMap<>();
     private final Map<String, String> queryParams = new HashMap<>();
-    private RequestBody requestBody;
-    private TimeUnit timeoutUnit;
-    private final Codec<T> codec;
+    private HttpRequest.BodyPublisher bodyPublisher;
+    private String contentType = "application/json";
+    private Object rawBody; // 用于拦截器访问原始请求体
 
-    public RequestBuilder(OkHttpClient client,Codec<T> codec) {
-        this.client = client;
+    public RequestBuilder(NetworkModule client, Codec<T> codec) {
+        this.module = client;
         this.codec = codec;
+        this.baseUrl = client.getBaseUrl();
     }
 
-    public RequestBuilder<T> setRequestMethod(RequestMethod method){
+    public HttpClient getClient() {
+        return module.getHttpClient();
+    }
+
+    public NetworkModule getModule(){
+        return module;
+    }
+
+    public RequestBuilder<T> setRequestMethod(RequestMethod method) {
         this.method = method;
         return this;
     }
 
-    public RequestBuilder<T> setUrl(String url){
-        this.url = url;
+    public RequestBuilder<T> setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
         return this;
     }
 
-    public RequestBuilder<T> addPath(String path){
+    public RequestBuilder<T> addPath(String path) {
         if (path == null || path.isEmpty()) {
             return this;
         }
-        
-        if (!this.url.endsWith("/")) {
-            this.url += "/";
-        }
-        
-        if (path.startsWith("/")) {
+
+        if (!this.path.endsWith("/") && !path.startsWith("/")) {
+            this.path += "/";
+        } else if (this.path.endsWith("/") && path.startsWith("/")) {
             path = path.substring(1);
         }
-        
-        this.url += path;
+
+        this.path += path;
         return this;
     }
 
-    /**
-     * 添加请求头
-     */
     public RequestBuilder<T> addHeader(String key, String value) {
         headers.put(key, value);
         return this;
     }
 
-    /**
-     * 添加URL查询参数
-     */
     public RequestBuilder<T> addQueryParam(String key, String value) {
         queryParams.put(key, value);
         return this;
     }
 
-    /**
-     * 设置JSON请求体
-     */
     public RequestBuilder<T> setJsonBody(T body) {
         try {
-            JsonElement jsonElement = codec.encodeStart(JsonOps.INSTANCE, body).getOrThrow(false, e -> {
-                throw new RuntimeException(e);
-            });
-            this.requestBody = RequestBody.create(
-                jsonElement.toString(),
-                MediaType.parse("application/json; charset=utf-8")
-            );
+            JsonElement jsonElement = codec.encodeStart(JsonOps.INSTANCE, body)
+                    .getOrThrow(false, e -> {
+                        throw new RuntimeException("编码失败: " + e);
+                    });
+            String jsonString = jsonElement.toString();
+            this.bodyPublisher = HttpRequest.BodyPublishers.ofString(jsonString);
+            this.contentType = "application/json";
         } catch (Exception e) {
-            throw new RuntimeException("设置请求体失败: " + e.getMessage(), e);
+            throw new RuntimeException("设置JSON请求体失败: " + e.getMessage(), e);
         }
         return this;
     }
 
-    /**
-     * 设置表单请求体
-     */
     public RequestBuilder<T> setFormBody(Map<String, String> formData) {
-        FormBody.Builder formBuilder = new FormBody.Builder();
+        StringBuilder formBody = new StringBuilder();
         for (Map.Entry<String, String> entry : formData.entrySet()) {
-            formBuilder.add(entry.getKey(), entry.getValue());
+            if (!formBody.isEmpty()) {
+                formBody.append("&");
+            }
+            formBody.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
+                    .append("=")
+                    .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
         }
-        this.requestBody = formBuilder.build();
+        this.bodyPublisher = HttpRequest.BodyPublishers.ofString(formBody.toString());
+        this.contentType = "application/x-www-form-urlencoded";
         return this;
     }
 
-
-    /**
-     * 同步执行请求
-     */
-    public ApiResponse<T> execute() throws IOException {
-        Request request = buildRequest();
-        Response response = client.newCall(request).execute();
+    public ApiResponse<T> execute() throws Exception {
+        HttpRequest request = buildRequest();
+        HttpResponse<String> response = getClient().send(request, HttpResponse.BodyHandlers.ofString());
         return parseResponse(response);
     }
 
-    /**
-     * 异步执行请求
-     */
-    public void enqueue(Callback<T> callback) {
-        try {
-            Request request = buildRequest();
-            client.newCall(request).enqueue(new okhttp3.Callback() {
-                @Override
-                public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                    callback.onFailure(e);
-                }
+    public CompletableFuture<ApiResponse<T>> executeAsync() {
+        HttpRequest request = buildRequest();
+        CompletableFuture<ApiResponse<T>> result = new CompletableFuture<>();
 
-                @Override
-                public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                    try (response) {
-                        ApiResponse<T> apiResponse = parseResponse(response);
-                        callback.onResponse(apiResponse);
-                    } catch (Exception e) {
-                        callback.onFailure(e);
+        getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(this::parseResponse)
+                .whenComplete((response, ex) -> {
+                    if (ex != null) {
+                        result.completeExceptionally(ex);
+                    } else {
+                        result.complete(response);
                     }
-                }
-            });
-        } catch (Exception e) {
-            callback.onFailure(e);
-        }
+                });
+        return result;
     }
 
-    /**
-     * 构建OkHttp请求对象
-     */
-    private Request buildRequest() {
-        if(url.isEmpty()){
-            throw new IllegalArgumentException("url is empty");
+    @ApiStatus.Internal
+    public HttpRequest buildRequest() {
+        if (baseUrl.isEmpty()) {
+            throw new IllegalArgumentException("baseUrl is empty");
         }
 
-        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder();
+        String fullUrl = buildFullUrl();
 
-        // 添加查询参数
-        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
-        }
-
-        Request.Builder requestBuilder = new Request.Builder()
-                .url(urlBuilder.build());
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl));
 
         // 添加请求头
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            requestBuilder.addHeader(entry.getKey(), entry.getValue());
+        headers.forEach(requestBuilder::header);
+        if (!headers.containsKey("Content-Type") && bodyPublisher != null) {
+            requestBuilder.header("Content-Type", contentType);
         }
 
         // 设置请求方法和请求体
         switch (method) {
             case GET:
-                requestBuilder.get();
+                requestBuilder.GET();
                 break;
             case POST:
-                requestBuilder.post(requestBody != null ? requestBody : RequestBody.create(new byte[0]));
+                requestBuilder.POST(bodyPublisher != null ? bodyPublisher : HttpRequest.BodyPublishers.noBody());
                 break;
             case PUT:
-                requestBuilder.put(requestBody != null ? requestBody : RequestBody.create(new byte[0]));
+                requestBuilder.PUT(bodyPublisher != null ? bodyPublisher : HttpRequest.BodyPublishers.noBody());
                 break;
             case DELETE:
-                if (requestBody != null) {
-                    requestBuilder.delete(requestBody);
-                } else {
-                    requestBuilder.delete();
-                }
+                requestBuilder.method("DELETE", bodyPublisher != null ? bodyPublisher : HttpRequest.BodyPublishers.noBody());
                 break;
             case HEAD:
-                requestBuilder.head();
+                requestBuilder.method("HEAD", HttpRequest.BodyPublishers.noBody());
                 break;
             case OPTIONS:
-                requestBuilder.method("OPTIONS", requestBody);
+                requestBuilder.method("OPTIONS", HttpRequest.BodyPublishers.noBody());
                 break;
             case PATCH:
-                requestBuilder.patch(requestBody != null ? requestBody : RequestBody.create(new byte[0]));
+                requestBuilder.method("PATCH", bodyPublisher != null ? bodyPublisher : HttpRequest.BodyPublishers.noBody());
                 break;
         }
 
-        return requestBuilder.build();
+        // 应用请求拦截器
+        return module.applyRequestInterceptors(requestBuilder, rawBody).build();
     }
 
-    /**
-     * 解析响应数据
-     */
-    private ApiResponse<T> parseResponse(Response response) throws IOException {
+    private ApiResponse<T> parseResponse(HttpResponse<String> response) {
+        // 先应用响应拦截器
+        HttpResponse<String> interceptedResponse = module.applyResponseInterceptors(response);
+
         ApiResponse<T> apiResponse = new ApiResponse<>();
-        apiResponse.setCode(response.code());
-        apiResponse.setMessage(response.message());
-        apiResponse.setHeaders(response.headers().toMultimap());
+        apiResponse.setCode(interceptedResponse.statusCode());
+        apiResponse.setMessage("");
+        apiResponse.setHeaders(interceptedResponse.headers().map());
+        apiResponse.setRawBody(interceptedResponse.body());
 
-        ResponseBody body = response.body();
-        if (body != null) {
-            String responseBody = body.string();
-            apiResponse.setRawBody(responseBody);
-
-            // 如果设置了Codec且响应码成功，则解析JSON
-        if (codec != null && response.isSuccessful()) {
+        // 解析响应体
+        if (codec != null && interceptedResponse.statusCode() >= 200 && interceptedResponse.statusCode() < 300) {
             try {
-                JsonElement jsonElement = JsonParser.parseString(responseBody);
+                JsonElement jsonElement = JsonParser.parseString(interceptedResponse.body());
                 T data = codec.decode(JsonOps.INSTANCE, jsonElement)
-                    .getOrThrow(false, e -> {
-                        throw new RuntimeException(e);
-                    }).getFirst();
+                        .getOrThrow(false, e -> {
+                            throw new RuntimeException(e);
+                        }).getFirst();
                 apiResponse.setData(data);
             } catch (Exception e) {
                 apiResponse.setError(new ApiError("CODEC解码失败: " + e.getMessage(), e));
             }
+        } else if (interceptedResponse.statusCode() >= 400) {
+            apiResponse.setError(new ApiError("请求失败: " + interceptedResponse.statusCode()));
         }
-
-        }
-
-        if (!response.isSuccessful()) {
-            apiResponse.setError(new ApiError("请求失败: " + response.code() + " " + response.message()));
-        }
-
         return apiResponse;
     }
 
+    private String buildFullUrl() {
+        StringBuilder fullUrl = new StringBuilder(baseUrl);
 
+        // 处理路径
+        if (!path.isEmpty()) {
+            if (!fullUrl.toString().endsWith("/") && !path.startsWith("/")) {
+                fullUrl.append("/");
+            } else if (fullUrl.toString().endsWith("/") && path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            fullUrl.append(path);
+        }
 
-    /**
-     * 异步请求回调接口
-     */
-    public interface Callback<T> {
-        void onResponse(ApiResponse<T> response);
-        void onFailure(Throwable throwable);
+        // 添加查询参数
+        if (!queryParams.isEmpty()) {
+            fullUrl.append("?");
+            boolean first = true;
+            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                if (!first) {
+                    fullUrl.append("&");
+                }
+                fullUrl.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
+                        .append("=").append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+                first = false;
+            }
+        }
+
+        return fullUrl.toString();
     }
 }

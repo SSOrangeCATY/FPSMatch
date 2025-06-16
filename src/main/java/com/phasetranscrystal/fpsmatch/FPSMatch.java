@@ -18,6 +18,8 @@ import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.core.network.api.MvpMusicApi;
+import com.phasetranscrystal.fpsmatch.core.network.example.ApiClientExample;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
@@ -94,6 +96,7 @@ public class FPSMatch {
         if(FPSMBukkit.isBukkitEnvironment()){
             FPSMBukkit.register();
         }
+        ApiClientExample.login();
         // context.registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
     }
 
@@ -178,8 +181,6 @@ public class FPSMatch {
             }
             return false;
         }
-
-
     }
 
 

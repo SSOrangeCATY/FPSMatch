@@ -7,17 +7,14 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.core.network.ApiResponse;
 import com.phasetranscrystal.fpsmatch.core.network.NetworkModule;
-import com.phasetranscrystal.fpsmatch.core.network.RequestBuilder;
 import com.phasetranscrystal.fpsmatch.core.network.RequestMethod;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * API客户端使用示例
  */
 public class ApiClientExample {
 
-    public static final NetworkModule network = initializeNetworkModule();
+    private static final NetworkModule network = NetworkModule.initializeNetworkModule("http://127.0.0.1:8081/");
 
     public static void main(String[] args) {
         LoginResult result = login();
@@ -25,16 +22,7 @@ public class ApiClientExample {
             System.out.println(result.getToken());
         }
         getUserList();
-    }
-
-    // 初始化网络模块
-    public static NetworkModule initializeNetworkModule() {
-        return new NetworkModule.Builder()
-                .baseUrl("http://127.0.0.1:8081/")
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .build();
+        network.shutdown();
     }
 
     // 示例：发送GET请求获取用户信息
@@ -72,20 +60,20 @@ public class ApiClientExample {
                 .addPath("users")
                 .addHeader("Authorization", "Bearer YOUR_TOKEN")
                 .setJsonBody(newUser)
-                .enqueue(new RequestBuilder.Callback<>() {
-                    @Override
-                    public void onResponse(ApiResponse<User> response) {
-                        if (response.isSuccessful() ) {
-                            System.out.println("用户创建成功: " + response.getData().getId());
-                        } else {
-                            System.err.println("创建失败: " + response.getError().getMessage());
-                        }
+                .executeAsync()
+                .thenAccept(response -> {
+                    if (response.isSuccessful()) {
+                        System.out.println("用户创建成功: " + response.getData().getId());
+                    } else {
+                        System.err.println("创建失败: " +
+                                (response.getError() != null ?
+                                        response.getError().getMessage() :
+                                        "HTTP " + response.getCode()));
                     }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        throwable.fillInStackTrace();
-                    }
+                })
+                .exceptionally(e -> {
+                    System.err.println("请求失败: " + e.getMessage());
+                    return null;
                 });
     }
 

@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.cs.event.CSGamePlayerJoinEvent;
 import com.phasetranscrystal.fpsmatch.common.net.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.net.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.net.FPSMusicPlayS2CPacket;
@@ -101,6 +102,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
     private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
     private final Setting<Integer> closeShopTime = this.addSetting("closeShopTime",200);
+
+    private final Setting<Boolean> useMusicApi = this.addSetting("useMusicApi",false);
+
+    private final Setting<Boolean> useProfileApi = this.addSetting("useProfileApi",false);
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
     private boolean isError = false;
@@ -334,19 +339,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         MapTeams mapTeams = this.getMapTeams();
-        mapTeams.joinTeam(teamName, player);
-        // 同步游戏类型和地图信息
-        this.pullGameInfo(player);
+        boolean success = mapTeams.joinTeam(teamName, player);
+        if(success){
+            mapTeams.getTeamByPlayer(player).ifPresent(team -> {
+                MinecraftForge.EVENT_BUS.post(new CSGamePlayerJoinEvent(this,team,player));
+            });
+            // 同步游戏类型和地图信息
+            this.pullGameInfo(player);
 
-        // 如果游戏已经开始，设置玩家为旁观者
-        if(this.isStart){
-            player.setGameMode(GameType.SPECTATOR);
-            mapTeams.getTeamByName(teamName)
-                    .flatMap(team -> team.getPlayerData(player.getUUID()))
-                    .ifPresent(data -> {
-                        data.setLiving(false);
-                    });
-            setBystander(player);
+            // 如果游戏已经开始，设置玩家为旁观者
+            if(this.isStart){
+                player.setGameMode(GameType.SPECTATOR);
+                mapTeams.getTeamByName(teamName)
+                        .flatMap(team -> team.getPlayerData(player.getUUID()))
+                        .ifPresent(data -> {
+                            data.setLiving(false);
+                        });
+                setBystander(player);
+            }
         }
     }
 
@@ -1469,8 +1479,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
      */
     public static final Codec<CSGameMap> CODEC = RecordCodecBuilder.create(instance -> instance.group(
         // 基础地图数据
-        Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
-        FPSMCodec.AREA_DATA_CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
+        Codec.STRING.fieldOf("mapName").forGetter(com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::getMapName),
+        FPSMCodec.AREA_DATA_CODEC.fieldOf("mapArea").forGetter(com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::getMapArea),
         ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
 
         // 队伍出生点数据
@@ -1540,14 +1550,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){
         Map<String, BiConsumer<CSGameMap,ServerPlayer>> commands = new HashMap<>();
-        commands.put("p", CSGameMap::setPauseState);
-        commands.put("pause", CSGameMap::setPauseState);
-        commands.put("unpause", CSGameMap::startUnpauseVote);
-        commands.put("up", CSGameMap::startUnpauseVote);
-        commands.put("agree",CSGameMap::handleAgreeCommand);
-        commands.put("a",CSGameMap::handleAgreeCommand);
-        commands.put("disagree",CSGameMap::handleDisagreeCommand);
-        commands.put("da",CSGameMap::handleDisagreeCommand);
+        commands.put("p", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::setPauseState);
+        commands.put("pause", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::setPauseState);
+        commands.put("unpause", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::startUnpauseVote);
+        commands.put("up", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::startUnpauseVote);
+        commands.put("agree", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::handleAgreeCommand);
+        commands.put("a", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::handleAgreeCommand);
+        commands.put("disagree", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::handleDisagreeCommand);
+        commands.put("da", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::handleDisagreeCommand);
         return commands;
     }
 
@@ -1642,10 +1652,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public static Map<String, Consumer<CSGameMap>> registerVoteAction(){
         Map<String, Consumer<CSGameMap>> commands = new HashMap<>();
-        commands.put("overtime",CSGameMap::startOvertime);
-        commands.put("unpause", CSGameMap::setUnPauseState);
-        commands.put("reset", CSGameMap::resetGame);
-        commands.put("start",CSGameMap::startGame);
+        commands.put("overtime", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::startOvertime);
+        commands.put("unpause", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::setUnPauseState);
+        commands.put("reset", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::resetGame);
+        commands.put("start", com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap::startGame);
         return commands;
     }
 

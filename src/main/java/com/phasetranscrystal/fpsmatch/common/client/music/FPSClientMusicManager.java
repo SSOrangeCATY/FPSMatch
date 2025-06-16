@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.music;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.data.music.OnlineMusic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -14,6 +15,8 @@ import javax.sound.sampled.*;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 客户端音乐管理器，用于播放和停止音乐。
@@ -56,13 +59,15 @@ public class FPSClientMusicManager {
 
     /**
      * 开始播放音频流
-     * @param rawStream 可解码的音频数据流 (PCM 格式 或能解码为 PCM)
+     * @param music 音频
      */
-    public static void play(InputStream rawStream) {
+    public static void play(OnlineMusic music) {
         stop();
 
         playThread = new Thread(() -> {
-            try (BufferedInputStream bis = new BufferedInputStream(rawStream);
+            InputStream stream = music.stream();
+            if(stream == null) return;
+            try (BufferedInputStream bis = new BufferedInputStream(stream);
                  AudioInputStream ais = AudioSystem.getAudioInputStream(bis)) {
 
                 AudioFormat format = ais.getFormat();

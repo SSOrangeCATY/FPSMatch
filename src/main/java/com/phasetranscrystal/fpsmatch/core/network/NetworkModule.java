@@ -1,59 +1,94 @@
 package com.phasetranscrystal.fpsmatch.core.network;
 
 import com.mojang.serialization.Codec;
-import okhttp3.OkHttpClient;
+import com.phasetranscrystal.fpsmatch.core.network.interceptor.Interceptor;
+import com.phasetranscrystal.fpsmatch.core.network.interceptor.LoggingInterceptor;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 网络请求模块核心类，负责管理OkHttpClient实例和提供请求构建接口
+ * 支持拦截器的网络请求模块
  */
 public class NetworkModule {
-    private final OkHttpClient okHttpClient;
+    private final HttpClient httpClient;
     private final String baseUrl;
+    private final List<Interceptor> interceptors = new ArrayList<>();
 
-    /**
-     * 私有构造函数，通过Builder初始化
-     */
     private NetworkModule(Builder builder) {
         this.baseUrl = builder.baseUrl;
-        this.okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(builder.connectTimeout, TimeUnit.MILLISECONDS)
-                .readTimeout(builder.readTimeout, TimeUnit.MILLISECONDS)
-                .writeTimeout(builder.writeTimeout, TimeUnit.MILLISECONDS)
-                .addInterceptor(new LoggingInterceptor()) // 添加日志拦截器
-                .build();
+
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(builder.connectTimeout));
+
+        if (builder.executor != null) {
+            clientBuilder.executor(builder.executor);
+        }
+
+        if (builder.followRedirects) {
+            clientBuilder.followRedirects(HttpClient.Redirect.NORMAL);
+        }
+
+        this.httpClient = clientBuilder.build();
+
+        this.interceptors.addAll(builder.interceptors);
     }
 
-    /**
-     * 创建POST请求构建器
-     */
     public <T> RequestBuilder<T> newRequest(Codec<T> codec) {
-        return new RequestBuilder<>(okHttpClient, codec)
-                .setUrl(baseUrl);
+        return new RequestBuilder<>(this, codec);
     }
 
-    /**
-     * 获取基础URL
-     */
     public String getBaseUrl() {
         return baseUrl;
     }
 
-    /**
-     * 获取OkHttpClient实例
-     */
-    public OkHttpClient getOkHttpClient() {
-        return okHttpClient;
+    public HttpClient getHttpClient() {
+        return httpClient;
     }
 
-    /**
-     * 构建器类，用于配置NetworkModule
-     */
+    public NetworkModule addInterceptor(Interceptor interceptor) {
+        interceptors.add(interceptor);
+        return this;
+    }
+
+
+    HttpRequest.Builder applyRequestInterceptors(HttpRequest.Builder builder, Object body) {
+        HttpRequest.Builder result = builder;
+        for (Interceptor interceptor : interceptors) {
+            result = interceptor.requestIntercept(result, body);
+        }
+        return result;
+    }
+
+    <T> HttpResponse<T> applyResponseInterceptors(HttpResponse<T> response) {
+        HttpResponse<T> result = response;
+        for (Interceptor interceptor : interceptors) {
+            result = interceptor.responseIntercept(result);
+        }
+        return result;
+    }
+
+    public void shutdown(){
+        Executor executor = httpClient.executor().orElse(null);
+        if (executor instanceof ExecutorService) {
+            ((ExecutorService) executor).shutdown();
+        }
+    }
+
     public static class Builder {
         private String baseUrl = "";
         private long connectTimeout = 10_000;
-        private long readTimeout = 10_000;
-        private long writeTimeout = 10_000;
+        private Executor executor;
+        private final List<Interceptor> interceptors = new ArrayList<>();
+        private boolean followRedirects = true;
 
         public Builder baseUrl(String baseUrl) {
             this.baseUrl = baseUrl;
@@ -65,18 +100,32 @@ public class NetworkModule {
             return this;
         }
 
-        public Builder readTimeout(long timeout, TimeUnit unit) {
-            this.readTimeout = unit.toMillis(timeout);
+        public Builder executor(Executor executor) {
+            this.executor = executor;
             return this;
         }
 
-        public Builder writeTimeout(long timeout, TimeUnit unit) {
-            this.writeTimeout = unit.toMillis(timeout);
+        public Builder followRedirects(boolean follow) {
+            this.followRedirects = follow;
+            return this;
+        }
+
+        public Builder addInterceptor(Interceptor interceptor){
+            this.interceptors.add(interceptor);
             return this;
         }
 
         public NetworkModule build() {
             return new NetworkModule(this);
         }
+    }
+
+    public static NetworkModule initializeNetworkModule(String baseUrl) {
+        return new Builder()
+                .baseUrl(baseUrl)
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .executor(Executors.newCachedThreadPool())
+                .addInterceptor(new LoggingInterceptor())
+                .build();
     }
 }

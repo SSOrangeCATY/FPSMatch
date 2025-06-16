@@ -4,10 +4,6 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventListenerHelper;
-
-import java.util.List;
-import java.util.UUID;
 
 public class GameWinnerEvent extends Event {
     BaseMap map;
