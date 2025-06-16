@@ -1,8 +1,11 @@
 package com.phasetranscrystal.fpsmatch.core.network.example;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.core.network.ApiResponse;
@@ -13,16 +16,37 @@ import com.phasetranscrystal.fpsmatch.core.network.RequestMethod;
  * API客户端使用示例
  */
 public class ApiClientExample {
-
-    private static final NetworkModule network = NetworkModule.initializeNetworkModule("http://127.0.0.1:8081/");
-
+    private static final NetworkModule network = NetworkModule.initializeNetworkModule("http://127.0.0.1:8081");
+    public static boolean downloading = false;
     public static void main(String[] args) {
-        LoginResult result = login();
-        if (result != null) {
-            System.out.println(result.getToken());
+        download();
+    }
+
+    public static void download(){
+        Path path = Paths.get("C:", "Users", "jumao", "Downloads", "QQ.exe");
+        NetworkModule download = NetworkModule.initializeNetworkModule("https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.19_250523_x64_01.exe");
+        downloading = true;
+        download.newRequest()
+                .downloadRequest()
+                .saveTo(path)
+                .progressCallback(progress -> {
+                    System.out.printf(progress.toString());
+                })
+                .downloadAsync()
+                .thenAccept(result -> {
+                    System.out.println("\n下载完成: " + result.fileName());
+                    downloading = false;
+                })
+                .exceptionally(ex -> {
+                    downloading = false;
+                    throw new RuntimeException(ex);
+                });
+
+        while (downloading) {
+
         }
-        getUserList();
-        network.shutdown();
+
+        download.shutdown();
     }
 
     // 示例：发送GET请求获取用户信息

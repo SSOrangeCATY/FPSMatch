@@ -4,20 +4,16 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.core.data.HashData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.network.download.DownloadHolder;
+import com.phasetranscrystal.fpsmatch.core.network.download.Downloader;
+import com.phasetranscrystal.fpsmatch.core.network.download.HashDownloadHolder;
 import com.phasetranscrystal.fpsmatch.util.hash.FileHashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public record OnlineMusic(String uuid, String musicUrl, String musicName, String coverUrl, String customMemo, HashData hashData) {
-    // Thread pool for async operations
-    private static final ExecutorService downloadExecutor = Executors.newCachedThreadPool();
+public record OnlineMusic(String uuid, String musicUrl, String musicName, String coverUrl, String customMemo, HashData hashData){
 
     public static final Codec<OnlineMusic> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("uuid").forGetter(OnlineMusic::uuid),
@@ -46,17 +42,24 @@ public record OnlineMusic(String uuid, String musicUrl, String musicName, String
         return getCoverFile().exists();
     }
 
-    public CompletableFuture<Boolean> downloadMusic() {
-        return downloadAsync(getMusicFile(), musicUrl);
+    public HashDownloadHolder musicHolder() {
+        return new HashDownloadHolder(musicUrl, getMusicFile(),hashData);
     }
 
-    public CompletableFuture<Boolean> downloadCover() {
-        return downloadAsync(getCoverFile(), coverUrl);
+    public DownloadHolder coverHolder() {
+        return new DownloadHolder(coverUrl, getCoverFile());
+    }
+
+    public void downloadMusic(){
+        Downloader.Instance().download(musicHolder());
+    }
+
+    public void downloadCover() {
+        Downloader.Instance().download(coverHolder());
     }
 
     public boolean checkHash() {
-        File file = getMusicFile();
-        if(file.exists()){
+        if(musicExists()){
             try{
                 return FileHashUtil.calculateHash(getMusicFile(), hashData.getHashAlgorithm()).equals(hashData.hash());
             }catch (Exception e){
@@ -66,46 +69,6 @@ public record OnlineMusic(String uuid, String musicUrl, String musicName, String
         }else{
             return false;
         }
-    }
-
-    private CompletableFuture<Boolean> downloadAsync(File file, String downloadUrl) {
-        return CompletableFuture.supplyAsync(() -> {
-            HttpURLConnection connection = null;
-            try {
-                connection = (HttpURLConnection) new URL(downloadUrl).openConnection();
-                connection.setRequestMethod("GET");
-                connection.setConnectTimeout(5000);
-                connection.setReadTimeout(10000);
-
-                int code = connection.getResponseCode();
-                if (code == 200) {
-                    try (InputStream in = connection.getInputStream();
-                         FileOutputStream fos = new FileOutputStream(file)) {
-                        byte[] buf = new byte[4096];
-                        int len;
-                        while ((len = in.read(buf)) != -1) {
-                            fos.write(buf, 0, len);
-                        }
-                    }
-                    log.info("Download successful => {}", file.getAbsolutePath());
-                    if(checkHash()){
-                        return true;
-                    }else{
-                        // 删除文件
-                        file.delete();
-                        return false;
-                    }
-                } else {
-                    log.error("Download failed -> code:{} / {}", code, downloadUrl);
-                    return false;
-                }
-            } catch (IOException e) {
-                log.error("error: ", e);
-                return false;
-            } finally {
-                if (connection != null) connection.disconnect();
-            }
-        }, downloadExecutor);
     }
 
     public InputStream stream(){
@@ -123,9 +86,5 @@ public record OnlineMusic(String uuid, String musicUrl, String musicName, String
             log.error("error: ", e);
             return null;
         }
-    }
-
-    public static void shutdown() {
-        downloadExecutor.shutdown();
     }
 }

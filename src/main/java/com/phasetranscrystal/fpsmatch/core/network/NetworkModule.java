@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.network;
 
 import com.mojang.serialization.Codec;
+import com.phasetranscrystal.fpsmatch.core.network.download.DownloadBuilder;
 import com.phasetranscrystal.fpsmatch.core.network.interceptor.Interceptor;
 import com.phasetranscrystal.fpsmatch.core.network.interceptor.LoggingInterceptor;
 
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 支持拦截器的网络请求模块
  */
 public class NetworkModule {
+    private boolean closed = false;
     private final HttpClient httpClient;
     private final String baseUrl;
     private final List<Interceptor> interceptors = new ArrayList<>();
@@ -44,6 +46,10 @@ public class NetworkModule {
 
     public <T> RequestBuilder<T> newRequest(Codec<T> codec) {
         return new RequestBuilder<>(this, codec);
+    }
+
+    public RequestBuilder<Void> newRequest() {
+        return new RequestBuilder<>(this, null);
     }
 
     public String getBaseUrl() {
@@ -78,6 +84,17 @@ public class NetworkModule {
 
     public void shutdown(){
         Executor executor = httpClient.executor().orElse(null);
+        if (executor instanceof ExecutorService) {
+            ((ExecutorService) executor).shutdown();
+        }
+        this.closed = true;
+    }
+
+    public boolean isClosed(){
+        return closed;
+    }
+
+    public static void shutdown(Executor executor){
         if (executor instanceof ExecutorService) {
             ((ExecutorService) executor).shutdown();
         }

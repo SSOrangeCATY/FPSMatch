@@ -4,9 +4,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import io.netty.util.internal.UnstableApi;
+import com.phasetranscrystal.fpsmatch.core.network.download.DownloadBuilder;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -15,10 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 /**
  * 基于Java HttpClient的请求构建器
@@ -33,12 +31,19 @@ public class RequestBuilder<T> {
     private final Map<String, String> queryParams = new HashMap<>();
     private HttpRequest.BodyPublisher bodyPublisher;
     private String contentType = "application/json";
-    private Object rawBody; // 用于拦截器访问原始请求体
+    private String rawBody;
 
     public RequestBuilder(NetworkModule client, Codec<T> codec) {
         this.module = client;
         this.codec = codec;
         this.baseUrl = client.getBaseUrl();
+    }
+
+    /**
+     * 开始构建下载请求
+     */
+    public DownloadBuilder<T> downloadRequest() {
+        return new DownloadBuilder<>(this);
     }
 
     public HttpClient getClient() {
@@ -91,6 +96,7 @@ public class RequestBuilder<T> {
                         throw new RuntimeException("编码失败: " + e);
                     });
             String jsonString = jsonElement.toString();
+            this.rawBody = jsonString;
             this.bodyPublisher = HttpRequest.BodyPublishers.ofString(jsonString);
             this.contentType = "application/json";
         } catch (Exception e) {
@@ -109,15 +115,23 @@ public class RequestBuilder<T> {
                     .append("=")
                     .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
         }
+        this.rawBody = formBody.toString();
         this.bodyPublisher = HttpRequest.BodyPublishers.ofString(formBody.toString());
         this.contentType = "application/x-www-form-urlencoded";
         return this;
     }
 
-    public ApiResponse<T> execute() throws Exception {
+    public ApiResponse<T> execute() {
+        ApiResponse<T> apiResponse = new ApiResponse<>();
         HttpRequest request = buildRequest();
-        HttpResponse<String> response = getClient().send(request, HttpResponse.BodyHandlers.ofString());
-        return parseResponse(response);
+        try{
+            HttpResponse<String> response = getClient().send(request, HttpResponse.BodyHandlers.ofString());
+            return parseResponse(response);
+        }catch (IOException | InterruptedException e){
+            apiResponse.setError(new ApiError(e.getMessage(),e));
+            apiResponse.setRawBody(rawBody);
+            return apiResponse;
+        }
     }
 
     public CompletableFuture<ApiResponse<T>> executeAsync() {
