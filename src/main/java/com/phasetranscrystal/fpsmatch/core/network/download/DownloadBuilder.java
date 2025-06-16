@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.network.download;
 
+import com.phasetranscrystal.fpsmatch.core.network.NetworkModule;
 import com.phasetranscrystal.fpsmatch.core.network.RequestBuilder;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -157,7 +158,7 @@ public class DownloadBuilder<T> {
     }
 
     public CompletableFuture<DownloadResult> downloadAsyncAndClose() {
-        return this.downloadAsync(parent.getClient().executor().get())
+        return this.downloadAsync()
                 .whenComplete((result, error) -> {
                     parent.getModule().shutdown();
                 });
@@ -172,7 +173,18 @@ public class DownloadBuilder<T> {
             } catch (DownloadException e) {
                 throw new CompletionException(e);
             }
-        },executor);
+        },executor).whenComplete(
+                (result, error) -> {
+                    NetworkModule.shutdown(executor);
+                }
+        );
+    }
+
+    public CompletableFuture<DownloadResult> downloadAsyncAndClose(Executor executor) {
+        return this.downloadAsync(executor)
+                .whenComplete((result, error) -> {
+                    NetworkModule.shutdown(executor);
+                });
     }
 
     private void validateParameters() {
