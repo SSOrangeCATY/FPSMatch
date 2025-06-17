@@ -44,7 +44,7 @@ public class DownloadBuilder<T> {
     /**
      * 设置进度回调
      */
-    public DownloadBuilder<T> progressCallback(Consumer<DownloadProgress> progressCallback) {
+    public DownloadBuilder<T> callback(Consumer<DownloadProgress> progressCallback) {
         this.progressCallback = progressCallback;
         return this;
     }

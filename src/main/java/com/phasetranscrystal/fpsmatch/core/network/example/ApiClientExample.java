@@ -11,40 +11,26 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.core.network.ApiResponse;
 import com.phasetranscrystal.fpsmatch.core.network.NetworkModule;
 import com.phasetranscrystal.fpsmatch.core.network.RequestMethod;
+import com.phasetranscrystal.fpsmatch.core.network.download.DownloadException;
 
 /**
  * API客户端使用示例
  */
 public class ApiClientExample {
     private static final NetworkModule network = NetworkModule.initializeNetworkModule("http://127.0.0.1:8081");
-    public static boolean downloading = false;
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         download();
     }
 
-    public static void download(){
+    public static void download() throws DownloadException {
         Path path = Paths.get("C:", "Users", "jumao", "Downloads", "QQ.exe");
         NetworkModule download = NetworkModule.initializeNetworkModule("https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.19_250523_x64_01.exe");
-        downloading = true;
         download.newRequest()
                 .downloadRequest()
                 .saveTo(path)
-                .progressCallback(progress -> {
+                .callback(progress -> {
                     System.out.printf(progress.toString());
-                })
-                .downloadAsync()
-                .thenAccept(result -> {
-                    System.out.println("\n下载完成: " + result.fileName());
-                    downloading = false;
-                })
-                .exceptionally(ex -> {
-                    downloading = false;
-                    throw new RuntimeException(ex);
-                });
-
-        while (downloading) {
-
-        }
+                }).download();
 
         download.shutdown();
     }

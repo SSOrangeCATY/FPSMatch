@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.HashData;
-import com.phasetranscrystal.fpsmatch.core.network.NetState;
 import com.phasetranscrystal.fpsmatch.util.hash.FileHashUtil;
 
 import java.io.File;

@@ -137,9 +137,9 @@ public record DownloadProgress(long bytesDownloaded, long totalBytes, double pro
     @Override
     public @NotNull String toString() {
         if (totalBytes < 0) {
-            return String.format("\r已下载: %s", getFormattedDownloadedSize());
+            return String.format("Downloading: %s", getFormattedDownloadedSize());
         }
-        return String.format("\r已下载: %s / %s (%s)",
+        return String.format("Downloading: %s / %s (%s)",
                 getFormattedDownloadedSize(),
                 getFormattedTotalSize(),
                 getFormattedProgress());

@@ -1,9 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.network.download;
 
-import com.mojang.serialization.Codec;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.network.NetworkModule;
-import com.phasetranscrystal.fpsmatch.core.network.RequestMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,19 +21,17 @@ public class Downloader {
         if(!modules.containsKey(url)) {
             NetworkModule module = NetworkModule.initializeNetworkModule(url);
             modules.put(url, module);
+
             module.newRequest()
                     .downloadRequest()
                     .saveTo(downloadAble.getFile().toPath())
-                    .progressCallback(progress -> {
-                        FPSMatch.LOGGER.info("{} {}", downloadAble.getFile(), progress.toString());
-                    })
                     .downloadAsyncAndClose()
                     .thenAccept(result -> {
-                        FPSMatch.LOGGER.info("下载完成: {}", result.fileName());
+                        logger.info("Download Success: {}", result.fileName());
                     })
                     .whenComplete((result, throwable) -> {
                         if(throwable != null) {
-                            logger.error("下载失败: ",throwable);
+                            logger.error("Download Fail: ",throwable);
                         }else{
                             downloadAble.onDownloadCompleted();
                         }
