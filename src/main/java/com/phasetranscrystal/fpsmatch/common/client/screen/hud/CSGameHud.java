@@ -97,8 +97,8 @@ public class CSGameHud implements IHudRenderer {
             guiGraphics.fill(centerX + x, y, centerX + x + 1, y + lineHeight, color);
         }
 
-        renderArmorBar(mc,gui, guiGraphics, screenWidth, screenHeight);
-        renderHealthBar(mc,gui, guiGraphics, screenWidth, screenHeight,centerX,lineWidth,y);
+        // TODO renderArmorBar(mc,gui, guiGraphics, screenWidth, screenHeight);
+        renderHealthBar(mc,gui, guiGraphics, centerX,lineWidth,y);
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
             ItemStack selectItem = mc.player.getInventory().getItem(inv.selected);
@@ -110,7 +110,7 @@ public class CSGameHud implements IHudRenderer {
         renderCombatKillTips(mc,gui, guiGraphics,centerX,y);
     }
 
-    public void renderHealthBar(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight,int centerX,int lineWidth,int y) {
+    public void renderHealthBar(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int centerX, int lineWidth, int y) {
         LocalPlayer player = mc.player;
         if (player != null) {
             int health = (int) player.getHealth();
@@ -122,17 +122,19 @@ public class CSGameHud implements IHudRenderer {
             int tempWidth = font.width("000") * 2;
             String healthText = String.valueOf((int) (healthPercent * 100));
             int healthTextX = centerX - lineWidth / 2 - 10 - tempWidth ;
+
             int healthTextY = y - font.lineHeight + 1;
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(healthTextX + 1.5F, healthTextY,0);
-            guiGraphics.pose().scale(2,2,0);
-            guiGraphics.drawString(font, healthText, 0, 0, 0xFFFFFFFF, false);
-            guiGraphics.pose().popPose();
-            // Render health bar
             int healthBarY = y + font.lineHeight;
             int healthBarHeight = 3;
             int healthBarFillWidth = (int) (healthPercent * tempWidth);
 
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(healthTextX + (float) tempWidth / 2 - (float) font.width(healthText), healthTextY,0);
+            guiGraphics.pose().scale(2,2,0);
+            guiGraphics.drawString(font, healthText, 0, 0, 0xFFFFFFFF, false);
+            guiGraphics.pose().popPose();
+
+            // Render health bar
             guiGraphics.fill(healthTextX, healthBarY, healthTextX + tempWidth, healthBarY + healthBarHeight, 0x80000000); // Background
             guiGraphics.fill(healthTextX, healthBarY, healthTextX + healthBarFillWidth, healthBarY + healthBarHeight, 0x8000FF00); // Fill
         }

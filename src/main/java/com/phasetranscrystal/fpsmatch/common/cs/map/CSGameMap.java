@@ -1168,9 +1168,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 time = warmUpTime.get() - this.currentPauseTime;
             } else if (this.isWaitingWinner) {
                 time = winnerWaitingTime.get() - this.currentPauseTime;
-            } else if (this.isStart) {
+            } else if(this.isBlasting == 1){
+                return -1;
+            }else if (this.isStart) {
                 time = roundTimeLimit.get() - this.currentRoundTime;
-            } else {
+            }else {
                 time = 0;
             }
         }

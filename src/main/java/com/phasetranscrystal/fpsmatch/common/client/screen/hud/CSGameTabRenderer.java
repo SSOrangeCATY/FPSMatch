@@ -125,17 +125,7 @@ public class CSGameTabRenderer implements TabRenderer {
             currentHeaderX + (damageWidth - minecraft.font.width(damageText)) / 2, headerY, 0xFFFFFFFF);
         
         // 过滤并排序玩家
-        Map<String, List<PlayerInfo>> teamPlayers = new HashMap<>();
-        teamPlayers.put("ct", new ArrayList<>());
-        teamPlayers.put("t", new ArrayList<>());
-
-        for (PlayerInfo info : playerInfoList) {
-            String team = ClientData.getTeamByUUID(info.getProfile().getId());
-            TabData tabData = ClientData.getTabDataByUUID(info.getProfile().getId());
-            if (team != null && tabData != null && !team.equals("spectator")) {
-                teamPlayers.get(team).add(info);
-            }
-        }
+        Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getCSTeamsPlayerInfo(playerInfoList);
 
         // 按伤害排序
         Comparator<PlayerInfo> damageComparator = (p1, p2) -> {

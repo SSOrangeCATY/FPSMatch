@@ -1,19 +1,29 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
+import com.phasetranscrystal.fpsmatch.common.client.data.TabData;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.BossEvent;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Unique;
 
+import java.util.*;
+
+import static com.phasetranscrystal.fpsmatch.common.client.FPSMClient.PLAYER_COMPARATOR;
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public class CSGameOverlay implements IGuiOverlay {
@@ -23,6 +33,19 @@ public class CSGameOverlay implements IGuiOverlay {
     public static int noColor = color(0,0,0,0);
     public static int textRoundTimeColor = color(255,255,255);
     public static final String code = "7355608";
+
+    private static final int[] BG_COLORS = new int[]{
+            RenderUtil.color(216,130,44), // Blue
+            RenderUtil.color(238,228,75), // Yellow
+            RenderUtil.color(66,185,131), // Purple
+            RenderUtil.color(7,156,130), // Green
+            RenderUtil.color(145,203,234)  // Orange
+    };
+
+    private final Map<UUID,Integer> playerColorIndex = new HashMap<>();
+    private final Map<UUID,String> cachedName = new HashMap<>();
+    private int nextColorIndex = 0;
+
     // 60*24 30*50
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -229,7 +252,28 @@ public class CSGameOverlay implements IGuiOverlay {
         if(ClientData.dismantleBombProgress > 0) {
             renderDemolitionProgress(player, guiGraphics,screenWidth,screenHeight);
         }
+
         this.renderMoneyText(guiGraphics,screenWidth,screenHeight);
+
+        int avatarSize = (int)(24.0F * scaleFactor);
+        int avatarGap  = (int)(3 * scaleFactor);
+        int offset     = (int)(26.0F * scaleFactor);
+
+        Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getCSTeamsPlayerInfo();
+
+        String localTeam = ClientData.currentTeam;
+
+        boolean showInfo = ClientData.isWaiting || ClientData.getLocalTabData().isLiving();
+
+        renderAvatarRow(guiGraphics, teamPlayers.get("ct"),
+                ctBoxX - offset, startY, boxWidth,
+                avatarSize, avatarGap, true,showInfo,
+                localTeam, "ct",scaleFactor);
+
+        renderAvatarRow(guiGraphics, teamPlayers.get("t"),
+                tBoxX + offset, startY, boxWidth,
+                avatarSize, avatarGap, false,showInfo,
+                localTeam, "t",scaleFactor);
     }
 
     private String getRoundTimeString() {
@@ -272,13 +316,203 @@ public class CSGameOverlay implements IGuiOverlay {
         return ClientData.dismantleBombProgress >= i;
     }
 
-    private void drawBar(GuiGraphics pGuiGraphics, int pX, int pY, BossEvent pBossEvent, int pWidth, int p_281636_) {
-        pGuiGraphics.blit(GUI_BARS_LOCATION, pX, pY, 0, BossEvent.BossBarColor.GREEN.ordinal() * 5 * 2 + p_281636_, pWidth, 5);
-        if (pBossEvent.getOverlay() != BossEvent.BossBarOverlay.PROGRESS) {
-            RenderSystem.enableBlend();
-            pGuiGraphics.blit(GUI_BARS_LOCATION, pX, pY, 0, 80 + (pBossEvent.getOverlay().ordinal() - 1) * 5 * 2 + p_281636_, pWidth, 5);
-            RenderSystem.disableBlend();
+    private int getColorIndexForPlayer(UUID uuid) {
+        if (!playerColorIndex.containsKey(uuid)) {
+            playerColorIndex.put(uuid, nextColorIndex);
+            nextColorIndex = (nextColorIndex + 1) % BG_COLORS.length;
         }
+        return playerColorIndex.get(uuid);
+    }
+
+    private void renderAvatarRow(GuiGraphics guiGraphics,
+                                 List<PlayerInfo> players,
+                                 int boxStartX,
+                                 int rowY,
+                                 int boxWidth,
+                                 int avatarSize,
+                                 int gap,
+                                 boolean leftSide,
+                                 boolean showInfo,
+                                 String localTeam,
+                                 String rowTeam,
+                                 float scaleFactor
+    )
+    {
+        boolean isSameTeam = isSameTeam(localTeam, rowTeam);
+        boolean fullDrawTeamInfo = isSameTeam && showInfo;
+        boolean isCT = rowTeam.equals("ct");
+        if (showInfo) {
+            rowY += 6;
+        }
+        Font font = Minecraft.getInstance().font;
+        for (int i=0; i<players.size(); i++) {
+            PlayerInfo player = players.get(i);
+            UUID uuid = player.getProfile().getId();
+            int drawX = leftSide
+                    ? (boxStartX + boxWidth - avatarSize - 2 - i*(avatarSize+gap))
+                    : (boxStartX + 2 + i*(avatarSize+gap));
+
+            // 1) 血量 =>0=死/观战
+            float actualRatio = fetchEntityHealthRatio(uuid);
+
+            // 2) 对非本地阵营 => 不显示血条
+            float barRatio = (!isSameTeam) ? 0f : actualRatio;
+
+            // 3) 背景框: 每玩家固定颜色
+            int colorIndex = getColorIndexForPlayer(uuid);
+            int bgColor = BG_COLORS[colorIndex];
+            guiGraphics.fill(drawX, rowY, drawX + avatarSize, rowY + avatarSize, bgColor);
+
+            // 4) 灰度头像(dead)
+            float r=1f,g=1f,b=1f,a=1f;
+            if (actualRatio<=0.001f) {
+                r=g=b=0.3f;
+            }
+            RenderSystem.setShaderColor(r,g,b,a);
+
+            int margin      = 1;
+            int avX         = drawX + margin;
+            int avY         = rowY + margin;
+            int smallAvSize = avatarSize - margin*2;
+
+            PlayerFaceRenderer.draw(guiGraphics, player.getSkinLocation(), avX, avY, smallAvSize);
+
+            RenderSystem.setShaderColor(1f,1f,1f,1f);
+            int startY = rowY + avatarSize + margin;
+            if (barRatio>0f) {
+                int barHeight = !fullDrawTeamInfo ? 2 : 4;
+                drawSmoothHealthBar(guiGraphics, barRatio, drawX, startY, drawX+avatarSize,startY + barHeight);
+                startY += barHeight + margin;
+            }
+
+            int killCount = ClientData.getTabDataByUUID(uuid).roundKills();
+            if(killCount > 0){
+                drawPlayerKills(guiGraphics,font,killCount,avX + (smallAvSize/2),startY,scaleFactor);
+                startY += 5 + margin;
+            }
+
+            if(showInfo){
+                drawPlayerName(guiGraphics, font, uuid, avX, avY + 1, smallAvSize,avatarSize,isCT,scaleFactor);
+            }
+
+            if(fullDrawTeamInfo) {
+                drawPlayerMoney(guiGraphics, font, uuid, avX + (smallAvSize/2), startY,scaleFactor);
+            }
+        }
+    }
+
+    private void drawPlayerName(GuiGraphics guiGraphics, Font font, UUID uuid,
+                                int avX, int avY, int smallAvSize,int width,boolean isCT,float scale)
+    {
+        String nameStr = getNameFromUUID(uuid);
+        float textScale = 0.8f * scale;
+        int xCenter = avX + (smallAvSize/2);
+        int nameY = avY - 8;
+        int maxWidth = avX+width - 1;
+        guiGraphics.fill(avX-1, nameY, maxWidth,nameY+6, -1072689136);
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(xCenter, nameY - 1, 0);
+        guiGraphics.pose().scale(textScale, textScale, 1f);
+        int nameWidth = font.width(nameStr);
+        if(nameWidth < width) {
+            guiGraphics.drawString(font, nameStr, -nameWidth/2, 0, isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
+        }else{
+            StringBuilder modified = new StringBuilder();
+            for (char c : nameStr.toCharArray()){
+                int fw = font.width(modified.toString());
+                if(font.width(modified.toString()) + 2 < width) {
+                    modified.append(c);
+                }else{
+                    modified.append("..");
+                    guiGraphics.drawString(font, modified.toString(), -fw/2, 0, isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
+                    break;
+                }
+            }
+        }
+        guiGraphics.pose().popPose();
+    }
+
+    private String getNameFromUUID(UUID uuid) {
+        Player p = Minecraft.getInstance().level.getPlayerByUUID(uuid);
+        if (p != null) {
+            String name = p.getName().getString();
+            cachedName.put(uuid,name);
+            return p.getName().getString();
+        }
+        return cachedName.getOrDefault(uuid,uuid.toString().substring(0,8));
+    }
+
+    private void drawPlayerKills(GuiGraphics guiGraphics, Font font,int count,
+                                 int centerX, int startY,float scaleFactor){
+
+        float textScale = 0.6f * scaleFactor;
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(centerX, startY, 0);
+        guiGraphics.pose().scale(textScale, textScale, 1f);
+
+        String str = "\uD83D\uDC80".repeat(Math.max(0, count));
+        int w = font.width(str);
+        guiGraphics.drawString(font, str, -w/2, 0, 0xFFFFFFFF, false);
+        guiGraphics.pose().popPose();
+    }
+
+    private void drawPlayerMoney(GuiGraphics guiGraphics, Font font, UUID uuid,
+                                 int centerX, int startY ,float scaleFactor)
+    {
+        int moneyValue = ClientData.playerMoney.getOrDefault(uuid, 0);
+        String moneyStr = "$" + moneyValue;
+
+        float textScale = 0.8f * scaleFactor;
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(centerX, startY, 0);
+        guiGraphics.pose().scale(textScale, textScale, 1f);
+
+        int w = font.width(moneyStr);
+        guiGraphics.drawString(font, moneyStr, -w/2, 0, 0xFFFFFFFF, false);
+
+        guiGraphics.pose().popPose();
+    }
+
+    private boolean isSameTeam(@Nullable String localTeam, String rowTeam) {
+        if (localTeam==null || localTeam.isEmpty()
+                || "spectator".equalsIgnoreCase(localTeam)) {
+            return true;
+        }
+        return localTeam.equalsIgnoreCase(rowTeam);
+    }
+
+    // 读血量 =>0=dead
+    private float fetchEntityHealthRatio(UUID uuid){
+        Player p = Minecraft.getInstance().level.getPlayerByUUID(uuid);
+        if (p==null || !p.isAlive() || p.isSpectator()) {
+            return 0f;
+        }
+        float hp = p.getHealth();
+        float mx = p.getMaxHealth();
+        return (mx<=0f)?0f:(hp/mx)*100f;
+    }
+
+    // 平滑血条
+    private void drawSmoothHealthBar(GuiGraphics gg, float ratio,
+                                     int startX, int startY, int endX, int endY)
+    {
+        int total = endX - startX;
+        for (int i = 0; i < total; i++) {
+            // 计算当前alpha值（从255到0线性变化）
+            float progress = (float)i / total;
+            int alpha = 255 - (int)(progress * 255);
+
+            // 确保alpha在0-255范围内
+            alpha = Math.max(0, Math.min(255, alpha));
+
+            gg.fill(startX, startY, startX + i, endY,
+                    RenderUtil.color(166, 42, 39, alpha));
+        }
+
+        int fillW = (int)(total*(ratio/100f));
+        gg.fill(startX, startY, startX+fillW, endY, RenderUtil.color(255,255,255));
     }
 
     public static String getCSGameTime(){

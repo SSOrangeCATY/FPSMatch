@@ -20,6 +20,7 @@ public class CSGameTabStatsS2CPacket {
     private final float damage;
     private final boolean isLiving;
     private final int headshotKills;
+    private final int roundKills;
     private final String team;
 
     public CSGameTabStatsS2CPacket(UUID uuid, PlayerData data, String team) {
@@ -30,6 +31,7 @@ public class CSGameTabStatsS2CPacket {
         this.damage = data.getDamage();
         this.isLiving = data.isLiving();
         this.headshotKills = data.getHeadshotKills();
+        this.roundKills = data._kills();
         this.team = team;
     }
 
@@ -42,6 +44,7 @@ public class CSGameTabStatsS2CPacket {
         this.isLiving = buf.readBoolean();
         this.headshotKills = buf.readInt();
         this.team = buf.readUtf();
+        this.roundKills = buf.readInt();
     }
 
     public static void encode(CSGameTabStatsS2CPacket packet, FriendlyByteBuf buf) {
@@ -53,6 +56,7 @@ public class CSGameTabStatsS2CPacket {
         buf.writeBoolean(packet.isLiving);
         buf.writeInt(packet.headshotKills);
         buf.writeUtf(packet.team);
+        buf.writeInt(packet.roundKills);
     }
 
     public static CSGameTabStatsS2CPacket decode(FriendlyByteBuf buf) {
@@ -67,7 +71,7 @@ public class CSGameTabStatsS2CPacket {
                     CSGameShopScreen.refreshFlag = true;
                 }
             }
-            ClientData.tabData.put(uuid,new Pair<>(team, new TabData(this.kills,this.deaths,this.assists,this.damage,this.isLiving,this.headshotKills)));
+            ClientData.tabData.put(uuid,new Pair<>(team, new TabData(this.kills,this.deaths,this.assists,this.damage,this.isLiving,this.headshotKills,this.roundKills)));
         });
         ctx.get().setPacketHandled(true);
     }

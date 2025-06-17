@@ -107,6 +107,17 @@ public class ClientData {
         return nextRoundMoney;
     }
 
+    public static TabData getLocalTabData(){
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            UUID uuid = mc.player.getUUID();
+            if(ClientData.tabData.containsKey(uuid)){
+                return ClientData.tabData.get(uuid).getSecond();
+            }
+        }
+        return null;
+    }
+
     @Nullable
     public static TabData getTabDataByUUID(UUID uuid){
         if(ClientData.tabData.containsKey(uuid)){
