@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
+import com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
@@ -220,7 +221,7 @@ public class FPSMCommand {
         BlockPos point = BlockPosArgument.getBlockPos(context, "point").above();
         String mapName = StringArgumentType.getString(context, "mapName");
         BaseMap baseMap = FPSMCore.getInstance().getMapByName(mapName);
-        if (baseMap instanceof com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap csGameMap) {
+        if (baseMap instanceof CSGameMap csGameMap) {
             SpawnPointData pointData = new SpawnPointData(context.getSource().getLevel().dimension(), point, 0f, 0f);
             csGameMap.setMatchEndTeleportPoint(pointData);
             context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.matchEndTeleportPoint.success", pointData.toString()), true);

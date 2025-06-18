@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.common.entity.CompositionC4Entity;
+import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
@@ -44,9 +44,9 @@ public interface BlastModeMap<T extends BaseMap> extends IMap<T> {
      * <p>
      * 爆破状态用于表示炸弹是否正在爆破过程中。
      *
-     * @param composition C4状态
+     * @param bomb 炸弹实体
      */
-    void setBlasting(CompositionC4Entity composition);
+    void setBlasting(BlastBombEntity bomb);
 
     /**
      * 设置炸弹是否已经爆炸。

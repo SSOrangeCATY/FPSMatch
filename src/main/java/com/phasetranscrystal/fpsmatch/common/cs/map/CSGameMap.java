@@ -18,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.data.*;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.common.cs.event.CSGameRoundEndEvent;
+import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerGetMvpEvent;
 import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
@@ -33,7 +34,7 @@ import com.phasetranscrystal.fpsmatch.common.item.BombDisposalKit;
 import com.phasetranscrystal.fpsmatch.common.item.CompositionC4;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.net.cs.shop.ShopStatesS2CPacket;
@@ -860,8 +861,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(entity instanceof ItemEntity itemEntity){
                 itemEntity.discard();
             }
-            if(entity instanceof CompositionC4Entity c4){
-                c4.discard();
+
+            if(entity instanceof BlastBombEntity){
+                entity.discard();
             }
 
             if(entity instanceof MatchDropEntity matchDropEntity){
@@ -1128,7 +1130,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public List<AreaData> getBombAreaData() {
         return bombAreaData;
     }
-    public void setBlasting(CompositionC4Entity c4) {
+    public void setBlasting(BlastBombEntity c4) {
         if(c4 == null) {
             isBlasting = 0;
             return;

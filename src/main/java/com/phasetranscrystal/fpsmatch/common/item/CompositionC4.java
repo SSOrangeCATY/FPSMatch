@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -32,7 +33,7 @@ import org.joml.Vector3f;
 
 import java.util.function.Consumer;
 
-public class CompositionC4 extends Item {
+public class CompositionC4 extends Item implements BlastBombItem {
 
 	public CompositionC4(Properties pProperties) {
 		super(pProperties);

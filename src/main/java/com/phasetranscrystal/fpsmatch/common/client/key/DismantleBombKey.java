@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.client.key;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombActionC2SPacket;
 import net.minecraft.client.KeyMapping;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;

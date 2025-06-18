@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch;
 
-import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
@@ -11,6 +10,18 @@ import com.phasetranscrystal.fpsmatch.common.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.cs.command.VoteCommand;
 import com.phasetranscrystal.fpsmatch.common.net.*;
+import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameSettingsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.CSTabRemovalS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.DeathMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombActionS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpHUDCloseS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.cs.shop.*;
+import com.phasetranscrystal.fpsmatch.common.net.effect.FlashBombAddonS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.ThrowEntityC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.net.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
@@ -18,8 +29,6 @@ import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.core.network.api.MvpMusicApi;
-import com.phasetranscrystal.fpsmatch.core.network.example.ApiClientExample;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import net.minecraft.client.Minecraft;
@@ -42,7 +51,6 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,12 +80,8 @@ public class FPSMatch {
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
     private static final String PROTOCOL_VERSION = "1.2.0";
     public static final TicketType<UUID> ENTITY_CHUNK_TICKET = TicketType.create("fpsm_chunk_ticket", (a, b) -> 0);
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation("fpsmatch", "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
+    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
+    public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
 
     public FPSMatch(FMLJavaModLoadingContext context)
     {
@@ -96,12 +100,39 @@ public class FPSMatch {
         if(FPSMBukkit.isBukkitEnvironment()){
             FPSMBukkit.register();
         }
-        ApiClientExample.login();
+        // ApiClientExample.login();
         // context.registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        NetworkPacketRegister.registerPackets();
+        registerPackets();
+    }
+
+    private static void registerPackets() {
+        PACKET_REGISTER.registerPacket(CSGameSettingsS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ShopDataSlotS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ShopActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(BombActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(BombActionS2CPacket.class);
+        PACKET_REGISTER.registerPacket(BombDemolitionProgressS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ShopMoneyS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ShopStatesS2CPacket.class);
+        PACKET_REGISTER.registerPacket(CSGameTabStatsS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMatchStatsResetS2CPacket.class);
+        PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMatchLoginMessageS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ThrowEntityC2SPacket.class);
+        PACKET_REGISTER.registerPacket(FlashBombAddonS2CPacket.class);
+        PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMatchGameTypeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MvpMessageS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MvpHUDCloseS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMusicPlayS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMusicStopS2CPacket.class);
+        PACKET_REGISTER.registerPacket(SaveSlotDataC2SPacket.class);
+        PACKET_REGISTER.registerPacket(EditToolSelectMapC2SPacket.class);
+        PACKET_REGISTER.registerPacket(PullGameInfoC2SPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
     }
 
     @SubscribeEvent

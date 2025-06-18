@@ -1,10 +1,10 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.google.common.collect.ImmutableList;
+import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
-import com.phasetranscrystal.fpsmatch.common.item.CompositionC4;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
@@ -39,7 +39,7 @@ public class FPSMUtil {
     public static final Predicate<ItemStack> THIRD_WEAPON_PREDICATE;
     public static final Predicate<ItemStack> THROW_PREDICATE;
     public static final Predicate<ItemStack> MISC_PREDICATE = (itemStack -> true);
-    public static final Predicate<ItemStack> C4_PREDICATE = (itemStack -> itemStack.getItem() instanceof CompositionC4);
+    public static final Predicate<ItemStack> C4_PREDICATE = (itemStack -> itemStack.getItem() instanceof BlastBombItem);
 
     static{
         THROW_PREDICATE = (itemStack -> {

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.net.cs.bomb;
+package com.phasetranscrystal.fpsmatch.common.net.entity.bomb;
 
 import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
 import net.minecraft.network.FriendlyByteBuf;

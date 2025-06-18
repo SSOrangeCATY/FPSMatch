@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.net.cs.bomb;
+package com.phasetranscrystal.fpsmatch.common.net.entity.bomb;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -7,7 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.common.entity.CompositionC4Entity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.EntityHitResult;
@@ -44,7 +44,7 @@ public record BombActionC2SPacket(boolean action) {
         ctx.get().enqueueWork(() -> {
             if (map instanceof BlastModeMap<?> blastModeMap && !blastModeMap.checkCanPlacingBombs(team.getFixedName())) {
                 List<? extends CompositionC4Entity> entities = sender.serverLevel().getEntities(EntityTypeTest.forClass(CompositionC4Entity.class),(t)->{
-                    Player player = t.getDemolisher();
+                    LivingEntity player = t.getDemolisher();
                     return player != null && player.getUUID().equals(sender.getUUID());
                 });
                 if(!action){

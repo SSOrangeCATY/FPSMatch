@@ -1,12 +1,13 @@
 package com.phasetranscrystal.fpsmatch.common.entity;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombActionS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombActionS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombDemolitionProgressS2CPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -27,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
-public class CompositionC4Entity extends Entity implements TraceableEntity {
+public class CompositionC4Entity extends Entity implements TraceableEntity , BlastBombEntity {
     private ChunkPos currentChunkPos;
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_RADIUS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
@@ -355,7 +356,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity {
     }
 
     @Nullable
-    public Player getDemolisher() {
+    public LivingEntity getDemolisher() {
         return demolisher;
     }
 

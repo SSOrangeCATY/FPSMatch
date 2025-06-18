@@ -29,7 +29,7 @@ public class ApiClientExample {
                 .downloadRequest()
                 .saveTo(path)
                 .callback(progress -> {
-                    System.out.printf(progress.toString());
+                    System.out.printf("\r"+progress.toString());
                 }).download();
 
         download.shutdown();

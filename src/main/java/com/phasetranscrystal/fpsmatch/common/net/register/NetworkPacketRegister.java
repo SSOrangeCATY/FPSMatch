@@ -1,62 +1,45 @@
 package com.phasetranscrystal.fpsmatch.common.net.register;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.net.*;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameSettingsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSTabRemovalS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.DeathMessageS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombActionC2SPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombActionS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.bomb.BombDemolitionProgressS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpHUDCloseS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.net.cs.shop.*;
-import com.phasetranscrystal.fpsmatch.common.net.effect.FlashBombAddonS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.entity.ThrowEntityC2SPacket;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 
 public class NetworkPacketRegister {
-    private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
-    public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch NetWork Packet Register");
-    public static void registerPackets() {
-        registerPacket(CSGameSettingsS2CPacket.class);
-        registerPacket(ShopDataSlotS2CPacket.class);
-        registerPacket(ShopActionC2SPacket.class);
-        registerPacket(BombActionC2SPacket.class);
-        registerPacket(BombActionS2CPacket.class);
-        registerPacket(BombDemolitionProgressS2CPacket.class);
-        registerPacket(ShopMoneyS2CPacket.class);
-        registerPacket(ShopStatesS2CPacket.class);
-        registerPacket(CSGameTabStatsS2CPacket.class);
-        registerPacket(FPSMatchStatsResetS2CPacket.class);
-        registerPacket(DeathMessageS2CPacket.class);
-        registerPacket(FPSMatchLoginMessageS2CPacket.class);
-        registerPacket(ThrowEntityC2SPacket.class);
-        registerPacket(FlashBombAddonS2CPacket.class);
-        registerPacket(CSTabRemovalS2CPacket.class);
-        registerPacket(FPSMatchGameTypeS2CPacket.class);
-        registerPacket(MvpMessageS2CPacket.class);
-        registerPacket(MvpHUDCloseS2CPacket.class);
-        registerPacket(FPSMusicPlayS2CPacket.class);
-        registerPacket(FPSMusicStopS2CPacket.class);
-        registerPacket(SaveSlotDataC2SPacket.class);
-        registerPacket(EditToolSelectMapC2SPacket.class);
-        registerPacket(PullGameInfoC2SPacket.class);
-        registerPacket(FPSMatchRespawnS2CPacket.class);
+    private final AtomicInteger idCounter = new AtomicInteger(0);
+    private final SimpleChannel channel;
+
+    public NetworkPacketRegister(ResourceLocation channel,String version) {
+        this.channel = NetworkRegistry.newSimpleChannel(
+                channel,
+                () -> version,
+                version::equals,
+                version::equals
+        );
     }
 
+    public NetworkPacketRegister(ResourceLocation channel, Supplier<String> networkProtocolVersion, Predicate<String> clientAcceptedVersions, Predicate<String> serverAcceptedVersions) {
+        this.channel = NetworkRegistry.newSimpleChannel(
+                channel,
+                networkProtocolVersion,
+                clientAcceptedVersions,
+                serverAcceptedVersions
+        );
+    }
 
     @SuppressWarnings("unchecked")
-    private static <T> void registerPacket(Class<T> packetClass) {
+    public <T> void registerPacket(Class<T> packetClass) {
         try {
             // 检查 encode
             Method encode = packetClass.getMethod("encode", packetClass, FriendlyByteBuf.class);
@@ -77,7 +60,7 @@ public class NetworkPacketRegister {
             Method handle = packetClass.getMethod("handle", Supplier.class);
 
             // 注册 Packet
-            FPSMatch.INSTANCE.messageBuilder(packetClass, ID_COUNTER.getAndIncrement())
+            channel.messageBuilder(packetClass, idCounter.getAndIncrement())
                     .encoder((packet, buf) -> {
                         try {
                             encode.invoke(null, packet, buf);
@@ -105,5 +88,9 @@ public class NetworkPacketRegister {
             throw new RuntimeException("Packet class " + packetClass.getName() +
                     " is missing required methods (encode/decode/handle)", e);
         }
+    }
+
+    public SimpleChannel getChannel() {
+        return channel;
     }
 }

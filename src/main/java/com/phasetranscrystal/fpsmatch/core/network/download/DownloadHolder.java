@@ -8,7 +8,7 @@ import java.io.File;
 public record DownloadHolder(String url,File file) implements IDownloadAble {
     public static final Codec<DownloadHolder> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("uuid").forGetter(DownloadHolder::url),
-            Codec.STRING.fieldOf("musicUrl").forGetter(DownloadHolder::getFileStr)
+            Codec.STRING.fieldOf("url").forGetter(DownloadHolder::getFileStr)
     ).apply(instance, DownloadHolder::new));
 
     public DownloadHolder(String url, String file) {
