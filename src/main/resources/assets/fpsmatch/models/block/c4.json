@@ -1,7 +1,0 @@
-{
-  "parent": "fpsmatch:block/c4_model",
-  "textures": {
-    "c4": "fpsmatch:block/c4",
-    "timer": "fpsmatch:block/c4_timer_empty"
-  }
-}

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.net.cs.shop.SaveSlotDataC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

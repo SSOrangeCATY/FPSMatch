@@ -9,7 +9,6 @@ import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
-import com.phasetranscrystal.fpsmatch.core.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import net.minecraft.resources.ResourceLocation;
@@ -44,18 +43,20 @@ public class FPSMCore {
     private final Map<String, Function3<ServerLevel,String,AreaData, BaseMap>> REGISTRY = new HashMap<>();
     private final FPSMDataManager fpsmDataManager;
     private final LMManager listenerModuleManager;
-    private final MVPMusicManager mvpMusicManager;
 
     private FPSMCore(String archiveName) {
         this.archiveName = archiveName;
-        this.mvpMusicManager = new MVPMusicManager();
         this.listenerModuleManager = new LMManager();
         this.fpsmDataManager = new FPSMDataManager(archiveName);
     }
 
     public static FPSMCore getInstance(){
-        if(INSTANCE == null) throw new RuntimeException("error : fpsm not install.");
+        if(INSTANCE == null) throw new RuntimeException("fpsm not install.");
         return INSTANCE;
+    }
+
+    public static boolean initialized(){
+        return INSTANCE != null;
     }
 
     @Nullable public BaseMap getMapByPlayer(Player player){
@@ -267,7 +268,4 @@ public class FPSMCore {
         return listenerModuleManager;
     }
 
-    public MVPMusicManager getMvpMusicManager() {
-        return mvpMusicManager;
-    }
 }

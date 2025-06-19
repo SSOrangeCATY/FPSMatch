@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * 用于管理玩家商店数据的类。
@@ -26,21 +27,16 @@ import java.util.concurrent.atomic.AtomicReference;
  * 该类存储了玩家的金钱和商店槽位数据，并提供了购买、退回和锁定槽位的功能。
  * 同时支持广播事件以处理槽位变更和成本检查。
  */
-public class ShopData {
+public class ShopData<T extends Enum<T> & INamedType> {
     /**
      * 玩家当前的金钱数量。
      */
     private int money = 800;
 
     /**
-     * 玩家将要获得的金钱（未实现）。
-     */
-    private final int willBeAddMoney = 0;
-
-    /**
      * 存储商店数据的 Map，键为物品类型，值为不可变的商店槽位列表。
      */
-    private final Map<ItemType, ImmutableList<ShopSlot>> data = new HashMap<>();
+    private final Map<T, ImmutableList<ShopSlot>> data = new HashMap<>();
 
     /**
      * 存储分组数据的 Multimap，键为分组 ID，值为商店槽位。
@@ -52,9 +48,9 @@ public class ShopData {
      *
      * @param shopData 商店数据
      */
-    public <T extends List<ShopSlot>> ShopData(Map<ItemType, T> shopData) {
+    private  <E extends List<ShopSlot>> ShopData(Map<T, E> shopData, int checker) {
         // 检查数据是否合法
-        checkData(shopData);
+        checkData(shopData,checker);
         this.setDoneData(shopData);
     }
 
@@ -63,9 +59,9 @@ public class ShopData {
      *
      * @param shopData 商店数据
      */
-    public <T extends List<ShopSlot>> void setDoneData(Map<ItemType, T> shopData) {
+    public <E extends List<ShopSlot>> void setDoneData(Map<T, E> shopData) {
         // 创建一个不可变 Map 的构建器
-        ImmutableMap.Builder<ItemType, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<T, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
         // 将传入的 Map 转换为不可变 Map
         shopData.forEach((k, v) -> {
             List<ShopSlot> shopSlots = new ArrayList<>();
@@ -98,8 +94,8 @@ public class ShopData {
      * @param shopData 商店数据
      * @param money 玩家初始金钱
      */
-    public <T extends List<ShopSlot>> ShopData(Map<ItemType, T> shopData, int money) {
-        this(shopData);
+    public <E extends List<ShopSlot>> ShopData(Map<T, E> shopData,int checker, int money) {
+        this(shopData,checker);
         this.money = money;
     }
 
@@ -110,16 +106,22 @@ public class ShopData {
      *
      * @param data 商店数据
      */
-    public static <T extends List<ShopSlot>> void checkData(Map<ItemType, T> data) {
+    public <E extends List<ShopSlot>> void checkData(Map<T, E> data,int checker) {
+        // 获取枚举类的所有值
+        List<T> enumConstants = data.keySet().stream().toList();
+        int typeN = enumConstants.size();
+        if(typeN != checker) {
+            throw new RuntimeException("Incorrect number of type. Expected "+checker+" but found " + typeN);
+        }
+
         // 遍历所有的物品类型
-        for (ItemType type : ItemType.values()) {
+        for (T type : enumConstants) {
             // 获取该类型的商店槽位列表
-            List<ShopSlot> slots = data.get(type);
+            List<ShopSlot> slots = data.getOrDefault(type,null);
             // 如果没有找到该类型的商店槽位列表，则抛出异常
             if (slots == null) throw new RuntimeException("No slots found for type " + type);
-                // 如果该类型的商店槽位列表数量不等于 5，则抛出异常
-            else if (slots.size() != 5)
-                throw new RuntimeException("Incorrect number of slots for type " + type + ". Expected 5 but found " + slots.size());
+                // 如果该类型的商店槽位列表数量不等于枚举类型数量，则抛出异常
+            if (slots.size() != type.slotCount()) throw new RuntimeException("Incorrect number of slots for type " + type + ". Expected "+type.slotCount()+" but found " + slots.size());
         }
     }
 
@@ -128,30 +130,10 @@ public class ShopData {
      *
      * @return 商店数据
      */
-    public Map<ItemType, ImmutableList<ShopSlot>> getData() {
+    public Map<T, ImmutableList<ShopSlot>> getData() {
         return data;
     }
 
-    /**
-     * 获取默认的商店数据。
-     * <p>
-     * 默认数据包含每个物品类型的 5 个空槽位。
-     *
-     * @return 默认的商店数据
-     */
-    public static Map<ItemType, ArrayList<ShopSlot>> getRawData() {
-        Map<ItemType, ArrayList<ShopSlot>> data = new HashMap<>();
-        int cost = 0;
-        ItemStack empty = ItemStack.EMPTY;
-        for (ItemType type : ItemType.values()) {
-            ArrayList<ShopSlot> list = new ArrayList<>();
-            for (int i = 0; i < 5; i++) {
-                list.add(new ShopSlot(empty, cost));
-            }
-            data.put(type, list);
-        }
-        return data;
-    }
 
     /**
      * 设置玩家的金钱数量。
@@ -187,7 +169,7 @@ public class ShopData {
      * @param type 物品类型
      * @return 商店槽位列表
      */
-    public List<ShopSlot> getShopSlotsByType(ItemType type) {
+    public List<ShopSlot> getShopSlotsByType(T type) {
         return this.data.get(type);
     }
 
@@ -210,7 +192,7 @@ public class ShopData {
      * @param index 槽位索引
      * @param action 操作类型
      */
-    public void handleButton(ServerPlayer player, ItemType type, int index, ShopAction action) {
+    public void handleButton(ServerPlayer player, T type, int index, ShopAction action) {
         List<ShopSlot> shopSlotList = data.get(type);
         if (index < 0 || index >= shopSlotList.size()) {
             return;
@@ -347,8 +329,8 @@ public class ShopData {
      * @return 如果找到匹配的槽位，返回槽位信息；否则返回 null
      */
     @Nullable
-    public Pair<ItemType, ShopSlot> checkItemStackIsInData(ItemStack itemStack) {
-        AtomicReference<Pair<ItemType, ShopSlot>> flag = new AtomicReference<>();
+    public Pair<T, ShopSlot> checkItemStackIsInData(ItemStack itemStack) {
+        AtomicReference<Pair<T, ShopSlot>> flag = new AtomicReference<>();
         if (itemStack.getItem() instanceof IGun iGun) {
             ResourceLocation gunId = iGun.getGunId(itemStack);
             data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {

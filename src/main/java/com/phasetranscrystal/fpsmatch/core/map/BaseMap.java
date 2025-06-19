@@ -1,12 +1,14 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.packet.GameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.FPSMatchGameTypeS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.FPSMatchStatsResetS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
+import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
@@ -17,6 +19,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -190,7 +194,7 @@ public abstract class BaseMap {
         this.pullGameInfo(player);
         this.getMapTeams().getTeamByName(teamName)
                 .flatMap(team -> team.getPlayerData(player.getUUID()))
-                .ifPresent(playerData -> this.sendPacketToAllPlayer(new CSGameTabStatsS2CPacket(player.getUUID(), playerData, teamName)));
+                .ifPresent(playerData -> this.sendPacketToAllPlayer(new GameTabStatsS2CPacket(player.getUUID(), playerData, teamName)));
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
             shopMap.getShop(player).ifPresent(shop -> shop.syncShopData(player));
@@ -360,7 +364,7 @@ public abstract class BaseMap {
             if (packet instanceof Packet<?> vanillaPacket) {
                 player.connection.send(vanillaPacket);
             } else {
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+                NetworkPacketRegister.getChannelFromCache(packet.getClass()).send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
         } else {
             FPSMatch.LOGGER.error("{} is not join {}:{}", player.getDisplayName().getString(), this.getGameType(), this.getMapName());
@@ -431,6 +435,25 @@ public abstract class BaseMap {
                 }else{
                     if (attacker == null) return;
                     event.setCanceled(true);
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerDeathEvent(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+            if (map != null) {
+                ServerPlayer attacker = null;
+                if(event.getSource().getEntity() instanceof ServerPlayer sourcePlayer){
+                    attacker = sourcePlayer;
+                }else if(event.getSource().getDirectEntity() instanceof ServerPlayer sourcePlayer){
+                    attacker = sourcePlayer;
+                }
+
+                if (attacker != null){
+                    MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(map, player, attacker));
                 }
             }
         }

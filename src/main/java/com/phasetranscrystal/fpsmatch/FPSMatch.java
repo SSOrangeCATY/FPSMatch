@@ -2,48 +2,29 @@ package com.phasetranscrystal.fpsmatch;
 
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
-import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
 import com.phasetranscrystal.fpsmatch.common.client.renderer.*;
 import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.*;
-import com.phasetranscrystal.fpsmatch.common.client.tab.TabManager;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
-import com.phasetranscrystal.fpsmatch.common.cs.command.VoteCommand;
-import com.phasetranscrystal.fpsmatch.common.net.*;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameSettingsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSGameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.CSTabRemovalS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.DeathMessageS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombActionC2SPacket;
-import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombActionS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.entity.bomb.BombDemolitionProgressS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpHUDCloseS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.mvp.MvpMessageS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.cs.shop.*;
-import com.phasetranscrystal.fpsmatch.common.net.effect.FlashBombAddonS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.net.entity.ThrowEntityC2SPacket;
-import com.phasetranscrystal.fpsmatch.common.net.register.NetworkPacketRegister;
-import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
+import com.phasetranscrystal.fpsmatch.common.packet.*;
+import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.common.item.FPSMSoundRegister;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.util.InputExtraCheck;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
+import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -78,7 +59,7 @@ import java.util.UUID;
 public class FPSMatch {
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
-    private static final String PROTOCOL_VERSION = "1.2.0";
+    private static final String PROTOCOL_VERSION = "1.2.1";
     public static final TicketType<UUID> ENTITY_CHUNK_TICKET = TicketType.create("fpsm_chunk_ticket", (a, b) -> 0);
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
@@ -109,38 +90,26 @@ public class FPSMatch {
     }
 
     private static void registerPackets() {
-        PACKET_REGISTER.registerPacket(CSGameSettingsS2CPacket.class);
         PACKET_REGISTER.registerPacket(ShopDataSlotS2CPacket.class);
         PACKET_REGISTER.registerPacket(ShopActionC2SPacket.class);
-        PACKET_REGISTER.registerPacket(BombActionC2SPacket.class);
-        PACKET_REGISTER.registerPacket(BombActionS2CPacket.class);
-        PACKET_REGISTER.registerPacket(BombDemolitionProgressS2CPacket.class);
         PACKET_REGISTER.registerPacket(ShopMoneyS2CPacket.class);
-        PACKET_REGISTER.registerPacket(ShopStatesS2CPacket.class);
-        PACKET_REGISTER.registerPacket(CSGameTabStatsS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchStatsResetS2CPacket.class);
-        PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
-        PACKET_REGISTER.registerPacket(FPSMatchLoginMessageS2CPacket.class);
         PACKET_REGISTER.registerPacket(ThrowEntityC2SPacket.class);
         PACKET_REGISTER.registerPacket(FlashBombAddonS2CPacket.class);
-        PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchGameTypeS2CPacket.class);
-        PACKET_REGISTER.registerPacket(MvpMessageS2CPacket.class);
-        PACKET_REGISTER.registerPacket(MvpHUDCloseS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicPlayS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicStopS2CPacket.class);
         PACKET_REGISTER.registerPacket(SaveSlotDataC2SPacket.class);
         PACKET_REGISTER.registerPacket(EditToolSelectMapC2SPacket.class);
         PACKET_REGISTER.registerPacket(PullGameInfoC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
+        PACKET_REGISTER.registerPacket(GameTabStatsS2CPacket.class);
     }
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         FPSMCommand.onRegisterCommands(event);
-        VoteCommand.onRegisterCommands(event);
     }
-
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
@@ -148,24 +117,19 @@ public class FPSMatch {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
         {
-            TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
             //注册原版GUI
             VanillaGuiRegister.register();
         }
 
         @SubscribeEvent
         public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
-            event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
-            event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
             event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
-            event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"mvp_hud", MVPHud.INSTANCE);
             event.registerBelowAll("hud_manager", FPSMGameHudManager.INSTANCE);
         }
 
 
         @SubscribeEvent
         public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerEntityRenderer(EntityRegister.C4.get(), new C4Renderer());
             event.registerEntityRenderer(EntityRegister.SMOKE_SHELL.get(), new SmokeShellRenderer());
             event.registerEntityRenderer(EntityRegister.INCENDIARY_GRENADE.get(), new IncendiaryGrenadeRenderer());
             event.registerEntityRenderer(EntityRegister.GRENADE.get(), new GrenadeRenderer());
@@ -174,45 +138,8 @@ public class FPSMatch {
         }
     }
 
-    @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-    public static class ClientEvents {
-        @SubscribeEvent
-        public static void onEvent(TickEvent.ClientTickEvent event) {
-            LocalPlayer player = Minecraft.getInstance().player;
-            if(player == null) return;
-            if((ClientData.isWaiting || ClientData.isPause) && (!ClientData.currentMap.equals("fpsm_none") && !ClientData.currentTeam.equals("spectator"))){
-                Minecraft.getInstance().options.keyUp.setDown(false);
-                Minecraft.getInstance().options.keyLeft.setDown(false);
-                Minecraft.getInstance().options.keyDown.setDown(false);
-                Minecraft.getInstance().options.keyRight.setDown(false);
-                Minecraft.getInstance().options.keyJump.setDown(false);
-            }
-
-            if(ClientData.isStart && (ClientData.currentMap.equals("fpsm_none") || ClientData.currentGameType.equals("none"))){
-                FPSMatch.INSTANCE.sendToServer(new PullGameInfoC2SPacket());
-            }
-        }
-
-
-        @SubscribeEvent
-        public static void onUse(InputEvent.MouseButton.Pre event){
-            if((ClientData.isWaiting || ClientData.isPause) && InputExtraCheck.isInGame()){
-                if(checkLocalPlayerHand()){
-                    event.setCanceled(true);
-                }
-            }
-        }
-
-        public static boolean checkLocalPlayerHand(){
-            LocalPlayer player = Minecraft.getInstance().player;
-            if (player != null) {
-                Item main = player.getMainHandItem().getItem();
-                Item off = player.getOffhandItem().getItem();
-                return main instanceof IGun || main instanceof IThrowEntityAble || off instanceof IGun || off instanceof IThrowEntityAble;
-            }
-            return false;
-        }
+    @OnlyIn(Dist.CLIENT)
+    public static void pullGameInfo(){
+        INSTANCE.sendToServer(new PullGameInfoC2SPacket());
     }
-
-
 }

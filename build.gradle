@@ -13,6 +13,7 @@ plugins {
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+    id 'maven-publish'
 }
 
 apply plugin: 'org.spongepowered.mixin'
@@ -161,6 +162,29 @@ tasks.named('jar', Jar).configure {
 
     finalizedBy 'reobfJar'
 }
+
+// 生成源码JAR的任务
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = 'sources'
+}
+
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            // 可选：自定义 groupId, artifactId 和 version
+            groupId = mod_group_id
+            artifactId = mod_id
+            version = mod_version
+
+            artifact sourcesJar
+        }
+    }
+}
+
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation

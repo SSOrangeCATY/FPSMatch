@@ -5,8 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
-    "MixinDustParticleOptionsBase",
-    "MixinItemEntity"
+    "MixinDustParticleOptionsBase"
   ],
   "client": [
     "LocalPlayerMixin",

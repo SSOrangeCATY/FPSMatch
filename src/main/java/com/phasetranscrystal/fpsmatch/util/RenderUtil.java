@@ -2,8 +2,7 @@ package com.phasetranscrystal.fpsmatch.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
-import com.phasetranscrystal.fpsmatch.common.client.data.TabData;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,10 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.phasetranscrystal.fpsmatch.common.client.FPSMClient.PLAYER_COMPARATOR;
 
@@ -43,11 +39,14 @@ public class RenderUtil {
         teamPlayers.put("t", new ArrayList<>());
 
         for (PlayerInfo info : playerInfoList) {
-            String team = ClientData.getTeamByUUID(info.getProfile().getId());
-            TabData tabData = ClientData.getTabDataByUUID(info.getProfile().getId());
-            if (team != null && tabData != null && !team.equals("spectator")) {
-                teamPlayers.get(team).add(info);
-            }
+            UUID uuid = info.getProfile().getId();
+            FPSMClient.getGlobalData().getPlayerTeam(uuid).ifPresent(team -> {
+                FPSMClient.getGlobalData().getPlayerTabData(uuid).ifPresent(tabData -> {
+                    if(!team.equals("spectator")){
+                        teamPlayers.get(team).add(info);
+                    }
+                });
+            });
         }
         return teamPlayers;
     }

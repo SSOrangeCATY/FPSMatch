@@ -1,37 +1,4 @@
 {
-  "beep": {
-    "subtitle": "sounds.fpsmatch.c4.beep",
-    "sounds": [
-      "fpsmatch:c4_beep"
-    ]
-  },
-  "planting": {
-    "subtitle": "sounds.fpsmatch.c4.plating",
-    "sounds": [
-      "fpsmatch:c4_planting"
-    ]
-  },
-  "planted": {
-    "subtitle": "sounds.fpsmatch.c4.planted",
-    "sounds": [
-      "fpsmatch:c4_planted"
-    ]
-  },
-  "defused": {
-    "subtitle": "sounds.fpsmatch.c4.defused",
-    "sounds": [
-      "fpsmatch:c4_defused"
-    ]
-  },
-  "buttons_click": {
-    "subtitle": "sounds.fpsmatch.buttons.click",
-    "sounds": [
-      "fpsmatch:click1",
-      "fpsmatch:click2",
-      "fpsmatch:click3",
-      "fpsmatch:click4"
-    ]
-  },
   "voice_smoke": {
     "subtitle": "sounds.fpsmatch.voice.smoke",
     "sounds": [
@@ -50,18 +17,6 @@
       "fpsmatch:voice_grenade"
     ]
   },
-  "voice_ct_win": {
-    "subtitle": "sounds.fpsmatch.voice.ct_win",
-    "sounds": [
-      "fpsmatch:voice_ct_win"
-    ]
-  },
-    "voice_t_win": {
-        "subtitle": "sounds.fpsmatch.voice.t_win",
-        "sounds": [
-        "fpsmatch:voice_t_win"
-        ]
-    },
   "flash": {
     "subtitle": "sounds.fpsmatch.effect.flash",
     "sounds": [

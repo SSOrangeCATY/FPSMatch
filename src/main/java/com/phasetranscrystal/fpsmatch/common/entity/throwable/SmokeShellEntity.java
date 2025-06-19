@@ -24,8 +24,6 @@ import org.joml.Vector3f;
 public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
     private static final EntityDataAccessor<ParticleOptions> PARTICLE_OPTIONS = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.PARTICLE);
     private static final EntityDataAccessor<Integer> Particle_COOLDOWN = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
-    private static final Vector3f T = new Vector3f(1, 0.75f, 0.25f);
-    private static final Vector3f CT = new Vector3f(0.25f, 0.55f, 1);
     public SmokeShellEntity(EntityType<? extends SmokeShellEntity> type, Level level) {
         super(type, level);
         this.noCulling = true;
@@ -38,9 +36,9 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         setTimeoutTicks(-1);
         if(this.getOwner() instanceof Player player){
             BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);
-            if(baseMap instanceof com.phasetranscrystal.fpsmatch.common.cs.map.CSGameMap csGameMap){
-                csGameMap.getMapTeams().getTeamByPlayer(player).ifPresent(t->{
-                    this.setParticleOptions(new DustParticleOptions(t.name.equals("ct") ? CT : T , 10F));
+            if(baseMap != null){
+                baseMap.getMapTeams().getTeamByPlayer(player).ifPresent(t->{
+                    this.setParticleOptions(new DustParticleOptions(t.getColor(), 10F));
                 });
             }
         }

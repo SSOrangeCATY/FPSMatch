@@ -13,8 +13,12 @@ public class ClientShopSlot{
     private int boughtCount = 0;
     private boolean locked = false;
     private int groupId = -1;
-    
-    public ClientShopSlot(ItemStack itemStack, int defaultCost) {
+
+    public static ClientShopSlot empty(){
+        return new ClientShopSlot(ItemStack.EMPTY,0);
+    }
+
+    private ClientShopSlot(ItemStack itemStack, int defaultCost) {
         this.itemStack = itemStack;
         this.cost = defaultCost;
     }
@@ -64,10 +68,6 @@ public class ClientShopSlot{
 
     public void setTexture(@Nullable ResourceLocation hudTexture) {
         this.texture = hudTexture;
-    }
-
-    public static ClientShopSlot getDefault(){
-        return new ClientShopSlot(ItemStack.EMPTY,0);
     }
 
     public String name() {

@@ -10,7 +10,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,10 +39,16 @@ public class CommandSuggests {
     public static final FPSMSuggestionProvider SKITS_SUGGESTION = new FPSMSuggestionProvider((c,b)-> CommandSuggests.getSuggestions(b, List.of("add","clear","list")));
 
     public static final FPSMSuggestionProvider SHOP_ITEM_TYPES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
-        ItemType[] types = ItemType.values();
+        String mapName = StringArgumentType.getString(c, "mapName");
+        String shopName = StringArgumentType.getString(c, "shopName");
+        BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         List<String> typeNames = new ArrayList<>();
-        for (ItemType t : types){
-            typeNames.add(t.name().toLowerCase());
+        if(map instanceof ShopMap<?> shopMap){
+            shopMap.getShop(shopName).ifPresent(shop -> {
+                for (Enum<?> t : shop.getEnums()){
+                    typeNames.add(t.name().toLowerCase());
+                }
+            });
         }
         return CommandSuggests.getSuggestions(b,typeNames);
     });
@@ -63,14 +68,14 @@ public class CommandSuggests {
     {
         String mapName = StringArgumentType.getString(c, "mapName");
         String shopName = StringArgumentType.getString(c, "shopName");
-        ItemType shopType = ItemType.valueOf(StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT));
+        String shopType = StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT);
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map instanceof ShopMap<?> shopMap) {
-            Optional<FPSMShop> optionalShop = shopMap.getShop(shopName);
+            Optional<FPSMShop<?>> optionalShop = shopMap.getShop(shopName);
             if (optionalShop.isPresent()) {
                 List<String> stringList = FPSMCore.getInstance().getListenerModuleManager().getListenerModules();
-                stringList.removeAll(optionalShop.get().getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames());
+                stringList.removeAll(optionalShop.get().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames());
                 return CommandSuggests.getSuggestions(b, stringList);
             }
         }
@@ -81,13 +86,13 @@ public class CommandSuggests {
     {
         String mapName = StringArgumentType.getString(c, "mapName");
         String shopName = StringArgumentType.getString(c, "shopName");
-        ItemType shopType = ItemType.valueOf(StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT));
+        String shopType = StringArgumentType.getString(c, "shopType").toUpperCase(Locale.ROOT);
         int slotNum = IntegerArgumentType.getInteger(c,"shopSlot") - 1;
         BaseMap map = FPSMCore.getInstance().getMapByName(mapName);
         if (map instanceof ShopMap<?> shopMap) {
-            Optional<FPSMShop> optionalShop = shopMap.getShop(shopName);
+            Optional<FPSMShop<?>> optionalShop = shopMap.getShop(shopName);
             if (optionalShop.isPresent()) {
-                List<String> stringList = optionalShop.get().getDefaultShopData().getShopSlotsByType(shopType).get(slotNum).getListenerNames();
+                List<String> stringList = optionalShop.get().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames();
                 return CommandSuggests.getSuggestions(b, stringList);
             }
         }

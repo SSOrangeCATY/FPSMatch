@@ -30,5 +30,6 @@
 完整许可证见 [LICENSE](LICENSE) 文件。
 
 ### 📒模组反馈：
+- 反馈 Issues
 - https://docs.qq.com/sheet/DQnZtS2l6dmNsaHBw?tab=BB08J2
 - BUG会优先解决，其他需求看情况来，会分别给上原因的。

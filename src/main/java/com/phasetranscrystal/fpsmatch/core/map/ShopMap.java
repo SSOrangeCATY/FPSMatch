@@ -21,16 +21,16 @@ public interface ShopMap<T extends BaseMap> extends IMap<T> {
      * @param shopName 商店名称
      * @return 商店实例
      */
-    Optional<FPSMShop> getShop(String shopName);
+    Optional<FPSMShop<?>> getShop(String shopName);
 
-    Optional<FPSMShop> getShop(Player player);
+    Optional<FPSMShop<?>> getShop(Player player);
 
     /**
      * 获取地图中所有商店的列表。
      *
      * @return 商店列表
      */
-    List<FPSMShop> getShops();
+    List<FPSMShop<?>> getShops();
 
     /**
      * 获取地图中所有商店的名称列表。

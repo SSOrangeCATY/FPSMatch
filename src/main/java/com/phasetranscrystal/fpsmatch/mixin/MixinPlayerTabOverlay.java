@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
-import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabManager;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
@@ -19,7 +20,7 @@ import java.util.*;
 public class MixinPlayerTabOverlay{
     @Inject(at = {@At("HEAD")}, method = "render(Lnet/minecraft/client/gui/GuiGraphics;ILnet/minecraft/world/scores/Scoreboard;Lnet/minecraft/world/scores/Objective;)V", cancellable = true)
     public void fpsMatch$render$Custom(GuiGraphics guiGraphics, int windowWidth, Scoreboard scoreboard, Objective objective, CallbackInfo ci) {
-        if(!ClientData.customTab || ClientData.currentGameType.equals("none")) {
+        if(!FPSMGameHudManager.enable || FPSMClient.getGlobalData().equalsGame("none")) {
             return;
         }
         

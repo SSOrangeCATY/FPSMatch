@@ -6,7 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
-import com.phasetranscrystal.fpsmatch.common.net.cs.shop.EditToolSelectMapC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.EditToolSelectMapC2SPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;

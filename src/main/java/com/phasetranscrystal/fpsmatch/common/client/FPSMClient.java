@@ -1,28 +1,38 @@
 package com.phasetranscrystal.fpsmatch.common.client;
 
+import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
+import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
 import com.phasetranscrystal.fpsmatch.common.client.key.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
+@OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT, modid = FPSMatch.MODID)
 public class FPSMClient {
+    private static final FPSMClientGlobalData DATA = new FPSMClientGlobalData();
+
+    public static FPSMClientGlobalData getGlobalData(){
+        return DATA;
+    }
+
     @SubscribeEvent
     public static void onClientSetup(RegisterKeyMappingsEvent event) {
         // 注册键位
-        event.register(OpenShopKey.OPEN_SHOP_KEY);
-        event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
-        event.register(CustomTabKey.CUSTOM_TAB_KEY);
         event.register(CustomHudKey.KEY);
         event.register(SwitchPreviousItemKey.KEY);
         //event.register(DebugMVPHudKey.CUSTOM_TAB_KEY);
@@ -38,5 +48,10 @@ public class FPSMClient {
             return Minecraft.getInstance().player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList();
         }
         return new ArrayList<>();
+    }
+
+    public static void reset() {
+        DATA.reset();
+        MinecraftForge.EVENT_BUS.post(new FPSMClientResetEvent());
     }
 }

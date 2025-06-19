@@ -2,8 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.client;
 
 import com.google.common.collect.Maps;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.data.ClientData;
-import com.phasetranscrystal.fpsmatch.common.client.screen.hud.CSGameHud;
+import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.IHudRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
@@ -24,14 +23,15 @@ public class FPSMGameHudManager implements IGuiOverlay{
     private final Map<String, List<IHudRenderer>> gameHudMap = Maps.newHashMap();
 
     public FPSMGameHudManager() {
-        // 注册游戏HUD
-        this.registerHud("cs", CSGameHud.INSTANCE);
     }
 
     @SubscribeEvent
     public static void onRenderGuiOverlayPre(RenderGuiOverlayEvent.Pre event) {
-        if(enable && INSTANCE.gameHudMap.containsKey(ClientData.currentGameType) && !ClientData.currentTeam.equals("spectator")){
-            INSTANCE.gameHudMap.get(ClientData.currentGameType)
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        String gameType = data.getCurrentGameType();
+        boolean isSpectator = data.isSpectator();
+        if(enable && INSTANCE.gameHudMap.containsKey(gameType) && !isSpectator){
+            INSTANCE.gameHudMap.get(gameType)
                     .forEach(overlay -> overlay.onRenderGuiOverlayPre(event));
         }
     }
@@ -42,9 +42,12 @@ public class FPSMGameHudManager implements IGuiOverlay{
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        String gameType = data.getCurrentGameType();
+        boolean isSpectator = data.isSpectator();
         // 渲染游戏HUD
-        if(enable && gameHudMap.containsKey(ClientData.currentGameType) && !ClientData.currentTeam.equals("spectator")){
-            gameHudMap.get(ClientData.currentGameType)
+        if(enable && gameHudMap.containsKey(gameType) && !isSpectator){
+            gameHudMap.get(gameType)
                     .forEach(overlay -> overlay.render(gui, guiGraphics, partialTick, screenWidth, screenHeight));
         }
     }

@@ -4,7 +4,6 @@ import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
-import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
@@ -172,12 +171,12 @@ public class MatchDropEntity extends Entity {
                     BaseMap map = FPSMCore.getInstance().getMapByPlayer(pEntity);
                     if (map instanceof ShopMap<?> shopMap) {
                         shopMap.getShop(pEntity).ifPresent(shop -> {
-                            ShopData shopData = shop.getPlayerShopData(pEntity.getUUID());
-                            Pair<ItemType, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
+                            ShopData<?> shopData = shop.getPlayerShopData(pEntity.getUUID());
+                            Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
                             if(pair != null){
                                 ShopSlot slot = pair.getSecond();
                                 slot.lock(copy.getCount());
-                                shop.syncShopData((ServerPlayer) pEntity,pair.getFirst(),slot);
+                                shop.syncShopData((ServerPlayer) pEntity, pair.getFirst().name(), slot);
                             }
                         });
                     }

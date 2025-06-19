@@ -4,7 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
 import com.phasetranscrystal.fpsmatch.core.function.IHolder;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
-import com.phasetranscrystal.fpsmatch.common.net.entity.ThrowEntityC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.sounds.SoundEvent;

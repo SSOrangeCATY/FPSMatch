@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.effect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.net.effect.FlashBombAddonS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;

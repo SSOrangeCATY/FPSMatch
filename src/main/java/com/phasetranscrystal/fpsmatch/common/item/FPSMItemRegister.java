@@ -1,11 +1,11 @@
 package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.FlashBombEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.GrenadeEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.IncendiaryGrenadeEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.SmokeShellEntity;
-import com.phasetranscrystal.fpsmatch.common.item.test.TestItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -18,10 +18,6 @@ public class FPSMItemRegister {
     public static final DeferredRegister<CreativeModeTab> TABS;
     public static RegistryObject<CreativeModeTab> FPSM_TAB;
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, FPSMatch.MODID);
-    public static final RegistryObject<Item> TEST_ITEM = ITEMS.register("test_item", () -> new TestItem(new Item.Properties()));
-    public static final RegistryObject<Item> C4 = ITEMS.register("c4", () -> new CompositionC4(new Item.Properties()));
-    public static final RegistryObject<BombDisposalKit> BOMB_DISPOSAL_KIT = ITEMS.register("bomb_disposal_kit",
-            () -> new BombDisposalKit(new Item.Properties()));
     public static final RegistryObject<BaseThrowAbleItem> SMOKE_SHELL = ITEMS.register("smoke_shell",
             () -> new BaseThrowAbleItem(new Item.Properties(), SmokeShellEntity::new , FPSMSoundRegister.voice_smoke::get));
     public static final RegistryObject<BaseThrowAbleItem> CT_INCENDIARY_GRENADE = ITEMS.register("ct_incendiary_grenade",
@@ -38,7 +34,7 @@ public class FPSMItemRegister {
     static {
         TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");
         FPSM_TAB = TABS.register("other", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.tab.fpsm"))
-                .icon(() -> C4.get().getDefaultInstance()).displayItems((parameters, output) -> {
+                .icon(() -> T_INCENDIARY_GRENADE.get().getDefaultInstance()).displayItems((parameters, output) -> {
             ITEMS.getEntries().forEach((entry) -> {
                 output.accept(entry.get());
             });

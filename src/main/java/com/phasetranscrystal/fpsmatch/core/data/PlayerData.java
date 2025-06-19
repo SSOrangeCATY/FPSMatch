@@ -4,9 +4,13 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.*;
-
+/**
+ * 带_前缀的是回合临时数据
+ * */
 public class PlayerData{
     private final UUID owner;
     private final Component name;
@@ -24,11 +28,15 @@ public class PlayerData{
     private boolean isLiving;
     private int headshotKills;
     private SpawnPointData spawnPointsData;
-    private boolean vote = false;
 
     public PlayerData(Player owner) {
         this.owner = owner.getUUID();
         this.name = owner.getDisplayName();
+    }
+
+    public PlayerData(UUID owner, Component name) {
+        this.owner = owner;
+        this.name = name;
     }
 
     public Component name(){
@@ -56,21 +64,13 @@ public class PlayerData{
     }
 
     public boolean isOnline() {
+        if(!FPSMCore.initialized()) throw new RuntimeException("isOnline method onlyIn serverSide");
         return FPSMCore.getInstance().getPlayerByUUID(this.owner).isPresent();
     }
 
     public Optional<ServerPlayer> getPlayer() {
         return FPSMCore.getInstance().getPlayerByUUID(this.owner);
     }
-
-    public boolean isVote() {
-        return vote;
-    }
-
-    public void setVote(boolean vote) {
-        this.vote = vote;
-    }
-
 
     public UUID getOwner() {
         return owner;
@@ -79,7 +79,6 @@ public class PlayerData{
     public Map<UUID, Float> getDamageData() {
         return damageData;
     }
-
 
     public void setDamageData(UUID hurt, float value){
         this.damageData.put(hurt,value);
@@ -102,6 +101,10 @@ public class PlayerData{
         return isLiving && this.isOnline();
     }
 
+    public boolean isLivingNoOnlineCheck() {
+        return isLiving;
+    }
+
     public void setMvpCount(int mvpCount) {
         this.mvpCount = mvpCount;
     }
@@ -122,16 +125,32 @@ public class PlayerData{
         return _damage;
     }
 
+    public void set_damage(float _damage) {
+        this._damage = _damage;
+    }
+
     public int _assists() {
         return _assists;
+    }
+
+    public void set_assists(int _assists) {
+        this._assists = _assists;
     }
 
     public int _deaths() {
         return _deaths;
     }
 
+    public void set_deaths(int _deaths) {
+        this._deaths = _deaths;
+    }
+
     public int _kills() {
         return _kills;
+    }
+
+    public void set_kills(int _kills) {
+        this._kills = _kills;
     }
 
     public int getKills() {
@@ -189,6 +208,8 @@ public class PlayerData{
         data.setHeadshotKills(headshotKills);
         return data;
     }
+
+
 
     public void merge(PlayerData data){
         this.setKills(this.kills + data.kills);

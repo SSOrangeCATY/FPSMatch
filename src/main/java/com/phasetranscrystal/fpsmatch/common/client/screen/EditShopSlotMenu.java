@@ -6,9 +6,8 @@ import com.google.gson.JsonElement;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
+import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
-import com.phasetranscrystal.fpsmatch.core.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
@@ -40,7 +39,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(id, playerInventory, FPSMCodec.decodeShopSlotFromJson(new Gson().fromJson(buf.readUtf(), JsonElement.class)), buf.readItem(), buf.readInt());
+        this(id, playerInventory, FPSMCodec.decodeFromJson(ShopSlot.CODEC,new Gson().fromJson(buf.readUtf(), JsonElement.class)), buf.readItem(), buf.readInt());
     }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot, ItemStack guiItemStack, int repoIndex) {
@@ -96,7 +95,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
             BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
             if (map instanceof ShopMap<?> shopMap) {
-                FPSMShop shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
+                FPSMShop<?> shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
                 if (shop == null) return;
                 //保存内容,先保存物品后设置内容
                 shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
@@ -106,7 +105,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
                 if (slotStack.getItem() instanceof IGun iGun) {
                     FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
                 }
-                shop.replaceDefaultShopData(ItemType.values()[this.repoIndex % 5], this.repoIndex / 5, shopSlot);
+                shop.replaceDefaultShopData(shop.getEnums().get(this.repoIndex % 5).name(), this.repoIndex / 5, shopSlot);
                 //同步
                 shop.syncShopData();
             }

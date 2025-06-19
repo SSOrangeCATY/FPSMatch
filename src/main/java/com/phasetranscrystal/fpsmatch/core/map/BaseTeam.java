@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
+import org.joml.Vector3f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -79,6 +80,11 @@ public class BaseTeam {
      * 队伍是否需要暂停。
      */
     private boolean needPause = false;
+
+    /**
+     * 队伍颜色
+     */
+    private Vector3f color = new Vector3f(1, 1, 1);
 
     /**
      * 构造函数，初始化队伍的基本信息。
@@ -443,5 +449,13 @@ public class BaseTeam {
      */
     public int getPauseTime() {
         return pauseTime;
+    }
+
+    public Vector3f getColor() {
+        return color;
+    }
+
+    public void setColor(Vector3f color) {
+        this.color = color;
     }
 }

@@ -2,7 +2,6 @@ package com.phasetranscrystal.fpsmatch.bukkit.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
-import com.phasetranscrystal.fpsmatch.common.cs.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.fpsmatch.core.event.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,18 +33,6 @@ public class FPSMBukkitEventBirge {
     }
 
     @SubscribeEvent
-    public void onForgeMvpEvent(PlayerGetMvpEvent event) {
-        if (!FPSMBukkit.isBukkitEnvironment()) return;
-
-        BukkitPlayerGetMvpEvent bukkitEvent = new BukkitPlayerGetMvpEvent(
-                event.getReason().uuid,
-                event.getMap(),
-                event.getReason()
-        );
-        Bukkit.getPluginManager().callEvent(bukkitEvent);
-    }
-
-    @SubscribeEvent
     public void onForgeGameWinnerEvent(GameWinnerEvent event) {
         if (!FPSMBukkit.isBukkitEnvironment()) return;
 
@@ -61,17 +48,5 @@ public class FPSMBukkitEventBirge {
         Bukkit.getPluginManager().callEvent(bukkitEvent);
     }
 
-    @SubscribeEvent
-    public void onForgeRoundEndEvent(CSGameRoundEndEvent event) {
-        if (!FPSMBukkit.isBukkitEnvironment()) return;
-
-        BukkitCSGameRoundEndEvent bukkitEvent = new BukkitCSGameRoundEndEvent(
-                event.getMap(),
-                event.getWinner(),
-                event.getReason(),
-                event.getWinnerMoney()
-        );
-        Bukkit.getPluginManager().callEvent(bukkitEvent);
-    }
 
 }

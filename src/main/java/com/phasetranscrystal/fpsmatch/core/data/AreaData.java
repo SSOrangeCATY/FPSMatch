@@ -2,6 +2,8 @@ package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -15,6 +17,10 @@ import javax.annotation.Nonnull;
 
 
 public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
+    public static final Codec<AreaData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            BlockPos.CODEC.optionalFieldOf("Position1", BlockPos.of(0L)).forGetter(AreaData::pos1),
+            BlockPos.CODEC.optionalFieldOf("Position2", BlockPos.of(0L)).forGetter(AreaData::pos2)
+    ).apply(instance, AreaData::new));
 
     public boolean isPlayerInArea(Player player) {
         return isInArea(new Vec3(player.getX(), player.getY(), player.getZ()));

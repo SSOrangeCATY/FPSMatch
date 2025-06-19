@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.codec.FPSMCodec;
+import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.item.EditorShopCapabilityProvider;
@@ -120,7 +120,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
         }
     }
 
-    private FPSMShop getShop() {
+    private FPSMShop<? extends Enum<?>> getShop() {
         if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
             BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
             if (map instanceof ShopMap<?> shopMap) {
@@ -138,7 +138,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                                 .max().orElse(0))  // 获取最大行数
                 //按列顺序遍历行
                 .mapToObj(row -> this.getShop().getDefaultShopDataMap().entrySet().stream()//按列创建流
-                        .sorted(Comparator.comparingInt(entry -> entry.getKey().typeIndex)) // 确保列顺序
+                        .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal())) // 确保列顺序
                         .map(Map.Entry::getValue)
                         .filter(slotList -> row < slotList.size())  // 过滤掉短列 【遗留问题，是否存在占位符？】
                         .map(slotList -> slotList.get(row)))  // 取出当前行的元素
@@ -155,7 +155,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
                     ),
                     buf -> {
                         // 在服务器端通过 buf 写入数据，传递给客户端
-                        String json = new Gson().toJson(FPSMCodec.encodeShopSlotToJson(shopSlot));
+                        String json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC,shopSlot));
                         buf.writeUtf(json); // 写入 JSON 数据
                         buf.writeItem(guiItemStack);
                         buf.writeInt(repoIndex);
