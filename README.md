@@ -1,6 +1,9 @@
 # FPSMatch [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/FPSMacth)
 [点击此处跳转到命令帮助](CommandHelper.md)
 
+## 构建
+- 如果要构建BlockOffensive需要先下载FPSMatch运行publishing task后再去BlockOffensive构建环境
+
 ### 📌 版本信息
 | 依赖        | 最低要求版本   |
 |-----------|----------|
