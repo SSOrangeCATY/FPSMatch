@@ -60,7 +60,6 @@ public class FPSMatch {
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
     private static final String PROTOCOL_VERSION = "1.2.1";
-    public static final TicketType<UUID> ENTITY_CHUNK_TICKET = TicketType.create("fpsm_chunk_ticket", (a, b) -> 0);
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
 
