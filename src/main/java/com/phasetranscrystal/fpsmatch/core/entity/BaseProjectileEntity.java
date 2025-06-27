@@ -6,6 +6,8 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -13,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -105,6 +108,11 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     protected void onHit(@NotNull HitResult r) {
         if (this.getState() == 2) return;
         super.onHit(r);
+
+        if(r instanceof EntityHitResult entityHitResult) {
+            entityHitResult.getEntity().hurt(this.damageSource(),1);
+        }
+
         if (!(r instanceof BlockHitResult result)) return;
         if (this.level().getGameRules().getRule(FPSMatchRule.RULE_THROWABLE_CAN_CROSS_BARRIER).get()) {
             if (this.level().getBlockState(result.getBlockPos()).getBlock() == Blocks.BARRIER) {
@@ -337,4 +345,13 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     public boolean shouldRender(double pX, double pY, double pZ) {
         return true;
     }
+
+    public DamageSource damageSource() {
+        if(this.getOwner() instanceof LivingEntity livingEntity) {
+            return this.damageSources().mobProjectile(this, livingEntity);
+        }else{
+            return this.damageSources().mobProjectile(this,null);
+        }
+    }
+
 }
