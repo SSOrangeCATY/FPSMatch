@@ -356,6 +356,7 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
         }
     }
 
+    @Override
     public @NotNull ItemStack getItem(){
         return new ItemStack(this.getDefaultItem());
     }
