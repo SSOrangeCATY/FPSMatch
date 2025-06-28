@@ -11,6 +11,7 @@ import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -124,6 +125,8 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
         Vec3 delta = getDeltaMovement();
 
+        playCollisionSound(level().getBlockState(result.getBlockPos()));
+
         // 地面碰撞处理
         if (result.getDirection() == Direction.UP) {
             if (activateOnGroundHit) {
@@ -137,11 +140,10 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
                     handleVerticalCollision(delta);
                 }
             }
-            return;
+        }else{
+            handleGeneralCollision(result, delta);
         }
 
-        // 通用碰撞处理
-        handleGeneralCollision(result, delta);
         playCollisionSound(level().getBlockState(result.getBlockPos()));
     }
 
@@ -352,6 +354,10 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
         }else{
             return this.damageSources().mobProjectile(this,null);
         }
+    }
+
+    public @NotNull ItemStack getItem(){
+        return new ItemStack(this.getDefaultItem());
     }
 
 }

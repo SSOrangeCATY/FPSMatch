@@ -142,7 +142,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
 
     @Override
     protected @NotNull Item getDefaultItem() {
-        return entityData.get(ITEM).getItem();
+        return getHoldItem();
     }
 
     public Item getHoldItem(){

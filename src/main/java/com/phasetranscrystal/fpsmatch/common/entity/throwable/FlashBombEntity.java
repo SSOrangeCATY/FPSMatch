@@ -118,8 +118,6 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         return new int[]{1, 6};
     }
 
-
-
     @Override
     protected @NotNull Item getDefaultItem() {
         return FPSMItemRegister.FLASH_BOMB.get();
