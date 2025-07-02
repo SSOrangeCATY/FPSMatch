@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMCommandEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
@@ -19,6 +20,7 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -35,6 +37,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec2;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 import java.util.*;
@@ -143,18 +146,18 @@ public class FPSMCommand {
                                                                 .then(Commands.literal("spawnpoints")
                                                                         .then(Commands.argument("action", StringArgumentType.string())
                                                                                 .suggests(CommandSuggests.SPAWNPOINTS_ACTION_SUGGESTION)
-                                                                                //处理含参
                                                                                 .then(Commands.argument("from", Vec2Argument.vec2())
                                                                                         .then(Commands.argument("to", Vec2Argument.vec2())
                                                                                                 .executes(FPSMCommand::handleSpawnAction)))
-                                                                                //处理不含参
                                                                                 .executes(FPSMCommand::handleSpawnAction)))
                                                                 .then(Commands.literal("players")
                                                                         .then(Commands.argument("targets", EntityArgument.players())
                                                                                 .then(Commands.argument("action", StringArgumentType.string())
                                                                                         .suggests(CommandSuggests.TEAM_ACTION_SUGGESTION)
                                                                                         .executes(FPSMCommand::handleTeamAction))))))))));
-        dispatcher.register(literal);
+        RegisterFPSMCommandEvent registerFPSMCommandEvent = new RegisterFPSMCommandEvent(literal);
+        MinecraftForge.EVENT_BUS.post(registerFPSMCommandEvent);
+        dispatcher.register(registerFPSMCommandEvent.get());
     }
 
     private static int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
