@@ -252,10 +252,10 @@ public class PlayerData{
     public String info(){
         return "{\"owner\":\"" + this.owner.toString() + "\"," +
                "\"scores\":" + this.scores + "," +
-               "\"kills\":" + this.kills + "," +
-               "\"deaths\":" + this.deaths + "," +
-               "\"assists\":" + this.assists + "," +
-               "\"damage\":" + this.damage + "," +
+               "\"kills\":" + this.kills + this._kills + "," +
+               "\"deaths\":" + this.deaths + this._deaths + "," +
+               "\"assists\":" + this.assists + this._assists + "," +
+               "\"damage\":" + this.damage + this._damage + "," +
                "\"headshotKills\":" + this.headshotKills + "," +
                "\"mvpCount\":" + this.mvpCount + "}";
     }
