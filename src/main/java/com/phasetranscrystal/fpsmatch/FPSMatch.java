@@ -4,7 +4,6 @@ import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.common.client.renderer.*;
 import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
-import com.phasetranscrystal.fpsmatch.common.client.web.WebServerManager;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.*;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
@@ -18,7 +17,6 @@ import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.TicketType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -36,8 +34,6 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 /*
     <FPSMatch>
@@ -116,10 +112,10 @@ public class FPSMatch {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event)
-    {
-        //注册原版GUI
-        VanillaGuiRegister.register();
-    }
+        {
+            //注册原版GUI
+            VanillaGuiRegister.register();
+        }
 
         @SubscribeEvent
         public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {

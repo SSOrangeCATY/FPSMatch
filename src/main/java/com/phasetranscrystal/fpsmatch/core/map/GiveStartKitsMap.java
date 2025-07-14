@@ -114,10 +114,10 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
             player.getInventory().clearContent();
             items.forEach(itemStack -> {
                 player.getInventory().add(itemStack.copy());
+                player.inventoryMenu.broadcastChanges();
+                player.inventoryMenu.slotsChanged(player.getInventory());
             });
             FPSMUtil.sortPlayerInventory(player);
-                    player.inventoryMenu.broadcastChanges();
-                    player.inventoryMenu.slotsChanged(player.getInventory());
         },()->
             System.out.println("givePlayerKits: player not in team ->" + player.getDisplayName().getString())
         );
@@ -138,7 +138,6 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                 items.forEach(itemStack ->
                     player.getInventory().add(itemStack.copy())
                 );
-                FPSMUtil.sortPlayerInventory(player);
                 player.inventoryMenu.broadcastChanges();
                 player.inventoryMenu.slotsChanged(player.getInventory());
             }
@@ -164,8 +163,6 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
                         }
                     });
                     FPSMUtil.sortPlayerInventory(player);
-                    player.inventoryMenu.broadcastChanges();
-                    player.inventoryMenu.slotsChanged(player.getInventory());
                 })
             );
         }
