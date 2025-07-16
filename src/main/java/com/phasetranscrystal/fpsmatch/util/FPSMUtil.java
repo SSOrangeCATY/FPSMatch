@@ -22,44 +22,45 @@ import java.util.function.Predicate;
 
 public class FPSMUtil {
     public static final List<GunTabType> MAIN_WEAPON = ImmutableList.of(GunTabType.RIFLE,GunTabType.SNIPER,GunTabType.SHOTGUN,GunTabType.SMG,GunTabType.MG);
-    public static final Predicate<ItemStack> MAIN_WEAPON_PREDICATE = (itemStack -> {
-        if(itemStack.getItem() instanceof IGun gun){
-            return isMainWeapon(gun.getGunId(itemStack));
-        }else{
-            return false;
-        }
-    });
-    public static final Predicate<ItemStack> SECONDARY_WEAPON_PREDICATE = (itemStack -> {
-        if(itemStack.getItem() instanceof IGun gun){
-            return getGunTypeByGunId(gun.getGunId(itemStack)).filter(gunTabType -> gunTabType == GunTabType.PISTOL).isPresent();
-        }else{
-            return false;
-        }
-    });
-    public static final Predicate<ItemStack> THIRD_WEAPON_PREDICATE;
-    public static final Predicate<ItemStack> THROW_PREDICATE;
+    public static final List<Predicate<ItemStack>> MAIN_WEAPON_PREDICATE = new ArrayList<>();
+    public static final List<Predicate<ItemStack>> SECONDARY_WEAPON_PREDICATE = new ArrayList<>();
+    public static final List<Predicate<ItemStack>> THIRD_WEAPON_PREDICATE = new ArrayList<>();
+    public static final List<Predicate<ItemStack>> THROW_PREDICATE = new ArrayList<>();
+    public static final List<Predicate<ItemStack>> C4_PREDICATE = new ArrayList<>();
     public static final Predicate<ItemStack> MISC_PREDICATE = (itemStack -> true);
-    public static final Predicate<ItemStack> C4_PREDICATE = (itemStack -> itemStack.getItem() instanceof BlastBombItem);
+
 
     static{
-        THROW_PREDICATE = (itemStack -> {
-            if(itemStack.getItem() instanceof IThrowEntityAble){
-                return true;
+        addMainWeaponPredicate((itemStack -> {
+            if(itemStack.getItem() instanceof IGun gun){
+                return isMainWeapon(gun.getGunId(itemStack));
             }else{
-                if (FPSMImpl.findEquipmentMod()){
-                    try{
-                        return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable;
-                    }catch (Exception e){
-                        return false;
-                    }
-                }else{
+                return false;
+            }
+        }));
+
+        addSecondaryWeaponPredicate((itemStack -> {
+            if(itemStack.getItem() instanceof IGun gun){
+                return getGunTypeByGunId(gun.getGunId(itemStack)).filter(gunTabType -> gunTabType == GunTabType.PISTOL).isPresent();
+            }else{
+                return false;
+            }
+        }));
+
+        addThrowablePredicate((itemStack -> itemStack.getItem() instanceof IThrowEntityAble));
+        addThrowablePredicate((itemStack -> {
+            if (FPSMImpl.findEquipmentMod()){
+                try{
+                    return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable;
+                }catch (Exception e){
                     return false;
                 }
+            }else{
+                return false;
             }
-        });
+        }));
 
-
-        THIRD_WEAPON_PREDICATE = (itemStack -> {
+        addThirdWeaponPredicate((itemStack -> {
             if(itemStack.getItem() instanceof IGun gun){
                 return getGunTypeByGunId(gun.getGunId(itemStack)).filter(gunTabType -> gunTabType == GunTabType.RPG).isPresent();
             }else{
@@ -73,7 +74,9 @@ public class FPSMUtil {
                     return false;
                 }
             }
-        });
+        }));
+
+        addC4Predicate((itemStack -> itemStack.getItem() instanceof BlastBombItem));
     }
 
     public static Optional<GunTabType> getGunTypeByGunId(ResourceLocation gunId){
@@ -99,19 +102,24 @@ public class FPSMUtil {
             }
 
             // 2. 按分类分组（操作副本）
-            Map<Predicate<ItemStack>, List<ItemStack>> categoryMap = new LinkedHashMap<>();
+            Map<List<Predicate<ItemStack>>, List<ItemStack>> categoryMap = new LinkedHashMap<>();
+            List<Predicate<ItemStack>> miscPredicates = new ArrayList<>();
+
+            miscPredicates.add(MISC_PREDICATE);
             categoryMap.put(MAIN_WEAPON_PREDICATE, new ArrayList<>());
             categoryMap.put(SECONDARY_WEAPON_PREDICATE, new ArrayList<>());
             categoryMap.put(THIRD_WEAPON_PREDICATE, new ArrayList<>());
             categoryMap.put(C4_PREDICATE, new ArrayList<>());
             categoryMap.put(THROW_PREDICATE, new ArrayList<>());
-            categoryMap.put(MISC_PREDICATE, new ArrayList<>());
+            categoryMap.put(miscPredicates, new ArrayList<>());
 
             for (ItemStack stack : allItems) {
-                for (Map.Entry<Predicate<ItemStack>, List<ItemStack>> entry : categoryMap.entrySet()) {
-                    if (entry.getKey().test(stack)) {
-                        entry.getValue().add(stack);
-                        break;
+                for (Map.Entry<List<Predicate<ItemStack>>, List<ItemStack>> entry : categoryMap.entrySet()) {
+                    for (Predicate<ItemStack> predicate : entry.getKey()) {
+                        if(predicate.test(stack)){
+                            entry.getValue().add(stack);
+                            break;
+                        }
                     }
                 }
             }
@@ -280,6 +288,22 @@ public class FPSMUtil {
                 resetGunAmmo(itemStack,iGun);
             }
         }));
+    }
+
+    public static void addMainWeaponPredicate(Predicate<ItemStack> predicate){
+        MAIN_WEAPON_PREDICATE.add(predicate);
+    }
+    public static void addSecondaryWeaponPredicate(Predicate<ItemStack> predicate){
+        SECONDARY_WEAPON_PREDICATE.add(predicate);
+    }
+    public static void addThirdWeaponPredicate(Predicate<ItemStack> predicate){
+        THIRD_WEAPON_PREDICATE.add(predicate);
+    }
+    public static void addThrowablePredicate(Predicate<ItemStack> predicate){
+        THROW_PREDICATE.add(predicate);
+    }
+    public static void addC4Predicate(Predicate<ItemStack> predicate){
+        C4_PREDICATE.add(predicate);
     }
 
 }
