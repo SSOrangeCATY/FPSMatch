@@ -100,6 +100,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(PullGameInfoC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
         PACKET_REGISTER.registerPacket(GameTabStatsS2CPacket.class);
+        PACKET_REGISTER.registerPacket(OpenEditorC2SPacket.class);
     }
 
     @SubscribeEvent

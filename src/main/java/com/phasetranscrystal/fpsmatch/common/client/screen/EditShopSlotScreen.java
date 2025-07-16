@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenEditorC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -92,6 +93,15 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
                 .build());
     }
 
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 256) {
+            //返回上级菜单
+            FPSMatch.INSTANCE.sendToServer(new OpenEditorC2SPacket());
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
 
     // 处理保存按钮点击事件
     private void onSaveButtonClick() {
@@ -106,6 +116,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
             ItemStack guiItemStack = this.menu.getGuiItemStack();
 
             // 返回上级菜单
+            FPSMatch.INSTANCE.sendToServer(new OpenEditorC2SPacket());
 
         }
     }

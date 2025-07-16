@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
@@ -44,6 +45,10 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private List<ShopSlot> shopSlots = new ArrayList<>();
 
 
+    public EditorShopContainer(int containerId, Inventory playerInventory,FriendlyByteBuf buf)
+    {
+        this(containerId, playerInventory, buf.readItem());
+    }
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
         this.guiItemStack = stack;
