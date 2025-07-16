@@ -30,6 +30,8 @@ public class FPSMItemRegister {
             () -> new BaseThrowAbleItem(new Item.Properties(), GrenadeEntity::new, FPSMSoundRegister.voice_grenade::get));
     public static final RegistryObject<BaseThrowAbleItem> FLASH_BOMB = ITEMS.register("flash_bomb",
             () -> new BaseThrowAbleItem(new Item.Properties(), FlashBombEntity::new, FPSMSoundRegister.voice_flash::get));
+    public static final RegistryObject<Item> SHOP_EDIT_TOOL = ITEMS.register("shop_edit_tool",
+            () -> new ShopEditTool(new Item.Properties()));
 
     static {
         TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");

@@ -38,7 +38,6 @@ public class ShopEditTool extends Item {
 
     public ShopEditTool(Properties pProperties) {
         super(pProperties);
-
     }
 
 
