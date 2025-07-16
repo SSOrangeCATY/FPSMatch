@@ -100,6 +100,10 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
 
 }
 
@@ -127,6 +131,9 @@ dependencies {
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
     implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6518539")
     implementation fg.deobf("curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599")
+    implementation fg.deobf("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
+    runtimeOnly fg.deobf("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
+
     compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
     //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'

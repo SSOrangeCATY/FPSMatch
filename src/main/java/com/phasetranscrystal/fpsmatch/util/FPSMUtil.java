@@ -27,8 +27,7 @@ public class FPSMUtil {
     public static final List<Predicate<ItemStack>> THIRD_WEAPON_PREDICATE = new ArrayList<>();
     public static final List<Predicate<ItemStack>> THROW_PREDICATE = new ArrayList<>();
     public static final List<Predicate<ItemStack>> C4_PREDICATE = new ArrayList<>();
-    public static final Predicate<ItemStack> MISC_PREDICATE = (itemStack -> true);
-
+    public static final List<Predicate<ItemStack>> MISC_PREDICATE = new ArrayList<>();
 
     static{
         addMainWeaponPredicate((itemStack -> {
@@ -59,6 +58,17 @@ public class FPSMUtil {
                 return false;
             }
         }));
+        addThrowablePredicate((itemStack -> {
+            if (FPSMImpl.findCounterStrikeGrenadesMod()){
+                try{
+                    return itemStack.getItem() instanceof club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
+                }catch (Exception e){
+                    return false;
+                }
+            }else{
+                return false;
+            }
+        }));
 
         addThirdWeaponPredicate((itemStack -> {
             if(itemStack.getItem() instanceof IGun gun){
@@ -77,6 +87,8 @@ public class FPSMUtil {
         }));
 
         addC4Predicate((itemStack -> itemStack.getItem() instanceof BlastBombItem));
+
+        MISC_PREDICATE.add((itemStack -> true));
     }
 
     public static Optional<GunTabType> getGunTypeByGunId(ResourceLocation gunId){
@@ -103,15 +115,13 @@ public class FPSMUtil {
 
             // 2. 按分类分组（操作副本）
             Map<List<Predicate<ItemStack>>, List<ItemStack>> categoryMap = new LinkedHashMap<>();
-            List<Predicate<ItemStack>> miscPredicates = new ArrayList<>();
 
-            miscPredicates.add(MISC_PREDICATE);
             categoryMap.put(MAIN_WEAPON_PREDICATE, new ArrayList<>());
             categoryMap.put(SECONDARY_WEAPON_PREDICATE, new ArrayList<>());
             categoryMap.put(THIRD_WEAPON_PREDICATE, new ArrayList<>());
             categoryMap.put(C4_PREDICATE, new ArrayList<>());
             categoryMap.put(THROW_PREDICATE, new ArrayList<>());
-            categoryMap.put(miscPredicates, new ArrayList<>());
+            categoryMap.put(MISC_PREDICATE, new ArrayList<>());
 
             for (ItemStack stack : allItems) {
                 for (Map.Entry<List<Predicate<ItemStack>>, List<ItemStack>> entry : categoryMap.entrySet()) {

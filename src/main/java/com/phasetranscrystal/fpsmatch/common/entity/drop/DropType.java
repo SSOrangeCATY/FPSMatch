@@ -8,24 +8,39 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
 public enum DropType {
     MAIN_WEAPON((player -> {
-        int i = player.getInventory().clearOrCountMatchingItems(FPSMUtil.MAIN_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
+        int i = 0;
+        for(Predicate<ItemStack> predicate : FPSMUtil.MAIN_WEAPON_PREDICATE){
+            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+        }
         return i < FPSMConfig.common.mainWeaponCount.get();
     })),
     SECONDARY_WEAPON((player -> {
-        int i = player.getInventory().clearOrCountMatchingItems(FPSMUtil.SECONDARY_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
+        int i = 0;
+        for (Predicate<ItemStack> predicate : FPSMUtil.SECONDARY_WEAPON_PREDICATE) {
+            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+        }
         return i < FPSMConfig.common.secondaryWeaponCount.get();
     })),
     THIRD_WEAPON((player -> {
-        int i = player.getInventory().clearOrCountMatchingItems(FPSMUtil.THIRD_WEAPON_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
+        int i = 0;
+        for (Predicate<ItemStack> predicate : FPSMUtil.THIRD_WEAPON_PREDICATE) {
+            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+        }
         return i < FPSMConfig.common.thirdWeaponCount.get();
     })),
     THROW((player -> {
-        int i = player.getInventory().clearOrCountMatchingItems(FPSMUtil.THROW_PREDICATE, 0, player.inventoryMenu.getCraftSlots());
+        int i = 0;
+        for (Predicate<ItemStack> predicate : FPSMUtil.THROW_PREDICATE) {
+            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+        }
         return i < FPSMConfig.common.throwableCount.get();
     })),
 
@@ -36,38 +51,25 @@ public enum DropType {
         this.playerPredicate = playerPredicate;
     }
 
-    public static Predicate<ItemStack> getPredicateByDropType(DropType type){
-        return switch (type) {
-            case MAIN_WEAPON -> FPSMUtil.MAIN_WEAPON_PREDICATE;
-            case SECONDARY_WEAPON -> FPSMUtil.SECONDARY_WEAPON_PREDICATE;
-            case THIRD_WEAPON -> FPSMUtil.THIRD_WEAPON_PREDICATE;
-            case THROW -> FPSMUtil.THROW_PREDICATE;
-            case MISC -> FPSMUtil.MISC_PREDICATE;
-        };
+    private static final Map<DropType, List<Predicate<ItemStack>>> PREDICATE_MAP = new HashMap<>();
+
+    static {
+        PREDICATE_MAP.put(DropType.MAIN_WEAPON,FPSMUtil.MAIN_WEAPON_PREDICATE);
+        PREDICATE_MAP.put(DropType.SECONDARY_WEAPON,FPSMUtil.SECONDARY_WEAPON_PREDICATE);
+        PREDICATE_MAP.put(DropType.THIRD_WEAPON,FPSMUtil.THIRD_WEAPON_PREDICATE);
+        PREDICATE_MAP.put(DropType.THROW,FPSMUtil.THROW_PREDICATE);
+        PREDICATE_MAP.put(DropType.MISC,FPSMUtil.MISC_PREDICATE);
+    }
+    public static List<Predicate<ItemStack>> getPredicateByDropType(DropType type){
+        return PREDICATE_MAP.get(type);
     }
 
     public static DropType getItemDropType(ItemStack itemStack) {
-        if (itemStack.getItem() instanceof IGun iGun) {
-            Optional<GunTabType> optional = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
-            if (optional.isPresent()) {
-                switch (optional.get()) {
-                    case RIFLE, SNIPER, SHOTGUN, SMG, MG -> {
-                        return DropType.MAIN_WEAPON;
-                    }
-                    case PISTOL -> {
-                        return DropType.SECONDARY_WEAPON;
-                    }
-                    case RPG -> {
-                        return DropType.THIRD_WEAPON;
-                    }
-                }
+        for (Map.Entry<DropType, List<Predicate<ItemStack>>> entrySet : PREDICATE_MAP.entrySet()) {
+            if(entrySet.getValue().stream().anyMatch(predicate -> predicate.test(itemStack))){
+                return entrySet.getKey();
             }
         }
-
-        if (itemStack.getItem() instanceof IThrowEntityAble) {
-            return DropType.THROW;
-        } else {
-            return DropType.MISC;
-        }
+        return DropType.MISC;
     }
 }
