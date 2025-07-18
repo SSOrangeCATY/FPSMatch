@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet.register;
 
-import com.google.common.collect.Maps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
@@ -11,13 +10,14 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 
 public class NetworkPacketRegister {
-    private static final Map<NetworkPacketRegister, List<Class<?>>> CACHED = Maps.newHashMap();
+    private static final Map<NetworkPacketRegister, List<Class<?>>> CACHED = new ConcurrentHashMap<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
     private final SimpleChannel channel;
     private final ResourceLocation name;
