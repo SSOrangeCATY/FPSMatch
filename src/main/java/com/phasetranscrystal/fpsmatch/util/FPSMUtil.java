@@ -108,7 +108,7 @@ public class FPSMUtil {
             for (int i = 0; i < inventory.items.size(); i++) {
                 ItemStack stack = inventory.items.get(i);
                 if (!stack.isEmpty()) {
-                    allItems.add(stack.copy()); // 创建独立副本
+                    allItems.add(stack.copy());
                 }
                 inventory.items.set(i, ItemStack.EMPTY);
             }
@@ -124,11 +124,13 @@ public class FPSMUtil {
             categoryMap.put(MISC_PREDICATE, new ArrayList<>());
 
             for (ItemStack stack : allItems) {
-                for (Map.Entry<List<Predicate<ItemStack>>, List<ItemStack>> entry : categoryMap.entrySet()) {
-                    for (Predicate<ItemStack> predicate : entry.getKey()) {
-                        if(predicate.test(stack)){
-                            entry.getValue().add(stack);
-                            break;
+                categorized:{
+                    for (Map.Entry<List<Predicate<ItemStack>>, List<ItemStack>> entry : categoryMap.entrySet()) {
+                        for (Predicate<ItemStack> predicate : entry.getKey()) {
+                            if(predicate.test(stack)){
+                                entry.getValue().add(stack);
+                                break categorized;
+                            }
                         }
                     }
                 }

@@ -363,6 +363,7 @@ public class ShopSlot{
                 }
             }
         }
+
         if(itemStack.getItem() instanceof ArmorItem armorItem){
             player.setItemSlot(armorItem.getEquipmentSlot(),itemStack);
         }else{
