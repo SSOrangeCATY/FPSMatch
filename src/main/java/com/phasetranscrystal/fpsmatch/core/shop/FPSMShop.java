@@ -424,8 +424,8 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param index 槽位索引
      * @param action 操作类型
      */
-    public void handleButton(ServerPlayer serverPlayer, String type, int index, ShopAction action) {
-        this.getPlayerShopData(serverPlayer.getUUID()).handleButton(serverPlayer, valueOf(type), index, action);
+    public void handleButton(ServerPlayer serverPlayer, INamedType type, int index, ShopAction action) {
+        this.getPlayerShopData(serverPlayer.getUUID()).handleButton(serverPlayer, valueOf(type.name()), index, action);
         this.syncShopData(serverPlayer);
         this.syncShopMoneyData(serverPlayer);
     }

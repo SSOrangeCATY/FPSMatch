@@ -55,7 +55,7 @@ public class ShopActionC2SPacket {
                     ctx.get().setPacketHandled(true);
                     return;
                 }
-                shop.handleButton(serverPlayer, this.type.name(), this.index,ShopAction.values()[this.action]);
+                shop.handleButton(serverPlayer, this.type, this.index,ShopAction.values()[this.action]);
             }
         });
         ctx.get().setPacketHandled(true);
