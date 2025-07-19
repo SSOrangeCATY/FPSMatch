@@ -357,7 +357,7 @@ public class ShopSlot{
         DropType type = DropType.getItemDropType(itemStack);
 
         // 检查玩家库存是否已有同类物品
-        checkAndHandleExistingItems(player, type, itemStack);
+        checkAndHandleExistingItems(player, type);
 
         // 将物品添加到玩家库存
         addItemToPlayerInventory(player, itemStack);
@@ -369,13 +369,13 @@ public class ShopSlot{
     /**
      * 检查并处理玩家已有的同类物品
      */
-    private void checkAndHandleExistingItems(Player player, DropType type, ItemStack newItem) {
+    private void checkAndHandleExistingItems(Player player, DropType type) {
         // 如果库存不匹配且不是杂项物品
         if (!type.inventoryMatch().test(player) && type != DropType.MISC) {
             // 检查所有库存槽位(主物品栏、装备栏、副手)
             for (ItemStack existingItem : getAllPlayerItems(player)) {
                 if (type.itemMatch().test(existingItem)) {
-                    handleMatchingItem(player, newItem, existingItem);
+                    handleMatchingItem(player, existingItem);
                     break;
                 }
             }
@@ -396,16 +396,18 @@ public class ShopSlot{
     /**
      * 处理匹配的已有物品
      */
-    private void handleMatchingItem(Player player, ItemStack newItem, ItemStack existingItem) {
+    private void handleMatchingItem(Player player, ItemStack existingItem) {
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
         if (!(map instanceof ShopMap<?> shopMap)) return;
 
         shopMap.getShop(player).ifPresent(shop -> {
             ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
-            Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(newItem);
+            Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(existingItem);
 
             if (pair != null && ((INamedType)pair.getFirst()).dorpUnlock()) {
                 ShopSlot slot = pair.getSecond();
+                if(slot.equals(this)) return;
+
                 slot.unlock(1);
 
                 // 复制并减少已有物品数量
