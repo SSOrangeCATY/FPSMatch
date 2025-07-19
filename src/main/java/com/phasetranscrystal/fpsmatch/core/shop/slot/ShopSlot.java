@@ -1,9 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
@@ -343,33 +349,84 @@ public class ShopSlot{
      * @return 购买后剩余金钱
      */
     public int buy(Player player, int money) {
+        // 增加购买计数
         boughtCount++;
+
+        // 处理生成要购买的物品
         ItemStack itemStack = process();
         DropType type = DropType.getItemDropType(itemStack);
-        if(!type.inventoryMatch().test(player)){
-            if(type != DropType.MISC){
-                List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
-                for(List<ItemStack> itemStackList : items ){
-                    for(ItemStack itemStack1 : itemStackList){
-                        if(type.itemMatch().test(itemStack1)){
-                            FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack1.copy());
-                            int count = itemStack1.getCount();
-                            this.unlock(count);
-                            itemStack1.shrink(count);
-                            break;
-                        }
-                    }
+
+        // 检查玩家库存是否已有同类物品
+        checkAndHandleExistingItems(player, type, itemStack);
+
+        // 将物品添加到玩家库存
+        addItemToPlayerInventory(player, itemStack);
+
+        // 返回剩余金额
+        return money - cost;
+    }
+
+    /**
+     * 检查并处理玩家已有的同类物品
+     */
+    private void checkAndHandleExistingItems(Player player, DropType type, ItemStack newItem) {
+        // 如果库存不匹配且不是杂项物品
+        if (!type.inventoryMatch().test(player) && type != DropType.MISC) {
+            // 检查所有库存槽位(主物品栏、装备栏、副手)
+            for (ItemStack existingItem : getAllPlayerItems(player)) {
+                if (type.itemMatch().test(existingItem)) {
+                    handleMatchingItem(player, newItem, existingItem);
+                    break;
                 }
             }
         }
+    }
 
-        if(itemStack.getItem() instanceof ArmorItem armorItem){
-            player.setItemSlot(armorItem.getEquipmentSlot(),itemStack);
-        }else{
+    /**
+     * 获取玩家所有物品(包括装备和副手)
+     */
+    private Iterable<ItemStack> getAllPlayerItems(Player player) {
+        return Iterables.concat(
+                player.getInventory().items,
+                player.getInventory().armor,
+                player.getInventory().offhand
+        );
+    }
+
+    /**
+     * 处理匹配的已有物品
+     */
+    private void handleMatchingItem(Player player, ItemStack newItem, ItemStack existingItem) {
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+        if (!(map instanceof ShopMap<?> shopMap)) return;
+
+        shopMap.getShop(player).ifPresent(shop -> {
+            ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
+            Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(newItem);
+
+            if (pair != null && ((INamedType)pair.getFirst()).dorpUnlock()) {
+                ShopSlot slot = pair.getSecond();
+                slot.unlock(1);
+
+                // 复制并减少已有物品数量
+                ItemStack copied = existingItem.copy();
+                copied.setCount(1);
+                FPSMCore.playerDropMatchItem((ServerPlayer) player, copied);
+                existingItem.shrink(1);
+            }
+        });
+    }
+
+    /**
+     * 将物品添加到玩家库存
+     */
+    private void addItemToPlayerInventory(Player player, ItemStack itemStack) {
+        if (itemStack.getItem() instanceof ArmorItem armorItem) {
+            player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
+        } else {
             player.getInventory().add(itemStack);
             FPSMUtil.sortPlayerInventory(player);
         }
-        return money - cost;
     }
 
     public void setItemSupplier(Supplier<ItemStack> itemSupplier) {
