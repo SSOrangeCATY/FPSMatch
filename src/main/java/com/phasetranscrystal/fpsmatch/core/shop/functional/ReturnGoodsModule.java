@@ -1,5 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
+import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 
 /**
  * 退货模块，用于处理商店槽位的退货逻辑。
@@ -22,6 +24,13 @@ public class ReturnGoodsModule implements ListenerModule {
         if (event.flag >= 1 && event.shopSlot.canReturn(event.player)) {
             event.addMoney(event.shopSlot.getCost());
             event.shopSlot.returnItem(event.player);
+        }
+    }
+
+    @Override
+    public void onCostCheck(CheckCostEvent event,ShopSlot slot){
+        if(slot.canReturn(event.player())){
+            event.addCost(slot.getCost());
         }
     }
 

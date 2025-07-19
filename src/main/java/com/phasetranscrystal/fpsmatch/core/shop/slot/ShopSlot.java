@@ -11,7 +11,6 @@ import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
-import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
@@ -295,9 +294,7 @@ public class ShopSlot{
         cost = defaultCost;
         boughtCount = 0;
         locked = false;
-        this.listener.forEach((listenerModule -> {
-            listenerModule.onReset(this);
-        }));
+        this.listener.forEach((listenerModule -> listenerModule.onReset(this)));
     }
 
     /**
@@ -314,16 +311,12 @@ public class ShopSlot{
             }
         }
         if(!this.listener.isEmpty()){
-            listener.forEach(listenerModule -> {
-                listenerModule.onChange(event);
-            });
+            listener.forEach(listenerModule -> listenerModule.onChange(event));
         }
     }
 
     public void handleCheckCostEvent(CheckCostEvent event){
-        if(this.canReturn(event.player()) && getListenerNames().contains("returnGoods")){
-            event.addCost(this.getCost());
-        }
+        listener.forEach(listenerModule -> listenerModule.onCostCheck(event,this));
     }
 
     public void addListener(ListenerModule listener) {
@@ -332,9 +325,7 @@ public class ShopSlot{
     }
     public List<String> getListenerNames(){
         List<String> names = new ArrayList<>();
-        this.listener.forEach(listenerModule -> {
-            names.add(listenerModule.getName());
-        });
+        this.listener.forEach(listenerModule -> names.add(listenerModule.getName()));
         return names;
     }
 
@@ -367,7 +358,7 @@ public class ShopSlot{
      */
     private void checkAndHandleExistingItems(Player player, DropType type) {
         // 如果库存不匹配且不是杂项物品
-        if (!type.inventoryMatch().test(player) && type != DropType.MISC) {
+        if (type != DropType.MISC && !type.inventoryMatch().test(player)) {
             // 检查所有库存槽位(主物品栏、装备栏、副手)
             for (ItemStack existingItem : getAllPlayerItems(player)) {
                 if (type.itemMatch().test(existingItem)) {
@@ -399,11 +390,8 @@ public class ShopSlot{
         shopMap.getShop(player).ifPresent(shop -> {
             ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(existingItem);
-
             if (pair != null && ((INamedType)pair.getFirst()).dorpUnlock()) {
                 ShopSlot slot = pair.getSecond();
-                if(slot.equals(this)) return;
-
                 slot.unlock(1);
 
                 // 复制并减少已有物品数量
@@ -485,6 +473,7 @@ public class ShopSlot{
         }
         return 0;
     }
+
     public String toString(){
         return "ShopSlot{" +
                 "itemStack=" + this.process() +

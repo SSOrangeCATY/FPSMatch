@@ -77,13 +77,12 @@ public class LMManager {
     public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
         event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
                 .withReadHandler(ChangeShopItemModule::read)
-                .withWriteHandler((manager) -> {
-                    FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
-                        if (module instanceof ChangeShopItemModule cSIM) {
-                            manager.saveData(cSIM, cSIM.getName());
-                        }
-                    });
-                }
+                .withWriteHandler((manager) ->
+                                FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
+                                    if (module instanceof ChangeShopItemModule cSIM) {
+                                        manager.saveData(cSIM, cSIM.getName());
+                                    }
+                                })
                 ).build());
     }
 }

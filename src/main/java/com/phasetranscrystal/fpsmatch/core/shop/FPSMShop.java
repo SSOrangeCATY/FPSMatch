@@ -396,9 +396,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      */
     public Map<String, List<ShopSlot>> getDefaultShopDataMapString() {
         Map<String, List<ShopSlot>> map = new HashMap<>();
-        this.defaultShopData.forEach((k, v) -> {
-            map.put(k.name(), v);
-        });
+        this.defaultShopData.forEach((k, v) -> map.put(k.name(), v));
         return map;
     }
 

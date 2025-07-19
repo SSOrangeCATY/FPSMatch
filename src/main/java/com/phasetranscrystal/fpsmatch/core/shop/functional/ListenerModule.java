@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
+import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 
@@ -20,6 +21,16 @@ public interface ListenerModule {
      */
     default void onChange(ShopSlotChangeEvent event){};
 
+    /**
+     * 处理商店槽位变更事件。
+     * <p>
+     * 当商店槽位的有组ID时且在购买物品计算价格时，该方法会被调用。
+     * 实现该方法时，可以访问事件对象以获取相关信息，并执行自定义逻辑。
+     *
+     * @param event 商店槽位价格检查事件
+     * @param slot 当前商店槽位
+     */
+    default void onCostCheck(CheckCostEvent event, ShopSlot slot){};
 
     /**
      * 处理商店槽位重置事件。
