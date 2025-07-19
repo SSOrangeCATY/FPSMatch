@@ -66,8 +66,10 @@ public enum DropType {
 
     public static DropType getItemDropType(ItemStack itemStack) {
         for (Map.Entry<DropType, List<Predicate<ItemStack>>> entrySet : PREDICATE_MAP.entrySet()) {
-            if(entrySet.getValue().stream().anyMatch(predicate -> predicate.test(itemStack))){
-                return entrySet.getKey();
+            for (Predicate<ItemStack> predicate : entrySet.getValue()) {
+                if (predicate.test(itemStack)) {
+                    return entrySet.getKey();
+                }
             }
         }
         return DropType.MISC;
