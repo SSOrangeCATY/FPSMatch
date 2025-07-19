@@ -162,7 +162,7 @@ public class MatchDropEntity extends Entity {
 
     public void playerTouch(@NotNull Player pEntity) {
         if (!this.level().isClientSide) {
-            if(this.pickupDelay == 0 && this.getDropType().playerPredicate.test(pEntity)){
+            if(this.pickupDelay == 0 && this.getDropType().inventoryMatch().test(pEntity)){
                 ItemStack itemStack = this.getItem();
                 if (!itemStack.isEmpty()) {
                     ItemStack copy = itemStack.copy();
