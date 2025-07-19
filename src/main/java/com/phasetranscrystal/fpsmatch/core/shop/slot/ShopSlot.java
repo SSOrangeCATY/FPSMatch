@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.core.shop.slot;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
@@ -17,7 +16,6 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
-import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -298,9 +296,7 @@ public class ShopSlot{
         boughtCount = 0;
         locked = false;
         this.listener.forEach((listenerModule -> {
-            if(listenerModule instanceof ChangeShopItemModule changeShopItemModule){
-                this.itemSupplier = changeShopItemModule.defaultItem()::copy;
-            }
+            listenerModule.onReset(this);
         }));
     }
 
@@ -319,7 +315,7 @@ public class ShopSlot{
         }
         if(!this.listener.isEmpty()){
             listener.forEach(listenerModule -> {
-                listenerModule.handle(event);
+                listenerModule.onChange(event);
             });
         }
     }

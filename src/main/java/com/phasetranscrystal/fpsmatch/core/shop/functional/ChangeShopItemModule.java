@@ -2,9 +2,10 @@ package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
+
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
@@ -43,7 +44,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
      * @param event 商店槽位变更事件
      */
     @Override
-    public void handle(ShopSlotChangeEvent event) {
+    public void onChange(ShopSlotChangeEvent event) {
         if (event.shopSlot.getBoughtCount() > 0 && !event.shopSlot.returningChecker.test(changedItem)) return;
         if (event.flag > 0) {
             event.shopSlot.itemSupplier = changedItem::copy;
@@ -56,6 +57,12 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
         }
     }
 
+
+    @Override
+    public void onReset(ShopSlot slot){
+        slot.itemSupplier = defaultItem::copy;
+        slot.setCost(defaultCost);
+    }
     /**
      * 获取该模块的名称。
      * <p>

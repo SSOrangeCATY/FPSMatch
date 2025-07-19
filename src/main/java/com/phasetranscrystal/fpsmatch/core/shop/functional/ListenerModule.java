@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 
 /**
  * 监听模块接口，用于定义商店槽位变更事件的处理逻辑。
@@ -17,8 +18,18 @@ public interface ListenerModule {
      *
      * @param event 商店槽位变更事件
      */
-    void handle(ShopSlotChangeEvent event);
+    default void onChange(ShopSlotChangeEvent event){};
 
+
+    /**
+     * 处理商店槽位重置事件。
+     * <p>
+     * 当商店槽位重置时，该方法会被调用。
+     * 实现该方法时，可以访问事件对象以获取相关信息，并执行自定义逻辑。
+     *
+     * @param slot 商店槽位
+     */
+    default void onReset(ShopSlot slot){};
     /**
      * 获取监听模块的名称。
      * <p>

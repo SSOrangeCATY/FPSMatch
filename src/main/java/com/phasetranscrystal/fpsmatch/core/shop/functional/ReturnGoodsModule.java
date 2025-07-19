@@ -18,7 +18,7 @@ public class ReturnGoodsModule implements ListenerModule {
      * @param event 商店槽位变更事件
      */
     @Override
-    public void handle(ShopSlotChangeEvent event) {
+    public void onChange(ShopSlotChangeEvent event) {
         if (event.flag >= 1 && event.shopSlot.canReturn(event.player)) {
             event.addMoney(event.shopSlot.getCost());
             event.shopSlot.returnItem(event.player);
