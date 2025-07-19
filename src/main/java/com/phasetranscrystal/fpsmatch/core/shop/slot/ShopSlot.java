@@ -353,7 +353,9 @@ public class ShopSlot{
                     for(ItemStack itemStack1 : itemStackList){
                         if(type.itemMatch().test(itemStack1)){
                             FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack1.copy());
-                            itemStack1.shrink(1);
+                            int count = itemStack1.getCount();
+                            this.unlock(count);
+                            itemStack1.shrink(count);
                             break;
                         }
                     }
