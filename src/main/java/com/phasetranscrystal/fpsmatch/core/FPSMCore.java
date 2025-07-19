@@ -228,7 +228,6 @@ public class FPSMCore {
                     if(!itemStack.isEmpty()){
                         break;
                     }
-                    List<Predicate<ItemStack>> predicates = DropType.getPredicateByDropType(type);
                     Inventory inventory = serverPlayer.getInventory();
                     List<List<ItemStack>> itemStackList = new ArrayList<>();
                     itemStackList.add(inventory.items);
@@ -236,11 +235,9 @@ public class FPSMCore {
                     itemStackList.add(inventory.offhand);
                     for(List<ItemStack> itemStacks : itemStackList){
                         for(ItemStack stack : itemStacks){
-                            for(Predicate<ItemStack> predicate : predicates){
-                                if (predicate.test(stack)){
-                                    itemStack = stack;
-                                    break;
-                                }
+                            if (type.itemMatch().test(stack)){
+                                itemStack = stack;
+                                break;
                             }
                         }
                     }

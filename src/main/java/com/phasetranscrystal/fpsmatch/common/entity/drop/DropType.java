@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
@@ -15,61 +16,71 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 public enum DropType {
-    MAIN_WEAPON((player -> {
-        int i = 0;
+    MAIN_WEAPON((stack -> {
         for(Predicate<ItemStack> predicate : FPSMUtil.MAIN_WEAPON_PREDICATE){
-            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+            if(predicate.test(stack)){
+                return true;
+            }
         }
-        return i < FPSMConfig.common.mainWeaponCount.get();
+        return false;
     })),
-    SECONDARY_WEAPON((player -> {
-        int i = 0;
+    SECONDARY_WEAPON((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.SECONDARY_WEAPON_PREDICATE) {
-            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+            if(predicate.test(stack)){
+                return true;
+            }
         }
-        return i < FPSMConfig.common.secondaryWeaponCount.get();
+        return false;
     })),
-    THIRD_WEAPON((player -> {
-        int i = 0;
+    THIRD_WEAPON((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.THIRD_WEAPON_PREDICATE) {
-            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+            if(predicate.test(stack)){
+                return true;
+            }
         }
-        return i < FPSMConfig.common.thirdWeaponCount.get();
+        return false;
     })),
-    THROW((player -> {
-        int i = 0;
+    THROW((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.THROW_PREDICATE) {
-            i += player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+            if(predicate.test(stack)){
+                return true;
+            }
         }
-        return i < FPSMConfig.common.throwableCount.get();
+        return false;
     })),
+    MISC((stack -> true));
 
-    MISC((player -> true));
+    private final Predicate<ItemStack> predicate;
 
-    public final Predicate<Player> playerPredicate;
-    DropType(Predicate<Player> playerPredicate) {
-        this.playerPredicate = playerPredicate;
+    DropType(Predicate<ItemStack> predicate) {
+        this.predicate = predicate;
     }
 
-    private static final Map<DropType, List<Predicate<ItemStack>>> PREDICATE_MAP = new HashMap<>();
-
-    static {
-        PREDICATE_MAP.put(DropType.MAIN_WEAPON,FPSMUtil.MAIN_WEAPON_PREDICATE);
-        PREDICATE_MAP.put(DropType.SECONDARY_WEAPON,FPSMUtil.SECONDARY_WEAPON_PREDICATE);
-        PREDICATE_MAP.put(DropType.THIRD_WEAPON,FPSMUtil.THIRD_WEAPON_PREDICATE);
-        PREDICATE_MAP.put(DropType.THROW,FPSMUtil.THROW_PREDICATE);
-        PREDICATE_MAP.put(DropType.MISC,FPSMUtil.MISC_PREDICATE);
+    public Predicate<Player> inventoryMatch(){
+        return (player) -> {
+            int i = player.getInventory().clearOrCountMatchingItems(predicate, 0, player.inventoryMenu.getCraftSlots());
+            return i < getLimit(this);
+        };
     }
-    public static List<Predicate<ItemStack>> getPredicateByDropType(DropType type){
-        return PREDICATE_MAP.get(type);
+
+    public Predicate<ItemStack> itemMatch(){
+        return predicate;
+    }
+
+    public static int getLimit(DropType type){
+        return switch (type) {
+            case MAIN_WEAPON -> FPSMConfig.common.mainWeaponCount.get();
+            case SECONDARY_WEAPON -> FPSMConfig.common.secondaryWeaponCount.get();
+            case THIRD_WEAPON -> FPSMConfig.common.thirdWeaponCount.get();
+            case THROW -> FPSMConfig.common.throwableCount.get();
+            case MISC -> Integer.MAX_VALUE;
+        };
     }
 
     public static DropType getItemDropType(ItemStack itemStack) {
-        for (Map.Entry<DropType, List<Predicate<ItemStack>>> entrySet : PREDICATE_MAP.entrySet()) {
-            for (Predicate<ItemStack> predicate : entrySet.getValue()) {
-                if (predicate.test(itemStack)) {
-                    return entrySet.getKey();
-                }
+        for (DropType type : DropType.values()) {
+            if(type.itemMatch().test(itemStack)){
+                return type;
             }
         }
         return DropType.MISC;

@@ -346,18 +346,15 @@ public class ShopSlot{
         boughtCount++;
         ItemStack itemStack = process();
         DropType type = DropType.getItemDropType(itemStack);
-        if(!type.playerPredicate.test(player)){
+        if(!type.inventoryMatch().test(player)){
             if(type != DropType.MISC){
-                List<Predicate<ItemStack>> predicates = DropType.getPredicateByDropType(type);
                 List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items,player.getInventory().armor,player.getInventory().offhand);
                 for(List<ItemStack> itemStackList : items ){
                     for(ItemStack itemStack1 : itemStackList){
-                        for (Predicate<ItemStack> predicate : predicates){
-                            if(predicate.test(itemStack1)){
-                                FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack1.copy());
-                                itemStack1.shrink(1);
-                                break;
-                            }
+                        if(type.itemMatch().test(itemStack1)){
+                            FPSMCore.playerDropMatchItem((ServerPlayer) player,itemStack1.copy());
+                            itemStack1.shrink(1);
+                            break;
                         }
                     }
                 }
