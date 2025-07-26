@@ -5,4 +5,5 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 public interface IHudRenderer extends IGuiOverlay {
     void onRenderGuiOverlayPre(RenderGuiOverlayEvent.Pre event);
+    boolean isSpectatorRenderable();
 }

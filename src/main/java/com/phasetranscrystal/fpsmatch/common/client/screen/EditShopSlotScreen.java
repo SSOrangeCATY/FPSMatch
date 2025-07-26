@@ -130,7 +130,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         //二级菜单标题
         pGuiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY - 15, 0x404040, false);
         //各个输入框标签：
-        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.dummy_ammo"), ammoFiled, 0xFFFFFF);
+        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.dummyAmmo"), ammoFiled, 0xFFFFFF);
         drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.name"), nameField, 0xFFFFFF);
         drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.price"), priceField, 0xFFFFFF);
         drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.group"), groupField, 0xFFFFFF);

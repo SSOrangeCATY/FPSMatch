@@ -143,12 +143,14 @@ public class FPSMCore {
         return GAMES.containsKey(gameType) && !GAMES.get(gameType).isEmpty() && GAMES.get(gameType).get(0) instanceof ShopMap<?>;
     }
 
-    public List<String> getEnableShopGames(){
-        return GAMES.values().stream()
-                .flatMap(List::stream)
-                .filter(baseMap -> baseMap instanceof ShopMap<?>)
-                .map(BaseMap::getMapName)
-                .collect(Collectors.toList());
+    public List<String> getEnableShopGames(String gameType){
+        List<String> enableShopGames = new ArrayList<>();
+        if (checkGameIsEnableShop(gameType)){
+            GAMES.get(gameType).forEach((map)->{
+                enableShopGames.add(map.getMapName());
+            });
+        }
+        return enableShopGames;
     }
 
     public List<String> getGameTypes(){

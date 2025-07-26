@@ -46,8 +46,10 @@ public class FPSMGameHudManager implements IGuiOverlay{
         String gameType = data.getCurrentGameType();
         boolean isSpectator = data.isSpectator();
         // 渲染游戏HUD
-        if(enable && gameHudMap.containsKey(gameType) && !isSpectator){
+        if(enable && gameHudMap.containsKey(gameType)){
             gameHudMap.get(gameType)
+                    .stream()
+                    .filter(overlay -> overlay.isSpectatorRenderable() || !isSpectator)
                     .forEach(overlay -> overlay.render(gui, guiGraphics, partialTick, screenWidth, screenHeight));
         }
     }

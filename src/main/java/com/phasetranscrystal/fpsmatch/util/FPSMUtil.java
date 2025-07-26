@@ -9,6 +9,7 @@ import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
+import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -247,6 +248,15 @@ public class FPSMUtil {
         }
     }
 
+    public static void setDummyAmmo(ItemStack itemStack, IGun iGun, int amount){
+        TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).ifPresent(index -> {
+            iGun.useDummyAmmo(itemStack);
+            iGun.setMaxDummyAmmoAmount(itemStack, amount);
+            iGun.setDummyAmmoAmount(itemStack, amount);
+            iGun.setCurrentAmmoCount(itemStack, index.getGunData().getAmmoAmount());
+        });
+    }
+
     public static int getTotalDummyAmmo(ItemStack itemStack, IGun iGun){
         Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(commonGunIndexOptional.isPresent()){
@@ -261,7 +271,7 @@ public class FPSMUtil {
     /**
      * use dummy ammo
      * */
-    public static void fixGunItem( @NotNull ItemStack itemStack, @NotNull IGun iGun) {
+    public static void fixGunItem(@NotNull ItemStack itemStack, @NotNull IGun iGun) {
         Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(gunIndexOptional.isPresent()){
             int maxAmmon = gunIndexOptional.get().getGunData().getAmmoAmount();
