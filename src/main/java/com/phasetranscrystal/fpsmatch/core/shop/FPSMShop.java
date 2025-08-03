@@ -13,6 +13,7 @@ import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +35,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     public final String name;
 
     /**
-     * 默认商店数据，存储了商店中所有物品类型及其对应的商店槽位列表。
+     * 默认商店数据，存储了商店中所有类型及其对应的商店槽位列表。
      */
     private final Map<T, ArrayList<ShopSlot>> defaultShopData;
 
@@ -177,7 +178,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * 同步指定玩家的商店槽位数据到客户端。
      *
      * @param player 玩家对象
-     * @param type 物品类型
+     * @param type 类型
      * @param slot 商店槽位
      */
     public void syncShopData(ServerPlayer player, String type, ShopSlot slot) {
@@ -188,7 +189,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * 同步指定玩家的商店槽位数据到客户端。
      *
      * @param player 玩家对象
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      */
     public void syncShopData(ServerPlayer player, T type, int index) {
@@ -267,10 +268,11 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         this.resetPlayerData();
     }
 
+
     /**
      * 替换默认商店数据中的某个槽位。
      *
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param shopSlot 新的商店槽位
      */
@@ -279,10 +281,21 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         this.resetPlayerData();
     }
 
+
+    /**
+     * 获取商店指定槽位的物品
+     *
+     * @param type 类型
+     * @param index 槽位索引
+     */
+    public ItemStack getDefaultShopDataItemStack(String type, int index){
+        return this.defaultShopData.get(valueOf(type)).get(index).process();
+    }
+    
     /**
      * 设置默认商店数据的分组 ID。
      *
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param groupId 分组 ID
      */
@@ -294,7 +307,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     /**
      * 添加默认商店数据的监听模块。
      *
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param listenerModule 监听模块
      */
@@ -306,7 +319,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     /**
      * 移除默认商店数据的监听模块。
      *
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param listenerModule 监听模块名称
      */
@@ -318,7 +331,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     /**
      * 设置默认商店数据的物品堆。
      *
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param itemStack 物品堆
      */
@@ -330,7 +343,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     /**
      * 设置默认商店数据的成本。
      *
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param cost 成本
      */
@@ -418,7 +431,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * 根据玩家的操作类型，更新玩家的商店数据并同步到客户端。
      *
      * @param serverPlayer 玩家对象
-     * @param type 物品类型
+     * @param type 类型
      * @param index 槽位索引
      * @param action 操作类型
      */

@@ -533,7 +533,7 @@ public class FPSMCommand {
         if (map instanceof ShopMap<?> shopMap) {
             Optional<FPSMShop<?>> shop = shopMap.getShop(shopName);
             if(shop.isPresent()){
-                ItemStack itemStack = shop.get().getDefaultShopDataMap().get(shopType).get(slotNum).process();
+                ItemStack itemStack = shop.get().getDefaultShopDataItemStack(shopType, slotNum);
                 if (itemStack.getItem() instanceof IGun iGun) {
                     FPSMUtil.setDummyAmmo(itemStack, iGun, dummyAmmoAmount);
                 }
