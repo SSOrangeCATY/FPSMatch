@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMCommandEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -303,7 +304,7 @@ public class FPSMCommand {
     }
 
     private static int handleReLoad(CommandContext<CommandSourceStack> context) {
-        //TODO MORE
+        MinecraftForge.EVENT_BUS.post(new FPSMReloadEvent(FPSMCore.getInstance()));
         context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.reload.success"), true);
         return 1;
     }
