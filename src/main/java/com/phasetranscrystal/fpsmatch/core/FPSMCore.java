@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -175,6 +176,7 @@ public class FPSMCore {
 
     protected void clearData(){
         GAMES.clear();
+        REGISTRY.clear();
     }
 
     public static void checkAndLeaveTeam(ServerPlayer player){
@@ -199,6 +201,21 @@ public class FPSMCore {
         // 读取数据
         INSTANCE.fpsmDataManager.readData();
     }
+
+
+    @SubscribeEvent
+    public static void onReloadEvent(FPSMReloadEvent event) {
+        for (List<BaseMap> maps : INSTANCE.GAMES.values()) {
+            for (BaseMap map : maps) {
+                try{
+                    map.reload();
+                }catch (Exception e){
+                    FPSMatch.LOGGER.error("{} map reload error: ", map.getMapName(), e);
+                }
+            }
+        }
+    }
+
 
     public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
         RandomSource random = player.getRandom();
