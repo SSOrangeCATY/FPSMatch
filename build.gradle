@@ -104,6 +104,7 @@ repositories {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
     }
+    maven {url "https://maven.mohistmc.com/"}
 
 }
 
@@ -134,7 +135,7 @@ dependencies {
     implementation fg.deobf("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
     runtimeOnly fg.deobf("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
 
-    compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
+    compileOnly fg.deobf("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
     //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

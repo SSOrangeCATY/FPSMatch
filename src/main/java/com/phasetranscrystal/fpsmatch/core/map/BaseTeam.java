@@ -202,6 +202,16 @@ public class BaseTeam {
         return offlinePlayers;
     }
 
+    public List<UUID> getOnlinePlayers() {
+        List<UUID> onlinePlayers = new ArrayList<>();
+        this.players.values().forEach(data -> {
+            if (data.isOnline()) {
+                onlinePlayers.add(data.getOwner());
+            }
+        });
+        return onlinePlayers;
+    }
+
     /**
      * 获取队伍中所有存活玩家的 UUID 列表。
      * @return 存活玩家 UUID 列表
@@ -214,6 +224,22 @@ public class BaseTeam {
             }
         });
         return uuids;
+    }
+
+    public boolean hasNoOnlinePlayers() {
+        if (this.players.isEmpty()) {
+            return true;
+        }
+        for (PlayerData data : this.players.values()) {
+            if (data.isOnline()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean isEmpty() {
+        return this.players.isEmpty();
     }
 
     /**

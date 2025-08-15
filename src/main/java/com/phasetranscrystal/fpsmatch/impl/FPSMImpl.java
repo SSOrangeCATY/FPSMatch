@@ -10,4 +10,8 @@ public class FPSMImpl {
     public static boolean findCounterStrikeGrenadesMod(){
         return ModList.get().isLoaded("csgrenades");
     }
+
+    public static boolean findMohist(){
+        return ModList.get().isLoaded("mohist");
+    }
 }
