@@ -393,13 +393,11 @@ public class ShopSlot{
             if (pair != null && ((INamedType)pair.getFirst()).dorpUnlock()) {
                 ShopSlot slot = pair.getSecond();
                 slot.unlock(1);
-
-                // 复制并减少已有物品数量
-                ItemStack copied = existingItem.copy();
-                copied.setCount(1);
-                FPSMCore.playerDropMatchItem((ServerPlayer) player, copied);
-                existingItem.shrink(1);
             }
+            ItemStack copied = existingItem.copy();
+            copied.setCount(1);
+            FPSMCore.playerDropMatchItem((ServerPlayer) player, copied);
+            existingItem.shrink(1);
         });
     }
 
