@@ -226,6 +226,15 @@ public class BaseTeam {
         return uuids;
     }
 
+    public void sendMessage(Component message) {
+        this.getLivingPlayers().forEach(uuid -> {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent( player -> {
+                        player.displayClientMessage(message,false);
+                    }
+            );
+        });
+    }
+
     public boolean hasNoOnlinePlayers() {
         if (this.players.isEmpty()) {
             return true;
