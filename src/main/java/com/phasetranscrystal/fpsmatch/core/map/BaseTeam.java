@@ -118,7 +118,7 @@ public class BaseTeam {
      */
     public void leave(ServerPlayer player) {
         if (this.hasPlayer(player.getUUID())) {
-            this.players.remove(player.getUUID());
+            this.delPlayer(player.getUUID());
             player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
         }
     }
@@ -129,6 +129,7 @@ public class BaseTeam {
      */
     public void delPlayer(UUID uuid) {
         this.players.remove(uuid);
+        this.teamUnableToSwitch.remove(uuid);
     }
 
     /**

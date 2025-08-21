@@ -346,18 +346,16 @@ public class MapTeams {
      * 如果指定的队伍不存在或队伍已满，则发送提示信息并让玩家离开当前队伍。
      *
      * @param teamName 队伍名称
-     * @param player 玩家对象
+     * @param player   玩家对象
      */
-    public boolean joinTeam(String teamName, ServerPlayer player) {
+    public void joinTeam(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         if (checkTeam(teamName) && !this.testTeamIsFull(teamName)) {
             this.playerJoin(player, teamName);
             this.playerName.put(player.getUUID(), player.getDisplayName());
             player.displayClientMessage(Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), teamName).withStyle(ChatFormatting.GREEN), false);
-            return true;
         } else {
             player.displayClientMessage(Component.translatable("commands.fpsm.team.leave.success",player.getDisplayName()).withStyle(ChatFormatting.RED), false);
-            return false;
         }
     }
 
@@ -487,6 +485,21 @@ public class MapTeams {
             this.teams.values().forEach((t) -> t.leave(player));
         }
         this.playerName.remove(player.getUUID());
+    }
+    /**
+     * 让玩家离开当前所在的队伍。
+     * <p>
+     * 遍历所有队伍，调用队伍的离开方法移除玩家，并从玩家名称映射中移除该玩家的 UUID。
+     *
+     * @param player 玩家UUID
+     */
+    public void leaveTeam(UUID player) {
+        if(this.getSpectatorTeam().hasPlayer(player)){
+            this.spectatorTeam.delPlayer(player);
+        }else{
+            this.teams.values().forEach((t) -> t.delPlayer(player));
+        }
+        this.playerName.remove(player);
     }
 
     /**
