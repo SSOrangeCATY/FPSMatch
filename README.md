@@ -1,5 +1,5 @@
 # FPSMatch [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/FPSMacth) - [中文页](README_ZH-CN.md)
-[Click here to jump to the command help](CommandHelper.md)
+[Click here to jump to the command help](CommandHelper_en-us.md)
 
 ### 📌 Version Info
 | Dependency | Minimum Version |
