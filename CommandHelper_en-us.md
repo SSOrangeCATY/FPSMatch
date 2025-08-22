@@ -1,136 +1,172 @@
-# FPSM Command Help
-Syntax Tree:
-```plaintext
-fpsm
-├── mvp <targets> <sound>
+# FPSM Command Help Document (v1.2.3.14)
+## Command Tree Structure
+
+```
+/fpsm
 ├── save
 ├── sync
 ├── reload
 ├── listenerModule add changeItemModule <changedCost> <defaultCost>
 ├── shop <gameType> <mapName>
-│   ├── modify set <shopName> <shopType> <shopSlot>
-│   │   ├── listenerModule add <listenerModule>
-│   │   ├── listenerModule remove <listenerModule>
-│   │   ├── groupID <groupID>
-│   │   ├── cost <cost>
-│   │   ├── item <item>
-│   │   ├── dummyAmmoAmount <dummyAmmoAmount>
-├── map
-│   ├── create <gameType> <mapName> <from> <to>
-│   ├── modify <mapName>
-│   │   ├── matchEndTeleportPoint <point>
-│   │   ├── bombArea add <from> <to>
-│   │   ├── debug <action>
-│   │   ├── team
-│   │   │   ├── join <targets>
-│   │   │   ├── leave <targets>
-│   │   │   ├── teams
-│   │   │   │   ├── spectator players <targets> <action>
-│   │   │   │   ├── <teamName> kits <action>
-│   │   │   │   │   ├── dummyAmmoAmount <dummyAmmoAmount>
-│   │   │   │   │   ├── item <item> <amount>
-│   │   │   │   ├── spawnpoints <action> <from> <to>
-│   │   │   │   ├── players <targets> <action>
+│   └── modify set <shopName> <shopType> <shopSlot>
+│       ├── listenerModule add <listenerModule>
+│       ├── listenerModule remove <listenerModule>
+│       ├── groupID <groupID>
+│       ├── cost <cost>
+│       ├── item [<item>]
+│       └── dummyAmmoAmount <dummyAmmoAmount>
+└── map
+    ├── create <gameType> <mapName> <from> <to>
+    └── modify <gameType> <mapName>
+        ├── matchEndTeleportPoint <point>
+        ├── bombArea add <from> <to>
+        ├── debug <action>
+        └── team
+            ├── join [<targets>]
+            ├── leave [<targets>]
+            └── teams
+                ├── spectator players <targets> <action>
+                └── <teamName>
+                    ├── kits <action> [<item>] [<amount>] [dummyAmmoAmount <dummyAmmoAmount>]
+                    ├── spawnpoints <action> [<from> <to>]
+                    └── players <targets> <action>
 ```
 
-## 1. /fpsm loadOld
-**Description:** Load old map data.  
-**Parameters:** None  
-**Example:** `/fpsm loadOld`  
-**Explanation:** This command loads old map data from the archive and registers it in the game.
+## Command Details
 
-## 2. /fpsm save
-**Description:** Save current game data.  
-**Parameters:** None  
-**Example:** `/fpsm save`  
-**Explanation:** This command saves the current game data to the archive.
+### 1. `/fpsm save`
+**Description**: Saves all FPSM data to disk  
+**Permission**: Requires OP level 2  
+**Example**:  
+`/fpsm save`  
+**Details**: Writes all current map configurations, shop settings, and team data to persistent storage.
 
-## 3. /fpsm sync
-**Description:** Synchronize shop data.  
-**Parameters:** None  
-**Example:** `/fpsm sync`  
-**Explanation:** This command synchronizes the shop data of all maps to ensure data consistency.
+### 2. `/fpsm sync`
+**Description**: Synchronizes all shop data  
+**Permission**: Requires OP level 2  
+**Example**:  
+`/fpsm sync`  
+**Details**: Forces all shops to reload and update their item data, ensuring consistency across the server.
 
-## 4. /fpsm reload
-**Description:** Reload game data.  
-**Parameters:** None  
-**Example:** `/fpsm reload`  
-**Explanation:** This command reloads the game data, suitable for reloading after data updates.
+### 3. `/fpsm reload`
+**Description**: Reloads all FPSM configurations  
+**Permission**: Requires OP level 2  
+**Example**:  
+`/fpsm reload`  
+**Details**: Triggers a complete reload of all FPSM data, including maps, shops, and modules. This is useful after making manual configuration changes.
 
-## 5. /fpsm listenerModule
-**Description:** Manage listener modules.  
-**Parameters:**
-- `add changeItemModule <changedCost> <defaultCost>`: Add a listener module to change item cost.
-    - `<changedCost>`: The changed item cost.
-    - `<defaultCost>`: The default item cost.  
-      **Example:** `/fpsm listenerModule add changeItemModule 10 5`  
-      **Explanation:** This command adds a listener to change item cost. The main hand item will be set to the changed item, and the off-hand item will be set to the default item.
+### 4. `/fpsm listenerModule add changeItemModule <changedCost> <defaultCost>`
+**Description**: Creates a change item listener module  
+**Parameters**:
+- `changedCost`: Price for the changed item (held in main hand)
+- `defaultCost`: Price for the default item (held in offhand)  
+  **Example**:  
+  `/fpsm listenerModule add changeItemModule 150 100`  
+  **Details**: Creates a module that allows changing shop items. The main hand item becomes the changed item, and the offhand item becomes the default item.
 
-## 6. /fpsm shop
-**Description:** Manage shops.  
-**Parameters:**
-- `<gameType>`: Game type.
-- `<mapName>`: Map name.
-- `<shopName>`: Shop name.
-- `<shopType>`: Shop type.
-- `<shopSlot>`: Shop slot.  
-  **Subcommands:**
-- `modify set <shopName> <shopType> <shopSlot> listenerModule add <listenerModule>`: Add a listener module to the shop.
-    - `<listenerModule>`: Listener module name.  
-      **Example:** `/fpsm shop fpsm map1 modify set shop1 weapon 1 listenerModule add module1`  
-      **Explanation:** This command adds a listener module to the specified shop slot.
-- `modify set <shopName> <shopType> <shopSlot> listenerModule remove <listenerModule>`: Remove a listener module from the shop.
-    - `<listenerModule>`: Listener module name.  
-      **Example:** `/fpsm shop fpsm map1 modify set shop1 weapon 1 listenerModule remove module1`  
-      **Explanation:** This command removes a listener module from the specified shop slot.
-- `modify set <shopName> <shopType> <shopSlot> groupID <groupID>`: Modify the group ID of the shop slot.
-    - `<groupID>`: Group ID.  
-      **Example:** `/fpsm shop fpsm map1 modify set shop1 weapon 1 groupID 2`  
-      **Explanation:** This command modifies the group ID of the specified shop slot.
-- `modify set <shopName> <shopType> <shopSlot> cost <cost>`: Modify the cost of the shop slot.
-    - `<cost>`: Cost.  
-      **Example:** `/fpsm shop fpsm map1 modify set shop1 weapon 1 cost 10`  
-      **Explanation:** This command modifies the cost of the specified shop slot.
-- `modify set <shopName> <shopType> <shopSlot> item <item>`: Modify the item of the shop slot.
-    - `<item>`: Item.  
-      **Example:** `/fpsm shop fpsm map1 modify set shop1 weapon 1 item diamond_sword`  
-      **Explanation:** This command modifies the item of the specified shop slot.
-- `modify set <shopName> <shopType> <shopSlot> dummyAmmoAmount <dummyAmmoAmount>`: Modify the dummy ammo amount of the shop slot.
-    - `<dummyAmmoAmount>`: Dummy ammo amount.  
-      **Example:** `/fpsm shop fpsm map1 modify set shop1 weapon 1 dummyAmmoAmount 50`  
-      **Explanation:** This command modifies the dummy ammo amount of the specified shop slot.
+### 5. Shop Management Commands
 
-## 7. /fpsm map
-**Description:** Manage maps.  
-**Parameters:**
-- `<gameType>`: Game type.
-- `<mapName>`: Map name.
-- `<from>`: Starting coordinates of the area.
-- `<to>`: Ending coordinates of the area.
-- `<point>`: Teleport point coordinates.
-- `<teamName>`: Team name.
-- `<action>`: Debug action, such as start, reset, newRound, cleanup, switch.  
-  **Subcommands:**
-- `create <gameType> <mapName> from <from> to <to>`: Create a new map.  
-  **Example:** `/fpsm map create fpsm map1 from 0 0 0 to 100 100 100`  
-  **Explanation:** This command creates a new map, with the area defined by the two diagonal points `<from>` and `<to>`.
-- `modify <mapName> matchEndTeleportPoint <point>`: Modify the match end teleport point of the map.  
-  **Example:** `/fpsm map modify map1 matchEndTeleportPoint 50 50 50`  
-  **Explanation:** This command modifies the match end teleport point of the specified map.
-- `modify <mapName> bombArea add from <from> to <to>`: Add a bomb area to the map.  
-  **Example:** `/fpsm map modify map1 bombArea add from 0 0 0 to 10 10 10`  
-  **Explanation:** This command adds a bomb area to the specified map, with the area defined by the two diagonal points `<from>` and `<to>`.
-- `modify <mapName> debug <action>`: Perform debug actions on the map.  
-  **Example:** `/fpsm map modify map1 debug start`  
-  **Explanation:** This command performs debug actions on the specified map, with the specific action determined by the `<action>` parameter.
-- `modify <mapName> join`: Join the map.  
-  **Example:** `/fpsm map modify map1 join`  
-  **Explanation:** This command joins the player to the specified map.
-- `modify <mapName> team <teamName> kits <action> <item>`: Modify the starting equipment of the team.
-    - `<action>`: Action type, such as add, clear, list.
-    - `<item>`: Item.  
-      **Example:** `/fpsm map modify map1 team team1 kits add diamond_sword`  
-      **Explanation:** This command adds starting equipment to the specified team.
-- `modify <mapName> team <teamName> teams <action>`
-  - `<action>`: Action type, such as add, clear, clearAll, set. 
-    - `set`: This command sets spawn points for a specified team within a designated area on the map. It can be used to set spawn points for a team, with the ability to specify a rectangular area using two diagonal coordinates. By default, all spawn points within the area are saved with the y coordinate based on the player's position when issuing the command, and the spawn points are aligned to the direction the player is facing. You need to provide extra Vec2 args `<from> <to>`.
+#### `/fpsm shop <gameType> <mapName> modify set <shopName> <shopType> <shopSlot> ...`
+**Description**: Modifies shop slot configurations  
+**Parameters**:
+- `gameType`: Game mode type (e.g., fpsm)
+- `mapName`: Name of the map
+- `shopName`: Name of the shop
+- `shopType`: Type of shop (e.g., WEAPON, EQUIPMENT)
+- `shopSlot`: Slot number (1-5)
+
+**Subcommands**:
+- `listenerModule add <listenerModule>`: Adds a listener module to the slot
+- `listenerModule remove <listenerModule>`: Removes a listener module from the slot
+- `groupID <groupID>`: Sets the group ID for the slot
+- `cost <cost>`: Sets the price for the item in the slot
+- `item [<item>]`: Sets the item for the slot (uses held item if not specified)
+- `dummyAmmoAmount <dummyAmmoAmount>`: Sets dummy ammo amount for guns
+
+**Examples**:  
+`/fpsm shop fpsm dust2 modify set main_shop WEAPON 1 cost 800`  
+`/fpsm shop fpsm dust2 modify set main_shop WEAPON 1 item minecraft:diamond_sword`  
+`/fpsm shop fpsm dust2 modify set main_shop WEAPON 1 dummyAmmoAmount 90`
+
+### 6. Map Management Commands
+
+#### `/fpsm map create <gameType> <mapName> <from> <to>`
+**Description**: Creates a new map  
+**Parameters**:
+- `gameType`: Game mode type
+- `mapName`: Name for the new map
+- `from`: Starting coordinates of the map area
+- `to`: Ending coordinates of the map area  
+  **Example**:  
+  `/fpsm map create fpsm dust2 ~ ~ ~ ~100 ~50 ~100`  
+  **Details**: Creates a new map with the specified boundaries. The area is defined by two opposite corners.
+
+#### `/fpsm map modify <gameType> <mapName> ...`
+**Description**: Modifies map configurations  
+**Subcommands**:
+
+##### a. `matchEndTeleportPoint <point>`
+Sets the teleport location after matches end  
+**Example**:  
+`/fpsm map modify fpsm dust2 matchEndTeleportPoint ~ ~ ~`
+
+##### b. `bombArea add <from> <to>`
+Adds a bomb zone (for bomb defusal modes)  
+**Example**:  
+`/fpsm map modify fpsm dust2 bombArea add ~ ~ ~ ~10 ~5 ~10`
+
+##### c. `debug <action>`
+Debug commands for testing:
+- `start`: Starts the game
+- `reset`: Resets the game
+- `newRound`: Starts a new round
+- `cleanup`: Cleans up the map
+- `switch`: Toggles debug mode
+
+**Example**:  
+`/fpsm map modify fpsm dust2 debug start`
+
+##### d. `team join/leave [<targets>]`
+Joins or leaves the map  
+**Examples**:  
+`/fpsm map modify fpsm dust2 team join`  
+`/fpsm map modify fpsm dust2 team leave @a`
+
+##### e. `teams <teamName> kits <action> ...`
+Manages team starting kits:
+- `add`: Adds an item to the kit (uses held item if not specified)
+- `clear`: Clears all items from the kit
+- `list`: Lists all items in the kit
+- Can include `dummyAmmoAmount` for setting ammo on guns
+
+**Examples**:  
+`/fpsm map modify fpsm dust2 teams T kits add`  
+`/fpsm map modify fpsm dust2 teams T kits add minecraft:stone 64`  
+`/fpsm map modify fpsm dust2 teams T kits add dummyAmmoAmount 90`
+
+##### f. `teams <teamName> spawnpoints <action> [<from> <to>]`
+Manages team spawn points:
+- `add`: Adds a spawn point at current location
+- `clear`: Clears all spawn points for the team
+- `clearall`: Clears all spawn points for all teams
+- `set`: Sets spawn points in a rectangular area (uses current Y position)
+
+**Examples**:  
+`/fpsm map modify fpsm dust2 teams T spawnpoints add`  
+`/fpsm map modify fpsm dust2 teams T spawnpoints set ~-5 ~-5 ~5 ~5`
+
+##### g. `teams <teamName> players <targets> <action>`
+Manages players in teams:
+- `join`: Adds players to the team
+- `leave`: Removes players from the team
+
+**Example**:  
+`/fpsm map modify fpsm dust2 teams T players @a join`
+
+##### h. `teams spectator players <targets> <action>`
+Manages spectators:
+- `join`: Adds players to spectators
+- `leave`: Removes players from spectators
+
+**Example**:  
+`/fpsm map modify fpsm dust2 teams spectator players @a[team=] join`
