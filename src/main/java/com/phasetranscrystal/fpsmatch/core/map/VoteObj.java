@@ -1,10 +1,10 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class VoteObj {
     private final long endVoteTimer;
@@ -12,9 +12,9 @@ public class VoteObj {
     private final Component message;
     private final float requiredPercent;
     private final Map<UUID, Boolean> voteResults = new HashMap<>();
-    private final Set<UUID> votedPlayers = new HashSet<>();
-    private final Consumer<VoteObj> onSuccess;
-    private final Consumer<VoteObj> onFailure;
+    private final Set<UUID> eligiblePlayers = new HashSet<>();
+    private final Runnable onSuccess;
+    private final Runnable onFailure;
     private VoteStatus status = VoteStatus.ONGOING;
     private boolean executed = false;
 
@@ -30,34 +30,56 @@ public class VoteObj {
      * @param requiredPercent 通过所需的玩家比例 (0.0 到 1.0)
      * @param onSuccess 投票成功时的回调
      * @param onFailure 投票失败时的回调
+     * @param eligiblePlayers 有资格投票的玩家集合
      */
     public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
-                   Consumer<VoteObj> onSuccess, Consumer<VoteObj> onFailure) {
+                   Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers) {
         this.endVoteTimer = System.currentTimeMillis() + duration * 1000L;
         this.voteTitle = voteTitle;
         this.message = message;
-        this.requiredPercent = Math.min(requiredPercent, 1f);
+        this.requiredPercent = Math.min(Math.max(requiredPercent, 0f), 1f); // 确保在0-1范围内
         this.onSuccess = onSuccess;
         this.onFailure = onFailure;
+        this.eligiblePlayers.addAll(eligiblePlayers);
     }
 
     /**
      * 处理玩家投票
      */
-    public void processVote(ServerPlayer player, boolean agree) {
-        if (status != VoteStatus.ONGOING) return;
+    public boolean processVote(ServerPlayer player, boolean agree) {
+        if (status != VoteStatus.ONGOING) return false;
 
         UUID playerId = player.getUUID();
+
+        // 检查玩家是否有资格投票
+        if (!eligiblePlayers.contains(playerId)) {
+            return false;
+        }
+
         voteResults.put(playerId, agree);
-        votedPlayers.add(playerId);
+        return true;
+    }
+
+    /**
+     * 添加有资格投票的玩家
+     */
+    public void addEligiblePlayer(UUID playerId) {
+        eligiblePlayers.add(playerId);
+    }
+
+    /**
+     * 移除有资格投票的玩家
+     */
+    public void removeEligiblePlayer(UUID playerId) {
+        eligiblePlayers.remove(playerId);
+        voteResults.remove(playerId);
     }
 
     /**
      * 自动检查投票状态并执行相应操作
-     * @param totalPlayers 当前总玩家数
      * @return true 如果投票已结束，false 如果投票仍在进行中
      */
-    public boolean tick(int totalPlayers) {
+    public boolean tick() {
         if (status != VoteStatus.ONGOING || executed) {
             return true; // 投票已结束或已执行回调
         }
@@ -69,12 +91,19 @@ public class VoteObj {
             return true;
         }
 
-        // 检查是否所有玩家都已投票
-        boolean allVoted = votedPlayers.size() >= totalPlayers;
+        int totalEligiblePlayers = getEligiblePlayerCount();
+        if (totalEligiblePlayers == 0) {
+            status = VoteStatus.FAILED;
+            executeCallback();
+            return true;
+        }
 
         // 计算当前同意票比例
         long agreeCount = voteResults.values().stream().filter(Boolean::booleanValue).count();
-        float currentRatio = totalPlayers > 0 ? (float) agreeCount / totalPlayers : 0f;
+        float currentRatio = (float) agreeCount / totalEligiblePlayers;
+
+        // 检查是否所有有资格的玩家都已投票
+        boolean allVoted = voteResults.size() >= totalEligiblePlayers;
 
         // 检查是否已达到通过比例
         boolean passed = currentRatio >= requiredPercent;
@@ -97,27 +126,53 @@ public class VoteObj {
 
         executed = true;
 
-        switch (status) {
-            case SUCCESS:
-                if (onSuccess != null) {
-                    onSuccess.accept(this);
-                }
-                break;
-            case FAILED:
-                if (onFailure != null) {
-                    onFailure.accept(this);
-                }
-                break;
+        try {
+            switch (status) {
+                case SUCCESS:
+                    if (onSuccess != null) {
+                        onSuccess.run();
+                    }
+                    break;
+                case FAILED:
+                    if (onFailure != null) {
+                        onFailure.run();
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            // 记录回调执行异常，避免影响主线程
+            System.err.println("Vote callback execution failed: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /**
      * 获取未投票的玩家ID
      */
-    public Set<UUID> getNonVotingPlayers(Collection<UUID> allPlayers) {
-        Set<UUID> nonVoting = new HashSet<>(allPlayers);
-        nonVoting.removeAll(votedPlayers);
+    public Set<UUID> getNonVotingPlayers() {
+        Set<UUID> nonVoting = new HashSet<>(eligiblePlayers);
+        nonVoting.removeAll(voteResults.keySet());
         return nonVoting;
+    }
+
+    /**
+     * 获取有资格投票的玩家数量
+     */
+    public int getEligiblePlayerCount() {
+        int count = 0;
+        for (UUID player : eligiblePlayers) {
+            if(FPSMCore.getInstance().getPlayerByUUID(player).isPresent()){
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 获取所有有资格投票的玩家
+     */
+    public Set<UUID> getEligiblePlayers() {
+        return Collections.unmodifiableSet(eligiblePlayers);
     }
 
     // Getter 方法
@@ -154,10 +209,20 @@ public class VoteObj {
     }
 
     public int getVotedCount() {
-        return votedPlayers.size();
+        return voteResults.size();
     }
 
     public boolean hasExecuted() {
         return executed;
+    }
+
+    /**
+     * 强制结束投票（用于特殊情况）
+     */
+    public void forceEnd(VoteStatus forcedStatus) {
+        if (status == VoteStatus.ONGOING && !executed) {
+            status = forcedStatus;
+            executeCallback();
+        }
     }
 }

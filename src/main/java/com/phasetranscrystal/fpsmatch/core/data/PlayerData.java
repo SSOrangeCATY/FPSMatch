@@ -249,6 +249,27 @@ public class PlayerData{
         this.damageData.clear();
     }
 
+    public void reset(){
+        this._assists = 0;
+        this.assists = 0;
+        this._deaths = 0;
+        this.deaths = 0;
+        this._damage = 0;
+        this.damage = 0;
+        this._kills = 0;
+        this.kills = 0;
+        this.mvpCount = 0;
+        this.isLiving = true;
+        this.damageData.clear();
+        this.headshotKills = 0;
+        this.scores = 0;
+    }
+
+    public void resetWithSpawnPoint(){
+        this.reset();
+        this.spawnPointsData = null;
+    }
+
     public String info(){
         return "{\"owner\":\"" + this.owner.toString() + "\"," +
                "\"scores\":" + this.scores + "," +
