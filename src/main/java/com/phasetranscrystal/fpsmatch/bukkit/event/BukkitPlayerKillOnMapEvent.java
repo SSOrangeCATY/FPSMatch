@@ -8,21 +8,22 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class BukkitPlayerKillOnMapEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
-    private final BaseMap map;
+    private final Optional<BaseMap> map;
     private final UUID dead;
     private final UUID killer;
 
-    public BukkitPlayerKillOnMapEvent(BaseMap map, UUID dead, UUID killer) {
+    public BukkitPlayerKillOnMapEvent(Optional<BaseMap> map, UUID dead, UUID killer) {
         this.map = map;
         this.dead = dead;
         this.killer = killer;
     }
 
-    public BaseMap getMap() { return map; }
+    public Optional<BaseMap> getMap() { return map; }
     public UUID getDead() { return dead; }
     public @Nullable Player getDeadPlayer() { return Bukkit.getPlayer(dead); }
     public UUID getKiller() { return killer; }

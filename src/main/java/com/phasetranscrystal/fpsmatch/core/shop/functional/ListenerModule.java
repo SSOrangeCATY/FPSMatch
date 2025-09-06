@@ -19,7 +19,7 @@ public interface ListenerModule {
      *
      * @param event 商店槽位变更事件
      */
-    default void onChange(ShopSlotChangeEvent event){};
+    default void onChange(ShopSlotChangeEvent event){}
 
     /**
      * 处理商店槽位变更事件。
@@ -30,7 +30,7 @@ public interface ListenerModule {
      * @param event 商店槽位价格检查事件
      * @param slot 当前商店槽位
      */
-    default void onCostCheck(CheckCostEvent event, ShopSlot slot){};
+    default void onCostCheck(CheckCostEvent event, ShopSlot slot){}
 
     /**
      * 处理商店槽位重置事件。
@@ -40,7 +40,8 @@ public interface ListenerModule {
      *
      * @param slot 商店槽位
      */
-    default void onReset(ShopSlot slot){};
+    default void onReset(ShopSlot slot){}
+
     /**
      * 获取监听模块的名称。
      * <p>

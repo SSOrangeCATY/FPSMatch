@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
+import com.google.gson.Gson;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +13,7 @@ import java.util.*;
  * 带_前缀的是回合临时数据
  * */
 public class PlayerData{
+    private static final Gson GSON = new Gson();
     private final UUID owner;
     private final Component name;
     private int scores = 0;
@@ -271,13 +273,21 @@ public class PlayerData{
     }
 
     public String info(){
-        return "{\"owner\":\"" + this.owner.toString() + "\"," +
-               "\"scores\":" + this.scores + "," +
-               "\"kills\":" + this.kills + "," +
-               "\"deaths\":" + this.deaths + "," +
-               "\"assists\":" + this.assists + "," +
-               "\"damage\":" + this.damage + "," +
-               "\"headshotKills\":" + this.headshotKills + "," +
-               "\"mvpCount\":" + this.mvpCount + "}";
+        return GSON.toJson(mappedInfo());
+    }
+
+    public Map<String,Object> mappedInfo(){
+        Map<String,Object> info = new HashMap<>();
+        info.put("owner",this.owner.toString());
+        info.put("name",this.name.getString());
+        info.put("living",this.isLiving);
+        info.put("scores",this.scores);
+        info.put("kills",this.kills + _kills);
+        info.put("deaths",this.deaths + this._deaths);
+        info.put("assists",this.assists + this._assists);
+        info.put("damage",this.damage + this._damage);
+        info.put("headshotKills",this.headshotKills);
+        info.put("mvpCount",this.mvpCount);
+        return info;
     }
 }

@@ -21,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
+import java.util.Optional;
 
 
 public class EditShopSlotMenu extends AbstractContainerMenu {
@@ -93,8 +94,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     public void saveData(ServerPlayer serverPlayer) {
         if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
-            BaseMap map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
-            if (map instanceof ShopMap<?> shopMap) {
+            Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
+            if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
                 FPSMShop<?> shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
                 if (shop == null) return;
                 //保存内容,先保存物品后设置内容

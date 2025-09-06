@@ -24,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -384,8 +385,8 @@ public class ShopSlot{
      * 处理匹配的已有物品
      */
     private void handleMatchingItem(Player player, ItemStack existingItem) {
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-        if (!(map instanceof ShopMap<?> shopMap)) return;
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
+        if (!(map.isPresent() && map.get() instanceof ShopMap<?> shopMap)) return;
 
         shopMap.getShop(player).ifPresent(shop -> {
             ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());

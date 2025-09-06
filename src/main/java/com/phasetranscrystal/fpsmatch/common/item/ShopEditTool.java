@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -70,8 +71,8 @@ public class ShopEditTool extends Item {
                         iteractItem.setTag(itemInHand, MAP_TAG, mapList.get(0));
                     }
                     preSelectedMap = iteractItem.getTag(itemInHand, MAP_TAG);
-                    BaseMap map = FPSMCore.getInstance().getMapByName(preSelectedMap);
-                    if (map instanceof ShopMap<?> shopMap) {
+                    Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(preSelectedMap);
+                    if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
                         List<String> shopList = shopMap.getShopNames();
                         if (!shopList.isEmpty() && itemInHand.getOrCreateTag().contains(SHOP_TAG)) {
                             preSelectedShop = iteractItem.getTag(itemInHand, SHOP_TAG);
@@ -94,10 +95,10 @@ public class ShopEditTool extends Item {
                         serverPlayer.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.all_shops").withStyle(ChatFormatting.BOLD)
                                 .append(shopList.toString()).withStyle(ChatFormatting.GREEN)
                         );
-                        BaseTeam team = map.getMapTeams().getTeamByName(newShop).orElse(null);
+                        BaseTeam team = map.get().getMapTeams().getTeamByName(newShop).orElse(null);
                         //加入队伍尝试
                         if (team != null && team.getRemainingLimit() >= 1) {
-                            map.join(newShop, serverPlayer);
+                            map.get().join(newShop, serverPlayer);
                             serverPlayer.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.select_and_join_shop").withStyle(ChatFormatting.BOLD)
                                     .append(newShop).withStyle(ChatFormatting.AQUA)
                             );

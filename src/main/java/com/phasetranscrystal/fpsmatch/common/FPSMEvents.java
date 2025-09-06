@@ -1,10 +1,12 @@
 package com.phasetranscrystal.fpsmatch.common;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.shop.functional.BulletproofArmorWithHelmetListenerModule;
+import com.phasetranscrystal.fpsmatch.common.shop.functional.BulletproofArmorWithoutHelmetListenerModule;
+import com.phasetranscrystal.fpsmatch.common.shop.functional.ChangeShopItemModule;
+import com.phasetranscrystal.fpsmatch.common.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
-import com.phasetranscrystal.fpsmatch.core.shop.functional.ChangeShopItemModule;
-import com.phasetranscrystal.fpsmatch.core.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -36,5 +38,7 @@ public class FPSMEvents {
         event.register(new ReturnGoodsModule());
         ChangeShopItemModule changeShopItemModule = new ChangeShopItemModule(new ItemStack(Items.APPLE), 50, new ItemStack(Items.GOLDEN_APPLE), 300);
         event.register(changeShopItemModule);
+        event.register(new BulletproofArmorWithoutHelmetListenerModule());
+        event.register(new BulletproofArmorWithHelmetListenerModule());
     }
 }

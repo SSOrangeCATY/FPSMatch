@@ -1,13 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -21,7 +15,6 @@ import java.util.Map;
  * 该类通过 Forge 的事件总线注册监听模块，并提供方法添加和获取监听模块。
  * 同时支持将监听模块的数据保存到游戏中。
  */
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LMManager {
     /**
      * 存储所有注册的监听模块。
@@ -70,19 +63,5 @@ public class LMManager {
      */
     public Map<String, ListenerModule> getRegistry() {
         return registry;
-    }
-
-
-    @SubscribeEvent
-    public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
-        event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
-                .withReadHandler(ChangeShopItemModule::read)
-                .withWriteHandler((manager) ->
-                                FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
-                                    if (module instanceof ChangeShopItemModule cSIM) {
-                                        manager.saveData(cSIM, cSIM.getName());
-                                    }
-                                })
-                ).build());
     }
 }

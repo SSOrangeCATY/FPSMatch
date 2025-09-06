@@ -32,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
@@ -59,22 +58,22 @@ public class FPSMCore {
         return INSTANCE != null;
     }
 
-    @Nullable public BaseMap getMapByPlayer(Player player){
+    public Optional<BaseMap> getMapByPlayer(Player player){
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list){
-                if(map.checkGameHasPlayer(player)) return map;
+                if(map.checkGameHasPlayer(player)) return Optional.of(map);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    @Nullable public BaseMap getMapByPlayerWithSpec(Player player){
+    public Optional<BaseMap> getMapByPlayerWithSpec(Player player){
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list){
-                if(map.checkGameHasPlayer(player) || map.checkSpecHasPlayer(player)) return map;
+                if(map.checkGameHasPlayer(player) || map.checkSpecHasPlayer(player)) return Optional.of(map);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     public void registerMap(String type, BaseMap map){
@@ -91,14 +90,13 @@ public class FPSMCore {
         }
     }
 
-    @Nullable public BaseMap getMapByName(String name){
-        AtomicReference<BaseMap> map = new AtomicReference<>();
-        GAMES.forEach((type,mapList)-> mapList.forEach((baseMap)->{
-            if(baseMap.getMapName().equals(name)) {
-                map.set(baseMap);
+    public Optional<BaseMap> getMapByName(String name){
+        for (List<BaseMap> list : GAMES.values()) {
+            for (BaseMap map : list){
+                if(map.getMapName().equals(name)) return Optional.of(map);
             }
-        }));
-       return map.get();
+        }
+        return Optional.empty();
     }
 
     public <T> List<T> getMapByClass(Class<T> clazz){
@@ -180,9 +178,9 @@ public class FPSMCore {
     }
 
     public static void checkAndLeaveTeam(ServerPlayer player){
-        BaseMap map = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
-        if(map != null){
-            map.leave(player);
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
+        if(map.isPresent()){
+            map.get().leave(player);
         }
     }
     @SubscribeEvent
@@ -235,9 +233,9 @@ public class FPSMCore {
     }
 
     public static void playerDeadDropWeapon(ServerPlayer serverPlayer){
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
-        if(map != null){
-            map.getMapTeams().getTeamByPlayer(serverPlayer).ifPresent(team->{
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
+        if(map.isPresent()){
+            map.get().getMapTeams().getTeamByPlayer(serverPlayer).ifPresent(team->{
                 ItemStack itemStack = ItemStack.EMPTY;
                 for(DropType type : DropType.values()){
                     if(type == DropType.MISC){

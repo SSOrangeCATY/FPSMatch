@@ -9,6 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class ShopActionC2SPacket {
@@ -43,9 +44,9 @@ public class ShopActionC2SPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            BaseMap map = FPSMCore.getInstance().getMapByName(name);
-            if(map instanceof ShopMap<?> shopMap){
-                BaseTeam team = map.getMapTeams().getTeamByPlayer(ctx.get().getSender()).orElse(null);
+            Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(name);
+            if(map.isPresent() && map.get() instanceof ShopMap<?> shopMap){
+                BaseTeam team = map.get().getMapTeams().getTeamByPlayer(ctx.get().getSender()).orElse(null);
                 FPSMShop<?> shop = null;
                 if (team != null) {
                     shop = shopMap.getShop(team.name).orElse(null);

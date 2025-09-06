@@ -1,14 +1,19 @@
-package com.phasetranscrystal.fpsmatch.core.shop.functional;
+package com.phasetranscrystal.fpsmatch.common.shop.functional;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
+import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
 /**
  * 改变商店物品的监听模块。
@@ -16,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
  * 该模块用于在商店槽位变更事件中动态修改槽位的物品和价格。
  * 支持在购买时替换物品和价格，并在退回时恢复默认设置。
  */
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule {
     /**
      * 该模块的编解码器，用于序列化和反序列化。
@@ -89,5 +95,19 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     @Override
     public int getPriority() {
         return 1;
+    }
+
+
+    @SubscribeEvent
+    public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
+        event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
+                .withReadHandler(ChangeShopItemModule::read)
+                .withWriteHandler((manager) ->
+                        FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
+                            if (module instanceof ChangeShopItemModule cSIM) {
+                                manager.saveData(cSIM, cSIM.getName());
+                            }
+                        })
+                ).build());
     }
 }

@@ -6,6 +6,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public record PullGameInfoC2SPacket() {
@@ -21,9 +22,9 @@ public record PullGameInfoC2SPacket() {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player != null) {
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map != null) {
-                    map.pullGameInfo(player);
+                Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
+                if (map.isPresent()) {
+                    map.get().pullGameInfo(player);
                 }
             }
         });

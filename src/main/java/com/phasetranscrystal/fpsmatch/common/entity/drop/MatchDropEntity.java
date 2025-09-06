@@ -25,6 +25,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+
 public class MatchDropEntity extends Entity {
     public static final EntityDataAccessor<Integer> DATA_TYPE = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.ITEM_STACK);
@@ -168,8 +170,8 @@ public class MatchDropEntity extends Entity {
                     ItemStack copy = itemStack.copy();
                     copy.setCount(1);
                     itemStack.shrink(1);
-                    BaseMap map = FPSMCore.getInstance().getMapByPlayer(pEntity);
-                    if (map instanceof ShopMap<?> shopMap) {
+                    Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(pEntity);
+                    if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
                         shopMap.getShop(pEntity).ifPresent(shop -> {
                             ShopData<?> shopData = shop.getPlayerShopData(pEntity.getUUID());
                             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(copy);

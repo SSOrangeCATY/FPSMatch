@@ -1,6 +1,7 @@
-package com.phasetranscrystal.fpsmatch.core.shop.functional;
+package com.phasetranscrystal.fpsmatch.common.shop.functional;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
+import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 
 /**

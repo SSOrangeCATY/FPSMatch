@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.*;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
+import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
@@ -101,6 +102,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
         PACKET_REGISTER.registerPacket(GameTabStatsS2CPacket.class);
         PACKET_REGISTER.registerPacket(OpenEditorC2SPacket.class);
+        PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
     }
 
     @SubscribeEvent

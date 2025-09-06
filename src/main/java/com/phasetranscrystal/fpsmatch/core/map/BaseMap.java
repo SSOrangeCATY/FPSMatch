@@ -380,14 +380,14 @@ public abstract class BaseMap {
     @SubscribeEvent
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map == null) {
+            Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
+            if (map.isEmpty()) {
                 if (!player.isCreative()) {
                     player.heal(player.getMaxHealth());
                     player.setGameMode(GameType.ADVENTURE);
                 }
             }else{
-                map.getMapTeams().getTeamByPlayer(player)
+                map.get().getMapTeams().getTeamByPlayer(player)
                         .flatMap(team -> team.getPlayerData(player.getUUID()))
                         .ifPresent(playerData -> {
                             playerData.setLiving(false);
@@ -415,8 +415,8 @@ public abstract class BaseMap {
     @SubscribeEvent
     public static void onPlayerHurt(LivingHurtEvent event){
         if(event.getEntity() instanceof ServerPlayer hurt){
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(hurt);
-            if(map != null && map.isStart) {
+            Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(hurt);
+            if(map.isPresent() && map.get().isStart) {
                 DamageSource source = event.getSource();
                 ServerPlayer attacker;
                 if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
@@ -430,7 +430,7 @@ public abstract class BaseMap {
                 boolean flag = attacker != null && !attacker.isDeadOrDying();
 
                 if (flag) {
-                    if(!attacker.getUUID().equals(hurt.getUUID())) map.getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
+                    if(!attacker.getUUID().equals(hurt.getUUID())) map.get().getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
                 }else{
                     if (attacker == null) return;
                     event.setCanceled(true);
@@ -442,8 +442,8 @@ public abstract class BaseMap {
     @SubscribeEvent
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map != null) {
+            Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
+            if (map.isPresent()) {
                 ServerPlayer attacker = null;
                 if(event.getSource().getEntity() instanceof ServerPlayer sourcePlayer){
                     attacker = sourcePlayer;
