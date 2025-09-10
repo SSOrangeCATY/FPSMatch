@@ -105,7 +105,7 @@ public class FPSMCommand {
                                                                                         .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
                                                                                                 .executes(FPSMCommand::handleModifyItem)))
                                                                                 .then(Commands.literal("dummy_ammo_amount")
-                                                                                        .then(Commands.argument("dummy_ammo_amount", IntegerArgumentType.integer(0))
+                                                                                        .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                                                                                 .executes(FPSMCommand::handleGunModifyGunAmmoAmount)))))))))))
                 .then(Commands.literal("map")
                         .then(Commands.literal("create")
@@ -155,7 +155,7 @@ public class FPSMCommand {
                                                                                         .suggests(FPSMCommandSuggests.SKITS_SUGGESTION)
                                                                                         .executes(FPSMCommand::handleKitsWithoutItemAction)
                                                                                         .then(Commands.literal("dummy_ammo_amount")
-                                                                                                .then(Commands.argument("dummy_ammo_amount", IntegerArgumentType.integer(0))
+                                                                                                .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                                                                                         .executes(FPSMCommand::handleKitsGunModifyGunAmmoAmount)))
                                                                                         .then(Commands.argument("item", ItemArgument.item(event.getBuildContext()))
                                                                                                 .executes(context -> handleKitsWithItemAction(context, 1))
@@ -407,18 +407,18 @@ public class FPSMCommand {
         String shopName = StringArgumentType.getString(context, SHOP_NAME_ARG);
         String shopType = StringArgumentType.getString(context, SHOP_TYPE_ARG).toUpperCase(Locale.ROOT);
         int slotNum = IntegerArgumentType.getInteger(context, SHOP_SLOT_ARG) - 1;
-        int dummy_ammo = IntegerArgumentType.getInteger(context, "dummy_ammo");
+        int amount = IntegerArgumentType.getInteger(context, "amount");
 
         return getMapByName(context)
                 .flatMap(map -> getShop(context, map, shopName))
                 .map(shop -> {
                     ItemStack itemStack = shop.getDefaultShopDataItemStack(shopType, slotNum);
                     if (itemStack.getItem() instanceof IGun iGun) {
-                        FPSMUtil.setDummyAmmo(itemStack, iGun, dummy_ammo);
+                        FPSMUtil.setDummyAmmo(itemStack, iGun, amount);
                     }
                     shop.setDefaultShopDataItemStack(shopType, slotNum, itemStack);
                     sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.modify.gun.success",
-                            shopType, slotNum, itemStack.getDisplayName(), dummy_ammo));
+                            shopType, slotNum, itemStack.getDisplayName(), amount));
                     return 1;
                 })
                 .orElseGet(() -> {
@@ -657,7 +657,7 @@ public class FPSMCommand {
     private static int handleKitsGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
         String teamName = StringArgumentType.getString(context, TEAM_NAME_ARG);
         String action = StringArgumentType.getString(context, ACTION_ARG);
-        int dummy_ammo = IntegerArgumentType.getInteger(context, "dummy_ammo");
+        int amount = IntegerArgumentType.getInteger(context, "amount");
 
         try {
             Player player = getPlayerOrFail(context);
@@ -670,8 +670,8 @@ public class FPSMCommand {
 
                             GunData gunData = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).get().getGunData();
                             iGun.useDummyAmmo(itemStack);
-                            iGun.setMaxDummyAmmoAmount(itemStack, dummy_ammo);
-                            iGun.setDummyAmmoAmount(itemStack, dummy_ammo);
+                            iGun.setMaxDummyAmmoAmount(itemStack, amount);
+                            iGun.setDummyAmmoAmount(itemStack, amount);
                             iGun.setCurrentAmmoCount(itemStack, gunData.getAmmoAmount());
                         }
                         return handleKitsAction(context, (GiveStartKitsMap<?>) map, teamName, action, itemStack);
