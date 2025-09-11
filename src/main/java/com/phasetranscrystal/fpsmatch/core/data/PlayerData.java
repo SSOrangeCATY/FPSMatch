@@ -31,6 +31,9 @@ public class PlayerData{
     private int headshotKills;
     private SpawnPointData spawnPointsData;
 
+    // Client
+    private float hp;
+
     public PlayerData(Player owner) {
         this.owner = owner.getUUID();
         this.name = owner.getDisplayName();
@@ -71,6 +74,7 @@ public class PlayerData{
     }
 
     public Optional<ServerPlayer> getPlayer() {
+        if(!FPSMCore.initialized()) throw new RuntimeException("isOnline method onlyIn serverSide");
         return FPSMCore.getInstance().getPlayerByUUID(this.owner);
     }
 
@@ -169,6 +173,27 @@ public class PlayerData{
 
     public void addKills(){
         this._kills += 1;
+    }
+
+    public float h(){
+        if(!FPSMCore.initialized()) throw new RuntimeException("isOnline method onlyIn serverSide");
+        return this.isLiving ? this.getPlayer().map(Player::getHealth).orElse(0f) : 0f;
+    }
+
+    public float hp(){
+        if(!FPSMCore.initialized()) throw new RuntimeException("isOnline method onlyIn serverSide");
+        float maxHealth = this.getPlayer().map(Player::getMaxHealth).orElse(0f);
+        float health = this.h();
+        if(maxHealth == 0 || health == 0) return 0;
+        return health / maxHealth;
+    }
+
+    public float healthPercent(){
+        return FPSMCore.initialized() ? this.hp() : this.hp;
+    }
+
+    public void setHp(float hp) {
+        this.hp = hp;
     }
 
     public void addDamage(float damage){
@@ -288,6 +313,7 @@ public class PlayerData{
         info.put("damage",this.damage + this._damage);
         info.put("headshotKills",this.headshotKills);
         info.put("mvpCount",this.mvpCount);
+        info.put("hp",healthPercent());
         return info;
     }
 }
