@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.common.effect.FlashBlindnessMobEffect;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,10 +24,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-
 public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
-    // 配置参数
     private final int radius;
+    private static final double MAX_EFFECTIVE_DISTANCE = 48.0;
 
     public FlashBombEntity(EntityType<? extends FlashBombEntity> type, Level level) {
         super(type, level);
@@ -44,17 +44,17 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
     protected void onActivated() {
         applyFlashEffect();
     }
+
     @Override
-    protected void onTimeOut(){
+    protected void onTimeOut() {
         applyFlashEffect();
     }
-
 
     private void applyFlashEffect() {
         AABB area = getBoundingBox().inflate(radius);
         for (Entity entity : level().getEntitiesOfClass(Entity.class, area)) {
             if (entity instanceof LivingEntity living) {
-                if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
+                if (entity instanceof ServerPlayer player && !player.gameMode.isSurvival()) {
                     continue;
                 }
                 applyBlindnessEffect(living);
@@ -64,45 +64,51 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
 
     private void applyBlindnessEffect(LivingEntity target) {
         Vec3 eyePos = new Vec3(target.getX(), target.getEyeY(), target.getZ());
-        if (isLineOfSightBlocked(eyePos)) return;
+        Vec3 flashPos = position();
 
-        double distance = eyePos.distanceTo(position());
+        double distance = eyePos.distanceTo(flashPos);
+        double distanceFactor = getDistanceFactor(distance);
+        double blockingFactor = getBlockingFactor(eyePos, flashPos);
 
-        //有效闪光距离20格 如果超过该距离则削弱效果
+        if (blockingFactor <= 0.0 || distanceFactor <= 0.0) {
+            return;
+        }
 
         double angle = calculateViewAngle(target);
-        int[] duration = calculateBlindnessDuration(angle);
+
+        FlashEffectDuration effectDuration = calculateBlindnessDuration(angle, distanceFactor, blockingFactor);
 
         MobEffectInstance effect = new MobEffectInstance(
                 FPSMEffectRegister.FLASH_BLINDNESS.get(),
-                duration[1], 1
+                effectDuration.totalDuration(),
+                1
         );
 
         if (effect.getEffect() instanceof FlashBlindnessMobEffect flashEffect) {
-            if(distance >= radius){
-                flashEffect.setFullBlindnessTime(1);
-                flashEffect.setTotalAndTicker(10);
-            }else{
-                flashEffect.setFullBlindnessTime(duration[0]);
-                flashEffect.setTotalAndTicker(duration[1] - duration[0]);
-            }
+            flashEffect.setFullBlindnessTime(effectDuration.fullBlindnessTime());
+            flashEffect.setTotalAndTicker(effectDuration.decayTime());
         }
 
         target.addEffect(effect);
 
-
-        if(target instanceof ServerPlayer player){
-            player.connection.send(new ClientboundSoundPacket(Holder.direct(FPSMSoundRegister.flash.get()), SoundSource.PLAYERS, player.getX(), player.getY(), player.getZ(), 0.8f, 1, 0));
+        if (target instanceof ServerPlayer player) {
+            playDistanceBasedSound(player, distance);
         }
     }
 
-    private boolean isLineOfSightBlocked(Vec3 eyePos) {
-        return level().clip(new ClipContext(
-                eyePos, position(),
+    private double getDistanceFactor(double distance) {
+        return Math.max(FPSMUtil.linearInterpolate(1.0, 0.0, distance / MAX_EFFECTIVE_DISTANCE), 0.0);
+    }
+
+    private double getBlockingFactor(Vec3 eyePos, Vec3 flashPos) {
+        ClipContext context = new ClipContext(
+                eyePos, flashPos,
                 ClipContext.Block.VISUAL,
                 ClipContext.Fluid.NONE,
                 null
-        )).getType() == HitResult.Type.BLOCK;
+        );
+        HitResult result = level().clip(context);
+        return result.getType() == HitResult.Type.MISS ? 1.0 : 0.0;
     }
 
     private double calculateViewAngle(LivingEntity target) {
@@ -111,16 +117,59 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         return Math.toDegrees(Math.acos(lookVec.dot(toBomb)));
     }
 
-    private int[] calculateBlindnessDuration(double angle) {
-        if (angle < 53) return new int[]{38, 98};
-        if (angle < 72) return new int[]{9, 68};
-        if (angle < 101) return new int[]{2, 39};
-        return new int[]{1, 6};
+    private FlashEffectDuration calculateBlindnessDuration(double angle, double distanceFactor, double blockingFactor) {
+        double fullyBlindedTime;
+        double totalEffectTime;
+
+        if (angle <= 53.0) {
+            fullyBlindedTime = 1.88;
+            totalEffectTime = 4.0;
+        } else if (angle <= 72.0) {
+            fullyBlindedTime = 0.45;
+            totalEffectTime = 3.0;
+        } else if (angle <= 101.0) {
+            fullyBlindedTime = 0.08;
+            totalEffectTime = 1.5;
+        } else {
+            fullyBlindedTime = 0.08;
+            totalEffectTime = 0.5;
+        }
+
+        fullyBlindedTime = Math.max(0.0, fullyBlindedTime * distanceFactor * blockingFactor);
+        totalEffectTime = Math.max(0.0, totalEffectTime * distanceFactor * blockingFactor);
+
+        int fullBlindnessTicks = (int) (fullyBlindedTime * 20);
+        int totalTicks = (int) (totalEffectTime * 20);
+        int decayTicks = totalTicks - fullBlindnessTicks;
+
+        return new FlashEffectDuration(fullBlindnessTicks, totalTicks, decayTicks);
     }
+
+    private void playDistanceBasedSound(ServerPlayer player, double distance) {
+        float volume = (float) getVolumeFromDistance(distance);
+
+        player.connection.send(new ClientboundSoundPacket(
+                Holder.direct(FPSMSoundRegister.FLASH.get()),
+                SoundSource.PLAYERS,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                volume,
+                1.0f,
+                0
+        ));
+    }
+
+    private double getVolumeFromDistance(double distance) {
+        double maxDistance = 30.0;
+        return Math.max(0.0, 1.0 - (distance / maxDistance));
+    }
+
 
     @Override
     protected @NotNull Item getDefaultItem() {
         return FPSMItemRegister.FLASH_BOMB.get();
     }
 
+    private record FlashEffectDuration(int fullBlindnessTime, int totalDuration, int decayTime) {}
 }

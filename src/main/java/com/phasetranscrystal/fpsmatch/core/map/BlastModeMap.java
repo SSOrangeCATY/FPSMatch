@@ -46,16 +46,7 @@ public interface BlastModeMap<T extends BaseMap> extends IMap<T> {
      *
      * @param bomb 炸弹实体
      */
-    void setBlasting(BlastBombEntity bomb);
-
-    /**
-     * 设置炸弹是否已经爆炸。
-     * <p>
-     * 该方法用于标记炸弹是否已经爆炸，以便在游戏中进行状态检查。
-     *
-     * @param exploded 是否已经爆炸
-     */
-    void setExploded(boolean exploded);
+    void setBombEntity(BlastBombEntity bomb);
 
     /**
      * 获取当前的爆破状态。
@@ -64,16 +55,7 @@ public interface BlastModeMap<T extends BaseMap> extends IMap<T> {
      *
      * @return 爆破状态
      */
-    int isBlasting();
-
-    /**
-     * 检查炸弹是否已经爆炸。
-     * <p>
-     * 返回炸弹是否已经爆炸的状态。
-     *
-     * @return 如果炸弹已经爆炸，返回 true；否则返回 false
-     */
-    boolean isExploded();
+    BlastBombState blastState();
 
     /**
      * 检查指定队伍是否可以放置炸弹。

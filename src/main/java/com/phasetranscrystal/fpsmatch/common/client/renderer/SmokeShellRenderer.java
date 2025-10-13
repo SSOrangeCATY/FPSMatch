@@ -30,6 +30,7 @@ public class SmokeShellRenderer implements EntityRendererProvider<SmokeShellEnti
             final Map<SmokeShellEntity,List<Particle>> particleMap = new HashMap<>();
             final ItemEntityRenderer itemRender = new ItemEntityRenderer(context);
             ItemEntity item = null;
+
             @Override
             public @NotNull ResourceLocation getTextureLocation(@NotNull SmokeShellEntity entity) {
                 return InventoryMenu.BLOCK_ATLAS;

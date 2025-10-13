@@ -78,7 +78,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     //shift 交互忽略
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
-        return null;
+        return ItemStack.EMPTY;
     }
 
     @Override

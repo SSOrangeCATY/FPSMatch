@@ -61,7 +61,7 @@ import java.util.Optional;
                     .ifPresent(attribute -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BulletproofArmorAttributeS2CPacket(attribute)));
         }
 
-        private static int getArmorValue(Player player, boolean headshot) {
+    public static int getArmorValue(Player player, boolean headshot) {
             Optional<BulletproofArmorAttribute> optional = BulletproofArmorAttribute.getInstance(player);
             if(optional.isPresent()) {
                 BulletproofArmorAttribute attribute = optional.get();
@@ -78,7 +78,7 @@ import java.util.Optional;
             return 0;
         }
 
-        private static void reduceArmorDurability(ServerPlayer player, int damage) {
+        public static void reduceArmorDurability(ServerPlayer player, int damage) {
             Optional<BulletproofArmorAttribute> optional = BulletproofArmorAttribute.getInstance(player);
             if(optional.isPresent()) {
                 BulletproofArmorAttribute attribute = optional.get();

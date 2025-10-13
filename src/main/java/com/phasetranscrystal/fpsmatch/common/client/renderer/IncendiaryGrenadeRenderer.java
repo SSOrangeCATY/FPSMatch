@@ -24,6 +24,7 @@ public class IncendiaryGrenadeRenderer implements EntityRendererProvider<Incendi
             public @NotNull ResourceLocation getTextureLocation(@NotNull IncendiaryGrenadeEntity pEntity) {
                 return TextureAtlas.LOCATION_BLOCKS;
             }
+
             @Override
             public void render(@NotNull IncendiaryGrenadeEntity pEntity, float pEntityYaw, float pPartialTicks, @NotNull PoseStack pPoseStack, @NotNull MultiBufferSource pBuffer, int pPackedLight) {
                 super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
@@ -36,7 +37,6 @@ public class IncendiaryGrenadeRenderer implements EntityRendererProvider<Incendi
                 itemRender.render(item, pEntityYaw, 0, pPoseStack, pBuffer, pPackedLight);
                 pPoseStack.popPose();
             }
-
         };
     }
 }

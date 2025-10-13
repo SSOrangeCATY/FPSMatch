@@ -25,6 +25,7 @@ public class GrenadeRenderer implements EntityRendererProvider<GrenadeEntity> {
             public @NotNull ResourceLocation getTextureLocation(GrenadeEntity pEntity) {
                 return TextureAtlas.LOCATION_BLOCKS;
             }
+
             @Override
             public void render(GrenadeEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
                 super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);

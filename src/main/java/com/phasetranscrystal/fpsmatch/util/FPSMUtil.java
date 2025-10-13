@@ -1,9 +1,13 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.google.common.collect.ImmutableList;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
@@ -12,9 +16,12 @@ import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -327,4 +334,89 @@ public class FPSMUtil {
         C4_PREDICATE.add(predicate);
     }
 
+    public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
+        RandomSource random = player.getRandom();
+        DropType type = DropType.getItemDropType(itemStack);
+        MatchDropEntity dropEntity = new MatchDropEntity(player.level(),itemStack,type);
+        double d0 = player.getEyeY() - (double)0.3F;
+        Vec3 pos = new Vec3(player.getX(), d0, player.getZ());
+        dropEntity.setPos(pos);
+        float f8 = Mth.sin(player.getXRot() * ((float)Math.PI / 180F));
+        float f2 = Mth.cos(player.getXRot() * ((float)Math.PI / 180F));
+        float f3 = Mth.sin(player.getYRot() * ((float)Math.PI / 180F));
+        float f4 = Mth.cos(player.getYRot() * ((float)Math.PI / 180F));
+        float f5 = random.nextFloat() * ((float)Math.PI * 2F);
+        float f6 = 0.02F * random.nextFloat();
+        dropEntity.setDeltaMovement((double)(-f3 * f2 * 0.3F) + Math.cos(f5) * (double)f6, -f8 * 0.3F + 0.1F + (random.nextFloat() - random.nextFloat()) * 0.1F, (double)(f4 * f2 * 0.3F) + Math.sin(f5) * (double)f6);
+        player.level().addFreshEntity(dropEntity);
+    }
+
+    public static void playerDeadDropWeapon(ServerPlayer serverPlayer, boolean dropThrowable) {
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
+
+        map.flatMap(baseMap -> baseMap.getMapTeams().getTeamByPlayer(serverPlayer))
+                .ifPresent(team -> {
+                    ItemStack weapon = findWeaponToDrop(serverPlayer);
+
+                    if (!weapon.isEmpty()) {
+                        playerDropMatchItem(serverPlayer, weapon);
+                    }
+
+                    if(!dropThrowable) return;
+                    Inventory inventory = serverPlayer.getInventory();
+                    ItemStack throwable = searchInventoryForType(inventory, DropType.THROW).get(0);
+                    if (!throwable.isEmpty()) {
+                        playerDropMatchItem(serverPlayer, throwable);
+                    }
+                });
+    }
+
+    /**
+     * 查找要掉落的主要武器
+     */
+    private static ItemStack findWeaponToDrop(ServerPlayer serverPlayer) {
+        Inventory inventory = serverPlayer.getInventory();
+
+        // 按优先级搜索所有物品栏
+        for (DropType type : DropType.values()) {
+            if (type == DropType.MISC || type == DropType.THIRD_WEAPON || type == DropType.THROW) {
+                continue;
+            }
+
+            ItemStack foundWeapon = searchInventoryForType(inventory, type).get(0);
+            if (!foundWeapon.isEmpty()) {
+                return foundWeapon;
+            }
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    /**
+     * 在物品栏中搜索指定类型的物品
+     */
+    private static List<ItemStack> searchInventoryForType(Inventory inventory, DropType... type) {
+        List<List<ItemStack>> inventorySections = Arrays.asList(
+                inventory.items,    // 主物品栏
+                inventory.armor,    // 装备栏
+                inventory.offhand   // 副手
+        );
+
+        ArrayList<ItemStack> foundItems = new ArrayList<>();
+        for (List<ItemStack> section : inventorySections) {
+            for (ItemStack stack : section) {
+                for (DropType dropType : type) {
+                    if (!stack.isEmpty() && dropType.itemMatch().test(stack)) {
+                        foundItems.add(stack);
+                    }
+                }
+            }
+        }
+
+        return foundItems.isEmpty() ? List.of(ItemStack.EMPTY) : foundItems;
+    }
+
+    public static double linearInterpolate(double start, double end, double factor) {
+        return start + (end - start) * factor;
+    }
 }

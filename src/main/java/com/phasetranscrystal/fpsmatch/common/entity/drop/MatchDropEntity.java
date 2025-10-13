@@ -1,6 +1,9 @@
 package com.phasetranscrystal.fpsmatch.common.entity.drop;
 
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -8,12 +11,15 @@ import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import com.tacz.guns.api.item.GunTabType;
+import com.tacz.guns.api.item.IGun;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
@@ -23,6 +29,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -36,6 +44,13 @@ public class MatchDropEntity extends Entity {
         this.pickupDelay = 20;
         this.setItem(itemStack);
         this.setDataType(type);
+    }
+
+    public MatchDropEntity(Level pLevel, ItemStack itemStack) {
+        super(EntityRegister.MATCH_DROP_ITEM.get(), pLevel);
+        this.pickupDelay = 20;
+        this.setItem(itemStack);
+        this.setDataType(DropType.getItemDropType(itemStack));
     }
 
     public MatchDropEntity(EntityType<? extends MatchDropEntity> pEntityType, Level pLevel) {
@@ -182,9 +197,18 @@ public class MatchDropEntity extends Entity {
                             }
                         });
                     }
+                    if(itemStack.getItem() instanceof IGun iGun){
+                        Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+                        type.ifPresent(t->{
+                            RegistryObject<SoundEvent> event = FPSMSoundRegister.getGunSound(t, FPSMSoundRegister.SoundType.DORP_PICKUP);
+                            pEntity.level().playSound(pEntity,getOnPos(), event.get(),pEntity.getSoundSource(),1,1);
+                        });
+                    }else{
+                        pEntity.level().playSound(pEntity,getOnPos(), SoundEvents.ITEM_PICKUP,pEntity.getSoundSource(),1,1);
+                    }
+
                     pEntity.addItem(copy);
                     FPSMUtil.sortPlayerInventory(pEntity);
-                    pEntity.level().playSound(pEntity,getOnPos(), SoundEvents.ITEM_PICKUP,pEntity.getSoundSource(),1,1);
                 }else{
                     this.discard();
                 }

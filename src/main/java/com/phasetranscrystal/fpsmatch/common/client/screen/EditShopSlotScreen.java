@@ -112,12 +112,8 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         LocalPlayer player = Minecraft.getInstance().player;
 
         if (player != null) {
-            // 获取 GUI 物品堆
-            ItemStack guiItemStack = this.menu.getGuiItemStack();
-
             // 返回上级菜单
             FPSMatch.INSTANCE.sendToServer(new OpenEditorC2SPacket());
-
         }
     }
 

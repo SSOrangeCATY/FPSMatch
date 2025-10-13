@@ -12,27 +12,27 @@ import org.jetbrains.annotations.NotNull;
 public class MatchDropRenderer implements EntityRendererProvider<MatchDropEntity> {
 
     @Override
-    public @NotNull EntityRenderer<MatchDropEntity> create(Context pContext) {
-        return new EntityRenderer<>(pContext) {
+    public @NotNull EntityRenderer<MatchDropEntity> create(@NotNull Context context) {
+        return new EntityRenderer<>(context) {
 
-            final ItemEntityRenderer itemRender = new ItemEntityRenderer(pContext);
+            final ItemEntityRenderer itemRender = new ItemEntityRenderer(context);
             ItemEntity item = null;
 
             @Override
-            public @NotNull ResourceLocation getTextureLocation(MatchDropEntity pEntity) {
+            public @NotNull ResourceLocation getTextureLocation(@NotNull MatchDropEntity entity) {
                 return TextureAtlas.LOCATION_BLOCKS;
             }
             @Override
-            public void render(MatchDropEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
-                pPoseStack.pushPose();
+            public void render(@NotNull MatchDropEntity entity, float pEntityYaw, float pPartialTicks, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int pPackedLight) {
+                poseStack.pushPose();
                 if(item == null){
-                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), pEntity.getItem());
+                    item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), entity.getItem());
                 }
-                if(!item.getItem().equals(pEntity.getItem(),false)){
-                    item.setItem(pEntity.getItem());
+                if(!item.getItem().equals(entity.getItem(),false)){
+                    item.setItem(entity.getItem());
                 }
-                itemRender.render(item,0,0,pPoseStack,pBuffer,pPackedLight);
-                pPoseStack.popPose();
+                itemRender.render(item,0,0,poseStack,bufferSource,pPackedLight);
+                poseStack.popPose();
             }
         };
     }

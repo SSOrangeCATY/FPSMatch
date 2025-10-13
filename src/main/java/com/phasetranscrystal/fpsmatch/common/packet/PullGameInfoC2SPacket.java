@@ -23,9 +23,7 @@ public record PullGameInfoC2SPacket() {
             ServerPlayer player = ctx.get().getSender();
             if (player != null) {
                 Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map.isPresent()) {
-                    map.get().pullGameInfo(player);
-                }
+                map.ifPresent(baseMap -> baseMap.pullGameInfo(player));
             }
         });
         ctx.get().setPacketHandled(true);

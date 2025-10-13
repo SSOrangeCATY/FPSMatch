@@ -96,6 +96,11 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
         }
     }
 
+    @Override
+    public boolean isAlwaysTicking() {
+        return true;
+    }
+
     // region 核心碰撞逻辑
     /**
      * 处理投掷物的碰撞逻辑。

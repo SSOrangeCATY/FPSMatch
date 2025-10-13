@@ -94,6 +94,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(ThrowEntityC2SPacket.class);
         PACKET_REGISTER.registerPacket(FlashBombAddonS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchGameTypeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMSoundPlayS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicPlayS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicStopS2CPacket.class);
         PACKET_REGISTER.registerPacket(SaveSlotDataC2SPacket.class);

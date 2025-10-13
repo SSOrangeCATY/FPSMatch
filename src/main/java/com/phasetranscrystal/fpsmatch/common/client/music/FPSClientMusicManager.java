@@ -34,7 +34,7 @@ public class FPSClientMusicManager {
      * 播放指定的音乐资源。
      * @param musicResource 音乐资源的 ResourceLocation
      */
-    public static void play(ResourceLocation musicResource) {
+    public static void playMusic(ResourceLocation musicResource) {
         SoundManager soundManager = mc.getSoundManager();
         if (musicResource != null) {
             stop();
@@ -46,15 +46,29 @@ public class FPSClientMusicManager {
         }
     }
 
+    public static void playSound(ResourceLocation musicResource) {
+        SoundManager soundManager = mc.getSoundManager();
+        if (musicResource != null) {
+            SimpleSoundInstance instance = new SimpleSoundInstance(musicResource, SoundSource.VOICE, 1.0F, 1.0F, SoundInstance.createUnseededRandom(), false, 0, SoundInstance.Attenuation.LINEAR, 0.0D, 0.0D, 0.0D, true);
+            soundManager.play(instance);
+        } else {
+            FPSMatch.LOGGER.error("failed to play sound: sound is null");
+        }
+    }
+
     /**
      * 播放指定的音乐事件。
      * <p>
-     * 该方法会调用 {@link #play(ResourceLocation)}，并传入音乐事件的资源路径。
+     * 该方法会调用 {@link #playMusic(ResourceLocation)}，并传入音乐事件的资源路径。
      *
      * @param musicResource 音乐事件
      */
-    public static void play(SoundEvent musicResource) {
-        play(musicResource.getLocation());
+    public static void playMusic(SoundEvent musicResource) {
+        playMusic(musicResource.getLocation());
+    }
+
+    public static void playSound(SoundEvent musicResource) {
+        playSound(musicResource.getLocation());
     }
 
     /**

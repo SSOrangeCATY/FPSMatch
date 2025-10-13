@@ -10,18 +10,11 @@ import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -31,7 +24,6 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
@@ -99,6 +91,7 @@ public class FPSMCore {
         return Optional.empty();
     }
 
+    @SuppressWarnings("unchecked")
     public <T> List<T> getMapByClass(Class<T> clazz){
         ArrayList<T> list = new ArrayList<>();
         for (List<BaseMap> maps : GAMES.values()) {
@@ -179,9 +172,7 @@ public class FPSMCore {
 
     public static void checkAndLeaveTeam(ServerPlayer player){
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
-        if(map.isPresent()){
-            map.get().leave(player);
-        }
+        map.ifPresent(baseMap -> baseMap.leave(player));
     }
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
@@ -214,58 +205,6 @@ public class FPSMCore {
         }
     }
 
-
-    public static void playerDropMatchItem(ServerPlayer player, ItemStack itemStack){
-        RandomSource random = player.getRandom();
-        DropType type = DropType.getItemDropType(itemStack);
-        MatchDropEntity dropEntity = new MatchDropEntity(player.level(),itemStack,type);
-        double d0 = player.getEyeY() - (double)0.3F;
-        Vec3 pos = new Vec3(player.getX(), d0, player.getZ());
-        dropEntity.setPos(pos);
-        float f8 = Mth.sin(player.getXRot() * ((float)Math.PI / 180F));
-        float f2 = Mth.cos(player.getXRot() * ((float)Math.PI / 180F));
-        float f3 = Mth.sin(player.getYRot() * ((float)Math.PI / 180F));
-        float f4 = Mth.cos(player.getYRot() * ((float)Math.PI / 180F));
-        float f5 = random.nextFloat() * ((float)Math.PI * 2F);
-        float f6 = 0.02F * random.nextFloat();
-        dropEntity.setDeltaMovement((double)(-f3 * f2 * 0.3F) + Math.cos(f5) * (double)f6, -f8 * 0.3F + 0.1F + (random.nextFloat() - random.nextFloat()) * 0.1F, (double)(f4 * f2 * 0.3F) + Math.sin(f5) * (double)f6);
-        player.level().addFreshEntity(dropEntity);
-    }
-
-    public static void playerDeadDropWeapon(ServerPlayer serverPlayer){
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(serverPlayer);
-        if(map.isPresent()){
-            map.get().getMapTeams().getTeamByPlayer(serverPlayer).ifPresent(team->{
-                ItemStack itemStack = ItemStack.EMPTY;
-                for(DropType type : DropType.values()){
-                    if(type == DropType.MISC){
-                        break;
-                    }
-                    if(!itemStack.isEmpty()){
-                        break;
-                    }
-                    Inventory inventory = serverPlayer.getInventory();
-                    List<List<ItemStack>> itemStackList = new ArrayList<>();
-                    itemStackList.add(inventory.items);
-                    itemStackList.add(inventory.armor);
-                    itemStackList.add(inventory.offhand);
-                    for(List<ItemStack> itemStacks : itemStackList){
-                        for(ItemStack stack : itemStacks){
-                            if (type.itemMatch().test(stack)){
-                                itemStack = stack;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if(!itemStack.isEmpty()){
-                    playerDropMatchItem(serverPlayer,itemStack);
-                }
-            });
-        }
-    }
-
     public MinecraftServer getServer() {
         return ServerLifecycleHooks.getCurrentServer();
     }
@@ -273,7 +212,6 @@ public class FPSMCore {
     public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
         return Optional.ofNullable(this.getServer().getPlayerList().getPlayer(uuid));
     }
-
 
     public FPSMDataManager getFPSMDataManager() {
         return fpsmDataManager;

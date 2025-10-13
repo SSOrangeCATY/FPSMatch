@@ -16,28 +16,28 @@ import org.jetbrains.annotations.NotNull;
 public class FlashBombRenderer implements EntityRendererProvider<FlashBombEntity> {
 
     @Override
-    public @NotNull EntityRenderer<FlashBombEntity> create(Context pContext) {
-        return new EntityRenderer<>(pContext) {
+    public @NotNull EntityRenderer<FlashBombEntity> create(@NotNull Context context) {
+        return new EntityRenderer<>(context) {
             ItemEntity item = null;
             ItemEntityRenderer itemRender = null;
 
             @Override
-            public @NotNull ResourceLocation getTextureLocation(FlashBombEntity pEntity) {
+            public @NotNull ResourceLocation getTextureLocation(@NotNull FlashBombEntity entity) {
                 return TextureAtlas.LOCATION_BLOCKS;
             }
 
             @Override
-            public void render(FlashBombEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
-                super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
-                if(pEntity.getState() == 2) return;
+            public void render(@NotNull FlashBombEntity entity, float pEntityYaw, float pPartialTicks, @NotNull PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
+                super.render(entity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
+                if(entity.getState() == 2) return;
                 pPoseStack.pushPose();
                 pPoseStack.translate(0.0F, -0.25F, 0.0F);
-                if(item == null){
-                    item = new ItemEntity(pEntity.level(), pEntity.getX(), pEntity.getY(), pEntity.getZ(), new ItemStack(FPSMItemRegister.FLASH_BOMB.get()));
-                    itemRender = new ItemEntityRenderer(pContext);
+                if(item == null) {
+                    item = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(FPSMItemRegister.FLASH_BOMB.get()));
+                    itemRender = new ItemEntityRenderer(context);
                 }
-                item.setXRot(pEntity.getXRot());
-                item.setYRot(pEntity.getYRot());
+                item.setXRot(entity.getXRot());
+                item.setYRot(entity.getYRot());
                 itemRender.render(item, pEntityYaw, 0, pPoseStack, pBuffer, pPackedLight);
                 pPoseStack.popPose();
             }

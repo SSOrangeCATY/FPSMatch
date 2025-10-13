@@ -4,6 +4,9 @@ import com.google.common.collect.Iterables;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -14,12 +17,18 @@ import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -307,7 +316,7 @@ public class ShopSlot{
             if(i > 0){
                 this.boughtCount--;
                 this.unlock();
-                FPSMCore.playerDropMatchItem(event.player,this.process().copy());
+                FPSMUtil.playerDropMatchItem(event.player,this.process().copy());
                 event.setCancelLogic(true);
             }
         }
@@ -336,31 +345,24 @@ public class ShopSlot{
      * @param money 当前金钱
      * @return 购买后剩余金钱
      */
-    public int buy(Player player, int money) {
-        // 增加购买计数
+    public int buy(ServerPlayer player, int money) {
         boughtCount++;
 
-        // 处理生成要购买的物品
         ItemStack itemStack = process();
         DropType type = DropType.getItemDropType(itemStack);
 
-        // 检查玩家库存是否已有同类物品
         checkAndHandleExistingItems(player, type);
 
-        // 将物品添加到玩家库存
         addItemToPlayerInventory(player, itemStack);
 
-        // 返回剩余金额
         return money - cost;
     }
 
     /**
      * 检查并处理玩家已有的同类物品
      */
-    private void checkAndHandleExistingItems(Player player, DropType type) {
-        // 如果库存不匹配且不是杂项物品
+    private void checkAndHandleExistingItems(ServerPlayer player, DropType type) {
         if (type != DropType.MISC && !type.inventoryMatch().test(player)) {
-            // 检查所有库存槽位(主物品栏、装备栏、副手)
             for (ItemStack existingItem : getAllPlayerItems(player)) {
                 if (type.itemMatch().test(existingItem)) {
                     handleMatchingItem(player, existingItem);
@@ -373,7 +375,7 @@ public class ShopSlot{
     /**
      * 获取玩家所有物品(包括装备和副手)
      */
-    private Iterable<ItemStack> getAllPlayerItems(Player player) {
+    private Iterable<ItemStack> getAllPlayerItems(ServerPlayer player) {
         return Iterables.concat(
                 player.getInventory().items,
                 player.getInventory().armor,
@@ -384,7 +386,7 @@ public class ShopSlot{
     /**
      * 处理匹配的已有物品
      */
-    private void handleMatchingItem(Player player, ItemStack existingItem) {
+    private void handleMatchingItem(ServerPlayer player, ItemStack existingItem) {
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
         if (!(map.isPresent() && map.get() instanceof ShopMap<?> shopMap)) return;
 
@@ -397,7 +399,7 @@ public class ShopSlot{
             }
             ItemStack copied = existingItem.copy();
             copied.setCount(1);
-            FPSMCore.playerDropMatchItem((ServerPlayer) player, copied);
+            FPSMUtil.playerDropMatchItem(player, copied);
             existingItem.shrink(1);
         });
     }
@@ -405,7 +407,17 @@ public class ShopSlot{
     /**
      * 将物品添加到玩家库存
      */
-    private void addItemToPlayerInventory(Player player, ItemStack itemStack) {
+    private void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
+        if(itemStack.getItem() instanceof IGun iGun){
+            Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+            type.ifPresent(t->{
+                RegistryObject<SoundEvent> event = FPSMSoundRegister.getGunSound(t, FPSMSoundRegister.SoundType.SHOP_BOUGHT);
+                player.level().playSound(player,player.getOnPos(), event.get(),player.getSoundSource(),1,1);
+            });
+        }else{
+            player.level().playSound(player,player.getOnPos(), SoundEvents.STONE_HIT,player.getSoundSource(),1,1);
+        }
+
         if (itemStack.getItem() instanceof ArmorItem armorItem) {
             player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
         } else {
