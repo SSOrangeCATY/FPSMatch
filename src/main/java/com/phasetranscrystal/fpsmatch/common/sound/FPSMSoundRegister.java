@@ -77,7 +77,7 @@ public class FPSMSoundRegister {
     }
 
     public static SoundEvent getItemDropSound(Item item) {
-        return ITEM_DROP_REGISTRY.getOrDefault(item, SoundEvents.STONE_BUTTON_CLICK_ON);
+        return ITEM_DROP_REGISTRY.getOrDefault(item, SoundEvents.STONE_HIT);
     }
 
     public static SoundEvent getItemBoughtSound(Item item) {
