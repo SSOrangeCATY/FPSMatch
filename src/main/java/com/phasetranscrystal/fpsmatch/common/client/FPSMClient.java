@@ -36,15 +36,6 @@ public class FPSMClient {
         event.register(SwitchPreviousItemKey.KEY);
     }
 
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
-            mc.getSoundManager().stop();
-        }
-    }
-
     public static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((playerInfo) -> 0)
             .thenComparing((playerInfo) -> Optionull.mapOrDefault(playerInfo.getTeam(), PlayerTeam::getName, ""))
             .thenComparing((playerInfo) -> playerInfo.getProfile().getName(), String::compareToIgnoreCase);
