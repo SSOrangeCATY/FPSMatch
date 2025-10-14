@@ -17,7 +17,7 @@ public class FPSMusicStopS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(FPSClientMusicManager::stop);
+        ctx.get().enqueueWork(FPSClientMusicManager::stopMusic);
         ctx.get().setPacketHandled(true);
     }
 }
