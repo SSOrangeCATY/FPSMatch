@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -14,6 +15,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
@@ -410,7 +412,13 @@ public class ShopSlot{
                 player.level().playSound(player,player.getOnPos(),FPSMSoundRegister.getGunBoughtSound(t),player.getSoundSource(),1,1);
             });
         }else{
-            player.level().playSound(player,player.getOnPos(), FPSMSoundRegister.getItemBoughtSound(itemStack.getItem()),player.getSoundSource(),1,1);
+            SoundEvent sound;
+            if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                sound = FPSMSoundRegister.getKnifeBoughtSound();
+            }else{
+                sound = FPSMSoundRegister.getItemBoughtSound(itemStack.getItem());
+            }
+            player.level().playSound(player,player.getOnPos(), sound, player.getSoundSource(),1,1);
         }
 
         if (itemStack.getItem() instanceof ArmorItem armorItem) {

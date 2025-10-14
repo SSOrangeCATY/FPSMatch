@@ -1,9 +1,12 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -52,8 +55,15 @@ public abstract class ItemDropSoundMixin extends Entity {
                             this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
                 });
             } else {
+                SoundEvent sound;
+                if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                    sound = FPSMSoundRegister.getKnifeDropSound();
+                }else{
+                    sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());
+                }
+
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                        FPSMSoundRegister.getItemDropSound(itemStack.getItem()),
+                        sound,
                         this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
             }
         }

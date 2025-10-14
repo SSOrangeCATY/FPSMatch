@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.mixin.accessor.ClientPacketListenerAccessor;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket;
@@ -30,7 +32,12 @@ public class ItemPickupSoundMixin {
         Entity entity = self.getLevel().getEntity(pPacket.getItemId());
 
         if (entity instanceof ItemEntity itemEntity) {
-            SoundEvent sound = FPSMSoundRegister.getItemPickSound(itemEntity.getItem().getItem());
+            SoundEvent sound;
+            if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemEntity.getItem().getItem())){
+                sound = FPSMSoundRegister.getKnifePickupSound();
+            }else{
+                sound = FPSMSoundRegister.getItemPickSound(itemEntity.getItem().getItem());
+            }
             if (sound != null) {
                 ClientPacketListenerAccessor accessor = (ClientPacketListenerAccessor) self;
                 RandomSource random = accessor.getRandom();

@@ -30,6 +30,40 @@ public class FPSMSoundRegister {
     private static final Map<Item, SoundEvent> ITEM_DROP_REGISTRY = new ConcurrentHashMap<>();
     private static final Map<Item, SoundEvent> ITEM_BOUGHT_REGISTRY = new ConcurrentHashMap<>();
 
+    private static SoundEvent KNIFE_PICKUP_SOUND = SoundEvents.ITEM_PICKUP;
+    private static SoundEvent KNIFE_DROP_SOUND = SoundEvents.STONE_BUTTON_CLICK_ON;
+    private static SoundEvent KNIFE_BOUGHT_SOUND = SoundEvents.STONE_HIT;
+
+    public static void registerKnifePickupSound(SoundEvent sound) {
+        KNIFE_PICKUP_SOUND = sound;
+    }
+
+    public static void registerKnifeDropSound(SoundEvent sound) {
+        KNIFE_DROP_SOUND = sound;
+    }
+
+    public static void registerKnifeBoughtSound(SoundEvent sound) {
+        KNIFE_BOUGHT_SOUND = sound;
+    }
+
+    public static SoundEvent getKnifePickupSound() {
+        return KNIFE_PICKUP_SOUND;
+    }
+
+    public static SoundEvent getKnifeDropSound() {
+        return KNIFE_DROP_SOUND;
+    }
+
+    public static SoundEvent getKnifeBoughtSound() {
+        return KNIFE_BOUGHT_SOUND;
+    }
+
+    public static void registerKnifeSounds(SoundEvent pickupSound, SoundEvent dropSound, SoundEvent boughtSound) {
+        registerKnifePickupSound(pickupSound);
+        registerKnifeDropSound(dropSound);
+        registerKnifeBoughtSound(boughtSound);
+    }
+
     public static SoundEvent getItemPickSound(Item item) {
         return ITEM_PICKUP_REGISTRY.getOrDefault(item, SoundEvents.ITEM_PICKUP);
     }
