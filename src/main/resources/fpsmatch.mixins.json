@@ -5,14 +5,17 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
+    "ItemDropSoundMixin",
     "MixinDustParticleOptionsBase",
     "PlayerHurtSelfMixin",
     "PlayerKnockbackMixin"
   ],
   "client": [
+    "ItemPickupSoundMixin",
     "LocalPlayerMixin",
     "MixinMinecraft",
-    "MixinPlayerTabOverlay"
+    "MixinPlayerTabOverlay",
+    "accessor.ClientPacketListenerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

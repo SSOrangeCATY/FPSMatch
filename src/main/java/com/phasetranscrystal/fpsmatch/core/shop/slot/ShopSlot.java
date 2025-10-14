@@ -4,9 +4,7 @@ import com.google.common.collect.Iterables;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -19,7 +17,6 @@ import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -27,7 +24,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
@@ -411,11 +407,10 @@ public class ShopSlot{
         if(itemStack.getItem() instanceof IGun iGun){
             Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
             type.ifPresent(t->{
-                RegistryObject<SoundEvent> event = FPSMSoundRegister.getGunSound(t, FPSMSoundRegister.SoundType.SHOP_BOUGHT);
-                player.level().playSound(player,player.getOnPos(), event.get(),player.getSoundSource(),1,1);
+                player.level().playSound(player,player.getOnPos(),FPSMSoundRegister.getGunBoughtSound(t),player.getSoundSource(),1,1);
             });
         }else{
-            player.level().playSound(player,player.getOnPos(), SoundEvents.STONE_HIT,player.getSoundSource(),1,1);
+            player.level().playSound(player,player.getOnPos(), FPSMSoundRegister.getItemBoughtSound(itemStack.getItem()),player.getSoundSource(),1,1);
         }
 
         if (itemStack.getItem() instanceof ArmorItem armorItem) {

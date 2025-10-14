@@ -1,14 +1,12 @@
 package com.phasetranscrystal.fpsmatch.common.entity.throwable;
 
 import com.phasetranscrystal.fpsmatch.FPSMConfig;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.GunDamageHandler;
-import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -16,17 +14,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
 
 public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     private final int explosionRadius = FPSMConfig.common.grenadeRadius.get();

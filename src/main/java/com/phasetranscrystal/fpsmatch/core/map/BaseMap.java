@@ -452,7 +452,7 @@ public abstract class BaseMap {
                 }
 
                 if (attacker != null){
-                    MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(map, player, attacker));
+                    MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(map.get(), player, attacker));
                 }
             }
         }

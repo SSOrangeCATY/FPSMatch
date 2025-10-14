@@ -15,7 +15,7 @@ import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;

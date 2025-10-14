@@ -1,9 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.entity.drop;
 
 import com.mojang.datafixers.util.Pair;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
@@ -20,7 +18,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -29,7 +26,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,6 +35,8 @@ public class MatchDropEntity extends Entity {
     public static final EntityDataAccessor<Integer> DATA_TYPE = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.ITEM_STACK);
     private int pickupDelay;
+    private boolean hasPlayedLandSound = false;
+
     public MatchDropEntity(Level pLevel, ItemStack itemStack, DropType type) {
         super(EntityRegister.MATCH_DROP_ITEM.get(), pLevel);
         this.pickupDelay = 20;
@@ -70,6 +68,13 @@ public class MatchDropEntity extends Entity {
             this.discard();
         } else {
             super.tick();
+            if (this.onGround() && !hasPlayedLandSound) {
+                playLandSound(this.getItem());
+                hasPlayedLandSound = true;
+            }else{
+                if(!this.onGround()) hasPlayedLandSound = false;
+            }
+
             if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
                 --this.pickupDelay;
             }
@@ -135,6 +140,23 @@ public class MatchDropEntity extends Entity {
         }
     }
 
+    private void playLandSound(ItemStack itemStack) {
+        if (!this.level().isClientSide) {
+            if (itemStack.getItem() instanceof IGun iGun) {
+                Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+                type.ifPresent(t -> {
+                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                            FPSMSoundRegister.getGunDropSound(t),
+                            this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
+                });
+            } else {
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                        FPSMSoundRegister.getItemDropSound(itemStack.getItem()),
+                        this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
+            }
+        }
+    }
+
 
     protected @NotNull BlockPos getBlockPosBelowThatAffectsMyMovement() {
         return this.getOnPos(0.999999F);
@@ -149,7 +171,6 @@ public class MatchDropEntity extends Entity {
         Vec3 vec3 = this.getDeltaMovement();
         this.setDeltaMovement(vec3.x * (double)0.95F, vec3.y + (double)(vec3.y < (double)0.06F ? 5.0E-4F : 0.0F), vec3.z * (double)0.95F);
     }
-
 
     public ItemStack getItem() {
         return this.entityData.get(DATA_ITEM);
@@ -200,11 +221,10 @@ public class MatchDropEntity extends Entity {
                     if(itemStack.getItem() instanceof IGun iGun){
                         Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
                         type.ifPresent(t->{
-                            RegistryObject<SoundEvent> event = FPSMSoundRegister.getGunSound(t, FPSMSoundRegister.SoundType.DORP_PICKUP);
-                            pEntity.level().playSound(pEntity,getOnPos(), event.get(),pEntity.getSoundSource(),1,1);
+                            pEntity.level().playSound(pEntity,getOnPos(), FPSMSoundRegister.getGunPickupSound(t),pEntity.getSoundSource(),1,1);
                         });
                     }else{
-                        pEntity.level().playSound(pEntity,getOnPos(), SoundEvents.ITEM_PICKUP,pEntity.getSoundSource(),1,1);
+                        pEntity.level().playSound(pEntity,getOnPos(), FPSMSoundRegister.getItemPickSound(itemStack.getItem()) ,pEntity.getSoundSource(),1,1);
                     }
 
                     pEntity.addItem(copy);

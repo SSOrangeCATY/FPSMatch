@@ -22,7 +22,6 @@ public class FPSMSoundPlayS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(()-> {
-            FPSClientMusicManager.stop();
             FPSClientMusicManager.playSound(location);
         });
         ctx.get().setPacketHandled(true);

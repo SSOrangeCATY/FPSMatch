@@ -1,21 +1,20 @@
 package com.phasetranscrystal.fpsmatch.common.client;
 
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
 import com.phasetranscrystal.fpsmatch.common.client.key.*;
-import net.minecraft.ChatFormatting;
+import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -35,7 +34,15 @@ public class FPSMClient {
         // 注册键位
         event.register(CustomHudKey.KEY);
         event.register(SwitchPreviousItemKey.KEY);
-        //event.register(DebugMVPHudKey.CUSTOM_TAB_KEY);
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
+            mc.getSoundManager().stop();
+        }
     }
 
     public static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((playerInfo) -> 0)

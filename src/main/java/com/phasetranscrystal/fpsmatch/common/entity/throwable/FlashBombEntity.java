@@ -6,7 +6,7 @@ import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FlashBlindnessMobEffect;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;

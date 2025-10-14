@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.FlashBombEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.GrenadeEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.IncendiaryGrenadeEntity;
