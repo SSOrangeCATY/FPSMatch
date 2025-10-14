@@ -29,6 +29,7 @@ public class FPSClientMusicManager {
     private static final float FADE_DURATION_SECONDS = 1f; // 淡入淡出时长，单位秒
     private static Thread playThread;
     private static volatile boolean playing;
+    private static SoundInstance lastMusic = null;
 
     /**
      * 播放指定的音乐资源。
@@ -37,10 +38,10 @@ public class FPSClientMusicManager {
     public static void playMusic(ResourceLocation musicResource) {
         SoundManager soundManager = mc.getSoundManager();
         if (musicResource != null) {
-            stop();
+            stopMusic();
             SimpleSoundInstance instance = new SimpleSoundInstance(musicResource, SoundSource.VOICE, 1.0F, 1.0F, SoundInstance.createUnseededRandom(), false, 0, SoundInstance.Attenuation.LINEAR, 0.0D, 0.0D, 0.0D, true);
             soundManager.play(instance);
-            playing = true;
+            lastMusic = instance;
         } else {
             FPSMatch.LOGGER.error("failed to play music: music is null");
         }
@@ -76,7 +77,7 @@ public class FPSClientMusicManager {
      * @param music 音频
      */
     public static void play(OnlineMusic music) {
-        stop();
+        stopMusic();
 
         playThread = new Thread(() -> {
             InputStream stream = music.stream();
@@ -166,10 +167,10 @@ public class FPSClientMusicManager {
     /**
      * 停止当前播放的音乐。
      */
-    public static void stop() {
+    public static void stopMusic() {
         if (playing) {
             mc.getMusicManager().stopPlaying();
-            mc.getSoundManager().stop();
+            if(lastMusic != null) mc.getSoundManager().stop(lastMusic);
         }
 
         playing = false;
