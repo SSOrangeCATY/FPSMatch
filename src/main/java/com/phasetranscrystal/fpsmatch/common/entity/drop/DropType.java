@@ -1,19 +1,9 @@
 package com.phasetranscrystal.fpsmatch.common.entity.drop;
 
 import com.phasetranscrystal.fpsmatch.FPSMConfig;
-import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 public enum DropType {

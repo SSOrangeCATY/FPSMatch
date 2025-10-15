@@ -21,23 +21,28 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 public class MatchDropEntity extends Entity {
     public static final EntityDataAccessor<Integer> DATA_TYPE = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.ITEM_STACK);
     private int pickupDelay;
     private boolean hasPlayedLandSound = false;
+    private final float rotation = new Random().nextFloat(0f, 360f);
 
     public MatchDropEntity(Level pLevel, ItemStack itemStack, DropType type) {
         super(EntityRegister.MATCH_DROP_ITEM.get(), pLevel);
@@ -57,6 +62,14 @@ public class MatchDropEntity extends Entity {
         super(pEntityType, pLevel);
     }
 
+    public float getRotation(){
+        return this.rotation;
+    }
+
+    @Override
+    public boolean isPickable() {
+        return true;
+    }
 
     @Override
     protected void defineSynchedData() {
@@ -147,9 +160,7 @@ public class MatchDropEntity extends Entity {
             if (itemStack.getItem() instanceof IGun iGun) {
                 Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
                 type.ifPresent(t -> {
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                            FPSMSoundRegister.getGunDropSound(t),
-                            this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
+                    this.playSound(FPSMSoundRegister.getGunDropSound(t));
                 });
             } else {
                 SoundEvent sound;
@@ -159,9 +170,7 @@ public class MatchDropEntity extends Entity {
                     sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());
                 }
 
-                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                        sound,
-                        this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
+                this.playSound(sound);
             }
         }
     }
@@ -207,6 +216,46 @@ public class MatchDropEntity extends Entity {
         pCompound.putString("DropType",this.getDropType().toString());
     }
 
+    @Override
+    public @NotNull InteractionResult interact(@NotNull Player player, @NotNull InteractionHand hand) {
+        if(!this.level().isClientSide){
+            Inventory inventory = player.getInventory();
+            List<ItemStack> items = FPSMUtil.searchInventoryForType(player.getInventory(), this.getDropType());
+            ItemStack replace = this.getItem().copy();
+            if(replace.getItem() instanceof IGun iGun){
+                Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(replace));
+                type.ifPresent(t->{
+                    this.playSound(FPSMSoundRegister.getGunPickupSound(t));
+                });
+            }else{
+                this.playSound(FPSMSoundRegister.getItemPickSound(replace.getItem()));
+            }
+            if(!items.isEmpty()){
+                ItemStack origin = items.get(0);
+                int slot = inventory.findSlotMatchingItem(origin);
+                if(slot != -1){
+                    ItemStack copied = origin.copy();
+                    inventory.setItem(slot, replace);
+                    FPSMUtil.playerDropMatchItem((ServerPlayer) player,copied);
+                }else{
+                    inventory.add(replace);
+                }
+            }else{
+                inventory.add(replace);
+            }
+            FPSMUtil.sortPlayerInventory(player);
+            this.discard();
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.PASS;
+    }
+
+    public void playSound(@NotNull SoundEvent sound) {
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                sound,
+                this.getSoundSource(), 0.3F, 0.8F + this.random.nextFloat() * 0.4F);
+    }
+
     public void playerTouch(@NotNull Player pEntity) {
         if (!this.level().isClientSide) {
             if(this.pickupDelay == 0 && this.getDropType().inventoryMatch().test(pEntity)){
@@ -227,15 +276,14 @@ public class MatchDropEntity extends Entity {
                             }
                         });
                     }
-                    if(itemStack.getItem() instanceof IGun iGun){
-                        Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+                    if(copy.getItem() instanceof IGun iGun){
+                        Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(copy));
                         type.ifPresent(t->{
-                            pEntity.level().playSound(pEntity,getOnPos(), FPSMSoundRegister.getGunPickupSound(t),pEntity.getSoundSource(),1,1);
+                            this.playSound(FPSMSoundRegister.getGunPickupSound(t));
                         });
                     }else{
-                        pEntity.level().playSound(pEntity,getOnPos(), FPSMSoundRegister.getItemPickSound(itemStack.getItem()) ,pEntity.getSoundSource(),1,1);
+                        this.playSound(FPSMSoundRegister.getItemPickSound(copy.getItem()));
                     }
-
                     pEntity.addItem(copy);
                     FPSMUtil.sortPlayerInventory(pEntity);
                 }else{

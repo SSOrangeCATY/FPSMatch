@@ -130,7 +130,7 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
-    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6518539")
+    implementation fg.deobf("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
     implementation fg.deobf("curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599")
     implementation fg.deobf("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
     runtimeOnly fg.deobf("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")

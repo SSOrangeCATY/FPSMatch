@@ -19,21 +19,21 @@ public class FPSMItemRegister {
     public static RegistryObject<CreativeModeTab> FPSM_TAB;
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, FPSMatch.MODID);
     public static final RegistryObject<BaseThrowAbleItem> SMOKE_SHELL = ITEMS.register("smoke_shell",
-            () -> new BaseThrowAbleItem(new Item.Properties(), SmokeShellEntity::new , FPSMSoundRegister.VOICE_SMOKE::get));
+            () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1), SmokeShellEntity::new , FPSMSoundRegister.VOICE_SMOKE::get));
     public static final RegistryObject<BaseThrowAbleItem> CT_INCENDIARY_GRENADE = ITEMS.register("ct_incendiary_grenade",
-            () -> new BaseThrowAbleItem(new Item.Properties(),
+            () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1),
             (player,level)-> new IncendiaryGrenadeEntity(player,level,3,FPSMItemRegister.CT_INCENDIARY_GRENADE::get)));
     public static final RegistryObject<BaseThrowAbleItem> T_INCENDIARY_GRENADE = ITEMS.register("t_incendiary_grenade",
-            () -> new BaseThrowAbleItem(new Item.Properties(),
+            () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1),
             (player,level)-> new IncendiaryGrenadeEntity(player,level,4,FPSMItemRegister.T_INCENDIARY_GRENADE::get)));
     public static final RegistryObject<BaseThrowAbleItem> GRENADE = ITEMS.register("grenade",
-            () -> new BaseThrowAbleItem(new Item.Properties(), GrenadeEntity::new, FPSMSoundRegister.VOICE_GRENADE::get));
+            () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1), GrenadeEntity::new, FPSMSoundRegister.VOICE_GRENADE::get));
     public static final RegistryObject<BaseThrowAbleItem> FLASH_BOMB = ITEMS.register("flash_bomb",
-            () -> new BaseThrowAbleItem(new Item.Properties(), FlashBombEntity::new, FPSMSoundRegister.VOICE_FLASH::get));
+            () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1), FlashBombEntity::new, FPSMSoundRegister.VOICE_FLASH::get));
     public static final RegistryObject<Item> SHOP_EDIT_TOOL = ITEMS.register("shop_edit_tool",
-            () -> new ShopEditTool(new Item.Properties()));
-    public static final RegistryObject<Item> BULLETPROOF_ARMOR = ITEMS.register("bulletproof_armor", () -> new BulletproofArmor(new Item.Properties(),false));
-    public static final RegistryObject<Item> BULLETPROOF_WITH_HELMET = ITEMS.register("bulletproof_with_helmet", () -> new BulletproofArmor(new Item.Properties(),true));
+            () -> new ShopEditTool(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> BULLETPROOF_ARMOR = ITEMS.register("bulletproof_armor", () -> new BulletproofArmor(new Item.Properties().stacksTo(1),false));
+    public static final RegistryObject<Item> BULLETPROOF_WITH_HELMET = ITEMS.register("bulletproof_with_helmet", () -> new BulletproofArmor(new Item.Properties().stacksTo(1),true));
 
     static {
         TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");

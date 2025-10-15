@@ -1,8 +1,11 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
@@ -16,10 +19,12 @@ import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -364,9 +369,9 @@ public class FPSMUtil {
 
                     if(!dropThrowable) return;
                     Inventory inventory = serverPlayer.getInventory();
-                    ItemStack throwable = searchInventoryForType(inventory, DropType.THROW).get(0);
+                    List<ItemStack> throwable = searchInventoryForType(inventory, DropType.THROW);
                     if (!throwable.isEmpty()) {
-                        playerDropMatchItem(serverPlayer, throwable);
+                        playerDropMatchItem(serverPlayer, throwable.get(0));
                     }
                 });
     }
@@ -374,7 +379,7 @@ public class FPSMUtil {
     /**
      * 查找要掉落的主要武器
      */
-    private static ItemStack findWeaponToDrop(ServerPlayer serverPlayer) {
+    public static ItemStack findWeaponToDrop(ServerPlayer serverPlayer) {
         Inventory inventory = serverPlayer.getInventory();
 
         // 按优先级搜索所有物品栏
@@ -383,9 +388,9 @@ public class FPSMUtil {
                 continue;
             }
 
-            ItemStack foundWeapon = searchInventoryForType(inventory, type).get(0);
+            List<ItemStack> foundWeapon = searchInventoryForType(inventory, type);
             if (!foundWeapon.isEmpty()) {
-                return foundWeapon;
+                return foundWeapon.get(0);
             }
         }
 
@@ -395,7 +400,7 @@ public class FPSMUtil {
     /**
      * 在物品栏中搜索指定类型的物品
      */
-    private static List<ItemStack> searchInventoryForType(Inventory inventory, DropType... type) {
+    public static List<ItemStack> searchInventoryForType(Inventory inventory, DropType... type) {
         List<List<ItemStack>> inventorySections = Arrays.asList(
                 inventory.items,    // 主物品栏
                 inventory.armor,    // 装备栏
@@ -413,10 +418,48 @@ public class FPSMUtil {
             }
         }
 
-        return foundItems.isEmpty() ? List.of(ItemStack.EMPTY) : foundItems;
+        return foundItems;
     }
 
     public static double linearInterpolate(double start, double end, double factor) {
         return start + (end - start) * factor;
+    }
+
+    /**
+     * 将物品添加到玩家库存
+     */
+    public static void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
+        if(itemStack.getItem() instanceof IGun iGun){
+            Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+            type.ifPresent(t->{
+                player.level().playSound(player,player.getOnPos(), FPSMSoundRegister.getGunBoughtSound(t),player.getSoundSource(),1,1);
+            });
+        }else{
+            SoundEvent sound;
+            if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                sound = FPSMSoundRegister.getKnifeBoughtSound();
+            }else{
+                sound = FPSMSoundRegister.getItemBoughtSound(itemStack.getItem());
+            }
+            player.level().playSound(player,player.getOnPos(), sound, player.getSoundSource(),1,1);
+        }
+
+        if (itemStack.getItem() instanceof ArmorItem armorItem) {
+            player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
+        } else {
+            player.getInventory().add(itemStack);
+            FPSMUtil.sortPlayerInventory(player);
+        }
+    }
+
+    /**
+     * 获取玩家所有物品(包括装备和副手)
+     */
+    public static Iterable<ItemStack> getAllPlayerItems(ServerPlayer player) {
+        return Iterables.concat(
+                player.getInventory().items,
+                player.getInventory().armor,
+                player.getInventory().offhand
+        );
     }
 }

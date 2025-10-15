@@ -351,7 +351,7 @@ public class ShopSlot{
 
         checkAndHandleExistingItems(player, type);
 
-        addItemToPlayerInventory(player, itemStack);
+        FPSMUtil.addItemToPlayerInventory(player, itemStack);
 
         return money - cost;
     }
@@ -361,24 +361,13 @@ public class ShopSlot{
      */
     private void checkAndHandleExistingItems(ServerPlayer player, DropType type) {
         if (type != DropType.MISC && !type.inventoryMatch().test(player)) {
-            for (ItemStack existingItem : getAllPlayerItems(player)) {
+            for (ItemStack existingItem : FPSMUtil.getAllPlayerItems(player)) {
                 if (type.itemMatch().test(existingItem)) {
                     handleMatchingItem(player, existingItem);
                     break;
                 }
             }
         }
-    }
-
-    /**
-     * 获取玩家所有物品(包括装备和副手)
-     */
-    private Iterable<ItemStack> getAllPlayerItems(ServerPlayer player) {
-        return Iterables.concat(
-                player.getInventory().items,
-                player.getInventory().armor,
-                player.getInventory().offhand
-        );
     }
 
     /**
@@ -400,33 +389,6 @@ public class ShopSlot{
             FPSMUtil.playerDropMatchItem(player, copied);
             existingItem.shrink(1);
         });
-    }
-
-    /**
-     * 将物品添加到玩家库存
-     */
-    private void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
-        if(itemStack.getItem() instanceof IGun iGun){
-            Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
-            type.ifPresent(t->{
-                player.level().playSound(player,player.getOnPos(),FPSMSoundRegister.getGunBoughtSound(t),player.getSoundSource(),1,1);
-            });
-        }else{
-            SoundEvent sound;
-            if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
-                sound = FPSMSoundRegister.getKnifeBoughtSound();
-            }else{
-                sound = FPSMSoundRegister.getItemBoughtSound(itemStack.getItem());
-            }
-            player.level().playSound(player,player.getOnPos(), sound, player.getSoundSource(),1,1);
-        }
-
-        if (itemStack.getItem() instanceof ArmorItem armorItem) {
-            player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
-        } else {
-            player.getInventory().add(itemStack);
-            FPSMUtil.sortPlayerInventory(player);
-        }
     }
 
     public void setItemSupplier(Supplier<ItemStack> itemSupplier) {
