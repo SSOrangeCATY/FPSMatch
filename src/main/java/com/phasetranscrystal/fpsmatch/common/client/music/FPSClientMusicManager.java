@@ -42,6 +42,7 @@ public class FPSClientMusicManager {
             SimpleSoundInstance instance = new SimpleSoundInstance(musicResource, SoundSource.VOICE, 1.0F, 1.0F, SoundInstance.createUnseededRandom(), false, 0, SoundInstance.Attenuation.LINEAR, 0.0D, 0.0D, 0.0D, true);
             soundManager.play(instance);
             lastMusic = musicResource;
+            playing = true;
         } else {
             FPSMatch.LOGGER.error("failed to play music: music is null");
         }
