@@ -1,11 +1,10 @@
-package com.phasetranscrystal.fpsmatch.core.event;
+package com.phasetranscrystal.fpsmatch.core.event.map;
 
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import net.minecraftforge.eventbus.api.Event;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

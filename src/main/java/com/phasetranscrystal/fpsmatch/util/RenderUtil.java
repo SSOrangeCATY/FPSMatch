@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.util;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
@@ -10,54 +11,63 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.*;
 
 import static com.phasetranscrystal.fpsmatch.common.client.FPSMClient.PLAYER_COMPARATOR;
 
 public class RenderUtil {
-    public static int color(int r,int g,int b){
+
+    public static Vector3f color(int color) {
+        float r = ((color >> 16) & 0xFF) / 255.0f;
+        float g = ((color >> 8) & 0xFF) / 255.0f;
+        float b = (color & 0xFF) / 255.0f;
+        return new Vector3f(r, g, b);
+    }
+
+    public static int color(Vector3f color) {
+        int r = (int) (color.x * 255);
+        int g = (int) (color.y * 255);
+        int b = (int) (color.z * 255);
+        return color(r, g, b);
+    }
+
+    public static int color(int r, int g, int b) {
         return (((0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF)));
     }
 
-    public static int color(int r,int g,int b,int a){
+    public static int color(int r, int g, int b, int a) {
         return (((a) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF)));
     }
 
-    public static Map<String, List<PlayerInfo>> getCSTeamsPlayerInfo(){
+    public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            return getCSTeamsPlayerInfo(mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList());
+            return getTeamsPlayerInfo(mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList());
         }
         return new HashMap<>();
     }
 
-    public static Map<String, List<PlayerInfo>> getCSTeamsPlayerInfo(List<PlayerInfo> playerInfoList){
+    public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo(List<PlayerInfo> playerInfoList) {
         Map<String, List<PlayerInfo>> teamPlayers = new HashMap<>();
-        teamPlayers.put("ct", new ArrayList<>());
-        teamPlayers.put("t", new ArrayList<>());
 
         for (PlayerInfo info : playerInfoList) {
             UUID uuid = info.getProfile().getId();
             FPSMClient.getGlobalData().getPlayerTeam(uuid).ifPresent(team -> {
                 FPSMClient.getGlobalData().getPlayerTabData(uuid).ifPresent(tabData -> {
-                    if(!team.equals("spectator")){
-                        teamPlayers.get(team).add(info);
-                    }
+                    teamPlayers.computeIfAbsent(team,k -> new ArrayList<>()).add(info);
                 });
             });
         }
         return teamPlayers;
     }
 
-    public static Component formatBoolean(boolean value){
-        return Component.literal(String.valueOf(value)).withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
-    }
-
     public static void renderReverseTexture(GuiGraphics guiGraphics, ResourceLocation icon,
-                                            int x, int y, int width, int height){
-        renderTexture(guiGraphics,icon,x,y,width,height,true,false);
+                                            int x, int y, int width, int height) {
+        renderTexture(guiGraphics, icon, x, y, width, height, true, false);
     }
 
     public static void renderTexture(GuiGraphics guiGraphics, ResourceLocation texture,
@@ -101,5 +111,130 @@ public class RenderUtil {
         buffer.vertex(matrix, x + width, y, 0).uv(maxU, minV).endVertex();
 
         BufferUploader.drawWithShader(buffer.end());
+    }
+
+    public static ResourceLocation fetchSkin(UUID id, String name) {
+        return Minecraft.getInstance().getSkinManager()
+                .getInsecureSkinLocation(new GameProfile(id, name));
+    }
+
+
+    /**
+     * 指数平滑算法（用于动画过渡）
+     *
+     * @param cur         当前值
+     * @param target      目标值
+     * @param dt          时间差（秒）
+     * @param halfLifeSec 半衰期（过渡速度）
+     * @return 平滑后的值
+     */
+    public static float expSmooth(float cur, float target, float dt, float halfLifeSec) {
+        if (halfLifeSec <= 0f) return target;
+        double f = Math.pow(0.5d, dt / Math.max(1e-6, halfLifeSec));
+        return (float) (target + (cur - target) * f);
+    }
+
+
+    /**
+     * 调整颜色的透明度
+     *
+     * @param argb 原始ARGB颜色
+     * @param mul  透明度乘数（0-1）
+     * @return 调整后的颜色
+     */
+    public static int mulAlpha(int argb, float mul) {
+        mul = Mth.clamp(mul,0, 1f);
+        int a = (int) (((argb >>> 24) & 0xFF) * mul);
+        return (a << 24) | (argb & 0x00FFFFFF);
+    }
+
+    /**
+     * 颜色插值（从c1过渡到c2）
+     *
+     * @param c1 起始颜色
+     * @param c2 目标颜色
+     * @param t  插值因子（0-1）
+     * @return 插值后的颜色
+     */
+    public static int lerpColor(int c1, int c2, float t) {
+        t = Mth.clamp(t,0, 1f);
+        int a1 = (c1 >>> 24) & 0xFF, r1 = (c1 >>> 16) & 0xFF, g1 = (c1 >>> 8) & 0xFF, b1 = c1 & 0xFF;
+        int a2 = (c2 >>> 24) & 0xFF, r2 = (c2 >>> 16) & 0xFF, g2 = (c2 >>> 8) & 0xFF, b2 = c2 & 0xFF;
+        int a = a1 + Math.round((a2 - a1) * t);
+        int r = r1 + Math.round((r2 - r1) * t);
+        int g = g1 + Math.round((g2 - g1) * t);
+        int b = b1 + Math.round((b2 - b1) * t);
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    /**
+     * 居中缩放绘制字符串
+     *
+     * @param g     绘图工具
+     * @param mc    Minecraft实例
+     * @param text  要绘制的文本
+     * @param x     绘制区域X坐标
+     * @param y     绘制区域Y坐标
+     * @param w     绘制区域宽度
+     * @param h     绘制区域高度
+     * @param color 文本颜色
+     */
+    public static void drawCenteredScaledString(GuiGraphics g, Minecraft mc, String text,
+                                                int x, int y, int w, int h, int color) {
+        int tw = mc.font.width(text);
+        int th = mc.font.lineHeight;
+        float maxW = Math.max(1f, w - 6f);
+        float sx = Math.min(1f, maxW / Math.max(1f, tw));
+        float sy = Math.min(1f, (h - 2f) / th);
+        float scale = Math.min(sx, sy);
+
+        int drawW = Math.round(tw * scale);
+        int drawH = Math.round(th * scale);
+        int dx = x + (w - drawW) / 2;
+        int dy = y + (h - drawH) / 2;
+
+        g.pose().pushPose();
+        g.pose().translate(dx, dy, 0);
+        g.pose().scale(scale, scale, 1f);
+        g.drawString(mc.font, text, 0, 0, color, false);
+        g.pose().popPose();
+    }
+
+    public static int lighten(int rgb, float p) {
+        return mixRGB(rgb, 0xFFFFFF, p);
+    }
+
+    public static int darken(int rgb, float p) {
+        return mixRGB(rgb, 0x000000, p);
+    }
+
+    public static float snapToPixel(float v, float scale) {
+        return Math.round(v * scale) / scale;
+    }
+
+    public static int lerpARGB(int a, int b, float t) {
+        t = Mth.clamp(t, 0f, 1f);
+        int aA = (a >>> 24) & 0xFF, aR = (a >>> 16) & 0xFF, aG = (a >>> 8) & 0xFF, aB = a & 0xFF;
+        int bA = (b >>> 24) & 0xFF, bR = (b >>> 16) & 0xFF, bG = (b >>> 8) & 0xFF, bB = b & 0xFF;
+        int rA = aA + Math.round((bA - aA) * t);
+        int rR = aR + Math.round((bR - aR) * t);
+        int rG = aG + Math.round((bG - aG) * t);
+        int rB = aB + Math.round((bB - aB) * t);
+        return (rA << 24) | (rR << 16) | (rG << 8) | rB;
+    }
+
+    public static int mixRGB(int c1, int c2, float p) {
+        p = Mth.clamp(p, 0f, 1f);
+        int r1 = (c1 >>> 16) & 0xFF, g1 = (c1 >>> 8) & 0xFF, b1 = c1 & 0xFF;
+        int r2 = (c2 >>> 16) & 0xFF, g2 = (c2 >>> 8) & 0xFF, b2 = c2 & 0xFF;
+        int r = (int) (r1 + (r2 - r1) * p), g = (int) (g1 + (g2 - g1) * p), b = (int) (b1 + (b2 - b1) * p);
+        return (r << 16) | (g << 8) | b;
+    }
+
+    public static float easeOutBack(float t) {
+        t = Mth.clamp(t, 0f, 1f);
+        float c1 = 1.70158f, c3 = c1 + 1f;
+        float u = t - 1f;
+        return 1f + c3 * u * u * u + c1 * u * u;
     }
 }

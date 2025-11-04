@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.entity.throwable;
 
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
@@ -17,7 +17,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -41,7 +40,7 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
             Optional<BaseMap> baseMap = FPSMCore.getInstance().getMapByPlayer(player);
             if(baseMap.isPresent()){
                 baseMap.get().getMapTeams().getTeamByPlayer(player).ifPresent(t->{
-                    this.setParticleOptions(new DustParticleOptions(t.getColor(), 10F));
+                    this.setParticleOptions(new DustParticleOptions(t.getColorVec3f(), 10F));
                 });
             }
         }

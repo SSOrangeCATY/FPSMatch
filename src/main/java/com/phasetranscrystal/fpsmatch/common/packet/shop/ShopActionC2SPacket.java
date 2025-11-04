@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.packet.shop;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.*;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;

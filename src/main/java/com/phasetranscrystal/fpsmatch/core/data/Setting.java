@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.data;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * 用于存储和管理配置项的通用类。
@@ -15,6 +16,7 @@ import com.mojang.serialization.JsonOps;
  *     <li>提供配置值的获取和设置方法。</li>
  *     <li>将配置值编码为 JSON 元素。</li>
  *     <li>从 JSON 元素中解码配置值。</li>
+ *     <li>提供创建各种类型配置项的静态工厂方法。</li>
  * </ul>
  *
  * @param <T> 配置值的类型，必须与指定的 Codec 兼容。
@@ -31,7 +33,7 @@ public class Setting<T> {
     private final String configName;
 
     /**
-     * 当前配置值。
+     * 当前配置值。S
      */
     private T value;
 
@@ -108,5 +110,91 @@ public class Setting<T> {
         this.value = this.codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
             throw new RuntimeException(e);
         }).getFirst();
+    }
+
+    public void readFromBuf(FriendlyByteBuf buf){
+        value = buf.readJsonWithCodec(codec);
+    };
+
+    public void writeToBuf(FriendlyByteBuf buf){
+        buf.writeJsonWithCodec(codec, this.value);
+    };
+
+
+    /**
+     * 创建一个整型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<Integer> ofInt(String configName, int defaultValue) {
+        return new Setting<>(configName, Codec.INT, defaultValue);
+    }
+
+    /**
+     * 创建一个长整型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<Long> ofLong(String configName, long defaultValue) {
+        return new Setting<>(configName, Codec.LONG, defaultValue);
+    }
+
+    /**
+     * 创建一个浮点型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<Float> ofFloat(String configName, float defaultValue) {
+        return new Setting<>(configName, Codec.FLOAT, defaultValue);
+    }
+
+    /**
+     * 创建一个双精度浮点型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<Double> ofDouble(String configName, double defaultValue) {
+        return new Setting<>(configName, Codec.DOUBLE, defaultValue);
+    }
+
+    /**
+     * 创建一个字节型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<Byte> ofByte(String configName, byte defaultValue) {
+        return new Setting<>(configName, Codec.BYTE, defaultValue);
+    }
+
+    /**
+     * 创建一个布尔型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<Boolean> ofBoolean(String configName, boolean defaultValue) {
+        return new Setting<>(configName, Codec.BOOL, defaultValue);
+    }
+
+    /**
+     * 创建一个字符串配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 配置项实例。
+     */
+    public static Setting<String> ofString(String configName, String defaultValue) {
+        return new Setting<>(configName, Codec.STRING, defaultValue);
     }
 }

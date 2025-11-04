@@ -1,3 +1,4 @@
+// IConfigureMap.java
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.google.gson.Gson;
@@ -149,6 +150,8 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
         }
     }
 
+    // ========== 使用 Setting 类的静态工厂方法 ==========
+
     /**
      * 添加一个整型配置项。
      *
@@ -157,7 +160,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Integer> addSetting(String configName, int defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.INT, defaultValue));
+        return addSetting(Setting.ofInt(configName, defaultValue));
     }
 
     /**
@@ -168,7 +171,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Long> addSetting(String configName, long defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.LONG, defaultValue));
+        return addSetting(Setting.ofLong(configName, defaultValue));
     }
 
     /**
@@ -179,7 +182,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Float> addSetting(String configName, float defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.FLOAT, defaultValue));
+        return addSetting(Setting.ofFloat(configName, defaultValue));
     }
 
     /**
@@ -190,7 +193,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Double> addSetting(String configName, double defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.DOUBLE, defaultValue));
+        return addSetting(Setting.ofDouble(configName, defaultValue));
     }
 
     /**
@@ -201,7 +204,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Byte> addSetting(String configName, byte defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.BYTE, defaultValue));
+        return addSetting(Setting.ofByte(configName, defaultValue));
     }
 
     /**
@@ -212,7 +215,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Boolean> addSetting(String configName, boolean defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.BOOL, defaultValue));
+        return addSetting(Setting.ofBoolean(configName, defaultValue));
     }
 
     /**
@@ -223,6 +226,6 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<String> addSetting(String configName, String defaultValue) {
-        return addSetting(new Setting<>(configName, Codec.STRING, defaultValue));
+        return addSetting(Setting.ofString(configName, defaultValue));
     }
 }

@@ -15,9 +15,12 @@ import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
-import com.tacz.guns.config.sync.SyncConfig;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.core.event.team.FPSMTeamCapabilityRegisterEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -56,11 +59,15 @@ import org.slf4j.LoggerFactory;
  */
 @Mod(FPSMatch.MODID)
 public class FPSMatch {
+
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
     private static final String PROTOCOL_VERSION = "1.2.1";
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
+    public static final String DEBUG_SYS_PROP = "fpsm.debug";
+    private static volatile boolean DEBUG_ENABLED =
+            Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
 
     public FPSMatch(FMLJavaModLoadingContext context)
     {
@@ -74,6 +81,8 @@ public class FPSMatch {
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
+
+        MinecraftForge.EVENT_BUS.post(new FPSMTeamCapabilityRegisterEvent());
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
         if(FPSMBukkit.isBukkitEnvironment()){
@@ -105,6 +114,8 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(GameTabStatsS2CPacket.class);
         PACKET_REGISTER.registerPacket(OpenEditorC2SPacket.class);
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
+        PACKET_REGISTER.registerPacket(TeamCapabilitySyncS2CPacket.class);
     }
 
     @SubscribeEvent
@@ -138,6 +149,18 @@ public class FPSMatch {
             event.registerEntityRenderer(EntityRegister.MATCH_DROP_ITEM.get(),new MatchDropRenderer());
         }
     }
+
+    public static synchronized boolean switchDebug(){
+        return DEBUG_ENABLED = !DEBUG_ENABLED;
+    }
+
+    public static boolean isDebugEnabled(){
+        return DEBUG_ENABLED;
+    }
+
+    public static void debug(String msg, Object... args) { if (DEBUG_ENABLED) LOGGER.info(msg, args); }
+
+    public static void info(String msg, Object... args) { LOGGER.info(msg,args);}
 
     @OnlyIn(Dist.CLIENT)
     public static void pullGameInfo(){

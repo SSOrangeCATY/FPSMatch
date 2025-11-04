@@ -115,5 +115,11 @@
   "commands.fpsm.help.listener": "§a/fpsm listener_module add change_item_module <changed_cost> <default_cost> §7- Add item change listener module\n",
   "commands.fpsm.help.shop": "§a/fpsm shop <gameType> <mapName> modify set <shopName> <shopType> <shopSlot> §7- Shop configuration\n   §b• listener_module add/remove <module> §7- Add/remove listener module\n   §b• group_id <id> §7- Set group ID\n   §b• cost <amount> §7- Set price\n   §b• item §7- Set item (held item)\n   §b• dummy_ammo_amount <amount> §7- Set dummy ammo amount\n",
   "commands.fpsm.help.map": "§a/fpsm map create <gameType> <mapName> <from> <to> §7- Create map\n§a/fpsm map modify <gameType> <mapName> §7- Map configuration\n   §b• match_end_teleport_point <point> §7- Set match end teleport point\n   §b• bomb_area add <from> <to> §7- Add bomb area\n   §b• debug <start|reset|newRound|cleanup|switch> §7- Debug commands\n   §b• team join/leave [targets] §7- Join/leave team\n   §b• team teams spectator players <targets> <action> §7- Spectator operations\n   §b• team teams <teamName> kits <action> §7- Team kit configuration\n   §b• team teams <teamName> spawnpoints <action> §7- Spawnpoint configuration\n   §b• team teams <teamName> players <targets> <action> §7- Team player operations\n",
-  "commands.fpsm.help.footer": "§eUse §6TAB key §efor auto-completion"
+  "commands.fpsm.help.footer": "§eUse §6TAB key §efor auto-completion",
+  "fpsm.killCam.killed_by": "Killed by",
+  "fpsm.killCam.unknown_weapon": "Unknown weapon",
+  "key.fpsm.switch_spec_previous.desc": "Switch previous teammate",
+  "key.fpsm.switch_spec_next.desc": "Switch next teammate",
+  "key.category.fpsm.spec": "FPSMatch Spectator",
+  "commands.fpsm.debug.success": "FPSMatch Debug Mode : %1$s"
 }

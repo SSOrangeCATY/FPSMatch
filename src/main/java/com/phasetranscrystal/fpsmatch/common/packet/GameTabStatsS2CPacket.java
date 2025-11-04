@@ -84,7 +84,7 @@ public class GameTabStatsS2CPacket {
                     FPSMClient.getGlobalData().setCurrentTeam(team);
                 }
             }
-            FPSMClient.getGlobalData().setTabData(uuid,team,data);
+            FPSMClient.getGlobalData().setTabData(team,uuid,data);
         });
         ctx.get().setPacketHandled(true);
     }

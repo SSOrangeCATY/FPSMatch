@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.entity.drop;
 
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;

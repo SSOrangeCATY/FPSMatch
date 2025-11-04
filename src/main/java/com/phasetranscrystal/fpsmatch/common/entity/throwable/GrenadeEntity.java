@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.entity.throwable;
 
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.GunDamageHandler;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;

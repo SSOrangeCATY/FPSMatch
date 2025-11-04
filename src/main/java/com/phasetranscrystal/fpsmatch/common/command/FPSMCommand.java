@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMCommandEvent;
@@ -17,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
@@ -66,6 +68,7 @@ public class FPSMCommand {
                 .then(Commands.literal("save").executes(FPSMCommand::handleSave))
                 .then(Commands.literal("sync").executes(FPSMCommand::handleSync))
                 .then(Commands.literal("reload").executes(FPSMCommand::handleReLoad))
+                .then(Commands.literal("debug").executes(FPSMCommand::handleDebug))
                 .then(Commands.literal("listener_module")
                         .then(Commands.literal("add")
                                 .then(Commands.literal("change_item_module")
@@ -248,6 +251,11 @@ public class FPSMCommand {
     private static int handleReLoad(CommandContext<CommandSourceStack> context) {
         MinecraftForge.EVENT_BUS.post(new FPSMReloadEvent(FPSMCore.getInstance()));
         sendSuccess(context.getSource(), Component.translatable("commands.fpsm.reload.success"));
+        return 1;
+    }
+
+    private static int handleDebug(CommandContext<CommandSourceStack> context) {
+        sendSuccess(context.getSource(), Component.translatable("commands.fpsm.debug.success",FPSMatch.switchDebug()));
         return 1;
     }
 

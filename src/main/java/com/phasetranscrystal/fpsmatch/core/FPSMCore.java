@@ -6,11 +6,13 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
+import com.phasetranscrystal.fpsmatch.core.event.map.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
-import com.tacz.guns.config.sync.SyncConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -21,12 +23,13 @@ import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-
+@SuppressWarnings("unchecked")
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     private static FPSMCore INSTANCE;
@@ -92,7 +95,6 @@ public class FPSMCore {
         return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
     public <T> List<T> getMapByClass(Class<T> clazz){
         ArrayList<T> list = new ArrayList<>();
         for (List<BaseMap> maps : GAMES.values()) {
@@ -222,4 +224,19 @@ public class FPSMCore {
         return listenerModuleManager;
     }
 
+    /*
+    * 获取当前FPSMatch运行在何种环境
+    * */
+    public static FPSMDist getCurrentEnvironment() {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            return FPSMDist.SERVER;
+        }else{
+            Minecraft mc = Minecraft.getInstance();
+            IntegratedServer localServer = mc.getSingleplayerServer();
+            if (localServer != null) {
+                return localServer.isPublished() ? FPSMDist.LAN : FPSMDist.LOCAL;
+            }
+        }
+        return FPSMDist.LOCAL;
+    }
 }

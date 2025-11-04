@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.entity.throwable;
 
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.core.function.IHolder;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;

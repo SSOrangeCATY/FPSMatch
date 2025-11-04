@@ -8,14 +8,22 @@
     "ItemDropSoundMixin",
     "MixinDustParticleOptionsBase",
     "PlayerHurtSelfMixin",
-    "PlayerKnockbackMixin"
+    "PlayerKnockbackMixin",
+    "collisiobox.MixinRenderHeadShotAABB",
+    "spec.glow.MixinEntityUnified"
   ],
   "client": [
     "ItemPickupSoundMixin",
     "LocalPlayerMixin",
     "MixinMinecraft",
     "MixinPlayerTabOverlay",
-    "accessor.ClientPacketListenerAccessor"
+    "accessor.ClientPacketListenerAccessor",
+    "ban3prs.Ban3rdPerson",
+    "collisiobox.MixinEntityRenderDispatcher",
+    "nametag.HidePlayerNameTagMixin",
+    "spec.glow.MixinKeyMappingBlockSpectatorOutlines",
+    "spec.teammate.CameraInvokerMixin",
+    "spec.teammate.KeyboardHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

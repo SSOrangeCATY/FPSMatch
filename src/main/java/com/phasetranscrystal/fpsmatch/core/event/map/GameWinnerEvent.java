@@ -1,7 +1,7 @@
-package com.phasetranscrystal.fpsmatch.core.event;
+package com.phasetranscrystal.fpsmatch.core.event.map;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.eventbus.api.Event;
 

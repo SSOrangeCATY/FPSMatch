@@ -2,9 +2,11 @@ package com.phasetranscrystal.fpsmatch.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.mojang.authlib.GameProfile;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
@@ -16,14 +18,21 @@ import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -461,5 +470,73 @@ public class FPSMUtil {
                 player.getInventory().armor,
                 player.getInventory().offhand
         );
+    }
+
+
+
+
+    /**
+     * 从伤害源中中获取击杀者
+     * */
+    public static ServerPlayer getKiller(ServerPlayer dead, DamageSource source) {
+        Entity src = source.getEntity();
+        if (src instanceof ServerPlayer sp) return sp;
+        Entity direct = source.getDirectEntity();
+        if (direct instanceof ServerPlayer dsp) return dsp;
+
+        if (direct instanceof Projectile proj && proj.getOwner() instanceof ServerPlayer owner) {
+            return owner;
+        }
+        if (direct instanceof ThrowableItemProjectile tip && tip.getOwner() instanceof ServerPlayer owner2){
+            return owner2;
+        }
+        if (direct instanceof AreaEffectCloud cloud && cloud.getOwner() instanceof ServerPlayer owner3){
+            return owner3;
+        }
+        if (direct instanceof PrimedTnt tnt && tnt.getOwner() instanceof ServerPlayer owner4){
+            return owner4;
+        }
+
+        Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(dead);
+        if(opt.isPresent()){
+            BaseMap baseMap = opt.get();
+            Map<UUID, Float> hurtMap = baseMap.getMapTeams().getDamageMap().get(dead.getUUID());
+            return hurtMap.entrySet().stream()
+                    .max(Comparator.comparingDouble(Map.Entry::getValue))
+                    .flatMap(e -> FPSMCore.getInstance().getPlayerByUUID(e.getKey()))
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    /**
+     * 从伤害源中中获取击杀者的武器
+     * */
+    public static ItemStack getKillerWeapon(DamageSource source){
+        Player attacker;
+        if (source.getEntity() instanceof Player p) {
+            attacker = p;
+        } else if (source.getEntity() instanceof ThrowableItemProjectile throwable
+                && throwable.getOwner() instanceof Player p) {
+            attacker = p;
+        } else {
+            attacker = null;
+        }
+
+        ItemStack itemStack;
+        if (source.getDirectEntity() instanceof ThrowableItemProjectile projectile) {
+            itemStack = projectile.getItem();
+        } else if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+            itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
+        }else{
+            itemStack = ItemStack.EMPTY;
+        }
+
+        return (itemStack.isEmpty() && attacker != null) ? attacker.getMainHandItem() : itemStack;
+    }
+
+    public static ResourceLocation fetchSkin(UUID id, String name){
+        return Minecraft.getInstance().getSkinManager()
+                .getInsecureSkinLocation(new GameProfile(id, name));
     }
 }

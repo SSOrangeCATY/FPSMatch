@@ -19,8 +19,8 @@ import static com.tacz.guns.util.InputExtraCheck.isInGame;
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class SwitchPreviousItemKey {
-    public static int previous = -1;
-    public static int current = 0;
+    private static int previous = -1;
+    private static int current = 0;
 
     public static final KeyMapping KEY = new KeyMapping("key.fpsm.switch_previous_item.desc",
             KeyConflictContext.IN_GAME,

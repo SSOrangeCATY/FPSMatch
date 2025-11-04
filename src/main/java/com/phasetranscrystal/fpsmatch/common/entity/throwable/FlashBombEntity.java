@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.entity.throwable;
 
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FlashBlindnessMobEffect;

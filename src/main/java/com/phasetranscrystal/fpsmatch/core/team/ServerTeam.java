@@ -1,0 +1,169 @@
+package com.phasetranscrystal.fpsmatch.core.team;
+
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraftforge.network.PacketDistributor;
+
+import java.util.*;
+
+/**
+ * 服务器端队伍实现类，处理所有服务器端队伍逻辑
+ */
+@SuppressWarnings("all")
+public final class ServerTeam extends BaseTeam {
+
+    public final Map<UUID, PlayerData> players = new HashMap<>();
+
+    public ServerTeam(String gameType, String mapName, String name, int playerLimit, PlayerTeam playerTeam) {
+        super(gameType, mapName, name, playerLimit, playerTeam);
+    }
+
+    @Override
+    public void join(FPSMPlayer player) {
+        if(player.isClientSide()) return;
+        Player p = player.get();
+        player.get().getScoreboard().addPlayerToTeam(p.getScoreboardName(), getPlayerTeam());
+        players.put(p.getUUID(), new PlayerData(p));
+    }
+
+    @Override
+    public void leave(FPSMPlayer player) {
+        if(player.isClientSide()) return;
+        Player p = player.get();
+        if (hasPlayer(p.getUUID())) {
+            delPlayer(p.getUUID());
+            p.getScoreboard().removePlayerFromTeam(p.getScoreboardName(), getPlayerTeam());
+        }
+    }
+
+    @Override
+    public void delPlayer(UUID uuid) {
+        players.remove(uuid);
+    }
+
+    @Override
+    public void resetLiving() {
+        players.values().forEach(data -> {
+            if (data.isOnline()) {
+                data.setLiving(true);
+                data.save();
+            }
+        });
+    }
+
+    @Override
+    public Optional<PlayerData> getPlayerData(UUID uuid) {
+        return Optional.ofNullable(players.get(uuid));
+    }
+
+    @Override
+    public List<PlayerData> getPlayersData() {
+        return new ArrayList<>(players.values());
+    }
+
+    @Override
+    public List<UUID> getPlayerList() {
+        return new ArrayList<>(players.keySet());
+    }
+
+    public List<UUID> getOfflinePlayers() {
+        List<UUID> offlinePlayers = new ArrayList<>();
+        players.values().forEach(data -> {
+            if (!data.isOnline()) {
+                offlinePlayers.add(data.getOwner());
+            }
+        });
+        return offlinePlayers;
+    }
+
+    public List<UUID> getOnlinePlayers() {
+        List<UUID> onlinePlayers = new ArrayList<>();
+        players.values().forEach(data -> {
+            if (data.isOnline()) {
+                onlinePlayers.add(data.getOwner());
+            }
+        });
+        return onlinePlayers;
+    }
+
+    public List<UUID> getLivingPlayers() {
+        List<UUID> uuids = new ArrayList<>();
+        players.values().forEach(data -> {
+            if (data.isLiving()) {
+                uuids.add(data.getOwner());
+            }
+        });
+        return uuids;
+    }
+
+    @Override
+    public boolean hasPlayer(UUID uuid) {
+        return players.containsKey(uuid);
+    }
+
+    @Override
+    public int getPlayerCount() {
+        return players.size();
+    }
+
+    public boolean hasNoOnlinePlayers() {
+        if (players.isEmpty()) return true;
+        for (PlayerData data : players.values()) {
+            if (data.isOnline()) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return players.isEmpty();
+    }
+
+    @Override
+    public Map<UUID, PlayerData> getPlayers() {
+        return new HashMap<>(players);
+    }
+
+    @Override
+    public void clearAndPutPlayers(Map<UUID, PlayerData> players) {
+        this.players.clear();
+        this.players.putAll(players);
+    }
+
+    @Override
+    public void sendMessage(Component message , boolean onlyLiving) {
+        List<UUID> players = onlyLiving ? getLivingPlayers() : getPlayerList();
+
+        players.forEach(uuid -> {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(
+                    player -> player.displayClientMessage(message, false)
+            );
+        });
+    }
+
+    @Override
+    public boolean isClientSide() {
+        return false;
+    }
+
+    public void syncCapabilities(ServerPlayer player) {
+        for (TeamCapabilitySyncS2CPacket packet : TeamCapabilitySyncS2CPacket.toList(this,this.getSynchronizableCapabilities())) {
+            FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        }
+    }
+
+    public void syncCapabilities(Collection<ServerPlayer> players) {
+        for (TeamCapabilitySyncS2CPacket packet : TeamCapabilitySyncS2CPacket.toList(this,this.getSynchronizableCapabilities())) {
+            for (ServerPlayer player : players) {
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+            }
+        }
+    }
+}

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.bukkit.event;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;

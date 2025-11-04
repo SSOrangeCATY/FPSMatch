@@ -1,10 +1,8 @@
-package com.phasetranscrystal.fpsmatch.core.event;
+package com.phasetranscrystal.fpsmatch.core.event.map;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.eventbus.api.Event;
-
-import java.util.Optional;
 
 public class PlayerKillOnMapEvent extends Event {
     private final BaseMap map;

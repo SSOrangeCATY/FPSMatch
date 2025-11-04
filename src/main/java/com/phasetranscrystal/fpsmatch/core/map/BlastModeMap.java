@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.List;

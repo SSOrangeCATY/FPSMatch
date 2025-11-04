@@ -1,10 +1,15 @@
-package com.phasetranscrystal.fpsmatch.core.map;
+package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.common.team.capabilities.CompensationCapability;
+import com.phasetranscrystal.fpsmatch.common.team.capabilities.PauseDataCapability;
+import com.phasetranscrystal.fpsmatch.common.team.capabilities.SpawnPointCapability;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,8 +26,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MapTeams {
     protected final ServerLevel level;
     protected final BaseMap map;
-    private final Map<String, BaseTeam> teams = new HashMap<>();
-    private final BaseTeam spectatorTeam;
+    private final Map<String, ServerTeam> teams = new HashMap<>();
+    private final ServerTeam spectatorTeam;
     private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public final Map<UUID,Component> playerName = new HashMap<>();
 
@@ -47,7 +52,12 @@ public class MapTeams {
         this.map = map;
         this.spectatorTeam = this.addTeam("spectator",-1,false);
         Vec3 vec3 = map.mapArea.getAABB().getCenter();
-        spectatorTeam.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),new BlockPos((int) vec3.x(), (int) vec3.y(), (int) vec3.z()),0,0));
+    }
+
+    public void addSpawnPoint(ServerTeam team, SpawnPointData spawnPointData) {
+        team.getCapability(SpawnPointCapability.class).ifPresent(cap -> {
+            cap.addSpawnPointData(spawnPointData);
+        });
     }
 
     /**
@@ -58,24 +68,10 @@ public class MapTeams {
      * @param team 队伍名称
      * @return 指定队伍的出生点数据列表，如果队伍不存在则返回 null
      */
-    @Nullable
-    public List<SpawnPointData> getSpawnPointsByTeam(String team){
-        BaseTeam t = this.teams.getOrDefault(team,null);
-        if(t == null) return null;
-        return t.getSpawnPointsData();
-    }
-
-    /**
-     * 获取所有队伍的出生点数据。
-     * <p>
-     * 返回一个 Map，其中键为队伍名称，值为对应的出生点数据列表。
-     *
-     * @return 包含所有队伍出生点数据的 Map
-     */
-    public Map<String,List<SpawnPointData>> getAllSpawnPoints(){
-        Map<String,List<SpawnPointData>> data = new HashMap<>();
-        this.teams.forEach((n,t)-> data.put(n,t.getSpawnPointsData()));
-        return data;
+    public Optional<List<SpawnPointData>> getSpawnPointsByTeam(String team){
+        ServerTeam t = this.teams.getOrDefault(team,null);
+        if(t == null) return Optional.empty();
+        return t.getCapability(SpawnPointCapability.class).map(SpawnPointCapability::getSpawnPointsData);
     }
 
     /**
@@ -87,32 +83,43 @@ public class MapTeams {
      * @param attackTeam 攻击方队伍
      * @param defendTeam 防守方队伍
      */
-    public static void switchAttackAndDefend(BaseMap map , BaseTeam attackTeam, BaseTeam defendTeam) {
+    public static void switchAttackAndDefend(BaseMap map , ServerTeam attackTeam, ServerTeam defendTeam) {
         if(map == null || attackTeam == null || defendTeam == null) return;
 
         //交换玩家
         Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
-        attackTeam.resetAllPlayers(defendTeam.getPlayers());
-        defendTeam.resetAllPlayers(tempPlayers);
+        attackTeam.clearAndPutPlayers(defendTeam.getPlayers());
+        defendTeam.clearAndPutPlayers(tempPlayers);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
         attackTeam.setScores(defendTeam.getScores());
         defendTeam.setScores(tempScore);
 
-        attackTeam.setCompensationFactor(0);
-        defendTeam.setCompensationFactor(0);
+        attackTeam.getCapability(CompensationCapability.class).ifPresent(cap -> {
+            cap.setCompensationFactor(0);
+        });
+
+        defendTeam.getCapability(CompensationCapability.class).ifPresent(cap -> {
+            cap.setCompensationFactor(0);
+        });
 
         // 交换暂停次数
-        int tempP = attackTeam.getPauseTime();
-        boolean tempN = attackTeam.needPause();
-        attackTeam.setPauseTime(defendTeam.getPauseTime());
-        attackTeam.setNeedPause(defendTeam.needPause());
-        defendTeam.setPauseTime(tempP);
-        defendTeam.setNeedPause(tempN);
+        attackTeam.getCapability(PauseDataCapability.class).ifPresent(attackCap -> {
+            int tempP = attackCap.getPauseTime();
+            boolean tempN = attackCap.needPause();
 
-        attackTeam.randomSpawnPoints();
-        defendTeam.randomSpawnPoints();
+            defendTeam.getCapability(PauseDataCapability.class).ifPresent(defendCap -> {
+                attackCap.setPauseTime(defendCap.getPauseTime());
+                attackCap.setNeedPause(defendCap.needPause());
+
+                defendCap.setPauseTime(tempP);
+                defendCap.setNeedPause(tempN);
+            });
+        });
+
+        attackTeam.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::randomSpawnPoints);
+        defendTeam.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::randomSpawnPoints);
 
         if(map instanceof ShopMap<?> shopMap){
             shopMap.getShop(attackTeam.name).ifPresent(shop -> shop.resetPlayerData(attackTeam.getPlayerList()));
@@ -141,7 +148,7 @@ public class MapTeams {
     public void putAllSpawnPoints(Map<String,List<SpawnPointData>> data){
         data.forEach((n,list)->{
             if (teams.containsKey(n)){
-                teams.get(n).addAllSpawnPointData(list);
+                teams.get(n).getCapability(SpawnPointCapability.class).ifPresent(cap->cap.addAllSpawnPointData(list));
             }
         });
     }
@@ -151,10 +158,10 @@ public class MapTeams {
      * <p>
      * 遍历所有队伍，并调用队伍的随机出生点分配方法。
      */
-    public boolean setTeamsSpawnPoints(){
+    public boolean randomSpawnPoints(){
         AtomicBoolean atomicBoolean = new AtomicBoolean(true);
         this.teams.forEach(((s, t) -> {
-            if(atomicBoolean.get()) atomicBoolean.set(t.randomSpawnPoints());
+            if(atomicBoolean.get()) atomicBoolean.set(t.getCapability(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
         }));
         return atomicBoolean.get();
     }
@@ -170,7 +177,7 @@ public class MapTeams {
     public void defineSpawnPoint(String teamName, SpawnPointData data) {
         BaseTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
-        team.addSpawnPointData(data);
+        team.getCapability(SpawnPointCapability.class).ifPresent(cap->cap.addSpawnPointData(data));
     }
 
     /**
@@ -183,7 +190,7 @@ public class MapTeams {
     public void resetSpawnPoints(String teamName){
         BaseTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
-        team.resetSpawnPointData();
+        team.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset);
     }
 
     /**
@@ -192,14 +199,14 @@ public class MapTeams {
      * 遍历所有队伍，并调用队伍的出生点数据重置方法。
      */
     public void resetAllSpawnPoints(){
-        this.teams.forEach((s,t)-> t.resetSpawnPointData());
+        this.teams.forEach((s,t)-> t.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset));
     }
 
 
-    public BaseTeam addTeam(String teamName,int limit, boolean addToSystem){
+    public ServerTeam addTeam(String teamName,int limit, boolean addToSystem){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayerTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        BaseTeam team = new BaseTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam);
+        ServerTeam team = new ServerTeam(map.getGameType(),map.getMapName(),teamName,limit,playerteam);
         if(addToSystem) this.teams.put(teamName, team);
         return team;
     }
@@ -213,7 +220,7 @@ public class MapTeams {
      * @param teamName 队伍名称
      * @param limit 队伍人数上限
      */
-    public BaseTeam addTeam(String teamName,int limit){
+    public ServerTeam addTeam(String teamName,int limit){
         return addTeam(teamName,limit,true);
     }
 
@@ -337,7 +344,7 @@ public class MapTeams {
      * @param teamName 队伍名称
      */
     private void playerJoin(ServerPlayer player, String teamName) {
-        this.teams.getOrDefault(teamName, this.spectatorTeam).join(player);
+        this.teams.getOrDefault(teamName, this.spectatorTeam).join(new FPSMPlayer(player));
     }
 
     /**
@@ -408,7 +415,7 @@ public class MapTeams {
         return list;
     }
 
-    public BaseTeam getSpectatorTeam() {
+    public ServerTeam getSpectatorTeam() {
         return spectatorTeam;
     }
     /**
@@ -464,8 +471,6 @@ public class MapTeams {
         this.teams.forEach((name, team) -> {
             team.setScores(0);
             team.getPlayers().clear();
-            team.setCompensationFactor(0);
-            team.setPauseTime(0);
         });
         this.unableToSwitch.clear();
         this.playerName.clear();
@@ -480,9 +485,9 @@ public class MapTeams {
      */
     public void leaveTeam(ServerPlayer player) {
         if(this.getSpectatorTeam().hasPlayer(player.getUUID())){
-            this.spectatorTeam.leave(player);
+            this.spectatorTeam.leave(new FPSMPlayer(player));
         }else{
-            this.teams.values().forEach((t) -> t.leave(player));
+            this.teams.values().forEach((t) -> t.leave(new FPSMPlayer(player)));
         }
         this.playerName.remove(player.getUUID());
     }
@@ -644,7 +649,7 @@ public class MapTeams {
      * @param winnerTeam 获胜队伍
      * @return MVP 玩家数据
      */
-    public RawMVPData getRoundMvpPlayer(BaseTeam winnerTeam) {
+    public RawMVPData getRoundMvpPlayer(ServerTeam winnerTeam) {
         RawMVPData mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();

@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.data;
 
 import com.google.gson.Gson;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;

@@ -8,7 +8,11 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.core.event.PlayerKillOnMapEvent;
+import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
+import com.phasetranscrystal.fpsmatch.core.event.map.PlayerKillOnMapEvent;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import com.phasetranscrystal.fpsmatch.common.team.capabilities.SpawnPointCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
@@ -205,8 +209,10 @@ public abstract class BaseMap {
         FPSMCore.checkAndLeaveTeam(player);
         player.setGameMode(GameType.SPECTATOR);
         this.pullGameInfo(player);
-        this.getMapTeams().getSpectatorTeam().join(player);
-        this.getMapTeams().getSpectatorTeam().getSpawnPointsData().stream().findAny().ifPresent(data -> this.teleportToPoint(player, data));
+        this.getMapTeams().getSpectatorTeam().join(new FPSMPlayer(player));
+        this.getMapTeams().getSpectatorTeam().getCapability(SpawnPointCapability.class)
+                .flatMap(cap -> cap.getSpawnPointsData().stream().findAny())
+                .ifPresent(data -> this.teleportToPoint(player, data));
     }
 
 
@@ -445,13 +451,13 @@ public abstract class BaseMap {
             Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map.isPresent()) {
                 ServerPlayer attacker = null;
-                if(event.getSource().getEntity() instanceof ServerPlayer sourcePlayer){
+                if (event.getSource().getEntity() instanceof ServerPlayer sourcePlayer) {
                     attacker = sourcePlayer;
-                }else if(event.getSource().getDirectEntity() instanceof ServerPlayer sourcePlayer){
+                } else if (event.getSource().getDirectEntity() instanceof ServerPlayer sourcePlayer) {
                     attacker = sourcePlayer;
                 }
 
-                if (attacker != null){
+                if (attacker != null) {
                     MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(map.get(), player, attacker));
                 }
             }
