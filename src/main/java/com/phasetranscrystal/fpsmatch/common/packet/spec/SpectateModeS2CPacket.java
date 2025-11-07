@@ -17,10 +17,10 @@ public record SpectateModeS2CPacket(SpectateMode mode) {
         return new SpectateModeS2CPacket(buf.readEnum(SpectateMode.class));
     }
 
-    public static void handle(SpectateModeS2CPacket p, Supplier<NetworkEvent.Context> ctxSup) {
+    public void handle(Supplier<NetworkEvent.Context> ctxSup) {
         NetworkEvent.Context ctx = ctxSup.get();
         ctx.enqueueWork(() -> {
-            SpectateState.set(p.mode);
+            SpectateState.set(mode);
         });
         ctx.setPacketHandled(true);
     }
