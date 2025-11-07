@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.packet.spec;
 
-import com.phasetranscrystal.fpsmatch.common.client.spectator.SpectateState;
-import com.phasetranscrystal.fpsmatch.common.spectator.teammate.SpectateMode;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateMode;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateState;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 

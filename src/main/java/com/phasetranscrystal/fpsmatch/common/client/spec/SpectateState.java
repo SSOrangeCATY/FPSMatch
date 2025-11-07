@@ -1,7 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.client.spectator;
-
-
-import com.phasetranscrystal.fpsmatch.common.spectator.teammate.SpectateMode;
+package com.phasetranscrystal.fpsmatch.common.client.spec;
 
 public final class SpectateState {
     private static volatile SpectateMode mode = SpectateMode.FREE;

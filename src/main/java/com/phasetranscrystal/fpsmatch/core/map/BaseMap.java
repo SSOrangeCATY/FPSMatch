@@ -13,6 +13,8 @@ import com.phasetranscrystal.fpsmatch.core.event.map.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.common.team.capabilities.SpawnPointCapability;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
@@ -66,14 +68,13 @@ public abstract class BaseMap {
 
     /**
      * 添加团队
-     * @param teamName 团队名称
-     * @param playerLimit 玩家限制
+     * @param data 团队数据
      */
-    public BaseTeam addTeam(String teamName, int playerLimit) {
-        return this.mapTeams.addTeam(teamName, playerLimit);
+    public ServerTeam addTeam(TeamData data) {
+        return this.mapTeams.addTeam(data);
     }
 
-    public BaseTeam getSpectatorTeam(){
+    public ServerTeam getSpectatorTeam(){
         return this.mapTeams.getSpectatorTeam();
     }
 
@@ -182,9 +183,9 @@ public abstract class BaseMap {
 
     public void join(ServerPlayer player) {
         MapTeams mapTeams = this.getMapTeams();
-        List<BaseTeam> baseTeams = mapTeams.getTeams();
+        List<ServerTeam> baseTeams = mapTeams.getTeams();
         if(baseTeams.isEmpty()) return;
-        BaseTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
+        ServerTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
         this.join(team.name, player);
     }
 
@@ -343,7 +344,7 @@ public abstract class BaseMap {
         );
     }
 
-    public <MSG> void sendPacketToTeamPlayer(BaseTeam team ,MSG packet,boolean living){
+    public <MSG> void sendPacketToTeamPlayer(ServerTeam team ,MSG packet,boolean living){
         team.getPlayersData().forEach(data ->
             data.getPlayer().ifPresent(player->{
                 if (data.isLiving() == living) {
@@ -353,7 +354,7 @@ public abstract class BaseMap {
         );
     }
 
-    public <MSG> void sendPacketToTeamLivingPlayer(BaseTeam team ,MSG packet){
+    public <MSG> void sendPacketToTeamLivingPlayer(ServerTeam team ,MSG packet){
         this.sendPacketToTeamPlayer(team,packet,true);
     }
 

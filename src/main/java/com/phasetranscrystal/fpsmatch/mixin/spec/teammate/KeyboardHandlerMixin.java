@@ -1,7 +1,8 @@
 package com.phasetranscrystal.fpsmatch.mixin.spec.teammate;
 
-import com.phasetranscrystal.fpsmatch.common.client.key.SwitchSpectatorKey;
-import com.phasetranscrystal.fpsmatch.common.client.spectator.SpectateState;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpecKeyHandler;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateState;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -24,11 +25,9 @@ public class KeyboardHandlerMixin {
         if (mc.screen instanceof ChatScreen) return;
         if (action != GLFW.GLFW_PRESS && action != GLFW.GLFW_REPEAT) return;
         boolean allowEscape = keyCode == GLFW.GLFW_KEY_ESCAPE;
-        boolean allowTeamSwitch =
-                SwitchSpectatorKey.KEY_SPECTATE_PREV.matches(keyCode, scanCode) ||
-                        SwitchSpectatorKey.KEY_SPECTATE_NEXT.matches(keyCode, scanCode);
+        boolean allowTeamSwitch = SpecKeyHandler.switchKeyMatches(keyCode, scanCode);
 
-        if (!(allowEscape || allowTeamSwitch)) {
+        if (!(allowEscape || allowTeamSwitch) && FPSMConfig.Server.lockSpecKeyHandle.get()) {
             ci.cancel();
         }
     }

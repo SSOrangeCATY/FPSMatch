@@ -1,6 +1,9 @@
 package com.phasetranscrystal.fpsmatch.mixin.spec.glow;
 
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.client.event.InputEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,15 +15,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(KeyMapping.class)
 public abstract class MixinKeyMappingBlockSpectatorOutlines {
 
-    /**
-     * 当游戏尝试对某个 KeyMapping 调用 setDown(true),
-     * 若它的名称为 "key.spectatorOutlines", 就拦截并取消，
-     * 使其实际 setDown(false) => 一直不被视为“按下”。
-     */
     @Inject(method = "setDown(Z)V", at = @At("HEAD"), cancellable = true)
     private void onSetDown(boolean isDown, CallbackInfo ci) {
+        if (Minecraft.getInstance().player == null || Minecraft.getInstance().gameMode == null) return;
         KeyMapping self = (KeyMapping)(Object)this;
-        if ("key.spectatorOutlines".equals(self.getName())) {
+        if ("key.spectatorOutlines".equals(self.getName()) && FPSMConfig.Server.disableSpecGlowKey.get()) {
             if (isDown) {
                 ci.cancel();
             }

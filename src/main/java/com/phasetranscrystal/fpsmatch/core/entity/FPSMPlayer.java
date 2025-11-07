@@ -27,10 +27,7 @@ public record FPSMPlayer(@NotNull Player get) {
     public Optional<BaseTeam> getTeam(){
         if(FPSMCore.initialized()){
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(get);
-            if(opt.isPresent()){
-                return opt.get().getMapTeams().getTeamByPlayer(get);
-            }
-            return Optional.empty();
+            return opt.flatMap(baseMap -> baseMap.getMapTeams().getTeamByPlayer(get));
         }else{
             return Optional.ofNullable(FPSMClient.getGlobalData().getTeamByUUID(uuid()).orElse(null));
         }

@@ -44,11 +44,6 @@ public class TeamSwitchRestrictionCapability implements TeamCapability {
     }
 
     @Override
-    public void reset() {
-        clearUnableToSwitchPlayers();
-    }
-
-    @Override
     public void destroy() {
         clearUnableToSwitchPlayers();
     }

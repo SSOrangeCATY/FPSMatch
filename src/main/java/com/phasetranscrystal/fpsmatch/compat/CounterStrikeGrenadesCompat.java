@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.compat;
 
-
 import club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
 import club.pisquad.minecraft.csgrenades.registery.ModDamageType;
 import club.pisquad.minecraft.csgrenades.registery.ModItems;

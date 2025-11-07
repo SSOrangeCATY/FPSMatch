@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.spectator;
+package com.phasetranscrystal.fpsmatch.common.client.spec;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;

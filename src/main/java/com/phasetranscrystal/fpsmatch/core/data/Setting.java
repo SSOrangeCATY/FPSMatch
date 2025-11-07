@@ -114,11 +114,11 @@ public class Setting<T> {
 
     public void readFromBuf(FriendlyByteBuf buf){
         value = buf.readJsonWithCodec(codec);
-    };
+    }
 
     public void writeToBuf(FriendlyByteBuf buf){
         buf.writeJsonWithCodec(codec, this.value);
-    };
+    }
 
 
     /**

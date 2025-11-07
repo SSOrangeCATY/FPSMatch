@@ -36,7 +36,7 @@ public class FPSMFormatUtil {
     }
 
     public static String i18n(ItemStack st) {
-        String unknown = I18n.exists("fpsm.killCam.unknown_weapon") ? I18n.get("fpsm.killCam.unknown_weapon") : "未知武器";
+        String unknown = I18n.exists("fpsm.unknown_weapon") ? I18n.get("fpsm.unknown_weapon") : "未知武器";
         if (st == null || st.isEmpty()) return unknown;
         IGun iGun = IGun.getIGunOrNull(st);
         if (iGun != null) {

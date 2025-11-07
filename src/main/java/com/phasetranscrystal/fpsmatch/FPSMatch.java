@@ -15,12 +15,14 @@ import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.event.team.FPSMTeamCapabilityRegisterEvent;
+import com.tacz.guns.GunMod;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -62,7 +64,7 @@ public class FPSMatch {
 
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
-    private static final String PROTOCOL_VERSION = "1.2.1";
+    private static final String PROTOCOL_VERSION = "1.3.0";
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
@@ -81,10 +83,10 @@ public class FPSMatch {
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
-
         MinecraftForge.EVENT_BUS.post(new FPSMTeamCapabilityRegisterEvent());
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
+        context.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());
         if(FPSMBukkit.isBukkitEnvironment()){
             FPSMBukkit.register();
         }
@@ -116,6 +118,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamCapabilitySyncS2CPacket.class);
+        PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
     }
 
     @SubscribeEvent

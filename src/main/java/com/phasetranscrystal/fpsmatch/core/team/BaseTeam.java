@@ -66,16 +66,6 @@ public abstract class BaseTeam {
                 .orElse(false);
     }
 
-    public final <T extends TeamSyncedCapability> boolean addCapability(T capability){
-        Class<T> clazz = (Class<T>) capability.getClass();
-        if(hasCapability(clazz)){
-            return false;
-        }
-        this.capabilities.put(clazz, capability);
-        capability.init();
-        return true;
-    }
-
     /**
      * 移除队伍的能力
      * @param capabilityClass 能力类型
@@ -125,6 +115,10 @@ public abstract class BaseTeam {
     public final List<String> getCapabilitiesString(){
         return getCapabilities().stream().map(TeamCapability::getName).collect(Collectors.toList());
     }
+    public final List<String> getSynchronizableCapabilitiesString(){
+        return getCapabilities().stream().filter(cap -> cap instanceof TeamSyncedCapability).map(TeamCapability::getName).collect(Collectors.toList());
+    }
+
 
     /**
      * 序列化指定能力到网络缓冲区
@@ -183,6 +177,7 @@ public abstract class BaseTeam {
                 .collect(Collectors.toList());
     }
 
+
     public abstract void sendMessage(Component message, boolean onlyLiving);
 
     public abstract boolean isClientSide();
@@ -227,9 +222,25 @@ public abstract class BaseTeam {
         this.color = color;
     }
 
-    public void reset(){
+    public void resetCapabilities(){
         this.capabilities.values().forEach(TeamCapability::reset);
+    }
+
+    public void reset(){
+        this.resetCapabilities();
         this.setScores(0);
+    }
+
+    public void clean(){
+        this.reset();
         this.getPlayers().clear();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof BaseTeam team){
+            return this.gameType.equals(team.gameType) && this.mapName.equals(team.mapName) && this.name.equals(team.name);
+        }
+        return false;
     }
 }

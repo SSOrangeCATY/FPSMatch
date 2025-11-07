@@ -114,6 +114,7 @@ public class FPSMCommandSuggests {
                 return CompletableFuture.supplyAsync(() -> this.suggestions.apply(context, builder));
         }
     }
+
     @NotNull
     public static Suggestions getSuggestions(SuggestionsBuilder builder, List<String> suggests) {
         String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);

@@ -128,7 +128,7 @@ public final class ServerTeam extends BaseTeam {
 
     @Override
     public Map<UUID, PlayerData> getPlayers() {
-        return new HashMap<>(players);
+        return players;
     }
 
     @Override
@@ -146,6 +146,10 @@ public final class ServerTeam extends BaseTeam {
                     player -> player.displayClientMessage(message, false)
             );
         });
+    }
+
+    public void sendMessage(Component message) {
+        this.sendMessage(message,false);
     }
 
     @Override

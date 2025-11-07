@@ -83,7 +83,7 @@ public class TeamCapabilityManager {
                         return Optional.empty();
                     }
                 } catch (Exception e) {
-                    FPSMatch.debug("Failed to create capability from network: " + className + ": " + e.getMessage());
+                    FPSMatch.debug("Failed to create capabilities from network: " + className + ": " + e.getMessage());
                 }
             }
         }

@@ -2,6 +2,8 @@ package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
+import com.phasetranscrystal.fpsmatch.core.team.capability.TeamCapability;
+import com.phasetranscrystal.fpsmatch.core.team.capability.TeamCapabilityManager;
 import net.minecraft.network.chat.Component;
 
 import java.util.*;
@@ -9,14 +11,25 @@ import java.util.*;
 public final class ClientTeam extends BaseTeam {
     public final Map<UUID, PlayerData> players;
 
-    public ClientTeam(String gameType, String mapName, String name) {
-        super(gameType, mapName, name, -1, null);
+    public ClientTeam(String gameType, String mapName, TeamData data) {
+        super(gameType, mapName, data.name(), -1, null);
         players = new HashMap<>();
+        for (String cap : data.capabilities()){
+            TeamCapabilityManager.getRegisteredCapabilityClass(cap).ifPresent(this::addCapability);
+        }
     }
 
     @Override
     public void join(FPSMPlayer player) {
         this.players.put(player.uuid(),new PlayerData(player.uuid(),player.get().getDisplayName()));
+    }
+
+    public void join(UUID uuid, PlayerData data) {
+        this.players.put(uuid,data);
+    }
+
+    public void join(UUID uuid, Component displayName) {
+        this.players.put(uuid,new PlayerData(uuid,displayName));
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +28,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      * @param team 队伍对象
      * @return 队伍的初始装备列表
      */
-    ArrayList<ItemStack> getKits(BaseTeam team);
+    ArrayList<ItemStack> getKits(ServerTeam team);
 
     /**
      * 为指定队伍添加初始装备。
@@ -36,7 +36,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      * @param team 队伍对象
      * @param itemStack 要添加的装备
      */
-    void addKits(BaseTeam team, ItemStack itemStack);
+    void addKits(ServerTeam team, ItemStack itemStack);
 
     /**
      * 设置指定队伍的初始装备列表。
@@ -46,7 +46,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      * @param team 队伍对象
      * @param itemStack 新的装备列表
      */
-    default void setTeamKits(BaseTeam team, ArrayList<ItemStack> itemStack) {
+    default void setTeamKits(ServerTeam team, ArrayList<ItemStack> itemStack) {
         this.clearTeamKits(team);
         this.getKits(team).addAll(itemStack);
     }
@@ -70,7 +70,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      *
      * @param team 队伍对象
      */
-    default void clearTeamKits(BaseTeam team) {
+    default void clearTeamKits(ServerTeam team) {
         this.getKits(team).clear();
     }
 
@@ -81,7 +81,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      * @param itemStack 要移除的物品
      * @return 如果成功移除，返回 true；否则返回 false
      */
-    default boolean removeItem(BaseTeam team, ItemStack itemStack) {
+    default boolean removeItem(ServerTeam team, ItemStack itemStack) {
         AtomicBoolean flag = new AtomicBoolean(false);
         this.getKits(team).forEach(itemStack1 -> {
             if (itemStack1.is(itemStack.getItem())) {
@@ -96,7 +96,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      * 清空所有队伍的初始装备。
      */
     default void clearAllTeamKits() {
-        for (BaseTeam team : this.getMap().getMapTeams().getTeams()) {
+        for (ServerTeam team : this.getMap().getMapTeams().getTeams()) {
             this.clearTeamKits(team);
         }
     }
@@ -129,7 +129,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      *
      * @param team 队伍对象
      */
-    default void giveTeamKits(@NotNull BaseTeam team) {
+    default void giveTeamKits(@NotNull ServerTeam team) {
         BaseMap map = this.getMap();
         for (UUID uuid : team.getPlayerList()) {
             Player player = map.getServerLevel().getPlayerByUUID(uuid);

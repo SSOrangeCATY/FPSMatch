@@ -18,9 +18,11 @@
     "MixinMinecraft",
     "MixinPlayerTabOverlay",
     "accessor.ClientPacketListenerAccessor",
+    "accessor.SoundEngineAccessor",
     "ban3prs.Ban3rdPerson",
     "collisiobox.MixinEntityRenderDispatcher",
     "nametag.HidePlayerNameTagMixin",
+    "sound.SoundEngineMixin",
     "spec.glow.MixinKeyMappingBlockSpectatorOutlines",
     "spec.teammate.CameraInvokerMixin",
     "spec.teammate.KeyboardHandlerMixin"

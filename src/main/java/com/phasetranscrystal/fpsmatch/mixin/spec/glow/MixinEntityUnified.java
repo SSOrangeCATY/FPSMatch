@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.mixin.spec.glow;
 
-import com.phasetranscrystal.fpsmatch.common.spectator.SpectatorGlowManager;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectatorGlowManager;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -10,9 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * 禁用原版所有发光
- */
 @Mixin(Entity.class)
 public abstract class MixinEntityUnified {
 
@@ -22,6 +20,8 @@ public abstract class MixinEntityUnified {
         if (localPlayer == null) {
             return;
         }
+        if(!FPSMConfig.Server.disableDefaultGlow.get()) return;
+
         Entity self = (Entity) (Object) this;
 
         if (self instanceof LivingEntity living) {

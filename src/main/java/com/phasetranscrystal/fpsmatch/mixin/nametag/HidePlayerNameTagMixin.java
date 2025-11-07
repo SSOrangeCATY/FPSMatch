@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.mixin.nametag;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -22,12 +23,13 @@ public abstract class HidePlayerNameTagMixin {
                     "Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
             at = @At("HEAD"),
             cancellable = true)
-    private void spechud$cancelNametag(AbstractClientPlayer player,
+    private void fpsmatch$cancelNametag(AbstractClientPlayer player,
                                        Component        msg,
                                        PoseStack        poseStack,
                                        MultiBufferSource buffer,
                                        int              packedLight,
                                        CallbackInfo     ci) {
-        ci.cancel();
+
+        if(FPSMConfig.Server.disableRenderNameTag.get()) ci.cancel();
     }
 }

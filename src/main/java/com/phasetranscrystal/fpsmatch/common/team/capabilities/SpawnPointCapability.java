@@ -77,7 +77,7 @@ public class SpawnPointCapability implements TeamCapability {
 
     @Override
     public void reset() {
-        clearSpawnPointsData();
+        randomSpawnPoints();
     }
 
     @Override
