@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.packet;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -14,6 +15,10 @@ public class GameTabStatsS2CPacket {
     private final UUID uuid;
     private final PlayerData data;
     private final String team;
+
+    public static GameTabStatsS2CPacket of(ServerTeam team, PlayerData data){
+        return new GameTabStatsS2CPacket(data.getOwner(),data,team.name);
+    }
 
     public GameTabStatsS2CPacket(UUID uuid, PlayerData data, String team) {
         this.uuid = uuid;

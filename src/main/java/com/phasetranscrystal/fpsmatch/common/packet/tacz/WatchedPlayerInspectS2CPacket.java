@@ -1,8 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.packet.tacz;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.compat.client.tacz.animation.GunAnimationController;
-import com.phasetranscrystal.fpsmatch.compat.client.tacz.fakeitem.ClientFakeItemManager;
+import com.phasetranscrystal.fpsmatch.compat.tacz.client.animation.GunAnimationController;
+import com.phasetranscrystal.fpsmatch.compat.tacz.client.fakeitem.ClientFakeItemManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;

@@ -96,7 +96,7 @@ public interface GiveStartKitsMap<T extends BaseMap> extends IMap<T> {
      * 清空所有队伍的初始装备。
      */
     default void clearAllTeamKits() {
-        for (ServerTeam team : this.getMap().getMapTeams().getTeams()) {
+        for (ServerTeam team : this.getMap().getMapTeams().getNormalTeams()) {
             this.clearTeamKits(team);
         }
     }

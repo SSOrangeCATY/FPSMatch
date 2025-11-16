@@ -1,10 +1,7 @@
 package com.phasetranscrystal.fpsmatch;
 
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
-import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
-import com.phasetranscrystal.fpsmatch.common.client.renderer.*;
 import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
-import com.phasetranscrystal.fpsmatch.common.client.screen.hud.*;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
@@ -20,24 +17,27 @@ import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
+import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.event.team.FPSMTeamCapabilityRegisterEvent;
-import com.tacz.guns.GunMod;
+import com.tacz.guns.client.gui.compat.ClothConfigScreen;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +75,7 @@ public class FPSMatch {
     {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::onEnqueue);
         MinecraftForge.EVENT_BUS.register(this);
         VanillaGuiRegister.CONTAINERS.register(modEventBus);
         FPSMItemRegister.ITEMS.register(modEventBus);
@@ -90,15 +91,22 @@ public class FPSMatch {
         if(FPSMBukkit.isBukkitEnvironment()){
             FPSMBukkit.register();
         }
-        // ApiClientExample.login();
-        // context.registerConfig(ModConfig.Type.SERVER, Config.serverSpec);
+    }
+
+    @SubscribeEvent
+    public void onEnqueue(final InterModEnqueueEvent event) {
+        event.enqueueWork(()->{
+            if(FPSMImpl.findClothConfig()){
+                DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> FPSMenuIntegration::registerModsPage);
+            }else{
+                if (FMLEnvironment.dist == Dist.CLIENT) {
+                    ClothConfigScreen.registerNoClothConfigPage();
+                }
+            }
+        });
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        registerPackets();
-    }
-
-    private static void registerPackets() {
         PACKET_REGISTER.registerPacket(ShopDataSlotS2CPacket.class);
         PACKET_REGISTER.registerPacket(ShopActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(ShopMoneyS2CPacket.class);
@@ -121,36 +129,17 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
     }
 
+    public static <M> void sendToPlayer(ServerPlayer player,M message){
+        NetworkPacketRegister.getChannelFromCache(message.getClass()).send(PacketDistributor.PLAYER.with(() -> player), message);
+    }
+
+    public static <M> void sendToServer(M message){
+        NetworkPacketRegister.getChannelFromCache(message.getClass()).sendToServer(message);
+    }
+
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         FPSMCommand.onRegisterCommands(event);
-    }
-
-    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents {
-
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event)
-        {
-            //注册原版GUI
-            VanillaGuiRegister.register();
-        }
-
-        @SubscribeEvent
-        public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
-            event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
-            event.registerBelowAll("hud_manager", FPSMGameHudManager.INSTANCE);
-        }
-
-
-        @SubscribeEvent
-        public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerEntityRenderer(EntityRegister.SMOKE_SHELL.get(), new SmokeShellRenderer());
-            event.registerEntityRenderer(EntityRegister.INCENDIARY_GRENADE.get(), new IncendiaryGrenadeRenderer());
-            event.registerEntityRenderer(EntityRegister.GRENADE.get(), new GrenadeRenderer());
-            event.registerEntityRenderer(EntityRegister.FLASH_BOMB.get(),new FlashBombRenderer());
-            event.registerEntityRenderer(EntityRegister.MATCH_DROP_ITEM.get(),new MatchDropRenderer());
-        }
     }
 
     public static synchronized boolean switchDebug(){

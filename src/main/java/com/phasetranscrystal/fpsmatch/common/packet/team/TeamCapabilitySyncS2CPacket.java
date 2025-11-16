@@ -1,8 +1,9 @@
 package com.phasetranscrystal.fpsmatch.common.packet.team;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
-import com.phasetranscrystal.fpsmatch.core.team.capability.TeamSyncedCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -16,7 +17,7 @@ public record TeamCapabilitySyncS2CPacket(
     FriendlyByteBuf capabilityData
 ) {
 
-    public static TeamCapabilitySyncS2CPacket of(ServerTeam team, Class<? extends TeamSyncedCapability> clazz) {
+    public static <T extends TeamCapability & FPSMCapability.Synchronizable> TeamCapabilitySyncS2CPacket of(ServerTeam team, Class<T> clazz) {
         FriendlyByteBuf dataBuf = new FriendlyByteBuf(Unpooled.buffer());
         dataBuf.writeUtf(clazz.getSimpleName());
         team.serializeCapability(clazz,dataBuf);
@@ -27,9 +28,9 @@ public record TeamCapabilitySyncS2CPacket(
         );
     }
 
-    public static List<TeamCapabilitySyncS2CPacket> toList(ServerTeam team,List<Class<? extends TeamSyncedCapability>> classes){
+    public static <T extends TeamCapability & FPSMCapability.Synchronizable> List<TeamCapabilitySyncS2CPacket> toList(ServerTeam team,List<Class<T>> classes){
         List<TeamCapabilitySyncS2CPacket> packets = new ArrayList<>();
-        for (Class<? extends TeamSyncedCapability> clazz : classes) {
+        for (Class<T> clazz : classes) {
             packets.add(of(team,clazz));
         }
         return packets;

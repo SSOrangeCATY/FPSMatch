@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;

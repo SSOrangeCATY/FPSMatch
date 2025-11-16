@@ -1,9 +1,9 @@
 package com.phasetranscrystal.fpsmatch.core.team;
 
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
-import com.phasetranscrystal.fpsmatch.core.team.capability.TeamCapability;
-import com.phasetranscrystal.fpsmatch.core.team.capability.TeamCapabilityManager;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.chat.Component;
 
 import java.util.*;
@@ -15,7 +15,7 @@ public final class ClientTeam extends BaseTeam {
         super(gameType, mapName, data.name(), -1, null);
         players = new HashMap<>();
         for (String cap : data.capabilities()){
-            TeamCapabilityManager.getRegisteredCapabilityClass(cap).ifPresent(this::addCapability);
+            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(cap, TeamCapability.class).ifPresent(this::addCapability);
         }
     }
 

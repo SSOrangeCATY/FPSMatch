@@ -1,10 +1,13 @@
 package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.packet.GameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -20,9 +23,11 @@ import java.util.*;
 public final class ServerTeam extends BaseTeam {
 
     public final Map<UUID, PlayerData> players = new HashMap<>();
+    private final BaseMap map;
 
-    public ServerTeam(String gameType, String mapName, String name, int playerLimit, PlayerTeam playerTeam) {
-        super(gameType, mapName, name, playerLimit, playerTeam);
+    public ServerTeam(BaseMap map, String name, int playerLimit, PlayerTeam playerTeam) {
+        super(map.getGameType(), map.getMapName(), name, playerLimit, playerTeam);
+        this.map = map;
     }
 
     @Override
@@ -31,6 +36,7 @@ public final class ServerTeam extends BaseTeam {
         Player p = player.get();
         player.get().getScoreboard().addPlayerToTeam(p.getScoreboardName(), getPlayerTeam());
         players.put(p.getUUID(), new PlayerData(p));
+        sync((ServerPlayer) p);
     }
 
     @Override
@@ -92,6 +98,7 @@ public final class ServerTeam extends BaseTeam {
         });
         return onlinePlayers;
     }
+
 
     public List<UUID> getLivingPlayers() {
         List<UUID> uuids = new ArrayList<>();
@@ -157,6 +164,12 @@ public final class ServerTeam extends BaseTeam {
         return false;
     }
 
+    public void sync(ServerPlayer player) {
+        FPSMAddTeamS2CPacket addTeamPacket = FPSMAddTeamS2CPacket.of(this);
+        FPSMatch.sendToPlayer(player, addTeamPacket);
+        this.syncCapabilities(player);
+    }
+
     public void syncCapabilities(ServerPlayer player) {
         for (TeamCapabilitySyncS2CPacket packet : TeamCapabilitySyncS2CPacket.toList(this,this.getSynchronizableCapabilities())) {
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
@@ -169,5 +182,9 @@ public final class ServerTeam extends BaseTeam {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
         }
+    }
+
+    public BaseMap getMap(){
+        return map;
     }
 }

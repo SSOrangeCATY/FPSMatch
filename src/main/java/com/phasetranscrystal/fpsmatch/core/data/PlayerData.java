@@ -32,6 +32,8 @@ public class PlayerData{
     private int headshotKills;
     private SpawnPointData spawnPointsData;
 
+    private boolean dirty;
+
     // Client
     private float hp;
 
@@ -45,6 +47,18 @@ public class PlayerData{
         this.name = name;
     }
 
+    public boolean isDirty(){
+        return dirty;
+    }
+
+    public void markDirty(){
+        dirty = true;
+    }
+
+    public void setDirty(boolean b){
+        dirty = b;
+    }
+
     public Component name(){
         return this.name;
     }
@@ -55,10 +69,12 @@ public class PlayerData{
 
     public void addScore(int scores){
         this.scores += scores;
+        markDirty();
     }
 
     public void setScores(int scores){
         this.scores = scores;
+        markDirty();
     }
 
     public int getScores() {
@@ -102,6 +118,7 @@ public class PlayerData{
 
     public void setLiving(boolean living) {
         isLiving = living;
+        markDirty();
     }
 
     public boolean isLiving() {
@@ -114,6 +131,7 @@ public class PlayerData{
 
     public void setMvpCount(int mvpCount) {
         this.mvpCount = mvpCount;
+        markDirty();
     }
 
     public int getMvpCount() {
@@ -134,6 +152,7 @@ public class PlayerData{
 
     public void set_damage(float _damage) {
         this._damage = _damage;
+        markDirty();
     }
 
     public int _assists() {
@@ -142,6 +161,7 @@ public class PlayerData{
 
     public void set_assists(int _assists) {
         this._assists = _assists;
+        markDirty();
     }
 
     public int _deaths() {
@@ -150,6 +170,7 @@ public class PlayerData{
 
     public void set_deaths(int _deaths) {
         this._deaths = _deaths;
+        markDirty();
     }
 
     public int _kills() {
@@ -158,6 +179,7 @@ public class PlayerData{
 
     public void set_kills(int _kills) {
         this._kills = _kills;
+        markDirty();
     }
 
     public int getKills() {
@@ -166,14 +188,17 @@ public class PlayerData{
 
     public void addDeaths(){
         this._deaths += 1;
+        markDirty();
     }
 
     public void addAssist(){
         this._assists += 1;
+        markDirty();
     }
 
     public void addKills(){
         this._kills += 1;
+        markDirty();
     }
 
     public float h(){
@@ -195,10 +220,12 @@ public class PlayerData{
 
     public void setHp(float hp) {
         this.hp = hp;
+
     }
 
     public void addDamage(float damage){
         this._damage += damage;
+        markDirty();
     }
 
     public float getDamage() {
@@ -207,18 +234,22 @@ public class PlayerData{
 
     public void setKills(int i) {
         this.kills = i;
+        markDirty();
     }
 
     public void setAssists(int assists) {
         this.assists = assists;
+        markDirty();
     }
 
     public void setDamage(float damage) {
         this.damage = damage;
+        markDirty();
     }
 
     public void setDeaths(int deaths) {
         this.deaths = deaths;
+        markDirty();
     }
 
     public void addMvpCount(int mvpCount){
@@ -236,8 +267,6 @@ public class PlayerData{
         data.setHeadshotKills(headshotKills);
         return data;
     }
-
-
 
     public void merge(PlayerData data){
         this.setKills(this.kills + data.kills);
@@ -257,10 +286,12 @@ public class PlayerData{
 
     public void addHeadshotKill() {
         this.headshotKills++;
+        markDirty();
     }
 
     public void setHeadshotKills(int headshotKills) {
         this.headshotKills = headshotKills;
+        markDirty();
     }
 
     public void save() {
@@ -291,6 +322,7 @@ public class PlayerData{
         this.damageData.clear();
         this.headshotKills = 0;
         this.scores = 0;
+        markDirty();
     }
 
     public void resetWithSpawnPoint(){

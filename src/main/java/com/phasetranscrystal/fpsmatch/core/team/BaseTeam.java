@@ -1,15 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.team;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
-import com.phasetranscrystal.fpsmatch.core.team.capability.TeamCapability;
-import com.phasetranscrystal.fpsmatch.core.team.capability.TeamCapabilityManager;
-import com.phasetranscrystal.fpsmatch.core.team.capability.TeamSyncedCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -24,6 +24,7 @@ public abstract class BaseTeam {
     private final PlayerTeam playerTeam;
     private int scores = 0;
     private Vector3f color = new Vector3f(1, 1, 1);
+    private boolean isSpectator = false;
     private final Map<Class<? extends TeamCapability>, TeamCapability> capabilities = new HashMap<>();
 
     public BaseTeam(String gameType, String mapName, String name, int playerLimit, PlayerTeam playerTeam) {
@@ -57,7 +58,7 @@ public abstract class BaseTeam {
         if (hasCapability(capabilityClass)) {
             return false;
         }
-        return TeamCapabilityManager.createInstance(this, capabilityClass)
+        return FPSMCapabilityManager.createInstance(this, capabilityClass)
                 .map(capability -> {
                     capabilities.put(capabilityClass, capability);
                     capability.init();
@@ -116,9 +117,8 @@ public abstract class BaseTeam {
         return getCapabilities().stream().map(TeamCapability::getName).collect(Collectors.toList());
     }
     public final List<String> getSynchronizableCapabilitiesString(){
-        return getCapabilities().stream().filter(cap -> cap instanceof TeamSyncedCapability).map(TeamCapability::getName).collect(Collectors.toList());
+        return getCapabilities().stream().filter(cap -> cap instanceof FPSMCapability.Synchronizable).map(TeamCapability::getName).collect(Collectors.toList());
     }
-
 
     /**
      * 序列化指定能力到网络缓冲区
@@ -126,7 +126,7 @@ public abstract class BaseTeam {
      * @param buf 网络缓冲区
      * @param <T> 能力类型
      */
-    public final <T extends TeamSyncedCapability> void serializeCapability(Class<T> capabilityClass, FriendlyByteBuf buf) {
+    public final <T extends TeamCapability & FPSMCapability.Synchronizable> void serializeCapability(Class<T> capabilityClass, FriendlyByteBuf buf) {
         getCapability(capabilityClass).ifPresent(capability -> {
             buf.writeUtf(capabilityClass.getName());
             capability.writeToBuf(buf);
@@ -139,15 +139,19 @@ public abstract class BaseTeam {
      */
     public final void deserializeCapability(FriendlyByteBuf buf) {
         String className = buf.readUtf();
-        TeamCapabilityManager.getRegisteredCapabilityClass(className).ifPresent(capabilityClass -> {
+        FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, TeamCapability.class).ifPresent(capabilityClass -> {
             getCapability(capabilityClass).ifPresentOrElse(
                     capability -> {
-                        if(capability instanceof TeamSyncedCapability syncedCapability){
-                            syncedCapability.readFromBuf(buf);
+                        if (capability instanceof FPSMCapability.Synchronizable synced) {
+                            synced.readFromBuf(buf);
                         }
                     },
-                    () -> TeamCapabilityManager.createFromNetwork(this, className, buf)
-                            .ifPresent(this::addCapabilityInstanceDirectly)
+                    () -> FPSMCapabilityManager.createFromNetwork(this, className, buf)
+                            .ifPresent(capability -> {
+                                if (capability instanceof TeamCapability teamCapability) {
+                                    this.addCapabilityInstanceDirectly(teamCapability);
+                                }
+                            })
             );
         });
     }
@@ -170,10 +174,10 @@ public abstract class BaseTeam {
      *
      * @return 需要同步的能力列表
      */
-    public final List<Class<? extends TeamSyncedCapability>> getSynchronizableCapabilities() {
+    public final <T extends TeamCapability & FPSMCapability.Synchronizable> List<Class<T>> getSynchronizableCapabilities() {
         return getCapabilities().stream()
-                .filter(capability -> capability instanceof TeamSyncedCapability)
-                .map(cap -> ((TeamSyncedCapability) cap).getClass())
+                .filter(capability -> capability instanceof FPSMCapability.Synchronizable)
+                .map(cap -> (Class<T>) cap.getClass())
                 .collect(Collectors.toList());
     }
 
@@ -194,7 +198,7 @@ public abstract class BaseTeam {
     /**
      * @apiNote  只在服务端返回不为null
      * */
-    public @Nullable PlayerTeam getPlayerTeam() {
+    public PlayerTeam getPlayerTeam() {
         return playerTeam;
     }
 
@@ -242,5 +246,48 @@ public abstract class BaseTeam {
             return this.gameType.equals(team.gameType) && this.mapName.equals(team.mapName) && this.name.equals(team.name);
         }
         return false;
+    }
+
+    public void setSpectator(boolean isSpectator) {
+        this.isSpectator = isSpectator;
+    }
+
+    public boolean isSpectator() {
+        return isSpectator;
+    }
+
+    public boolean isNormal(){
+        return !isSpectator;
+    }
+
+    public List<FPSMCapability.Savable<?>> getSaveData() {
+        return capabilities.values().stream()
+                .filter(FPSMCapability.Savable.class::isInstance)
+                .map(cap -> (FPSMCapability.Savable<?>) cap)
+                .collect(Collectors.toList());
+    }
+
+    public <T> void write(String className, T data) {
+        FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, TeamCapability.class)
+                .flatMap(this::getCapability).ifPresent(capability -> {
+                    if (capability instanceof FPSMCapability.Savable<?> savable) {
+                        try {
+                            FPSMCapability.Savable<T> cap = (FPSMCapability.Savable<T>) savable;
+                            cap.write(data);
+                        } catch (Exception e) {
+                            FPSMatch.LOGGER.error("Error while write capability", e);
+                        }
+                    }
+                });
+    }
+
+    public <D, T extends TeamCapability & FPSMCapability.Savable<D>> void write(Class<T> clazz, D data) {
+        getCapability(clazz).ifPresent(cap -> {
+            cap.write(data);
+        });
+    }
+
+    public void write(Map<String,?> data){
+        data.forEach(this::write);
     }
 }

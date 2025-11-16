@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;

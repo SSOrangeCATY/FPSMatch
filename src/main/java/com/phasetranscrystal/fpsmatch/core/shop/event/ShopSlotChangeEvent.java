@@ -15,7 +15,7 @@ public class ShopSlotChangeEvent{
     /**
      * @param player 玩家
      * @param flag 变化标志。
-     * @apiNote flag 规范：>0表示购入，<0表示返回。数值对应数量。*/
+     * @apiNote flag 规范：>0表示购入，<0表示退款。数值对应数量。*/
     public ShopSlotChangeEvent(ShopSlot shopSlot, ServerPlayer player,int money, int flag) {
         this.shopSlot = shopSlot;
         this.player = player;
@@ -30,7 +30,6 @@ public class ShopSlotChangeEvent{
     public boolean isCancelLogic(){
         return cancelLogic;
     }
-
 
     public void addMoney(int count){
         this.money += count;

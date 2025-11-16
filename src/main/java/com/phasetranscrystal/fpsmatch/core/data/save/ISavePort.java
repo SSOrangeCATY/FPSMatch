@@ -22,14 +22,7 @@ import java.util.function.Consumer;
  * 实现该接口的类需要提供一个具体的 {@link Codec} 实例，用于定义数据的编解码逻辑。
  */
 public interface ISavePort<T> {
-    /**
-     * 获取当前数据类型的编解码器。
-     * <p>
-     * 实现类需要提供一个具体的 {@link Codec} 实例，用于定义数据的编解码逻辑。
-     *
-     * @return 数据类型的编解码器
-     */
-    Codec<T> codec();
+    Codec<T> codec();   // 获取数据的编解码器
 
     /**
      * 获取读取数据后的处理逻辑。

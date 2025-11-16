@@ -1,18 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.packet.GameTabStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.event.map.PlayerKillOnMapEvent;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
-import com.phasetranscrystal.fpsmatch.common.team.capabilities.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import net.minecraft.core.BlockPos;
@@ -30,7 +27,6 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -50,6 +46,8 @@ public abstract class BaseMap {
     private final ServerLevel serverLevel;
     // 地图团队
     private final MapTeams mapTeams;
+
+    private final Map<Class<? extends MapCapability>, MapCapability> capabilities;
     // 地图区域数据
     public final AreaData mapArea;
     /**
@@ -64,6 +62,7 @@ public abstract class BaseMap {
         this.mapName = mapName;
         this.mapArea = areaData;
         this.mapTeams = new MapTeams(serverLevel, this);
+        this.capabilities = new HashMap<>();
     }
 
     /**
@@ -183,7 +182,7 @@ public abstract class BaseMap {
 
     public void join(ServerPlayer player) {
         MapTeams mapTeams = this.getMapTeams();
-        List<ServerTeam> baseTeams = mapTeams.getTeams();
+        List<ServerTeam> baseTeams = mapTeams.getNormalTeams();
         if(baseTeams.isEmpty()) return;
         ServerTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
         this.join(team.name, player);
@@ -197,25 +196,11 @@ public abstract class BaseMap {
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         this.pullGameInfo(player);
-        this.getMapTeams().getTeamByName(teamName)
-                .flatMap(team -> team.getPlayerData(player.getUUID()))
-                .ifPresent(playerData -> this.sendPacketToAllPlayer(new GameTabStatsS2CPacket(player.getUUID(), playerData, teamName)));
         this.getMapTeams().joinTeam(teamName, player);
         if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
             shopMap.getShop(player).ifPresent(shop -> shop.syncShopData(player));
         }
     }
-
-    public void joinSpec(ServerPlayer player){
-        FPSMCore.checkAndLeaveTeam(player);
-        player.setGameMode(GameType.SPECTATOR);
-        this.pullGameInfo(player);
-        this.getMapTeams().getSpectatorTeam().join(new FPSMPlayer(player));
-        this.getMapTeams().getSpectatorTeam().getCapability(SpawnPointCapability.class)
-                .flatMap(cap -> cap.getSpawnPointsData().stream().findAny())
-                .ifPresent(data -> this.teleportToPoint(player, data));
-    }
-
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
         this.getMapTeams().getTeamByPlayer(player)
@@ -367,10 +352,10 @@ public abstract class BaseMap {
      */
     public <MSG> void sendPacketToJoinedPlayer(@NotNull ServerPlayer player, MSG packet, boolean noCheck) {
         if (noCheck || this.checkGameHasPlayer(player)) {
-            if (packet instanceof Packet<?> vanillaPacket) {
-                player.connection.send(vanillaPacket);
+            if (packet instanceof Packet<?> vanilla) {
+                player.connection.send(vanilla);
             } else {
-                NetworkPacketRegister.getChannelFromCache(packet.getClass()).send(PacketDistributor.PLAYER.with(() -> player), packet);
+                FPSMatch.sendToPlayer(player, packet);
             }
         } else {
             FPSMatch.LOGGER.error("{} is not join {}:{}", player.getDisplayName().getString(), this.getGameType(), this.getMapName());
@@ -467,6 +452,10 @@ public abstract class BaseMap {
 
     public void pullGameInfo(ServerPlayer player){
         this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+    }
+
+    public void read(){
+
     }
 
 }

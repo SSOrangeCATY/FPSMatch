@@ -10,6 +10,8 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,14 +39,38 @@ public class FPSMCommandSuggests {
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(StringArgumentType.getString(c, MAP_NAME_ARG));
         Suggestions suggestions = FPSMCommandSuggests.getSuggestions(b, new ArrayList<>());
         if (map.isPresent()){
-            suggestions = FPSMCommandSuggests.getSuggestions(b, map.get().getMapTeams().getTeamsName());
+            suggestions = FPSMCommandSuggests.getSuggestions(b, map.get().getMapTeams().getNormalTeamsName());
         }
         return suggestions;
     });
+
     public static final FPSMSuggestionProvider MAP_DEBUG_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("start","reset","new_round","cleanup","switch")));
     public static final FPSMSuggestionProvider TEAM_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("join","leave")));
     public static final FPSMSuggestionProvider SPAWNPOINTS_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("add","clear","clear_all","set")));
     public static final FPSMSuggestionProvider SKITS_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("add","clear","list")));
+
+    public static final FPSMSuggestionProvider TEAM_CAPABILITIES_ARGS = new FPSMSuggestionProvider((c,b)-> {
+        String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
+        String teamName = StringArgumentType.getString(c, TEAM_NAME_ARG);
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
+        List<String> capabilities = new ArrayList<>();
+        map.flatMap(baseMap -> baseMap.getMapTeams().getTeamByName(teamName)).ifPresent(team -> {
+            team.getCapabilities().forEach(
+                    cap->{
+                        FPSMCapabilityManager.getFactory(cap.getClass()).ifPresent(
+                                factory->{
+                                    TeamCapability.Factory.Command command = factory.command();
+                                    if(factory.command() != null){
+                                        capabilities.add(command.getName());
+                                    }
+                                }
+                        );
+                    }
+            );
+        });
+
+        return FPSMCommandSuggests.getSuggestions(b,capabilities);
+    });
 
     public static final FPSMSuggestionProvider SHOP_ITEM_TYPES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
         String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
@@ -101,11 +127,10 @@ public class FPSMCommandSuggests {
             Optional<FPSMShop<?>> optionalShop = shopMap.getShop(shopName);
             if (optionalShop.isPresent()) {
                 List<String> stringList = optionalShop.get().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames();
-                return FPSMCommandSuggests.getSuggestions(b, stringList);
+                return getSuggestions(b, stringList);
             }
         }
-        return FPSMCommandSuggests.getSuggestions(b, new ArrayList<>());});
-
+        return getSuggestions(b, new ArrayList<>());});
 
 
     public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
