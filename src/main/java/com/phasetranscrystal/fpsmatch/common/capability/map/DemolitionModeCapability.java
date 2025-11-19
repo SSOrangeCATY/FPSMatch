@@ -1,14 +1,24 @@
 package com.phasetranscrystal.fpsmatch.common.capability.map;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +26,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DemolitionModeCapability extends MapCapability implements FPSMCapability.Savable<DemolitionModeCapability.Data> {
+
+    public static void register() {
+        FPSMCapabilityManager.register(DemolitionModeCapability.class, new Factory<>() {
+            @Override
+            public DemolitionModeCapability create(BaseMap map) {
+                return new DemolitionModeCapability(map);
+            }
+
+            @Override
+            public Command command(){
+                return new DemolitionCommand();
+            }
+        });
+    }
+
+
     private final BaseMap map;
 
     private final Data data = new Data();
@@ -186,6 +212,39 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
 
         public String getDemolitionTeam() {
             return demolitionTeam;
+        }
+    }
+
+    public static class DemolitionCommand implements Factory.Command {
+        @Override
+        public String getName() {
+            return "demolition";
+        }
+
+        @Override
+        public LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context) {
+            return builder
+                    .then(Commands.literal("bomb_area")
+                            .then(Commands.literal("add")
+                                    .then(Commands.argument("from", BlockPosArgument.blockPos())
+                                            .then(Commands.argument("to", BlockPosArgument.blockPos())
+                                                    .executes(DemolitionCommand::handleBombAreaAction)))));
+        }
+
+        private static int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
+            BlockPos pos1 = BlockPosArgument.getBlockPos(context, "from");
+            BlockPos pos2 = BlockPosArgument.getBlockPos(context, "to");
+
+            return FPSMCommand.getMapCapability(context, DemolitionModeCapability.class)
+                    .map(cap -> {
+                        cap.addBombArea(new AreaData(pos1, pos2));
+                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.success"));
+                        return 1;
+                    })
+                    .orElseGet(() -> {
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.failed"));
+                        return 0;
+                    });
         }
     }
 }

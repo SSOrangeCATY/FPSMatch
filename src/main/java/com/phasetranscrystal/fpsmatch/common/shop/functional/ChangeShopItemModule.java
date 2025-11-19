@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
+import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
@@ -105,7 +105,7 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
                 .withWriteHandler((manager) ->
                         FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
                             if (module instanceof ChangeShopItemModule cSIM) {
-                                manager.saveData(cSIM, cSIM.getName());
+                                manager.saveData(cSIM, cSIM.getName(),true);
                             }
                         })
                 ).build());

@@ -27,6 +27,18 @@ import java.util.*;
  */
 public class FPSMShop<T extends Enum<T> & INamedType> {
 
+    public static <T extends Enum<T> & INamedType> FPSMShop<T> create(Class<T> enumClass, String name){
+        return create(enumClass,name,800);
+    }
+
+    public static <T extends Enum<T> & INamedType> FPSMShop<T> create(Class<T> enumClass, String name, int startMoney){
+        Map<T,ArrayList<ShopSlot>> shopSlots = new HashMap<>();
+        for (T type : enumClass.getEnumConstants()){
+            shopSlots.put(type,type.defaultSlots());
+        }
+        return new FPSMShop<>(enumClass,name,shopSlots,startMoney);
+    }
+
     public final Class<T> enumClass;
     /**
      * 商店的名称，通常与队伍名称相关联。

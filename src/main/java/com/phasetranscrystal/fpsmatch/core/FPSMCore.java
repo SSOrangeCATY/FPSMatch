@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.core;
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.map.RegisterFPSMapEvent;
@@ -162,7 +162,7 @@ public class FPSMCore {
                 map.mapTick();
             }catch(Exception e){
                 FPSMatch.LOGGER.error("{} map error: ", map.getMapName(), e);
-                map.resetGame();
+                map.reset();
             }
         }));
     }
@@ -178,7 +178,7 @@ public class FPSMCore {
     }
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        FPSMCore.getInstance().fpsmDataManager.saveData();
+        FPSMCore.getInstance().fpsmDataManager.saveAllData();
     }
 
     @SubscribeEvent
@@ -190,7 +190,7 @@ public class FPSMCore {
         // 注册数据
         MinecraftForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(INSTANCE.fpsmDataManager));
         // 读取数据
-        INSTANCE.fpsmDataManager.readData();
+        INSTANCE.fpsmDataManager.readAllData();
     }
 
 

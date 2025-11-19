@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
+import com.google.common.collect.Lists;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMCommandEvent;
@@ -35,6 +36,13 @@ public abstract class FPSMCapability<H> {
      * 获取能力的持有者
      */
     public abstract H getHolder();
+
+    /**
+     * 不允许在CapabilityMap中移除此能力
+     */
+    public boolean isImmutable(){
+        return false;
+    };
 
     /**
      * 获取能力名称（默认使用类名）

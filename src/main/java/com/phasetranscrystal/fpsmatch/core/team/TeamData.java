@@ -30,11 +30,11 @@ public record TeamData(String name, int limit, List<String> capabilities) {
     }
 
     public static TeamData of(ServerTeam team) {
-        return new TeamData(team.name,team.getPlayerLimit(),team.getSynchronizableCapabilitiesString());
+        return new TeamData(team.name,team.getPlayerLimit(),team.getCapabilityMap().getSynchronizableCapabilitiesString());
     }
 
     public static TeamData of(ClientTeam team) {
-        return new TeamData(team.name,-1,team.getCapabilitiesString());
+        return new TeamData(team.name,-1,team.getCapabilityMap().getCapabilitiesString());
     }
 
     public List<Class<? extends TeamCapability>> getCapabilities(){

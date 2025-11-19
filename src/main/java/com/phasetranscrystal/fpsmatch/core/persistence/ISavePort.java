@@ -1,10 +1,12 @@
-package com.phasetranscrystal.fpsmatch.core.data.save;
+package com.phasetranscrystal.fpsmatch.core.persistence;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import com.phasetranscrystal.fpsmatch.core.persistence.datafixer.DataFixer;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -13,6 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * 用于定义可保存数据的接口。
@@ -36,6 +39,13 @@ public interface ISavePort<T> {
         return (data) -> {};
     }
 
+    int getVersion();
+
+    // 获取数据初始化逻辑
+    default Supplier<T> getInitializer() {
+        throw new UnsupportedOperationException("Default initializer not provided for " + getClass().getSimpleName());
+    }
+
     /**
      * 从 JSON 元素中解码数据。
      * <p>
@@ -45,9 +55,28 @@ public interface ISavePort<T> {
      * @return 解码后的数据
      */
     default T decodeFromJson(JsonElement json) {
-        return this.codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
-            throw new RuntimeException(e);
-        }).getFirst();
+        JsonObject wrapper = json.getAsJsonObject();
+
+        int oldVersion = wrapper.has("version") ? wrapper.get("version").getAsInt() : 0;
+
+        JsonElement rawData = oldVersion == 0 ? json : wrapper.get("data");
+
+        if(oldVersion == getVersion()) return decode(rawData);
+
+
+        return codec()
+                .decode(JsonOps.INSTANCE, DataFixer.getInstance().fixJson(getClass(), rawData, oldVersion, getVersion()))
+                .getOrThrow(false, e -> {
+                    throw new DataPersistenceException("Failed to decode fixed data", e);
+                }).getFirst();
+    }
+
+    default T decode(JsonElement jsonElement){
+        return codec().decode(JsonOps.INSTANCE, jsonElement)
+                .getOrThrow(false, e -> {
+                    throw new DataPersistenceException("Failed to decode fixed data", e);
+                })
+                .getFirst();
     }
 
     /**
@@ -59,10 +88,12 @@ public interface ISavePort<T> {
      * @return 编码后的 JSON 元素
      */
     default JsonElement encodeToJson(T data) {
-        return this.codec().encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, e -> {
-            throw new RuntimeException(e);
-        });
+        JsonObject wrapper = new JsonObject();
+        wrapper.addProperty("version", getVersion());
+        wrapper.add("data", codec().encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, DataPersistenceException::new));
+        return wrapper;
     }
+
 
 
     /**
@@ -73,21 +104,16 @@ public interface ISavePort<T> {
      * @return 读取到的数据，如果文件不存在则返回null
      */
     default T readSpecificFile(File directory, String fileName) {
-        if (!directory.exists() || !directory.isDirectory()) {
-            return null;
-        }
+        try {
+            File file = new File(directory, PersistenceUtils.fixFileName(fileName) + "." + getFileType());
+            if (!file.exists()) return getInitializer().get();
 
-        File file = new File(directory, fileName + "." + this.getFileType());
-        if (!file.exists() || !file.isFile()) {
-            return null;
-        }
-
-        try (FileReader reader = new FileReader(file)) {
-            JsonElement element = new Gson().fromJson(reader, JsonElement.class);
-            return this.decodeFromJson(element);
+            // 读取并修复数据
+            try (FileReader reader = new FileReader(file)) {
+                return decodeFromJson(new Gson().fromJson(reader, JsonElement.class));
+            }
         } catch (Exception e) {
-            e.fillInStackTrace();
-            return null;
+            return getInitializer().get();
         }
     }
 
@@ -176,14 +202,6 @@ public interface ISavePort<T> {
      * @param fileName 文件名（不包含扩展名）
      * @return 文件写入器
      */
-    /**
-     * 获取文件写入器。
-     *
-     * @param data 待写入的数据
-     * @param fileName 文件名（不包含扩展名）
-     * @param overwrite 是否覆盖现有文件内容（true为覆盖，false为合并）
-     * @return 文件写入器
-     */
     default Consumer<File> getWriter(T data, String fileName, boolean overwrite) {
         return (directory) -> {
             if (!directory.exists()) {
@@ -250,5 +268,9 @@ public interface ISavePort<T> {
 
     default String getFileType(){
         return "json";
+    }
+
+    default boolean createNewDataFile(File directory, String fileName) {
+        return createNewDataFile(directory, fileName, getInitializer().get());
     }
 }

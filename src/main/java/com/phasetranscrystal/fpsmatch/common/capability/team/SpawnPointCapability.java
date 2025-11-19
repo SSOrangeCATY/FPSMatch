@@ -121,6 +121,11 @@ public class SpawnPointCapability extends TeamCapability {
         return team;
     }
 
+    @Override
+    public boolean isImmutable(){
+        return true;
+    }
+
     static class SpawnPointCommand implements TeamCapability.Factory.Command {
 
         public static final FPSMCommandSuggests.FPSMSuggestionProvider SPAWNPOINTS_ACTION_SUGGESTION =
@@ -151,7 +156,7 @@ public class SpawnPointCapability extends TeamCapability {
                     .flatMap(map -> map.getMapTeams().getTeamByName(teamName)) // 直接获取团队实例
                     .map(team -> {
                         // 获取当前团队的SpawnPointCapability
-                        SpawnPointCapability spawnCap = team.getCapability(SpawnPointCapability.class).orElse(null);
+                        SpawnPointCapability spawnCap = team.getCapabilityMap().getCapability(SpawnPointCapability.class).orElse(null);
                         if (spawnCap == null) {
                             FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
                             return 0;
@@ -189,7 +194,7 @@ public class SpawnPointCapability extends TeamCapability {
 
         private static int handleSpawnClearAll(CommandContext<CommandSourceStack> context, BaseMap map) {
             map.getMapTeams().getTeamsWithSpec().forEach(team -> {
-                team.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
+                team.getCapabilityMap().getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
             });
             FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clearall.success"));
             return 1;

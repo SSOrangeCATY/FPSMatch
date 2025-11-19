@@ -15,7 +15,7 @@ public final class ClientTeam extends BaseTeam {
         super(gameType, mapName, data.name(), -1, null);
         players = new HashMap<>();
         for (String cap : data.capabilities()){
-            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(cap, TeamCapability.class).ifPresent(this::addCapability);
+            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(cap, TeamCapability.class).ifPresent(this.getCapabilityMap()::addCapability);
         }
     }
 

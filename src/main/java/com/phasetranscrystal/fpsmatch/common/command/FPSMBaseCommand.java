@@ -50,7 +50,7 @@ public class FPSMBaseCommand {
 
     // 命令处理方法
     private static int handleSave(CommandContext<CommandSourceStack> context) {
-        FPSMCore.getInstance().getFPSMDataManager().saveData();
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
         sendSuccess(context.getSource(), Component.translatable("commands.fpsm.save.success"));
         return 1;
     }
@@ -85,7 +85,7 @@ public class FPSMBaseCommand {
             ServerPlayer player = context.getSource().getPlayerOrException();
             int amount = IntegerArgumentType.getInteger(context, "amount");
 
-            ItemStack itemStack = player.getMainHandItem().copy();
+            ItemStack itemStack = player.getMainHandItem();
             if (itemStack.isEmpty()) {
                 sendFailure(context.getSource(), Component.translatable("commands.fpsm.tacz.dummy.amount.empty_hand"));
                 return 0;

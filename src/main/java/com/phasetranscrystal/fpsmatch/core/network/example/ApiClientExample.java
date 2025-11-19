@@ -23,8 +23,8 @@ public class ApiClientExample {
     }
 
     public static void download() throws DownloadException {
-        Path path = Paths.get("C:", "Users", "jumao", "Downloads", "QQ.exe");
-        NetworkModule download = NetworkModule.initializeNetworkModule("https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.19_250523_x64_01.exe");
+        Path path = Paths.get("C:", "");
+        NetworkModule download = NetworkModule.initializeNetworkModule("");
         download.newRequest()
                 .downloadRequest()
                 .saveTo(path)

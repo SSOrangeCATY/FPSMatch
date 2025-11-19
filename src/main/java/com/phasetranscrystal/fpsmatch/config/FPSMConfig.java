@@ -16,7 +16,7 @@ public class FPSMConfig {
         public static void init(ForgeConfigSpec.Builder builder) {
             lock3PersonCamera = builder.comment(
                     "禁用第三人称"
-            ).define("Lock3PersonCamera", false);
+            ).define("Lock3PersonCamera", true);
 
             lockSpecKeyHandle = builder.comment(
                     "阻止旁观者原版按键"
@@ -56,6 +56,10 @@ public class FPSMConfig {
 
 
     public static class Common {
+
+        // normal
+        public final ForgeConfigSpec.BooleanValue autoAdventureMode;
+
         // drops
         public final ForgeConfigSpec.IntValue mainWeaponCount;
         public final ForgeConfigSpec.IntValue secondaryWeaponCount;
@@ -77,6 +81,13 @@ public class FPSMConfig {
         public final ForgeConfigSpec.IntValue smokeShellLivingTime;
 
         private Common(ForgeConfigSpec.Builder builder) {
+
+            builder.push("normal");
+            autoAdventureMode = builder.comment(
+                    "进入世界自动切换到冒险模式"
+            ).define("AutoAdventureMode", true);
+            builder.pop();
+
             builder.push("drops");
             {
                 mainWeaponCount = builder.comment(

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
+import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
 import net.minecraftforge.eventbus.api.Event;
 
 /**

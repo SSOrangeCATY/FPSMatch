@@ -41,6 +41,7 @@ public class MapTeams {
         this.level = level;
         this.map = map;
         this.addTeam(TeamData.of("spectator",-1,List.of(SpawnPointCapability.class)),true)
+                .getCapabilityMap()
                 .getCapability(SpawnPointCapability.class)
                 .ifPresent(cap->{
                     Vec3 vec3 = map.getMapArea().getAABB().getCenter();
@@ -61,7 +62,7 @@ public class MapTeams {
 
 
     public void addSpawnPoint(ServerTeam team, SpawnPointData spawnPointData) {
-        team.getCapability(SpawnPointCapability.class).ifPresent(cap -> {
+        team.getCapabilityMap().getCapability(SpawnPointCapability.class).ifPresent(cap -> {
             cap.addSpawnPointData(spawnPointData);
         });
     }
@@ -77,7 +78,7 @@ public class MapTeams {
     public Optional<List<SpawnPointData>> getSpawnPointsByTeam(String team){
         ServerTeam t = this.teams.getOrDefault(team,null);
         if(t == null) return Optional.empty();
-        return t.getCapability(SpawnPointCapability.class).map(SpawnPointCapability::getSpawnPointsData);
+        return t.getCapabilityMap().getCapability(SpawnPointCapability.class).map(SpawnPointCapability::getSpawnPointsData);
     }
 
     /**
@@ -132,7 +133,7 @@ public class MapTeams {
     public void putAllSpawnPoints(Map<String,List<SpawnPointData>> data){
         data.forEach((n,list)->{
             if (teams.containsKey(n)){
-                teams.get(n).getCapability(SpawnPointCapability.class).ifPresent(cap->cap.addAllSpawnPointData(list));
+                teams.get(n).getCapabilityMap().getCapability(SpawnPointCapability.class).ifPresent(cap->cap.addAllSpawnPointData(list));
             }
         });
     }
@@ -145,7 +146,7 @@ public class MapTeams {
     public boolean randomSpawnPoints(){
         AtomicBoolean atomicBoolean = new AtomicBoolean(true);
         this.teams.forEach(((s, t) -> {
-            if(atomicBoolean.get()) atomicBoolean.set(t.getCapability(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
+            if(atomicBoolean.get()) atomicBoolean.set(t.getCapabilityMap().getCapability(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
         }));
         return atomicBoolean.get();
     }
@@ -161,7 +162,7 @@ public class MapTeams {
     public void defineSpawnPoint(String teamName, SpawnPointData data) {
         ServerTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
-        team.getCapability(SpawnPointCapability.class).ifPresent(cap->cap.addSpawnPointData(data));
+        team.getCapabilityMap().getCapability(SpawnPointCapability.class).ifPresent(cap->cap.addSpawnPointData(data));
     }
 
     /**
@@ -174,7 +175,7 @@ public class MapTeams {
     public void resetSpawnPoints(String teamName){
         ServerTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
-        team.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset);
+        team.getCapabilityMap().getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset);
     }
 
     /**
@@ -183,7 +184,7 @@ public class MapTeams {
      * 遍历所有队伍，并调用队伍的出生点数据重置方法。
      */
     public void resetAllSpawnPoints(){
-        this.teams.forEach((s,t)-> t.getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset));
+        this.teams.forEach((s,t)-> t.getCapabilityMap().getCapability(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset));
     }
 
     public ServerTeam addTeam(TeamData data, boolean isSpectator){
@@ -194,7 +195,7 @@ public class MapTeams {
         ServerTeam team = new ServerTeam(map,teamName,limit,playerteam);
 
         for (Class<? extends TeamCapability> capClazz : data.getCapabilities()){
-            if(!team.addCapability(capClazz)){
+            if(!team.getCapabilityMap().addCapability(capClazz)){
                 FPSMatch.LOGGER.error("{} Team Capability is not registered : {}",fixedName,capClazz.getName());
             }
         }
@@ -786,14 +787,14 @@ public class MapTeams {
     public Map<String,List<TeamCapability.Savable<?>>> getSavable(){
         Map<String,List<TeamCapability.Savable<?>>> savable = new HashMap<>();
         teams.values().forEach((t)->{
-            savable.put(t.name,t.getSaveData());
+            savable.put(t.name,t.getCapabilityMap().getSaveData());
         });
         return savable;
     }
 
     public void write(Map<String,Map<String,?>> data){
         for (String key : data.keySet()) {
-            teams.get(key).write(data.get(key));
+            teams.get(key).getCapabilityMap().write(data.get(key));
         }
     }
 

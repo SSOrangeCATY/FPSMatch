@@ -9,11 +9,10 @@ import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
-import com.phasetranscrystal.fpsmatch.core.map.EndTeleportMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -53,16 +52,6 @@ public class FPSMapCommand {
                                 .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)
                                 .then(Commands.argument(FPSMCommandSuggests.MAP_NAME_ARG, StringArgumentType.string())
                                         .suggests(FPSMCommandSuggests.MAP_NAMES_WITH_GAME_TYPE_SUGGESTION)
-                                        // 匹配结束传送点修改
-                                        .then(Commands.literal("match_end_teleport_point")
-                                                .then(Commands.argument("point", BlockPosArgument.blockPos())
-                                                        .executes(FPSMapCommand::handleModifyMatchEndTeleportPoint)))
-                                        // 炸弹区域修改
-                                        .then(Commands.literal("bomb_area")
-                                                .then(Commands.literal("add")
-                                                        .then(Commands.argument("from", BlockPosArgument.blockPos())
-                                                                .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                                                        .executes(FPSMapCommand::handleBombAreaAction)))))
                                         // 调试操作
                                         .then(Commands.literal("debug")
                                                 .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
@@ -79,12 +68,6 @@ public class FPSMapCommand {
                                                         .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
                                                                 .executes(FPSMapCommand::handleLeaveMapWithTarget)))
                                                 .then(Commands.literal("teams")
-                                                        .then(Commands.literal("spectator")
-                                                                .then(Commands.literal("players")
-                                                                        .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
-                                                                                .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
-                                                                                        .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                        .executes(FPSMapCommand::handleSpecTeamAction)))))
                                                         .then(Commands.argument(FPSMCommandSuggests.TEAM_NAME_ARG, StringArgumentType.string())
                                                                 .suggests(FPSMCommandSuggests.TEAM_NAMES_SUGGESTION)
                                                                 .then(buildTeamCapabilityCommands(builder.getSecond()))
@@ -126,14 +109,31 @@ public class FPSMapCommand {
                                                                                                 .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                                                                                         .executes(FPSMapCommand::handleGunModifyGunAmmoAmount))))))))))));
     }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> buildMapCapabilityCommands(CommandBuildContext context) {
+        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("");
+        // 遍历所有注册的TeamCapability
+        for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities((t)-> t.isAssignableFrom(MapCapability.class))) {
+            // 获取Capability的Factory
+            FPSMCapabilityManager.getRawFactory(capClass).ifPresent(factory -> {
+                // 获取Factory中定义的指令
+                FPSMCapability.Factory.Command command = factory.command();
+                if (command != null) {
+                    root.then(command.builder(Commands.literal(command.getName()), context));
+                }
+            });
+        }
+        return root;
+    }
+
     private static LiteralArgumentBuilder<CommandSourceStack> buildTeamCapabilityCommands(CommandBuildContext context) {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("");
         // 遍历所有注册的TeamCapability
         for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities((t)-> t.isAssignableFrom(TeamCapability.class))) {
             // 获取Capability的Factory
-            FPSMCapabilityManager.getFactory(capClass).ifPresent(factory -> {
+            FPSMCapabilityManager.getRawFactory(capClass).ifPresent(factory -> {
                 // 获取Factory中定义的指令
-                TeamCapability.Factory.Command command = factory.command();
+                FPSMCapability.Factory.Command command = factory.command();
                 if (command != null) {
                     // 调用指令的builder方法，挂载到当前节点
                     root.then(command.builder(Commands.literal(command.getName()), context));
@@ -159,44 +159,6 @@ public class FPSMapCommand {
         return 0;
     }
 
-    private static int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
-        BlockPos point = BlockPosArgument.getBlockPos(context, "point").above();
-
-        return FPSMCommand.getMapByName(context)
-                .filter(map -> map instanceof EndTeleportMap)
-                .map(map -> {
-                    SpawnPointData pointData = new SpawnPointData(
-                            context.getSource().getLevel().dimension(),
-                            point, 0f, 0f
-                    );
-                    ((EndTeleportMap<?>) map).setMatchEndTeleportPoint(pointData);
-                    FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.metp.success", pointData.toString()));
-                    return 1;
-                })
-                .orElseGet(() -> {
-                    String mapName = StringArgumentType.getString(context, FPSMCommandSuggests.MAP_NAME_ARG);
-                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.metp.not_available", mapName));
-                    return 0;
-                });
-    }
-
-    private static int handleBombAreaAction(CommandContext<CommandSourceStack> context) {
-        BlockPos pos1 = BlockPosArgument.getBlockPos(context, "from");
-        BlockPos pos2 = BlockPosArgument.getBlockPos(context, "to");
-
-        return FPSMCommand.getMapByName(context)
-                .filter(map -> map instanceof BlastModeMap)
-                .map(map -> {
-                    ((BlastModeMap<?>) map).addBombArea(new AreaData(pos1, pos2));
-                    FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.success"));
-                    return 1;
-                })
-                .orElseGet(() -> {
-                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.failed"));
-                    return 0;
-                });
-    }
-
     private static int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String action = StringArgumentType.getString(context, FPSMCommandSuggests.ACTION_ARG);
 
@@ -204,11 +166,11 @@ public class FPSMapCommand {
                 .map(map -> {
                     switch (action) {
                         case "start":
-                            map.startGame();
+                            map.start();
                             FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.debug.start.success", map.getMapName()));
                             break;
                         case "reset":
-                            map.resetGame();
+                            map.reset();
                             FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.debug.reset.success", map.getMapName()));
                             break;
                         case "new_round":

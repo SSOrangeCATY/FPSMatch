@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.map;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
@@ -47,7 +48,7 @@ public abstract class BaseMap {
     // 地图团队
     private final MapTeams mapTeams;
 
-    private final Map<Class<? extends MapCapability>, MapCapability> capabilities;
+    private final CapabilityMap<BaseMap,MapCapability> capabilities;
     // 地图区域数据
     public final AreaData mapArea;
     /**
@@ -62,7 +63,7 @@ public abstract class BaseMap {
         this.mapName = mapName;
         this.mapArea = areaData;
         this.mapTeams = new MapTeams(serverLevel, this);
-        this.capabilities = new HashMap<>();
+        this.capabilities = CapabilityMap.ofMapCapability(this);
     }
 
     /**
@@ -109,7 +110,7 @@ public abstract class BaseMap {
     /**
      * 开始游戏
      */
-    public abstract void startGame();
+    public abstract void start();
 
     /**
      * 检查玩家是否在游戏中
@@ -163,7 +164,7 @@ public abstract class BaseMap {
     /**
      * 重置游戏
      */
-    public abstract void resetGame();
+    public abstract void reset();
 
     /**
      * 获取地图团队
@@ -294,6 +295,16 @@ public abstract class BaseMap {
      * 重新加载地图逻辑
      * */
     public void reload(){}
+
+
+    /**
+     * 获取地图的所有能力
+     *
+     * @return 能力实例集合
+     */
+    public CapabilityMap<BaseMap,MapCapability> getCapabilityMap() {
+        return capabilities;
+    }
 
     /**
      * 比较两张地图是否相等
@@ -452,10 +463,6 @@ public abstract class BaseMap {
 
     public void pullGameInfo(ServerPlayer player){
         this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
-    }
-
-    public void read(){
-
     }
 
 }

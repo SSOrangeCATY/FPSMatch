@@ -46,6 +46,11 @@ public class FPSMCapabilityManager {
         return Optional.ofNullable((FPSMCapability.Factory<H, T>) CAPABILITY_FACTORIES.get(capabilityClass));
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T extends FPSMCapability<?>> Optional<FPSMCapability.Factory<?, T>> getRawFactory(Class<T> capabilityClass) {
+        return Optional.ofNullable((FPSMCapability.Factory<?, T>) CAPABILITY_FACTORIES.get(capabilityClass));
+    }
+
     /**
      * 为持有者创建能力实例
      * @param holder 能力持有者

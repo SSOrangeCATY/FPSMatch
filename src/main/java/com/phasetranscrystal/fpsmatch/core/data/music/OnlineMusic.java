@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.data.music;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.core.data.HashData;
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.persistence.PersistenceUtils;
 import com.phasetranscrystal.fpsmatch.core.network.download.DownloadHolder;
 import com.phasetranscrystal.fpsmatch.core.network.download.Downloader;
 import com.phasetranscrystal.fpsmatch.core.network.download.HashDownloadHolder;
@@ -27,11 +27,11 @@ public record OnlineMusic(String uuid, String musicUrl, String musicName, String
     private static final Logger log = LoggerFactory.getLogger(OnlineMusic.class);
 
     public File getMusicFile() {
-        return FPSMDataManager.getLocalCacheFile(musicName, "music");
+        return PersistenceUtils.getLocalCachePath(musicName, "music").toFile();
     }
 
     public File getCoverFile() {
-        return FPSMDataManager.getLocalCacheFile(musicName, "cover");
+        return PersistenceUtils.getLocalCachePath(musicName, "cover").toFile();
     }
 
     public boolean musicExists() {

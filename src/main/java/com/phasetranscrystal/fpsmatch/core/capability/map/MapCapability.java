@@ -9,4 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
  */
 public abstract class MapCapability extends FPSMCapability<BaseMap> {
 
+    public void victory() {}
+
+    public void tick(){}
 }

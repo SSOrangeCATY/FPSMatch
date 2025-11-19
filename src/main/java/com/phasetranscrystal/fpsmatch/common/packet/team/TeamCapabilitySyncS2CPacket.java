@@ -20,7 +20,7 @@ public record TeamCapabilitySyncS2CPacket(
     public static <T extends TeamCapability & FPSMCapability.Synchronizable> TeamCapabilitySyncS2CPacket of(ServerTeam team, Class<T> clazz) {
         FriendlyByteBuf dataBuf = new FriendlyByteBuf(Unpooled.buffer());
         dataBuf.writeUtf(clazz.getSimpleName());
-        team.serializeCapability(clazz,dataBuf);
+        team.getCapabilityMap().serializeCapability(clazz,dataBuf);
 
         return new TeamCapabilitySyncS2CPacket(
                 team.name,
@@ -60,7 +60,7 @@ public record TeamCapabilitySyncS2CPacket(
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             FPSMClient.getGlobalData().getTeamByName(teamName).ifPresent(team -> {
-                team.deserializeCapability(capabilityData);
+                team.getCapabilityMap().deserializeCapability(capabilityData);
             });
             capabilityData.release();
         });

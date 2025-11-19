@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.capability.team;
 
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -7,7 +8,7 @@ import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.function.Function;
 
-public class CompensationCapability extends TeamCapability implements Synchronizable {
+public class CompensationCapability extends TeamCapability implements FPSMCapability.Synchronizable {
     private final BaseTeam team;
     private int compensationFactor = 0;
     private Function<Integer,Integer> function = (i)-> Math.max(0, Math.min(i, 4));

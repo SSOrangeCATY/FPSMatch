@@ -5,11 +5,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
-import com.phasetranscrystal.fpsmatch.core.data.save.ISavePort;
+import com.phasetranscrystal.fpsmatch.core.persistence.ISavePort;
 
 import java.io.File;
 import java.io.FileReader;
@@ -149,8 +148,6 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
             e.fillInStackTrace();
         }
     }
-
-    // ========== 使用 Setting 类的静态工厂方法 ==========
 
     /**
      * 添加一个整型配置项。

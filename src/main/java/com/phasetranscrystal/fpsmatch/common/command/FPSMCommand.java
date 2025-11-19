@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMCommandEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -92,9 +93,14 @@ public class FPSMCommand {
         }
     }
 
-    public static <T extends TeamCapability> Optional<T> getCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
+    public static <T extends TeamCapability> Optional<T> getTeamCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
         Optional<ServerTeam> team = FPSMCommand.getTeamByName(context);
-        return team.flatMap(serverTeam -> serverTeam.getCapability(clazz));
+        return team.flatMap(serverTeam -> serverTeam.getCapabilityMap().getCapability(clazz));
+    }
+
+    public static <T extends MapCapability> Optional<T> getMapCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
+        Optional<BaseMap> map = FPSMCommand.getMapByName(context);
+        return map.flatMap(baseMap -> baseMap.getCapabilityMap().getCapability(clazz));
     }
 
     public static Optional<FPSMShop<?>> getShop(CommandContext<CommandSourceStack> context, BaseMap map, String shopName) {

@@ -55,9 +55,9 @@ public class FPSMCommandSuggests {
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
         List<String> capabilities = new ArrayList<>();
         map.flatMap(baseMap -> baseMap.getMapTeams().getTeamByName(teamName)).ifPresent(team -> {
-            team.getCapabilities().forEach(
+            team.getCapabilityMap().getCapabilities().forEach(
                     cap->{
-                        FPSMCapabilityManager.getFactory(cap.getClass()).ifPresent(
+                        FPSMCapabilityManager.getRawFactory(cap.getClass()).ifPresent(
                                 factory->{
                                     TeamCapability.Factory.Command command = factory.command();
                                     if(factory.command() != null){

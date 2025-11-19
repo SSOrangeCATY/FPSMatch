@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(LocalPlayer.class)
+@Mixin(value = LocalPlayer.class, priority = 800)
 public abstract class LocalPlayerMixin extends AbstractClientPlayer {
 
     public LocalPlayerMixin(ClientLevel world, GameProfile profile) {
@@ -30,5 +30,4 @@ public abstract class LocalPlayerMixin extends AbstractClientPlayer {
         boolean flag = activeItem.getItem() instanceof IThrowEntityAble;
         return !flag && instance.isUsingItem();
     }
-
 }

@@ -198,7 +198,7 @@ public class StartKitsCapability extends TeamCapability {
                 return 0;
             }
 
-            return FPSMCommand.getCapability(context, StartKitsCapability.class).map(capability -> {
+            return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                 capability.addKit(itemStack);
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
                         itemStack.getDisplayName(), capability.team.name), true);
@@ -212,7 +212,7 @@ public class StartKitsCapability extends TeamCapability {
         private static int handleAddKitWithItem(CommandContext<CommandSourceStack> context, int count) {
             try {
                 ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(count, false);
-                return FPSMCommand.getCapability(context, StartKitsCapability.class).map(capability -> {
+                return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                     capability.addKit(itemStack);
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
                             itemStack.getDisplayName(), capability.team.name), true);
@@ -228,7 +228,7 @@ public class StartKitsCapability extends TeamCapability {
          * 处理清空初始装备
          */
         private static int handleClearKits(CommandContext<CommandSourceStack> context) {
-            return FPSMCommand.getCapability(context, StartKitsCapability.class).map(capability -> {
+            return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                 capability.clearTeamKits();
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success",
                         capability.team.name), true);
@@ -240,7 +240,7 @@ public class StartKitsCapability extends TeamCapability {
          * 处理列出初始装备
          */
         private static int handleListKits(CommandContext<CommandSourceStack> context) {
-            return FPSMCommand.getCapability(context, StartKitsCapability.class).map(capability -> {
+            return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                 List<ItemStack> kits = capability.getTeamKits();
                 kits.forEach(itemStack ->
                         context.getSource().sendSuccess(itemStack::getDisplayName, true)

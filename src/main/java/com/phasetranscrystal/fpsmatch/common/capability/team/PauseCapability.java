@@ -1,23 +1,24 @@
 package com.phasetranscrystal.fpsmatch.common.capability.team;
 
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.FriendlyByteBuf;
 
-public class PauseDataCapability extends TeamCapability implements Synchronizable {
+public class PauseCapability extends TeamCapability implements FPSMCapability.Synchronizable {
     private final BaseTeam team;
 
     private int pauseTime = 0;
     private boolean needPause = false;
 
-    private PauseDataCapability(BaseTeam team) {
+    private PauseCapability(BaseTeam team) {
         this.team = team;
     }
 
     public static void register() {
-        FPSMCapabilityManager.register(PauseDataCapability.class, PauseDataCapability::new);
+        FPSMCapabilityManager.register(PauseCapability.class, PauseCapability::new);
     }
 
     public void addPause() {
