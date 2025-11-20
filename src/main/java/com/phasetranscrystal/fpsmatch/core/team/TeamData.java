@@ -3,8 +3,8 @@ package com.phasetranscrystal.fpsmatch.core.team;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +30,11 @@ public record TeamData(String name, int limit, List<String> capabilities) {
     }
 
     public static TeamData of(ServerTeam team) {
-        return new TeamData(team.name,team.getPlayerLimit(),team.getCapabilityMap().getSynchronizableCapabilitiesString());
+        return new TeamData(team.name,team.getPlayerLimit(),team.getCapabilityMap().synchronizableCapabilitiesString());
     }
 
     public static TeamData of(ClientTeam team) {
-        return new TeamData(team.name,-1,team.getCapabilityMap().getCapabilitiesString());
+        return new TeamData(team.name,-1,team.getCapabilityMap().capabilitiesString());
     }
 
     public List<Class<? extends TeamCapability>> getCapabilities(){

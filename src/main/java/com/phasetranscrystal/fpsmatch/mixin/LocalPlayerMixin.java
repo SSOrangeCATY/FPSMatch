@@ -5,10 +5,10 @@ import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = LocalPlayer.class, priority = 800)
 public abstract class LocalPlayerMixin extends AbstractClientPlayer {
@@ -17,17 +17,14 @@ public abstract class LocalPlayerMixin extends AbstractClientPlayer {
         super(world, profile);
     }
 
-
-    @Redirect(
-            method = "aiStep",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/player/LocalPlayer;isUsingItem()Z"
-            )
+    @Inject(
+            method = "isUsingItem",
+            at = @At("HEAD"),
+            cancellable = true
     )
-    private boolean redirectIsUsingItem(LocalPlayer instance) {
-        ItemStack activeItem = instance.getUseItem();
-        boolean flag = activeItem.getItem() instanceof IThrowEntityAble;
-        return !flag && instance.isUsingItem();
+    private void fpsm$IsUsingItem(CallbackInfoReturnable<Boolean> cir) {
+        LocalPlayer instance = (LocalPlayer) (Object) this;
+        boolean flag = instance.getUseItem().getItem() instanceof IThrowEntityAble;
+        cir.setReturnValue(!flag && cir.getReturnValue());
     }
 }

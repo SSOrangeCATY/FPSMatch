@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 public record FPSMAddTeamS2CPacket(String gameType, String mapName, int color, TeamData teamData) {
     public static FPSMAddTeamS2CPacket of(ServerTeam team){
-        return new FPSMAddTeamS2CPacket(team.gameType, team.mapName,team.getColor(),TeamData.of(team));
+        return new FPSMAddTeamS2CPacket(team.gameType, team.mapName,team.getColor(), TeamData.of(team));
     }
 
     public static void encode(FPSMAddTeamS2CPacket packet, FriendlyByteBuf packetBuffer) {

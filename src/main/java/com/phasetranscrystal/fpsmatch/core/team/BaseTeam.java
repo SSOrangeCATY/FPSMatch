@@ -93,7 +93,7 @@ public abstract class BaseTeam {
     }
 
     public void resetCapabilities(){
-        this.capabilities.resetAllCapabilities();
+        this.capabilities.resetAll();
     }
 
     public void reset(){

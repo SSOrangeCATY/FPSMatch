@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 
 public class FPSMDataManager {
     private final Map<Class<?>, DataEntry<?>> registry = new HashMap<>();
-    private final ArrayList<Consumer<FPSMDataManager>> writeHandlers = new ArrayList<>();
     private final Path levelDataPath;
     private final Path globalDataPath;
 
@@ -44,7 +43,6 @@ public class FPSMDataManager {
     public <T> void registerData(Class<T> clazz, String folderName, SaveHolder<T> holder) {
         String fixedFolderName = PersistenceUtils.fixFileName(folderName);
         registry.put(clazz, new DataEntry<>(fixedFolderName, holder));
-        writeHandlers.add(holder.writeHandler());
     }
 
     // 同步保存数据
@@ -97,7 +95,9 @@ public class FPSMDataManager {
     }
 
     public void saveAllData() {
-        writeHandlers.forEach(handler -> handler.accept(this));
+        registry.values().forEach(entry -> {
+            entry.holder.writeHandler().accept(this);
+        });
     }
 
     public <T> File getSaveFolder(T savedData) {

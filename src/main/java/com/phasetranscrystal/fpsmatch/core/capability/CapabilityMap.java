@@ -7,12 +7,13 @@ import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.common.MinecraftForge;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
 public class CapabilityMap<H, T extends FPSMCapability<H>> {
@@ -41,28 +42,57 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @param capabilityClass 能力类型
      * @return 是否添加成功
      */
-    public final <C extends T> boolean addCapability(Class<C> capabilityClass) {
-        if (hasCapability(capabilityClass)) {
-            return false;
+    public final <C extends T> boolean add(Class<C> capabilityClass) {
+        return FPSMCapabilityManager.createInstance(this.getHolder(), capabilityClass).map(this::addDirectly).orElse(false);
+    }
+
+    public final boolean add(T capability){
+        if(!FPSMCapabilityManager.isRegistered(capability.getClass())) return false;
+        this.addDirectly(capability);
+        return true;
+    }
+
+    /**
+     * 批量添加多种能力。
+     * @param capabilityClasses 能力类型列表
+     * @return 添加成功的能力类型列表
+     */
+    public final <C extends T> List<Class<C>> addAll(Collection<Class<C>> capabilityClasses) {
+        List<Class<C>> added = new ArrayList<>();
+        for (Class<C> clazz : capabilityClasses) {
+            if (add(clazz)) {
+                added.add(clazz);
+            }
         }
-        return FPSMCapabilityManager.createInstance(this.getHolder(), capabilityClass)
-                .map(capability -> {
-                    capabilities.put(capabilityClass, capability);
-                    capability.init();
-                    return true;
-                })
-                .orElse(false);
+        return added;
+    }
+
+    /**
+     * 直接添加能力实例（用于网络同步）
+     * @param capability 能力实例
+     */
+    private boolean addDirectly(T capability) {
+        Class<T> capabilityClass = (Class<T>) capability.getClass();
+        if (!contains(capabilityClass)) {
+            capabilities.put(capabilityClass, capability);
+            MinecraftForge.EVENT_BUS.register(capability);
+            capability.init();
+            return true;
+        }
+        return false;
     }
 
     /**
      * 移除队伍的能力
      * @param capabilityClass 能力类型
      */
-    public final <C extends T> void removeCapability(Class<C> capabilityClass) {
-        if(getCapability(capabilityClass).map(FPSMCapability::isImmutable).orElse(true)) return;
-
-        getCapability(capabilityClass).ifPresent(FPSMCapability::destroy);
-        capabilities.remove(capabilityClass);
+    public final <C extends T> void remove(Class<C> capabilityClass) {
+        get(capabilityClass).ifPresent(cap->{
+            if(cap.isImmutable()) return;
+            cap.destroy();
+            capabilities.remove(capabilityClass);
+            MinecraftForge.EVENT_BUS.unregister(cap);
+        });
     }
 
     /**
@@ -70,49 +100,81 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @param capabilityClass 能力类型
      * @return 能力实例（Optional）
      */
-    @SuppressWarnings("unchecked")
-    public final <C extends T> Optional<C> getCapability(Class<C> capabilityClass) {
+    public final <C extends T> Optional<C> get(Class<C> capabilityClass) {
         return Optional.ofNullable((C) capabilities.get(capabilityClass));
     }
+
+    /**
+     * 获取指定类型的能力，如果不存在，则尝试创建并添加它。
+     *
+     * @param capabilityClass 能力类型
+     * @return 存在或新创建的能力实例 (Optional)
+     */
+    public final <C extends T> Optional<C> getOrCreate(Class<C> capabilityClass) {
+        Optional<C> existing = get(capabilityClass);
+        if (existing.isPresent()) {
+            return existing;
+        }
+
+        if (add(capabilityClass)) {
+            return get(capabilityClass);
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * 如果指定类型的能力存在，则对其执行提供的操作。
+     * 无论能力是否存在，此方法都会返回 CapabilityMap 本身，以支持链式调用。
+     *
+     * @param capabilityClass 要检查的能力类型
+     * @param action 如果能力存在，则执行的操作
+     * @return 调用此方法的 CapabilityMap 实例
+     */
+    public final <C extends T> CapabilityMap<H, T> ifPresent(Class<C> capabilityClass, Consumer<C> action) {
+        this.get(capabilityClass).ifPresent(action);
+        return this;
+    }
+
 
     /**
      * 检查队伍是否拥有指定能力
      * @param capabilityClass 能力类型
      * @return 是否拥有
      */
-    public final <C extends T> boolean hasCapability(Class<C> capabilityClass) {
+    public final <C extends T> boolean contains(Class<C> capabilityClass) {
         return capabilities.containsKey(capabilityClass);
     }
 
     /**
      * 重置所有能力状态
      */
-    public final void resetAllCapabilities() {
+    public final void resetAll() {
         capabilities.values().forEach(FPSMCapability::reset);
     }
 
-    public final <C extends T> void resetCapability(Class<C> capability) {
-        getCapability(capability).ifPresent(FPSMCapability::reset);
+    public final <C extends T> void reset(Class<C> capability) {
+        get(capability).ifPresent(FPSMCapability::reset);
     }
 
-    public final List<T> getCapabilities(){
+    public final List<T> values(){
         return capabilities.values().stream().toList();
     }
 
-    public final List<String> getCapabilitiesString(){
-        return getCapabilities().stream().map(FPSMCapability::getName).collect(Collectors.toList());
-    }
-    public final List<String> getSynchronizableCapabilitiesString(){
-        return getCapabilities().stream().filter(cap -> cap instanceof FPSMCapability.Synchronizable).map(FPSMCapability::getName).collect(Collectors.toList());
+    public final List<String> capabilitiesString(){
+        return values().stream().map(FPSMCapability::getName).toList();
     }
 
+    public final List<String> synchronizableCapabilitiesString(){
+        return values().stream().filter(cap -> cap instanceof FPSMCapability.Synchronizable).map(FPSMCapability::getName).collect(Collectors.toList());
+    }
     /**
      * 序列化指定能力到网络缓冲区
      * @param capabilityClass 要序列化的能力类
      * @param buf 网络缓冲区
      */
     public final <C extends FPSMCapability<H> & FPSMCapability.Synchronizable> void serializeCapability(Class<C> capabilityClass, FriendlyByteBuf buf) {
-        getCapability((Class<T>) capabilityClass).ifPresent(capability -> {
+        get((Class<T>) capabilityClass).ifPresent(capability -> {
             buf.writeUtf(capabilityClass.getName());
             ((FPSMCapability.Synchronizable) capability).writeToBuf(buf);
         });
@@ -125,7 +187,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     public final void deserializeCapability(FriendlyByteBuf buf) {
         String className = buf.readUtf();
         FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType()).ifPresent(capabilityClass -> {
-            getCapability(capabilityClass).ifPresentOrElse(
+            get(capabilityClass).ifPresentOrElse(
                     capability -> {
                         if (capability instanceof FPSMCapability.Synchronizable synced) {
                             synced.readFromBuf(buf);
@@ -134,23 +196,20 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                     () -> FPSMCapabilityManager.createFromNetwork(this, className, buf)
                             .ifPresent(capability -> {
                                 if (getCapabilityType().isAssignableFrom(capability.getClass())) {
-                                    this.addCapabilityInstanceDirectly((T) capability);
+                                    this.addDirectly((T) capability);
                                 }
                             })
             );
         });
     }
 
+
     /**
-     * 直接添加能力实例（用于网络同步）
-     * @param capability 能力实例
+     * 获取所有能力的流(Stream)，便于进行过滤、映射等操作。
+     * @return 包含所有能力的 Stream
      */
-    private void addCapabilityInstanceDirectly(T capability) {
-        Class<T> capabilityClass = (Class<T>) capability.getClass();
-        if (!hasCapability(capabilityClass)) {
-            capabilities.put(capabilityClass, capability);
-            capability.init();
-        }
+    public final Stream<T> stream() {
+        return capabilities.values().stream();
     }
 
     /**
@@ -159,7 +218,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 需要同步的能力列表
      */
     public final <C extends FPSMCapability<H> & FPSMCapability.Synchronizable> List<Class<C>> getSynchronizableCapabilityClasses() {
-        return getCapabilities().stream()
+        return values().stream()
                 .filter(capability -> capability instanceof FPSMCapability.Synchronizable)
                 .map(cap -> (Class<C>) cap.getClass())
                 .collect(Collectors.toList());
@@ -174,12 +233,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public void clear(){
-        for (Map.Entry<Class<? extends T>, T> capability : capabilities.entrySet()) {
-            if(!capability.getValue().isImmutable()){
-                capability.getValue().destroy();
-                capabilities.remove(capability.getKey());
-            }
-        }
+        capabilities.keySet().forEach(this::remove);
     }
 
     public List<FPSMCapability.Savable<?>> getSaveData() {
@@ -191,7 +245,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
 
     public <D> void write(String className, D data) {
         FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType())
-                .flatMap(this::getCapability).ifPresent(capability -> {
+                .flatMap(this::get).ifPresent(capability -> {
                     if (capability instanceof FPSMCapability.Savable<?> savable) {
                         try {
                             FPSMCapability.Savable<D> cap = (FPSMCapability.Savable<D>) savable;
@@ -204,7 +258,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public <D, C extends FPSMCapability<H> & FPSMCapability.Savable<D>> void write(Class<C> clazz, D data) {
-        getCapability((Class<T>) clazz).ifPresent(cap -> {
+        get((Class<T>) clazz).ifPresent(cap -> {
             ((FPSMCapability.Savable<D>) cap).write(data);
         });
     }

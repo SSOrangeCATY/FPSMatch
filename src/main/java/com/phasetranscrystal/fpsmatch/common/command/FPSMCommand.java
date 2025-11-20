@@ -43,7 +43,6 @@ public class FPSMCommand {
 
         LiteralArgumentBuilder<CommandSourceStack> literal = init(builder);
 
-
         RegisterFPSMCommandEvent registerFPSMCommandEvent = new RegisterFPSMCommandEvent(literal,context);
 
         MinecraftForge.EVENT_BUS.post(registerFPSMCommandEvent);
@@ -95,12 +94,12 @@ public class FPSMCommand {
 
     public static <T extends TeamCapability> Optional<T> getTeamCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
         Optional<ServerTeam> team = FPSMCommand.getTeamByName(context);
-        return team.flatMap(serverTeam -> serverTeam.getCapabilityMap().getCapability(clazz));
+        return team.flatMap(serverTeam -> serverTeam.getCapabilityMap().get(clazz));
     }
 
     public static <T extends MapCapability> Optional<T> getMapCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
         Optional<BaseMap> map = FPSMCommand.getMapByName(context);
-        return map.flatMap(baseMap -> baseMap.getCapabilityMap().getCapability(clazz));
+        return map.flatMap(baseMap -> baseMap.getCapabilityMap().get(clazz));
     }
 
     public static Optional<FPSMShop<?>> getShop(CommandContext<CommandSourceStack> context, BaseMap map, String shopName) {

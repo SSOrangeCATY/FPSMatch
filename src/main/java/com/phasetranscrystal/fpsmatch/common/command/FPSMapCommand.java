@@ -11,7 +11,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
@@ -57,6 +56,7 @@ public class FPSMapCommand {
                                                 .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
                                                         .suggests(FPSMCommandSuggests.MAP_DEBUG_SUGGESTION)
                                                         .executes(FPSMapCommand::handleDebugAction)))
+                                        .then(buildMapCapabilityCommands(builder.getSecond()))
                                         // 团队相关修改
                                         .then(Commands.literal("team")
                                                 .then(Commands.literal("join")
@@ -111,7 +111,7 @@ public class FPSMapCommand {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildMapCapabilityCommands(CommandBuildContext context) {
-        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("");
+        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("capability");
         // 遍历所有注册的TeamCapability
         for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities((t)-> t.isAssignableFrom(MapCapability.class))) {
             // 获取Capability的Factory
@@ -127,7 +127,7 @@ public class FPSMapCommand {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildTeamCapabilityCommands(CommandBuildContext context) {
-        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("");
+        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("capability");
         // 遍历所有注册的TeamCapability
         for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities((t)-> t.isAssignableFrom(TeamCapability.class))) {
             // 获取Capability的Factory

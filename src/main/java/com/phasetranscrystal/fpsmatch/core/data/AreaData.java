@@ -35,40 +35,27 @@ public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
     }
 
     public boolean isInArea(Vec3 pos) {
-        AABB area = new AABB(
-                Math.min(pos1.getX(), pos2.getX()),
-                Math.min(pos1.getY(), pos2.getY()),
-                Math.min(pos1.getZ(), pos2.getZ()),
-                Math.max(pos1.getX(), pos2.getX()),
-                Math.max(pos1.getY(), pos2.getY()),
-                Math.max(pos1.getZ(), pos2.getZ())
-        );
-        return area.contains(pos);
+        return getAABB().contains(pos);
     }
 
     public AABB getAABB(){
         return new AABB(
-                Math.min(pos1.getX(), pos2.getX()),
-                Math.min(pos1.getY(), pos2.getY()),
-                Math.min(pos1.getZ(), pos2.getZ()),
-                Math.max(pos1.getX(), pos2.getX()),
-                Math.max(pos1.getY(), pos2.getY()),
-                Math.max(pos1.getZ(), pos2.getZ())
+                Math.min(pos1.getX() - 1, pos2.getX() - 1),
+                Math.min(pos1.getY() - 1, pos2.getY() - 1),
+                Math.min(pos1.getZ() - 1, pos2.getZ() - 1),
+                Math.max(pos1.getX() + 1, pos2.getX() + 1),
+                Math.max(pos1.getY() + 1, pos2.getY() + 1),
+                Math.max(pos1.getZ() + 1, pos2.getZ() + 1)
         );
     }
 
     //TODO
     public void renderArea(MultiBufferSource multiBufferSource, PoseStack poseStack) {
         VertexConsumer vertexconsumer = multiBufferSource.getBuffer(RenderType.lines());
-        double minX = Math.min(pos1.getX(), pos2.getX());
-        double minY = Math.min(pos1.getY(), pos2.getY());
-        double minZ = Math.min(pos1.getZ(), pos2.getZ());
-        double maxX = Math.max(pos1.getX(), pos2.getX());
-        double maxY = Math.max(pos1.getY(), pos2.getY());
-        double maxZ = Math.max(pos1.getZ(), pos2.getZ());
+        AABB aabb = getAABB();
         LevelRenderer.renderLineBox(poseStack, vertexconsumer,
-                minX, minY, minZ, // Minimum corner
-                maxX, maxY, maxZ, // Maximum corner
+                aabb.minX, aabb.minY, aabb.minZ,
+                aabb.maxX, aabb.maxY, aabb.maxZ,
                 1.0F, 1.0F, 0.0F, 1.0F, 1.0F, 1.0F, 0.0F
         );
     }

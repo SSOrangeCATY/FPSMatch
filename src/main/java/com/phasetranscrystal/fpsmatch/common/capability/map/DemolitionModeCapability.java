@@ -41,7 +41,6 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         });
     }
 
-
     private final BaseMap map;
 
     private final Data data = new Data();
@@ -68,8 +67,6 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         this.data.getBombAreaData().add(area);
     }
 
-    ;
-
     /**
      * 获取所有炸弹区域的数据。
      * <p>
@@ -81,8 +78,6 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         return this.data.getBombAreaData();
     }
 
-    ;
-
     /**
      * 设置爆破方的队伍名称。
      * <p>
@@ -93,8 +88,6 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
     public void setDemolitionTeam(ServerTeam team) {
         this.data.setDemolitionTeam(team.getFixedName());
     }
-
-    ;
 
     /**
      * 设置当前的爆破状态。
