@@ -152,6 +152,12 @@
   "commands.fpsm.tacz.dummy.amount.success": "Set dummy ammo amount for %s to %d",
   "commands.fpsm.tacz.dummy.amount.invalid_gun": "Invalid gun data",
   "commands.fpsm.tacz.dummy.amount.not_gun": "ItemStack is not a gun",
-  "commands.fpsm.capability.missing": "%d capability is not found"
-
+  "commands.fpsm.capability.missing": "%d capability is not found",
+  "commands.fpsm.modify.shop.initialize.type_not_found": "Shop type not found: %s",
+  "commands.fpsm.modify.shop.initialize.success": "Initialized shop type %s for team %s with start money: %d",
+  "commands.fpsm.modify.shop.initialize.failed": "Failed to initialize shop type %s",
+  "commands.fpsm.modify.shop.not_initialized": "Shop is not initialized",
+  "commands.fpsm.modify.shop.reset.success": "Reset shop player data for team %s",
+  "commands.fpsm.modify.shop.sync.success": "Synced shop data for team %s",
+  "commands.fpsm.modify.shop.info": "Team: %s, Shop Type: %s, Start Money: %d, Player Count: %d"
 }

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.event.map;
+package com.phasetranscrystal.fpsmatch.core.event.register;
 
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -17,6 +17,7 @@ public class RegisterFPSMapEvent extends Event {
     {
         return false;
     }
+
     public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map) {
         this.fpsmCore.registerGameType(typeName,map);
     }

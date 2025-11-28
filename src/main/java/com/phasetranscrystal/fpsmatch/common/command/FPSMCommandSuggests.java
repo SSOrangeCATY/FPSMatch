@@ -15,10 +15,7 @@ import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -97,6 +94,8 @@ public class FPSMCommandSuggests {
         return FPSMCommandSuggests.getSuggestions(b,names);
     });
 
+    public static final FPSMSuggestionProvider SHOP_TYPE_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, FPSMShop.getRegisteredShopTypes()));
+
     public static final FPSMSuggestionProvider SHOP_SET_SLOT_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("1","2","3","4","5")));
     public static final FPSMSuggestionProvider SHOP_SLOT_ADD_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
     {
@@ -141,7 +140,7 @@ public class FPSMCommandSuggests {
     }
 
     @NotNull
-    public static Suggestions getSuggestions(SuggestionsBuilder builder, List<String> suggests) {
+    public static Suggestions getSuggestions(SuggestionsBuilder builder, Collection<String> suggests) {
         String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
 
         for (String suggest : suggests) {

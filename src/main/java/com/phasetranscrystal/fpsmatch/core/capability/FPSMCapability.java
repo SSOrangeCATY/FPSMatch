@@ -1,9 +1,8 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
-import com.google.common.collect.Lists;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.serialization.Codec;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMCommandEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.FriendlyByteBuf;

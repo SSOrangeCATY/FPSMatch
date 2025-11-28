@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.event;
+package com.phasetranscrystal.fpsmatch.core.event.register;
 
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;

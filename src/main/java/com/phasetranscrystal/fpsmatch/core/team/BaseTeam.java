@@ -4,9 +4,12 @@ import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraftforge.common.MinecraftForge;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -35,8 +38,12 @@ public abstract class BaseTeam {
         return capabilities;
     }
 
-    public abstract void join(FPSMPlayer player);
-    public abstract void leave(FPSMPlayer player);
+    public boolean join(FPSMPlayer player){
+       return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player.get()));
+    };
+    public boolean leave(FPSMPlayer player){
+        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player.get()));
+    };
     public abstract void delPlayer(UUID player);
     public abstract void resetLiving();
     public abstract Optional<PlayerData> getPlayerData(UUID player);

@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.capability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
-import com.phasetranscrystal.fpsmatch.core.event.team.FPSMTeamCapabilityRegisterEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMTeamCapabilityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 public class FPSMCapabilityRegister {
 
     @SubscribeEvent
-    public static void register(FPSMTeamCapabilityRegisterEvent event) {
+    public static void register(RegisterFPSMTeamCapabilityEvent event) {
         // TEAM
         CompensationCapability.register();
         PauseCapability.register();

@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.event.map.PlayerGetShopDataEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
@@ -13,7 +12,6 @@ import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +24,57 @@ import java.util.*;
  * 支持通过网络包同步商店数据和金钱信息。
  */
 public class FPSMShop<T extends Enum<T> & INamedType> {
+    private static final Map<String, Class<? extends INamedType>> REGISTERED_SHOP_TYPES = new HashMap<>();
+
+    /**
+     * 注册商店类型
+     * @param typeId 类型标识符
+     * @param typeClass 类型类
+     */
+    public static void registerShopType(String typeId, Class<? extends INamedType> typeClass) {
+        if (REGISTERED_SHOP_TYPES.containsKey(typeId)) {
+            FPSMatch.LOGGER.warn("Shop type {} already registered, overriding with {}", typeId, typeClass.getSimpleName());
+        }
+        REGISTERED_SHOP_TYPES.put(typeId, typeClass);
+        FPSMatch.LOGGER.info("Registered shop type: {} -> {}", typeId, typeClass.getSimpleName());
+    }
+
+    /**
+     * 获取所有已注册的商店类型
+     */
+    public static Set<String> getRegisteredShopTypes() {
+        return new HashSet<>(REGISTERED_SHOP_TYPES.keySet());
+    }
+
+    /**
+     * 根据类型ID获取商店类型类
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends Enum<T> & INamedType> Class<T> getShopTypeClass(String typeId) {
+        Class<? extends INamedType> clazz = REGISTERED_SHOP_TYPES.get(typeId);
+        if (clazz != null && clazz.isEnum()) {
+            return (Class<T>) clazz;
+        }
+        return null;
+    }
+
+    /**
+     * 检查类型是否已注册
+     */
+    public static boolean isShopTypeRegistered(String typeId) {
+        return REGISTERED_SHOP_TYPES.containsKey(typeId);
+    }
+
+    /**
+     * 创建商店（使用注册的类型ID）
+     */
+    public static <T extends Enum<T> & INamedType> FPSMShop<T> createWithTypeId(String typeId, String name, int startMoney) {
+        Class<T> typeClass = getShopTypeClass(typeId);
+        if (typeClass == null) {
+            throw new IllegalArgumentException("Shop type not registered: " + typeId);
+        }
+        return create(typeClass, name, startMoney);
+    }
 
     public static <T extends Enum<T> & INamedType> FPSMShop<T> create(Class<T> enumClass, String name){
         return create(enumClass,name,800);
@@ -391,13 +440,11 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
             protectedMap.put(entry.getKey(), List.copyOf(entry.getValue()));
         }
 
-        PlayerGetShopDataEvent<T> event = new PlayerGetShopDataEvent<>(uuid,this,protectedMap);
-        MinecraftForge.EVENT_BUS.post(event);
         ShopData<T> finalData;
         if(this.playersData.containsKey(uuid)){
-            finalData = new ShopData<>(event.getData(), this.typeCount , this.playersData.get(uuid).getMoney());
+            finalData = new ShopData<>(protectedMap, this.typeCount , this.playersData.get(uuid).getMoney());
         }else{
-            finalData = new ShopData<>(event.getData(), this.typeCount , this.startMoney);
+            finalData = new ShopData<>(protectedMap, this.typeCount , this.startMoney);
         }
 
         this.playersData.put(uuid, finalData);

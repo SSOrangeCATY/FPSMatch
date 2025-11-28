@@ -2,10 +2,10 @@ package com.phasetranscrystal.fpsmatch.bukkit.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
-import com.phasetranscrystal.fpsmatch.core.event.map.GameWinnerEvent;
-import com.phasetranscrystal.fpsmatch.core.event.map.PlayerKillOnMapEvent;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
+
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.bukkit.Bukkit;
@@ -23,27 +23,25 @@ public class FPSMBukkitEventBirge {
     }
 
     @SubscribeEvent
-    public void onForgeKillEvent(PlayerKillOnMapEvent event) {
+    public void onForgeKillEvent(FPSMapEvent.PlayerDeathEvent event) {
         if(!FPSMBukkit.isBukkitEnvironment()) return;
-        ServerPlayer forgeDead = event.getDead();
-        ServerPlayer forgeKiller = event.getKiller();
+        Player forgeDead = event.getDead();
+        Player forgeKiller = event.getKiller();
         BukkitPlayerKillOnMapEvent bukkitEvent = new BukkitPlayerKillOnMapEvent(
-                event.getBaseMap(), forgeDead.getUUID(), forgeKiller.getUUID()
+                event.getMap(), forgeDead.getUUID(), forgeKiller.getUUID()
         );
         Bukkit.getPluginManager().callEvent(bukkitEvent);
     }
 
     @SubscribeEvent
-    public void onForgeGameWinnerEvent(GameWinnerEvent event) {
+    public void onForgeGameWinnerEvent(FPSMapEvent.VictoryEvent event) {
         if (!FPSMBukkit.isBukkitEnvironment()) return;
 
-        ServerLevel forgeLevel = event.getLevel();
+        ServerLevel forgeLevel = event.getMap().getServerLevel();
         World bukkitWorld = Bukkit.getWorld(FPSMBukkit.getLevelName(forgeLevel));
 
         BukkitGameWinnerEvent bukkitEvent = new BukkitGameWinnerEvent(
                 event.getMap(),
-                event.getWinner(),
-                event.getLoser(),
                 bukkitWorld
         );
         Bukkit.getPluginManager().callEvent(bukkitEvent);

@@ -8,8 +8,4 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
  * 持有者固定为BaseMap，继承基础能力接口
  */
 public abstract class MapCapability extends FPSMCapability<BaseMap> {
-
-    public void victory() {}
-
-    public void tick(){}
 }

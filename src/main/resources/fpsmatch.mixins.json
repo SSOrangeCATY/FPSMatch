@@ -14,7 +14,6 @@
   ],
   "client": [
     "ItemPickupSoundMixin",
-    "LocalPlayerMixin",
     "MixinMinecraft",
     "MixinPlayerTabOverlay",
     "accessor.ClientPacketListenerAccessor",

@@ -81,7 +81,7 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         @Override
         public LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context) {
             return builder
-                    .then(Commands.argument("point", BlockPosArgument.blockPos())
+                    .then(Commands.argument("add", BlockPosArgument.blockPos())
                     .executes(METPCommand::handleModifyMatchEndTeleportPoint));
         }
 

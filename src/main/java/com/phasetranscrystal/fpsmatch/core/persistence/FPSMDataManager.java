@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.persistence;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLLoader;
 
@@ -10,10 +10,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 

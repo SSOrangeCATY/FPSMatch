@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
 
+import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
@@ -17,6 +18,7 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
 public class CapabilityMap<H, T extends FPSMCapability<H>> {
+    Codec<CapabilityMap<H, T>> codec;
 
     public static CapabilityMap<BaseMap, MapCapability> ofMapCapability(BaseMap map){
         return new CapabilityMap<>(map, MapCapability.class);

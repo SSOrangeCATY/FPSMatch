@@ -8,7 +8,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.core.event.map.PlayerKillOnMapEvent;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
@@ -110,7 +110,9 @@ public abstract class BaseMap {
     /**
      * 开始游戏
      */
-    public abstract void start();
+    public boolean start(){
+        return !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.StartEvent(this));
+    };
 
     /**
      * 检查玩家是否在游戏中
@@ -146,7 +148,9 @@ public abstract class BaseMap {
     /**
      * 胜利操作
      */
-    public abstract void victory();
+    public void victory(){
+        MinecraftForge.EVENT_BUS.post(new FPSMapEvent.VictoryEvent(this));
+    };
 
     /**
      * 胜利条件
@@ -158,13 +162,16 @@ public abstract class BaseMap {
     /**
      * 清理地图
      */
-    public void cleanupMap() {
+    public boolean cleanupMap(){
+        return !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ClearEvent(this));
     }
 
     /**
      * 重置游戏
      */
-    public abstract void reset();
+    public void reset(){
+        MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ResetEvent(this));
+    };
 
     /**
      * 获取地图团队
@@ -290,11 +297,18 @@ public abstract class BaseMap {
      */
     public abstract String getGameType();
 
-
     /**
      * 重新加载地图逻辑
      * */
-    public void reload(){}
+    public boolean reload(){
+        return !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ReloadEvent(this));
+    }
+    
+    public boolean load(){
+        if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.LoadEvent(this))) return false;
+        FPSMCore.getInstance().registerMap(this.getGameType(),this);
+        return true;
+    }
 
 
     /**
@@ -455,7 +469,7 @@ public abstract class BaseMap {
                 }
 
                 if (attacker != null) {
-                    MinecraftForge.EVENT_BUS.post(new PlayerKillOnMapEvent(map.get(), player, attacker));
+                    MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerDeathEvent(map.get(), player, attacker));
                 }
             }
         }

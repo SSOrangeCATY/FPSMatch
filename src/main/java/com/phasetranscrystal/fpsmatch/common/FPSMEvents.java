@@ -6,7 +6,7 @@ import com.phasetranscrystal.fpsmatch.common.shop.functional.BulletproofArmorWit
 import com.phasetranscrystal.fpsmatch.common.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.ReturnGoodsModule;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterListenerModuleEvent;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;

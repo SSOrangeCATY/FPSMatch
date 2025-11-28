@@ -20,7 +20,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
-import com.phasetranscrystal.fpsmatch.core.event.team.FPSMTeamCapabilityRegisterEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMTeamCapabilityEvent;
 import com.tacz.guns.client.gui.compat.ClothConfigScreen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -84,7 +84,7 @@ public class FPSMatch {
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
-        MinecraftForge.EVENT_BUS.post(new FPSMTeamCapabilityRegisterEvent());
+        MinecraftForge.EVENT_BUS.post(new RegisterFPSMTeamCapabilityEvent());
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
         context.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());

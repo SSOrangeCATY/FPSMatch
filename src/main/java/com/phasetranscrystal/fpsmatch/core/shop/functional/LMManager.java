@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
-import com.phasetranscrystal.fpsmatch.core.event.RegisterListenerModuleEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterListenerModuleEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.Nullable;
 

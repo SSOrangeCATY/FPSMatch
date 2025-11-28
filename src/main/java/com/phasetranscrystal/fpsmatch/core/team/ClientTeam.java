@@ -20,8 +20,10 @@ public final class ClientTeam extends BaseTeam {
     }
 
     @Override
-    public void join(FPSMPlayer player) {
+    public boolean join(FPSMPlayer player) {
+        if(!super.join(player)) return false;
         this.players.put(player.uuid(),new PlayerData(player.uuid(),player.get().getDisplayName()));
+        return true;
     }
 
     public void join(UUID uuid, PlayerData data) {
@@ -33,8 +35,10 @@ public final class ClientTeam extends BaseTeam {
     }
 
     @Override
-    public void leave(FPSMPlayer player) {
+    public boolean leave(FPSMPlayer player) {
+        if(!super.leave(player)) return false;
         this.delPlayer(player.uuid());
+        return true;
     }
 
     @Override

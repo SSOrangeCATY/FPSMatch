@@ -143,5 +143,21 @@
   "config.fpsmatch.common.throwable.incendiary_grenade_damage": "燃烧弹伤害",
   "config.fpsmatch.common.throwable.incendiary_grenade_damage.tooltip": "燃烧弹的伤害",
   "config.fpsmatch.common.throwable.smoke_shell_living_time": "烟雾弹存活时间",
-  "config.fpsmatch.common.throwable.smoke_shell_living_time.tooltip": "烟雾弹激活后的存活时间 (tick)。20 tick = 1秒"
+  "config.fpsmatch.common.throwable.smoke_shell_living_time.tooltip": "烟雾弹激活后的存活时间 (tick)。20 tick = 1秒",
+
+  "commands.fpsm.team.capability.invalid": "无效的队伍能力：%d",
+  "commands.fpsm.debug.success": "FPSMatch 调试模式：%1$s",
+  "fpsm.unknown_weapon": "未知武器",
+  "commands.fpsm.tacz.dummy.amount.empty_hand": "主手物品栈为空",
+  "commands.fpsm.tacz.dummy.amount.success": "已将 %s 的虚拟弹药数量设置为 %d",
+  "commands.fpsm.tacz.dummy.amount.invalid_gun": "无效的枪支数据",
+  "commands.fpsm.tacz.dummy.amount.not_gun": "物品栈不是枪支",
+  "commands.fpsm.capability.missing": "未找到 %d 能力",
+  "commands.fpsm.modify.shop.initialize.type_not_found": "未找到商店类型：%s",
+  "commands.fpsm.modify.shop.initialize.success": "已为队伍 %s 初始化商店类型 %s，初始资金：%d",
+  "commands.fpsm.modify.shop.initialize.failed": "初始化商店类型 %s 失败",
+  "commands.fpsm.modify.shop.not_initialized": "商店尚未初始化",
+  "commands.fpsm.modify.shop.reset.success": "已重置队伍 %s 的商店玩家数据",
+  "commands.fpsm.modify.shop.sync.success": "已同步队伍 %s 的商店数据",
+  "commands.fpsm.modify.shop.info": "队伍：%s，商店类型：%s，初始资金：%d，玩家数量：%d"
 }

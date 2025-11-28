@@ -30,22 +30,26 @@ public final class ServerTeam extends BaseTeam {
     }
 
     @Override
-    public void join(FPSMPlayer player) {
-        if(player.isClientSide()) return;
+    public boolean join(FPSMPlayer player) {
+        if(!super.join(player)) return false;
+        if(player.isClientSide()) return false;
         Player p = player.get();
         player.get().getScoreboard().addPlayerToTeam(p.getScoreboardName(), getPlayerTeam());
         players.put(p.getUUID(), new PlayerData(p));
         sync((ServerPlayer) p);
+        return true;
     }
 
     @Override
-    public void leave(FPSMPlayer player) {
-        if(player.isClientSide()) return;
+    public boolean leave(FPSMPlayer player) {
+        if(!super.leave(player)) return false;
+        if(player.isClientSide()) return false;
         Player p = player.get();
         if (hasPlayer(p.getUUID())) {
             delPlayer(p.getUUID());
             p.getScoreboard().removePlayerFromTeam(p.getScoreboardName(), getPlayerTeam());
         }
+        return true;
     }
 
     @Override

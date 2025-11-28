@@ -9,20 +9,14 @@ import org.bukkit.event.HandlerList;
 public class BukkitGameWinnerEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
     private final BaseMap map;
-    private final BaseTeam winners;
-    private final BaseTeam losers;
     private final World world;
 
-    public BukkitGameWinnerEvent(BaseMap map, BaseTeam winners, BaseTeam losers, World world) {
+    public BukkitGameWinnerEvent(BaseMap map, World world) {
         this.map = map;
-        this.winners = winners;
-        this.losers = losers;
         this.world = world;
     }
 
     public BaseMap getMap() { return map; }
-    public BaseTeam getWinners() { return winners; }
-    public BaseTeam getLosers() { return losers; }
     public World getWorld() { return world; }
 
     @Override
