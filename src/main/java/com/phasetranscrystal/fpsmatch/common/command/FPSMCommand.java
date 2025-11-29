@@ -129,9 +129,7 @@ public class FPSMCommand {
         }
 
         // 添加分页信息
-        helpMessage.append(Component.translatable("commands.fpsm.help.page_info", page, totalPages))
-                .append(Component.literal("\n"))
-                .append(Component.translatable("commands.fpsm.help.footer"));
+        helpMessage.append(Component.translatable("commands.fpsm.help.page_info", page, totalPages));
 
         context.getSource().sendSuccess(() -> helpMessage, false);
         return 1;
@@ -215,10 +213,7 @@ public class FPSMCommand {
         }
 
         // 添加分页信息
-        helpMessage.append(Component.translatable("commands.fpsm.help.page_info", page, totalPages))
-                .append(Component.literal("\n"))
-                .append(Component.translatable("commands.fpsm.help.footer"));
-
+        helpMessage.append(Component.translatable("commands.fpsm.help.page_info", page, totalPages));
         context.getSource().sendSuccess(() -> helpMessage, false);
         return 1;
     }
