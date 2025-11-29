@@ -3,24 +3,23 @@ package com.phasetranscrystal.fpsmatch.common.capability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMTeamCapabilityEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCapabilityEvent;
+import net.minecraftforge.common.MinecraftForge;
 
-@Mod.EventBusSubscriber
 public class FPSMCapabilityRegister {
 
-    @SubscribeEvent
-    public static void register(RegisterFPSMTeamCapabilityEvent event) {
+    public static void register() {
         // TEAM
         CompensationCapability.register();
         PauseCapability.register();
         SpawnPointCapability.register();
         TeamSwitchRestrictionCapability.register();
         StartKitsCapability.register();
-
+        ShopCapability.register();
         // MAP
         DemolitionModeCapability.register();
         GameEndTeleportCapability.register();
+
+        MinecraftForge.EVENT_BUS.post(new RegisterFPSMCapabilityEvent());
     }
 }

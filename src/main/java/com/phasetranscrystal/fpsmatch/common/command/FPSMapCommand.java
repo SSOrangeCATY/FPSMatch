@@ -83,7 +83,7 @@ public class FPSMapCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> buildMapCapabilityCommands(CommandBuildContext context) {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("capability");
         // 遍历所有注册的TeamCapability
-        for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities((t)-> t.isAssignableFrom(MapCapability.class))) {
+        for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities(FPSMCapabilityManager.CapabilityType.MAP)) {
             // 获取Capability的Factory
             FPSMCapabilityManager.getRawFactory(capClass).ifPresent(factory -> {
                 // 获取Factory中定义的指令
@@ -99,7 +99,7 @@ public class FPSMapCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> buildTeamCapabilityCommands(CommandBuildContext context) {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("capability");
         // 遍历所有注册的TeamCapability
-        for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities((t)-> t.isAssignableFrom(TeamCapability.class))) {
+        for (Class<? extends FPSMCapability<?>> capClass : FPSMCapabilityManager.getRegisteredCapabilities(FPSMCapabilityManager.CapabilityType.TEAM)) {
             // 获取Capability的Factory
             FPSMCapabilityManager.getRawFactory(capClass).ifPresent(factory -> {
                 // 获取Factory中定义的指令

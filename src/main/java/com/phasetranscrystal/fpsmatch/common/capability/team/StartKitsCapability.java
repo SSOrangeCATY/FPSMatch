@@ -17,6 +17,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -42,7 +43,7 @@ public class StartKitsCapability extends TeamCapability {
      * 注册能力到全局管理器
      */
     public static void register() {
-        FPSMCapabilityManager.register(StartKitsCapability.class, new Factory<>() {
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, StartKitsCapability.class, new Factory<>() {
             @Override
             public StartKitsCapability create(BaseTeam team) {
                 if(team instanceof ServerTeam serverTeam) {
@@ -180,6 +181,15 @@ public class StartKitsCapability extends TeamCapability {
                             .executes(StartKitsCommand::handleClearKits))
                     .then(Commands.literal("list")
                             .executes(StartKitsCommand::handleListKits));
+        }
+
+        @Override
+        public List<MutableComponent> help() {
+            return List.of(
+                    Component.translatable("commands.fpsm.help.capability.kits.add"),
+                    Component.translatable("commands.fpsm.help.capability.kits.clear"),
+                    Component.translatable("commands.fpsm.help.capability.kits.list")
+            );
         }
 
         /**

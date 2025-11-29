@@ -20,6 +20,7 @@ import net.minecraft.commands.arguments.coordinates.Vec2Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec2;
@@ -39,7 +40,7 @@ public class SpawnPointCapability extends TeamCapability {
      * 注册能力到全局管理器
      */
     public static void register() {
-        FPSMCapabilityManager.register(SpawnPointCapability.class, new TeamCapability.Factory<>() {
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, SpawnPointCapability.class, new TeamCapability.Factory<>() {
             @Override
             public SpawnPointCapability create(BaseTeam team) {
                 return new SpawnPointCapability(team);
@@ -146,6 +147,16 @@ public class SpawnPointCapability extends TeamCapability {
                                     .then(Commands.argument("to", Vec2Argument.vec2())
                                             .executes(SpawnPointCommand::handleSpawnAction)))
                             .executes(SpawnPointCommand::handleSpawnAction));
+        }
+
+        @Override
+        public List<MutableComponent> help() {
+            return List.of(
+                    Component.translatable("commands.fpsm.help.capability.spawnpoints.add"),
+                    Component.translatable("commands.fpsm.help.capability.spawnpoints.clear"),
+                    Component.translatable("commands.fpsm.help.capability.spawnpoints.clear_all"),
+                    Component.translatable("commands.fpsm.help.capability.spawnpoints.set")
+            );
         }
 
         private static int handleSpawnAction(CommandContext<CommandSourceStack> context) {

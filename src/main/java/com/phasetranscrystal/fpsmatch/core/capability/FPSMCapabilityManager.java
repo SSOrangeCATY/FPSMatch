@@ -13,8 +13,13 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class FPSMCapabilityManager {
 
+    public enum CapabilityType {
+        TEAM,
+        MAP
+    }
+
     // 存储能力类型与对应工厂的映射（键：能力Class，值：工厂实例）
-    private static final Map<Class<? extends FPSMCapability<?>>, FPSMCapability.Factory<?, ?>> CAPABILITY_FACTORIES = new HashMap<>();
+    private static final Map<CapabilityType, Map<Class<? extends FPSMCapability<?>>, FPSMCapability.Factory<?, ?>>> CAPABILITY_FACTORIES = new HashMap<>();
 
     /**
      * 注册能力工厂
@@ -24,18 +29,18 @@ public class FPSMCapabilityManager {
      * @param <T> 能力类型
      * @throws IllegalArgumentException 若能力已注册则抛出异常
      */
-    public static <H, T extends FPSMCapability<H>> void register(Class<T> capabilityClass, FPSMCapability.Factory<H, T> factory) {
+    public static <H, T extends FPSMCapability<H>> void register(CapabilityType type, Class<T> capabilityClass, FPSMCapability.Factory<H, T> factory) {
         if (isRegistered(capabilityClass)) {
             throw new IllegalArgumentException("Capability " + capabilityClass.getSimpleName() + " already registered!");
         }
-        CAPABILITY_FACTORIES.put(capabilityClass, factory);
+        CAPABILITY_FACTORIES.computeIfAbsent(type, k -> new HashMap<>()).put(capabilityClass, factory);
     }
 
     /**
      * 检查能力是否已注册
      */
     public static <T extends FPSMCapability<?>> boolean isRegistered(Class<T> capabilityClass) {
-        return CAPABILITY_FACTORIES.containsKey(capabilityClass);
+        return CAPABILITY_FACTORIES.values().stream().anyMatch(map -> map.containsKey(capabilityClass));
     }
 
     /**
@@ -43,12 +48,28 @@ public class FPSMCapabilityManager {
      */
     @SuppressWarnings("unchecked")
     public static <H, T extends FPSMCapability<H>> Optional<FPSMCapability.Factory<H, T>> getFactory(Class<T> capabilityClass) {
-        return Optional.ofNullable((FPSMCapability.Factory<H, T>) CAPABILITY_FACTORIES.get(capabilityClass));
+        return Optional.ofNullable((FPSMCapability.Factory<H, T>) CAPABILITY_FACTORIES.values().stream()
+                .filter(map -> map.containsKey(capabilityClass))
+                .findFirst()
+                .map(map -> map.get(capabilityClass))
+                .orElse(null));
+    }
+
+    /**
+     * 获取能力工厂（按类型分组）
+     */
+    @SuppressWarnings("unchecked")
+    public static <H, T extends FPSMCapability<H>> Optional<FPSMCapability.Factory<H, T>> getFactory(CapabilityType type, Class<T> capabilityClass) {
+        return Optional.ofNullable((FPSMCapability.Factory<H, T>) CAPABILITY_FACTORIES.get(type).get(capabilityClass));
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends FPSMCapability<?>> Optional<FPSMCapability.Factory<?, T>> getRawFactory(Class<T> capabilityClass) {
-        return Optional.ofNullable((FPSMCapability.Factory<?, T>) CAPABILITY_FACTORIES.get(capabilityClass));
+        return Optional.ofNullable((FPSMCapability.Factory<?, T>) CAPABILITY_FACTORIES.values().stream()
+                .filter(map -> map.containsKey(capabilityClass))
+                .findFirst()
+                .map(map -> map.get(capabilityClass))
+                .orElse(null));
     }
 
     /**
@@ -65,23 +86,24 @@ public class FPSMCapabilityManager {
      * 获取所有已注册的能力类型
      */
     public static List<Class<? extends FPSMCapability<?>>> getRegisteredCapabilities() {
-        return new ArrayList<>(CAPABILITY_FACTORIES.keySet());
+        return CAPABILITY_FACTORIES.values().stream()
+                .flatMap(map -> map.keySet().stream())
+                .collect(Collectors.toList());
     }
 
     /**
      * 根据条件过滤已注册的能力类型
      */
-    public static List<Class<? extends FPSMCapability<?>>> getRegisteredCapabilities(Predicate<Class<? extends FPSMCapability<?>>> predicate) {
-        return CAPABILITY_FACTORIES.keySet().stream()
-                .filter(predicate)
-                .collect(Collectors.toList());
+    public static List<Class<? extends FPSMCapability<?>>> getRegisteredCapabilities(CapabilityType type) {
+        return new ArrayList<>(CAPABILITY_FACTORIES.getOrDefault(type,new HashMap<>()).keySet());
     }
 
     /**
      * 根据类名获取已注册的能力类型
      */
     public static Optional<Class<? extends FPSMCapability<?>>> getCapabilityClassByName(String className) {
-        return CAPABILITY_FACTORIES.keySet().stream()
+        return CAPABILITY_FACTORIES.values().stream()
+                .flatMap(map -> map.keySet().stream())
                 .filter(clazz -> clazz.getSimpleName().equals(className))
                 .findFirst();
     }

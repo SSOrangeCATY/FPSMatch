@@ -28,10 +28,12 @@ public class FPSMCommandSuggests {
     public static final String TEAM_NAME_ARG = "team_name";
     public static final String ACTION_ARG = "action";
     public static final String TARGETS_ARG = "targets";
+    public static final String CATEGORY_ARG = "category";
+    public static final FPSMSuggestionProvider HELP_CATEGORIES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, List.of("basic", "listener", "map")));
     
     public static final FPSMSuggestionProvider GAME_TYPES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getGameTypes()));
     public static final FPSMSuggestionProvider MAP_NAMES_WITH_GAME_TYPE_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getMapNames(StringArgumentType.getString(c, GAME_TYPE_ARG))));
-    public static final FPSMSuggestionProvider MAP_NAMES_WITH_IS_ENABLE_SHOP_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getEnableShopGames(StringArgumentType.getString(c, GAME_TYPE_ARG))));
+
     public static final FPSMSuggestionProvider TEAM_NAMES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(StringArgumentType.getString(c, MAP_NAME_ARG));
         Suggestions suggestions = FPSMCommandSuggests.getSuggestions(b, new ArrayList<>());

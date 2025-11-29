@@ -39,6 +39,16 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         this.capabilityType = capabilityType;
     }
 
+    public final void tick(){
+        for(T cap : capabilities.values()){
+            try{
+                cap.tick();
+            }catch (Exception e){
+                FPSMatch.LOGGER.error("Error ticking capability {} on holder {}", cap.getClass().getSimpleName(), this.holder, e);
+            }
+        }
+    }
+
     /**
      * 添加能力到队伍（通过管理器创建实例）
      * @param capabilityClass 能力类型

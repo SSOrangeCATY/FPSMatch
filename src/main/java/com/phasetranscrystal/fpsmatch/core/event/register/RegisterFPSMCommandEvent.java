@@ -1,17 +1,21 @@
 package com.phasetranscrystal.fpsmatch.core.event.register;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.eventbus.api.Event;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RegisterFPSMCommandEvent extends Event {
     private final LiteralArgumentBuilder<CommandSourceStack> builder;
-    private final List<Component> helps = new ArrayList<>();
+    private final Map<FPSMCommand.HelpCategory, List<Component>> helps = new HashMap<>();
     private final CommandBuildContext context;
 
     public RegisterFPSMCommandEvent(LiteralArgumentBuilder<CommandSourceStack> builder , CommandBuildContext context) {
@@ -23,8 +27,14 @@ public class RegisterFPSMCommandEvent extends Event {
         this.builder.then(child);
     }
 
-    public void addHelp(Component translation) {
-        this.helps.add(translation);
+    public void addHelp(FPSMCommand.HelpCategory category, MutableComponent translation) {
+        this.helps.computeIfAbsent(category, k -> new ArrayList<>()).add(translation.append(Component.literal("\n")));
+    }
+
+    public void addHelp(FPSMCommand.HelpCategory category, List<MutableComponent> translations) {
+        for (MutableComponent component : translations) {
+            addHelp(category, component);
+        }
     }
 
     public CommandBuildContext getContext(){
@@ -35,7 +45,7 @@ public class RegisterFPSMCommandEvent extends Event {
         return this.builder;
     }
 
-    public List<Component> getHelps() {
-        return new ArrayList<>(this.helps);
+    public Map<FPSMCommand.HelpCategory, List<Component>> getHelps() {
+        return this.helps;
     }
 }

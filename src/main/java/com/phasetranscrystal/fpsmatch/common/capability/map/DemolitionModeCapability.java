@@ -19,6 +19,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +29,7 @@ import java.util.List;
 public class DemolitionModeCapability extends MapCapability implements FPSMCapability.Savable<DemolitionModeCapability.Data> {
 
     public static void register() {
-        FPSMCapabilityManager.register(DemolitionModeCapability.class, new Factory<>() {
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.MAP, DemolitionModeCapability.class, new Factory<>() {
             @Override
             public DemolitionModeCapability create(BaseMap map) {
                 return new DemolitionModeCapability(map);
@@ -222,6 +223,13 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
                                     .then(Commands.argument("from", BlockPosArgument.blockPos())
                                             .then(Commands.argument("to", BlockPosArgument.blockPos())
                                                     .executes(DemolitionCommand::handleBombAreaAction)))));
+        }
+
+        @Override
+        public List<MutableComponent> help() {
+            return List.of(
+                    Component.translatable("commands.fpsm.help.capability.demolition.bomb_area.add")
+            );
         }
 
         private static int handleBombAreaAction(CommandContext<CommandSourceStack> context) {

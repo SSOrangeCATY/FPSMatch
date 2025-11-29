@@ -18,7 +18,7 @@ public class PauseCapability extends TeamCapability implements FPSMCapability.Sy
     }
 
     public static void register() {
-        FPSMCapabilityManager.register(PauseCapability.class, PauseCapability::new);
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, PauseCapability.class, PauseCapability::new);
     }
 
     public void addPause() {

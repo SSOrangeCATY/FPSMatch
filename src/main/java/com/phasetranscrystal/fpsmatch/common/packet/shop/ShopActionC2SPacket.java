@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet.shop;
 
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -45,18 +46,18 @@ public class ShopActionC2SPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(name);
-            if(map.isPresent() && map.get() instanceof ShopMap<?> shopMap){
+            if(map.isPresent()){
                 BaseTeam team = map.get().getMapTeams().getTeamByPlayer(ctx.get().getSender()).orElse(null);
-                FPSMShop<?> shop = null;
+                ShopCapability cap = null;
                 if (team != null) {
-                    shop = shopMap.getShop(team.name).orElse(null);
+                    cap = team.getCapabilityMap().get(ShopCapability.class).orElse(null);
                 }
                 ServerPlayer serverPlayer = ctx.get().getSender();
-                if (shop == null || serverPlayer == null) {
+                if (cap == null || serverPlayer == null || !cap.isInitialized()) {
                     ctx.get().setPacketHandled(true);
                     return;
                 }
-                shop.handleButton(serverPlayer, this.type, this.index,ShopAction.values()[this.action]);
+                cap.getShop().handleButton(serverPlayer, this.type, this.index,ShopAction.values()[this.action]);
             }
         });
         ctx.get().setPacketHandled(true);

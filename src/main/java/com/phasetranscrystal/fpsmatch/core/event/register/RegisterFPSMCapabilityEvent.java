@@ -2,8 +2,8 @@ package com.phasetranscrystal.fpsmatch.core.event.register;
 
 import net.minecraftforge.eventbus.api.Event;
 
-public class RegisterFPSMTeamCapabilityEvent extends Event {
-    public RegisterFPSMTeamCapabilityEvent(){
+public class RegisterFPSMCapabilityEvent extends Event {
+    public RegisterFPSMCapabilityEvent(){
     }
     @Override
     public boolean isCancelable()

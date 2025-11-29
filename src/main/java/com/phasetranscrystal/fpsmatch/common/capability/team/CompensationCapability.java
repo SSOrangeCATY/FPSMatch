@@ -18,7 +18,7 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
     }
 
     public static void register() {
-        FPSMCapabilityManager.register(CompensationCapability.class, CompensationCapability::new);
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, CompensationCapability.class, CompensationCapability::new);
     }
 
     public void setFunction(Function<Integer,Integer> function) {

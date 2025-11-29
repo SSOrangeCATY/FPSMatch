@@ -6,6 +6,10 @@ import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEve
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+
+import java.util.List;
 
 /**
  * 基础能力接口，定义所有能力的通用规范
@@ -15,6 +19,8 @@ import net.minecraft.network.FriendlyByteBuf;
  * @see Savable 允许持久化数据
  */
 public abstract class FPSMCapability<H> {
+
+    public void tick(){};
 
     /**
      * 初始化能力（持有者添加能力时调用）
@@ -76,6 +82,9 @@ public abstract class FPSMCapability<H> {
         interface Command {
             String getName();
             LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context);
+            default List<MutableComponent> help() {
+                return List.of();
+            }
         }
     }
 

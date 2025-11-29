@@ -17,11 +17,14 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+
+import java.util.List;
 
 public class GameEndTeleportCapability extends MapCapability implements FPSMCapability.Savable<SpawnPointData> {
 
     public static void register() {
-        FPSMCapabilityManager.register(GameEndTeleportCapability.class, new Factory<>() {
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.MAP, GameEndTeleportCapability.class, new Factory<>() {
             @Override
             public GameEndTeleportCapability create(BaseMap map) {
                 return new GameEndTeleportCapability(map);
@@ -81,8 +84,15 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         @Override
         public LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context) {
             return builder
-                    .then(Commands.argument("add", BlockPosArgument.blockPos())
+                    .then(Commands.argument("set", BlockPosArgument.blockPos())
                     .executes(METPCommand::handleModifyMatchEndTeleportPoint));
+        }
+
+        @Override
+        public List<MutableComponent> help() {
+            return List.of(
+                    Component.translatable("commands.fpsm.help.capability.match_end_teleport_point.set")
+            );
         }
 
         private static int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
