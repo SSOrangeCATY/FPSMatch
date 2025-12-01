@@ -126,3 +126,4 @@ run/
 /.eclipse/configurations/FPSMatch - runServerSlim.launch
 /logs/
 /.eclipse/
+/.vscode/
