@@ -1,40 +1,25 @@
 package com.phasetranscrystal.fpsmatch.core.event.register;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.eventbus.api.Event;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class RegisterFPSMCommandEvent extends Event {
     private final LiteralArgumentBuilder<CommandSourceStack> builder;
-    private final Map<FPSMCommand.HelpCategory, List<Component>> helps = new HashMap<>();
+    private final FPSMHelpManager helper;
     private final CommandBuildContext context;
 
-    public RegisterFPSMCommandEvent(LiteralArgumentBuilder<CommandSourceStack> builder , CommandBuildContext context) {
+    public RegisterFPSMCommandEvent(LiteralArgumentBuilder<CommandSourceStack> builder , CommandBuildContext context, FPSMHelpManager helper) {
         this.builder = builder;
         this.context = context;
+        this.helper = helper;
     }
 
     public void addChild(LiteralArgumentBuilder<CommandSourceStack> child) {
         this.builder.then(child);
-    }
-
-    public void addHelp(FPSMCommand.HelpCategory category, MutableComponent translation) {
-        this.helps.computeIfAbsent(category, k -> new ArrayList<>()).add(translation.append(Component.literal("\n")));
-    }
-
-    public void addHelp(FPSMCommand.HelpCategory category, List<MutableComponent> translations) {
-        for (MutableComponent component : translations) {
-            addHelp(category, component);
-        }
     }
 
     public CommandBuildContext getContext(){
@@ -44,8 +29,31 @@ public class RegisterFPSMCommandEvent extends Event {
     public LiteralArgumentBuilder<CommandSourceStack> getTree(){
         return this.builder;
     }
-
-    public Map<FPSMCommand.HelpCategory, List<Component>> getHelps() {
-        return this.helps;
+    
+    /**
+     * 注册命令帮助信息
+     * @param commandPath 命令路径，如 "fpsm map modify capability mycap"
+     * @param description 命令描述
+     */
+    public void registerHelp(String commandPath, MutableComponent description) {
+        this.helper.registerCommandHelp(commandPath, description);
+    }
+    
+    /**
+     * 注册命令帮助信息
+     * @param commandPath 命令路径，如 "fpsm map modify capability mycap"
+     * @param descriptionKey 命令描述的语言键
+     */
+    public void registerHelp(String commandPath, String descriptionKey) {
+        this.helper.registerCommandHelp(commandPath, descriptionKey);
+    }
+    
+    /**
+     * 注册命令参数
+     * @param commandPath 命令路径，如 "fpsm map modify capability mycap"
+     * @param parameters 参数列表，如 "amount"
+     */
+    public void registerParameters(String commandPath, String... parameters) {
+        this.helper.registerCommandParameters(commandPath, parameters);
     }
 }

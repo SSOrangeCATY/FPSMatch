@@ -8,11 +8,9 @@ import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
-import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -31,6 +29,39 @@ import java.util.*;
 public class FPSMapCommand {
     // 构建map modify命令树
     public static LiteralArgumentBuilder<CommandSourceStack> init(Pair<LiteralArgumentBuilder<CommandSourceStack>, CommandBuildContext> builder) {
+        // 获取HelpManager实例
+        FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
+        
+        // 注册map命令帮助
+        helpManager.registerCommandHelp("fpsm map");
+        helpManager.registerCommandHelp("fpsm map create", Component.translatable("commands.fpsm.help.map.create"));
+        helpManager.registerCommandHelp("fpsm map modify", Component.translatable("commands.fpsm.help.map.modify"));
+        helpManager.registerCommandHelp("fpsm map modify debug", Component.translatable("commands.fpsm.help.map.debug"));
+        helpManager.registerCommandHelp("fpsm map modify debug start", Component.translatable("commands.fpsm.help.map.debug.start"));
+        helpManager.registerCommandHelp("fpsm map modify debug reset", Component.translatable("commands.fpsm.help.map.debug.reset"));
+        helpManager.registerCommandHelp("fpsm map modify debug new_round", Component.translatable("commands.fpsm.help.map.debug.new_round"));
+        helpManager.registerCommandHelp("fpsm map modify debug cleanup", Component.translatable("commands.fpsm.help.map.debug.cleanup"));
+        helpManager.registerCommandHelp("fpsm map modify debug switch", Component.translatable("commands.fpsm.help.map.debug.switch"));
+
+        // 注册map team命令帮助
+        helpManager.registerCommandHelp("fpsm map modify team", Component.translatable("commands.fpsm.help.map.team"));
+        helpManager.registerCommandHelp("fpsm map modify team join", Component.translatable("commands.fpsm.help.map.team.join"));
+        helpManager.registerCommandHelp("fpsm map modify team leave", Component.translatable("commands.fpsm.help.map.team.leave"));
+        helpManager.registerCommandHelp("fpsm map modify team teams");
+        helpManager.registerCommandHelp("fpsm map modify team teams players", Component.translatable("commands.fpsm.help.map.team.players"));
+        // 注册map capability命令帮助
+        helpManager.registerCommandHelp("fpsm map modify capability", Component.translatable("commands.fpsm.help.category.capability"));
+        // 注册team capability命令帮助
+        helpManager.registerCommandHelp("fpsm map modify team teams capability", Component.translatable("commands.fpsm.help.category.capability"));
+
+        // 注册命令参数
+        helpManager.registerCommandParameters("fpsm map create", "*" + FPSMCommandSuggests.GAME_TYPE_ARG, "*" + FPSMCommandSuggests.MAP_NAME_ARG, "*from", "*to");
+        helpManager.registerCommandParameters("fpsm map modify", "*" + FPSMCommandSuggests.GAME_TYPE_ARG, "*" + FPSMCommandSuggests.MAP_NAME_ARG);
+        helpManager.registerCommandParameters("fpsm map modify debug", "*" + FPSMCommandSuggests.ACTION_ARG);
+        helpManager.registerCommandParameters("fpsm map modify team join", "*" + FPSMCommandSuggests.TARGETS_ARG);
+        helpManager.registerCommandParameters("fpsm map modify team leave", "*" + FPSMCommandSuggests.TARGETS_ARG);
+        helpManager.registerCommandParameters("fpsm map modify team teams", "*" + FPSMCommandSuggests.TEAM_NAME_ARG);
+        helpManager.registerCommandParameters("fpsm map modify team teams players", "*" + FPSMCommandSuggests.TARGETS_ARG, "*" + FPSMCommandSuggests.ACTION_ARG);
         return builder.getFirst()
                 .then(Commands.literal("create")
                         .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
@@ -90,6 +121,7 @@ public class FPSMapCommand {
                 FPSMCapability.Factory.Command command = factory.command();
                 if (command != null) {
                     root.then(command.builder(Commands.literal(command.getName()), context));
+                    command.help(FPSMHelpManager.getInstance());
                 }
             });
         }
@@ -107,6 +139,7 @@ public class FPSMapCommand {
                 if (command != null) {
                     // 调用指令的builder方法，挂载到当前节点
                     root.then(command.builder(Commands.literal(command.getName()), context));
+                    command.help(FPSMHelpManager.getInstance());
                 }
             });
         }

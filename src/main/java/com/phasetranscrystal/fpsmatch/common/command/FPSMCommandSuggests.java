@@ -28,8 +28,6 @@ public class FPSMCommandSuggests {
     public static final String TEAM_NAME_ARG = "team_name";
     public static final String ACTION_ARG = "action";
     public static final String TARGETS_ARG = "targets";
-    public static final String CATEGORY_ARG = "category";
-    public static final FPSMSuggestionProvider HELP_CATEGORIES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, List.of("basic", "listener", "map")));
     
     public static final FPSMSuggestionProvider GAME_TYPES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getGameTypes()));
     public static final FPSMSuggestionProvider MAP_NAMES_WITH_GAME_TYPE_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getMapNames(StringArgumentType.getString(c, GAME_TYPE_ARG))));
@@ -45,8 +43,6 @@ public class FPSMCommandSuggests {
 
     public static final FPSMSuggestionProvider MAP_DEBUG_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("start","reset","new_round","cleanup","switch")));
     public static final FPSMSuggestionProvider TEAM_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("join","leave")));
-    public static final FPSMSuggestionProvider SPAWNPOINTS_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("add","clear","clear_all","set")));
-    public static final FPSMSuggestionProvider SKITS_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("add","clear","list")));
 
     public static final FPSMSuggestionProvider TEAM_CAPABILITIES_ARGS = new FPSMSuggestionProvider((c,b)-> {
         String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
@@ -84,16 +80,6 @@ public class FPSMCommandSuggests {
             });
         }
         return FPSMCommandSuggests.getSuggestions(b,typeNames);
-    });
-
-    public static final FPSMSuggestionProvider SHOP_NAMES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
-        String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
-        List<String> names = new ArrayList<>();
-        if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-            return FPSMCommandSuggests.getSuggestions(b,shopMap.getShopNames());
-        }
-        return FPSMCommandSuggests.getSuggestions(b,names);
     });
 
     public static final FPSMSuggestionProvider SHOP_TYPE_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, FPSMShop.getRegisteredShopTypes()));

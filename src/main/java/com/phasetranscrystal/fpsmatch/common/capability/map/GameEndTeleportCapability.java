@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
@@ -17,9 +18,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-
-import java.util.List;
 
 public class GameEndTeleportCapability extends MapCapability implements FPSMCapability.Savable<SpawnPointData> {
 
@@ -89,10 +87,10 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         }
 
         @Override
-        public List<MutableComponent> help() {
-            return List.of(
-                    Component.translatable("commands.fpsm.help.capability.match_end_teleport_point.set")
-            );
+        public void help(FPSMHelpManager helper) {
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("match_end_teleport_point"));
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("match_end_teleport_point set"), Component.translatable("commands.fpsm.help.capability.match_end_teleport_point.set"));
+            helper.registerCommandParameters(FPSMHelpManager.withMapCapability("match_end_teleport_point set"), "*point");
         }
 
         private static int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {

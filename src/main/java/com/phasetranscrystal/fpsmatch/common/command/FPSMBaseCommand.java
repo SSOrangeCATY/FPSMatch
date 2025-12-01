@@ -28,10 +28,26 @@ import static com.phasetranscrystal.fpsmatch.common.command.FPSMCommand.*;
 
 public class FPSMBaseCommand {
 
-    public static <T extends ArgumentBuilder<CommandSourceStack, T>> ArgumentBuilder<CommandSourceStack, T> init(ArgumentBuilder<CommandSourceStack, T> builder){
+    public static <T extends ArgumentBuilder<CommandSourceStack, T>> ArgumentBuilder<CommandSourceStack, T> init(ArgumentBuilder<CommandSourceStack, T> builder){        // 获取HelpManager实例
+        FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
+        
+        // 注册基本命令帮助
+        helpManager.registerCommandHelp("fpsm save", Component.translatable("commands.fpsm.help.basic.save"));
+        helpManager.registerCommandHelp("fpsm reload", Component.translatable("commands.fpsm.help.basic.reload"));
+        helpManager.registerCommandHelp("fpsm debug", Component.translatable("commands.fpsm.help.basic.debug"));
+        
+        // 注册tacz命令帮助
+        helpManager.registerCommandHelp("fpsm tacz dummy", Component.translatable("commands.fpsm.help.tacz.dummy"));
+        helpManager.registerCommandParameters("fpsm tacz dummy", "*amount");
+        
+        // 注册listener_module命令帮助
+        helpManager.registerCommandHelp("fpsm listener_module");
+        helpManager.registerCommandHelp("fpsm listener_module add", Component.translatable("commands.fpsm.help.listener.add"));
+        helpManager.registerCommandHelp("fpsm listener_module add change_item_module", Component.translatable("commands.fpsm.help.listener.add_change_item"));
+        helpManager.registerCommandParameters("fpsm listener_module add change_item_module", "*changed_cost", "*default_cost");
+        
         return builder
                 .then(Commands.literal("save").executes(FPSMBaseCommand::handleSave))
-                .then(Commands.literal("sync").executes(FPSMBaseCommand::handleSync))
                 .then(Commands.literal("reload").executes(FPSMBaseCommand::handleReLoad))
                 .then(Commands.literal("debug").executes(FPSMBaseCommand::handleDebug))
                 .then(Commands.literal("tacz")
@@ -52,17 +68,6 @@ public class FPSMBaseCommand {
     private static int handleSave(CommandContext<CommandSourceStack> context) {
         FPSMCore.getInstance().getFPSMDataManager().saveAllData();
         sendSuccess(context.getSource(), Component.translatable("commands.fpsm.save.success"));
-        return 1;
-    }
-
-    private static int handleSync(CommandContext<CommandSourceStack> context) {
-        FPSMCore.getInstance().getAllMaps().values().stream()
-                .flatMap(List::stream)
-                .filter(ShopMap.class::isInstance)
-                .map(ShopMap.class::cast)
-                .forEach(ShopMap::clearAndSyncShopData);
-
-        sendSuccess(context.getSource(), Component.translatable("commands.fpsm.sync.success"));
         return 1;
     }
 

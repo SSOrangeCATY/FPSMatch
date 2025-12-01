@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
@@ -19,7 +20,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -226,10 +226,11 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         }
 
         @Override
-        public List<MutableComponent> help() {
-            return List.of(
-                    Component.translatable("commands.fpsm.help.capability.demolition.bomb_area.add")
-            );
+        public void help(FPSMHelpManager helper) {
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition"));
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition bomb_area"));
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition bomb_area add"), Component.translatable("commands.fpsm.help.capability.demolition.bomb_area.add"));
+            helper.registerCommandParameters(FPSMHelpManager.withMapCapability("demolition bomb_area add"), "*from", "*to");
         }
 
         private static int handleBombAreaAction(CommandContext<CommandSourceStack> context) {

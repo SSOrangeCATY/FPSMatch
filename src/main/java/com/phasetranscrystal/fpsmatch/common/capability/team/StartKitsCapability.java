@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -17,7 +18,6 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -184,12 +184,12 @@ public class StartKitsCapability extends TeamCapability {
         }
 
         @Override
-        public List<MutableComponent> help() {
-            return List.of(
-                    Component.translatable("commands.fpsm.help.capability.kits.add"),
-                    Component.translatable("commands.fpsm.help.capability.kits.clear"),
-                    Component.translatable("commands.fpsm.help.capability.kits.list")
-            );
+        public void help(FPSMHelpManager helper) {
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("kits"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("kits add"), Component.translatable("commands.fpsm.help.capability.kits.add"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("kits clear"), Component.translatable("commands.fpsm.help.capability.kits.clear"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("kits list"), Component.translatable("commands.fpsm.help.capability.kits.list"));
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("kits add"), "item", "amount");
         }
 
         /**

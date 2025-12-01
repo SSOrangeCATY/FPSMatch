@@ -2,14 +2,11 @@ package com.phasetranscrystal.fpsmatch.core.capability;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.serialization.Codec;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-
-import java.util.List;
 
 /**
  * 基础能力接口，定义所有能力的通用规范
@@ -82,8 +79,7 @@ public abstract class FPSMCapability<H> {
         interface Command {
             String getName();
             LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context);
-            default List<MutableComponent> help() {
-                return List.of();
+            default void help(FPSMHelpManager helper) {
             }
         }
     }

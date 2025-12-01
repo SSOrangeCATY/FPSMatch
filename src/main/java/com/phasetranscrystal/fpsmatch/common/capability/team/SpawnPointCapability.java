@@ -5,10 +5,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -20,7 +20,6 @@ import net.minecraft.commands.arguments.coordinates.Vec2Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec2;
@@ -128,11 +127,6 @@ public class SpawnPointCapability extends TeamCapability {
     }
 
     static class SpawnPointCommand implements TeamCapability.Factory.Command {
-
-        public static final FPSMCommandSuggests.FPSMSuggestionProvider SPAWNPOINTS_ACTION_SUGGESTION =
-                new FPSMCommandSuggests.FPSMSuggestionProvider((c, b)->
-                        FPSMCommandSuggests.getSuggestions(b, List.of("add","clear","clear_all","set")));
-
         @Override
         public String getName() {
             return "spawnpoints";
@@ -141,49 +135,46 @@ public class SpawnPointCapability extends TeamCapability {
         // 构建指令树，挂载到团队指令后
         @Override
         public LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> parent, CommandBuildContext context) {
-            return parent.then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
-                            .suggests(SPAWNPOINTS_ACTION_SUGGESTION)
+            return parent
+                    .then(Commands.literal("add")
+                            .executes(SpawnPointCommand::handleSpawnAdd))
+                    .then(Commands.literal("clear")
+                            .executes(SpawnPointCommand::handleSpawnClear))
+                    .then(Commands.literal("clear_all")
+                            .executes(SpawnPointCommand::handleSpawnClearAll))
+                    .then(Commands.literal("set")
                             .then(Commands.argument("from", Vec2Argument.vec2())
                                     .then(Commands.argument("to", Vec2Argument.vec2())
-                                            .executes(SpawnPointCommand::handleSpawnAction)))
-                            .executes(SpawnPointCommand::handleSpawnAction));
+                                            .executes(SpawnPointCommand::handleSpawnSet))));
         }
 
         @Override
-        public List<MutableComponent> help() {
-            return List.of(
-                    Component.translatable("commands.fpsm.help.capability.spawnpoints.add"),
-                    Component.translatable("commands.fpsm.help.capability.spawnpoints.clear"),
-                    Component.translatable("commands.fpsm.help.capability.spawnpoints.clear_all"),
-                    Component.translatable("commands.fpsm.help.capability.spawnpoints.set")
-            );
+        public void help(FPSMHelpManager helper) {
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints add"), Component.translatable("commands.fpsm.help.capability.spawnpoints.add"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints clear"), Component.translatable("commands.fpsm.help.capability.spawnpoints.clear"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints clear_all"), Component.translatable("commands.fpsm.help.capability.spawnpoints.clear_all"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints set"), Component.translatable("commands.fpsm.help.capability.spawnpoints.set"));
+            
+            // 注册命令参数
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("spawnpoints set"), "*from", "*to");
         }
 
-        private static int handleSpawnAction(CommandContext<CommandSourceStack> context) {
+        private static int handleSpawnAdd(CommandContext<CommandSourceStack> context) {
             String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
-            String action = StringArgumentType.getString(context, FPSMCommandSuggests.ACTION_ARG);
-
+            
             return FPSMCommand.getMapByName(context)
-                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName)) // 直接获取团队实例
+                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
                     .map(team -> {
-                        // 获取当前团队的SpawnPointCapability
                         SpawnPointCapability spawnCap = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
                         if (spawnCap == null) {
                             FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
                             return 0;
                         }
-
-                        // 根据动作分发处理
-                        return switch (action) {
-                            case "add" -> handleSpawnAdd(context, spawnCap, teamName);
-                            case "clear" -> handleSpawnClear(context,spawnCap, teamName);
-                            case "clear_all" -> handleSpawnClearAll(context, team.getMap());
-                            case "set" -> handleSpawnSet(context, spawnCap, teamName);
-                            default -> {
-                                FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.invalidAction"));
-                                yield 0;
-                            }
-                        };
+                        
+                        spawnCap.addSpawnPointData(getSpawnPointData(context));
+                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.add.success", teamName));
+                        return 1;
                     })
                     .orElseGet(() -> {
                         FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
@@ -191,68 +182,103 @@ public class SpawnPointCapability extends TeamCapability {
                     });
         }
 
-        private static int handleSpawnAdd(CommandContext<CommandSourceStack> context, SpawnPointCapability spawnCap, String teamName) {
-            spawnCap.addSpawnPointData(getSpawnPointData(context));
-            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.add.success", teamName));
-            return 1;
-        }
-
-        private static int handleSpawnClear(CommandContext<CommandSourceStack> context, SpawnPointCapability spawnCap, String teamName) {
-            spawnCap.clearSpawnPointsData();
-            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clear.success", teamName));
-            return 1;
-        }
-
-        private static int handleSpawnClearAll(CommandContext<CommandSourceStack> context, BaseMap map) {
-            map.getMapTeams().getTeamsWithSpec().forEach(team -> {
-                team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
-            });
-            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clearall.success"));
-            return 1;
-        }
-
-        private static int handleSpawnSet(CommandContext<CommandSourceStack> context, SpawnPointCapability spawnCap, String teamName) {
-            try {
-                Vec2 from = Vec2Argument.getVec2(context, "from");
-                Vec2 to = Vec2Argument.getVec2(context, "to");
-
-                int minX = (int) Math.floor(Math.min(from.x, to.x));
-                int maxX = (int) Math.floor(Math.max(from.x, to.x));
-                int minZ = (int) Math.floor(Math.min(from.y, to.y));
-                int maxZ = (int) Math.floor(Math.max(from.y, to.y));
-                int y = BlockPos.containing(context.getSource().getPosition()).getY();
-
-                double border = from.distanceToSqr(to);
-                if (border >= 130) {
-                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.over_flow"));
-                    return 0;
-                }
-
-                List<SpawnPointData> newSpawnPoints = new ArrayList<>();
-                SpawnPointData defaultData = getSpawnPointData(context);
-
-                for (int x = minX; x <= maxX; x++) {
-                    for (int z = minZ; z <= maxZ; z++) {
-                        BlockPos pos = new BlockPos(x, y, z);
-                        BlockState block = context.getSource().getLevel().getBlockState(pos);
-                        if (block.isAir()) {
-                            newSpawnPoints.add(new SpawnPointData(
-                                    defaultData.getDimension(), pos,
-                                    defaultData.getYaw(), defaultData.getPitch()
-                            ));
+        private static int handleSpawnClear(CommandContext<CommandSourceStack> context) {
+            String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
+            
+            return FPSMCommand.getMapByName(context)
+                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
+                    .map(team -> {
+                        SpawnPointCapability spawnCap = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
+                        if (spawnCap == null) {
+                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
+                            return 0;
                         }
-                    }
-                }
+                        
+                        spawnCap.clearSpawnPointsData();
+                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clear.success", teamName));
+                        return 1;
+                    })
+                    .orElseGet(() -> {
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
+                        return 0;
+                    });
+        }
 
-                spawnCap.setAllSpawnPointData(newSpawnPoints);
-                generateCubeEdgesParticles(context.getSource(), minX, y, minZ, maxX + 1, y + 1, maxZ + 1);
-                FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.success", newSpawnPoints.size(), teamName));
-                return 1;
+        private static int handleSpawnClearAll(CommandContext<CommandSourceStack> context) {
+            String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
+            
+            return FPSMCommand.getMapByName(context)
+                    .map(map -> {
+                        map.getMapTeams().getTeamsWithSpec().forEach(team -> {
+                            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
+                        });
+                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clearall.success"));
+                        return 1;
+                    })
+                    .orElseGet(() -> {
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
+                        return 0;
+                    });
+        }
 
-            } catch (IllegalArgumentException e) {
-                FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.missing_args"));
-                return 0;
-            }
+        private static int handleSpawnSet(CommandContext<CommandSourceStack> context) {
+            String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
+            
+            return FPSMCommand.getMapByName(context)
+                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
+                    .map(team -> {
+                        SpawnPointCapability spawnCap = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
+                        if (spawnCap == null) {
+                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
+                            return 0;
+                        }
+                        
+                        try {
+                            Vec2 from = Vec2Argument.getVec2(context, "from");
+                            Vec2 to = Vec2Argument.getVec2(context, "to");
+
+                            int minX = (int) Math.floor(Math.min(from.x, to.x));
+                            int maxX = (int) Math.floor(Math.max(from.x, to.x));
+                            int minZ = (int) Math.floor(Math.min(from.y, to.y));
+                            int maxZ = (int) Math.floor(Math.max(from.y, to.y));
+                            int y = BlockPos.containing(context.getSource().getPosition()).getY();
+
+                            double border = from.distanceToSqr(to);
+                            if (border >= 130) {
+                                FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.over_flow"));
+                                return 0;
+                            }
+
+                            List<SpawnPointData> newSpawnPoints = new ArrayList<>();
+                            SpawnPointData defaultData = getSpawnPointData(context);
+
+                            for (int x = minX; x <= maxX; x++) {
+                                for (int z = minZ; z <= maxZ; z++) {
+                                    BlockPos pos = new BlockPos(x, y, z);
+                                    BlockState block = context.getSource().getLevel().getBlockState(pos);
+                                    if (block.isAir()) {
+                                        newSpawnPoints.add(new SpawnPointData(
+                                                defaultData.getDimension(), pos,
+                                                defaultData.getYaw(), defaultData.getPitch()
+                                        ));
+                                    }
+                                }
+                            }
+
+                            spawnCap.setAllSpawnPointData(newSpawnPoints);
+                            generateCubeEdgesParticles(context.getSource(), minX, y, minZ, maxX + 1, y + 1, maxZ + 1);
+                            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.success", newSpawnPoints.size(), teamName));
+                            return 1;
+
+                        } catch (IllegalArgumentException e) {
+                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.missing_args"));
+                            return 0;
+                        }
+                    })
+                    .orElseGet(() -> {
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
+                        return 0;
+                    });
         }
 
 

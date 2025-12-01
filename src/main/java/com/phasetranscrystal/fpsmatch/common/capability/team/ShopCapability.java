@@ -9,6 +9,7 @@ import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -26,12 +27,10 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -341,14 +340,28 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         @Override
-        public List<MutableComponent> help() {
-            return List.of(
-                    Component.translatable("commands.fpsm.help.capability.shop.initialize"),
-                    Component.translatable("commands.fpsm.help.capability.shop.reset"),
-                    Component.translatable("commands.fpsm.help.capability.shop.sync"),
-                    Component.translatable("commands.fpsm.help.capability.shop.info"),
-                    Component.translatable("commands.fpsm.help.capability.shop.modify")
-            );
+        public void help(FPSMHelpManager helper) {
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop initialize"), Component.translatable("commands.fpsm.help.capability.shop.initialize"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop reset"), Component.translatable("commands.fpsm.help.capability.shop.reset"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop sync"), Component.translatable("commands.fpsm.help.capability.shop.sync"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop info"), Component.translatable("commands.fpsm.help.capability.shop.info"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set"), Component.translatable("commands.fpsm.help.capability.shop.modify"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set listener_module add"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.listener_module.add"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set listener_module remove"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.listener_module.remove"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set group_id"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.group_id"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set cost"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.cost"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set item"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.item"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set dummy_ammo_amount"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.dummy_ammo_amount"));
+
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop initialize"), "*type", "*startMoney");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set"), "*type", "*slot", "*action");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set listener_module add"), "*listener_module");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set listener_module remove"), "*listener_module");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set group_id"), "*group_id");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set cost"), "*cost");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set item"), "item");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set dummy_ammo_amount"), "*amount");
         }
 
         /**
