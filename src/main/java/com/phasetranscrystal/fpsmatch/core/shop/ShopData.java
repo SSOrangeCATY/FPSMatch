@@ -27,6 +27,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * 同时支持广播事件以处理槽位变更和成本检查。
  */
 public class ShopData<T extends Enum<T> & INamedType> {
+
+    private int maxMoney = 16000;
+
     /**
      * 玩家当前的金钱数量。
      */
@@ -149,7 +152,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 减少的金钱数量
      */
     public void reduceMoney(int money) {
-        this.money -= Math.max(0, money);
+        this.money = Math.max(0, this.money -= Math.max(0, money));
     }
 
     /**
@@ -158,8 +161,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 增加的金钱数量
      */
     public void addMoney(int money) {
-        this.money += Math.max(0, money);
-        this.money = Math.min(16000, this.money);
+        this.money = Math.min(getMaxMoney(), this.money += Math.max(0, money));
     }
 
     /**
@@ -347,5 +349,13 @@ public class ShopData<T extends Enum<T> & INamedType> {
             })));
         }
         return flag.get();
+    }
+
+    public int getMaxMoney() {
+        return maxMoney;
+    }
+
+    public void setMaxMoney(int maxMoney) {
+        this.maxMoney = maxMoney;
     }
 }

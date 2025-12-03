@@ -13,11 +13,26 @@ import net.minecraftforge.common.MinecraftForge;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
 public class CapabilityMap<H, T extends FPSMCapability<H>> {
+
+    public static <C extends MapCapability> Optional<C> getMapCapability(BaseMap map, final Class<C> capability) {
+        return map.getCapabilityMap().get(capability);
+    }
+
+    public static <C extends TeamCapability> Optional<C> getTeamCapability(BaseTeam team, final Class<C> capability) {
+        return team.getCapabilityMap().get(capability);
+    }
+
+    public static <C extends TeamCapability> Map<BaseTeam, Optional<C>> getTeamCapability(BaseMap map, final Class<C> capability) {
+        return map.getMapTeams().getNormalTeams().stream()
+                .collect(Collectors.toMap(Function.identity(), team -> getTeamCapability(team, capability)));
+    }
+
     Codec<CapabilityMap<H, T>> codec;
 
     public static CapabilityMap<BaseMap, MapCapability> ofMapCapability(BaseMap map){

@@ -1,9 +1,11 @@
 package com.phasetranscrystal.fpsmatch.common.entity.drop;
 
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
@@ -29,13 +31,32 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MatchDropEntity extends Entity {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPlayerDropItem(ItemTossEvent event){
+        ItemStack itemStack = event.getEntity().getItem();
+        FPSMCore.getInstance().getMapByPlayer(event.getPlayer()).ifPresent(map->
+                {
+                    DropType type = DropType.getItemDropType(itemStack);
+                    if(!event.isCanceled() && type != DropType.MISC){
+                        FPSMUtil.playerDropMatchItem((ServerPlayer) event.getPlayer(),itemStack);
+                        event.setCanceled(true);
+                    }
+                }
+        );
+    }
+
     public static final EntityDataAccessor<Integer> DATA_TYPE = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(MatchDropEntity.class, EntityDataSerializers.ITEM_STACK);
     private int pickupDelay;

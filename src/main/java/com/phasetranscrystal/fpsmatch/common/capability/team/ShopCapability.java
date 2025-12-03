@@ -5,19 +5,25 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMTeamEvent;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
@@ -28,18 +34,22 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.item.ItemTossEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * 商店能力：为队伍提供商店系统支持
  * 使用注册的商店类型系统，无需泛型
  */
 public class ShopCapability extends TeamCapability implements FPSMCapability.Savable<FPSMShop<?>>, FPSMCapability.DataSynchronizable {
-
     public static Optional<FPSMShop<?>> getShopByPlayer(ServerPlayer player) {
         return FPSMCore.getInstance().getMapByPlayer(player)
                 .flatMap(map -> map.getMapTeams().getTeamByPlayer(player)
@@ -47,7 +57,45 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                                 .flatMap(ShopCapability::getShopSafe)));
     }
 
-    private final ServerTeam team;
+    public static Optional<ShopData<?>> getPlayerShopData(BaseMap map, UUID player) {
+        return map.getMapTeams().getTeamByPlayer(player)
+                .flatMap(team -> team.getCapabilityMap().get(ShopCapability.class)
+                        .flatMap(ShopCapability::getShopSafe)
+                        .map(shop -> shop.getPlayerShopData(player)));
+    }
+
+    public static Optional<ShopData<?>> getPlayerShopData(ServerPlayer player) {
+        return getShopByPlayer(player)
+                .map(shop -> shop.getPlayerShopData(player));
+    }
+
+    public static void syncShopData(BaseMap map){
+        map.getMapTeams().getNormalTeams().forEach(team -> {
+            team.getCapabilityMap().get(ShopCapability.class).ifPresent(ShopCapability::sync);
+        });
+    }
+
+    public static void setPlayerMoney(BaseMap map, UUID playerUUID, int money){
+        getPlayerShopData(map, playerUUID).ifPresent(shopData -> {
+            shopData.setMoney(money);
+        });
+    }
+
+
+    public static void setPlayerMoney(BaseMap map, int money){
+        map.getMapTeams().getNormalTeams().forEach(team -> {
+            team.getCapabilityMap()
+                    .get(ShopCapability.class)
+                    .flatMap(ShopCapability::getShopSafe)
+                    .ifPresent(shop -> {
+                        team.getPlayerList().forEach(player -> {
+                            shop.getPlayerShopData(player).setMoney(money);
+                        });
+                    });
+        });
+    }
+
+        private final ServerTeam team;
     private FPSMShop<?> shop;
     private String shopTypeId;
     private int startMoney = 800;
@@ -71,6 +119,44 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         if (isInitialized() && team.equals(event.getTeam())) {
             shop.clearPlayerShopData(event.getPlayer().getUUID());
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
+        if(event.getEntity().level().isClientSide) return;
+
+        ShopCapability.getShopByPlayer((ServerPlayer) event.getEntity()).ifPresent(shop -> {
+            ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+            Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
+            if(pair != null){
+                ShopSlot slot = pair.getSecond();
+                slot.lock(event.getStack().getCount());
+                shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst().name(),slot);
+            }
+        });
+
+        FPSMCore.getInstance().getMapByPlayer(event.getEntity()).ifPresent(map->
+                FPSMUtil.sortPlayerInventory(event.getEntity())
+        );
+    }
+
+
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public static void onPlayerDropItem(ItemTossEvent event){
+        if(event.getEntity().level().isClientSide) return;
+        ItemStack itemStack = event.getEntity().getItem();
+
+        ShopCapability.getShopByPlayer((ServerPlayer) event.getPlayer()).ifPresent(shop -> {
+                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+                Pair<? extends INamedType, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
+                if(pair != null){
+                    ShopSlot slot = pair.getSecond();
+                    if(pair.getFirst().dorpUnlock()){
+                        slot.unlock(itemStack.getCount());
+                        shop.syncShopData((ServerPlayer) event.getPlayer(),pair.getFirst().name(),slot);
+                    }
+                }
+        });
     }
 
     /**
@@ -148,6 +234,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         if (isInitialized()) {
             shop.resetPlayerData();
             shop.syncShopData();
+            shop.syncShopMoneyData();
         }
     }
 
@@ -157,6 +244,22 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     public void syncShopData() {
         if (isInitialized()) {
             shop.syncShopData();
+        }
+    }
+
+    @Override
+    public void sync(){
+        if (isInitialized()) {
+            shop.syncShopMoneyData();
+            shop.syncShopData();
+        }
+    }
+
+    @Override
+    public void sync(Player player){
+        if (isInitialized() && player instanceof ServerPlayer serverPlayer) {
+            shop.syncShopMoneyData(serverPlayer);
+            shop.syncShopData(serverPlayer);
         }
     }
 

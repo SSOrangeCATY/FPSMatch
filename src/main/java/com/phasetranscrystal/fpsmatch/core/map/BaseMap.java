@@ -66,6 +66,15 @@ public abstract class BaseMap {
         this.capabilities = CapabilityMap.ofMapCapability(this);
     }
 
+    public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData, List<Class<? extends MapCapability>> capabilities) {
+        this(serverLevel, mapName, areaData);
+        for (Class<? extends MapCapability> cap : capabilities) {
+            if(!this.capabilities.add(cap)){
+                FPSMatch.LOGGER.error("Failed to add capability {} to map {}", cap.getSimpleName(), this.mapName);
+            }
+        }
+    }
+
     /**
      * 添加团队
      * @param data 团队数据
