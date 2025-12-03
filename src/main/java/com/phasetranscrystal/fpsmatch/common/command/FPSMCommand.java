@@ -7,10 +7,12 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import net.minecraft.commands.CommandBuildContext;
@@ -97,13 +99,23 @@ public class FPSMCommand {
         }
     }
 
+    public static Optional<CapabilityMap<BaseMap,MapCapability>> getMapCapabilities(CommandContext<CommandSourceStack> context) {
+        Optional<BaseMap> map = getMapByName(context);
+        return map.map(BaseMap::getCapabilityMap);
+    }
+
+    public static Optional<CapabilityMap<BaseTeam, TeamCapability>> getTeamCapabilities(CommandContext<CommandSourceStack> context) {
+        Optional<ServerTeam> map = getTeamByName(context);
+        return map.map(ServerTeam::getCapabilityMap);
+    }
+
     public static <T extends TeamCapability> Optional<T> getTeamCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
-        Optional<ServerTeam> team = FPSMCommand.getTeamByName(context);
+        Optional<ServerTeam> team = getTeamByName(context);
         return team.flatMap(serverTeam -> serverTeam.getCapabilityMap().get(clazz));
     }
 
     public static <T extends MapCapability> Optional<T> getMapCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
-        Optional<BaseMap> map = FPSMCommand.getMapByName(context);
+        Optional<BaseMap> map = getMapByName(context);
         return map.flatMap(baseMap -> baseMap.getCapabilityMap().get(clazz));
     }
 

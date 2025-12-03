@@ -106,8 +106,7 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.metp.success", pointData.toString()));
                         return 1;
                     }).orElseGet(() -> {
-                        String mapName = StringArgumentType.getString(context, FPSMCommandSuggests.MAP_NAME_ARG);
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.metp.not_available", mapName));
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing", GameEndTeleportCapability.class.getSimpleName()));
                         return 0;
                     });
         }

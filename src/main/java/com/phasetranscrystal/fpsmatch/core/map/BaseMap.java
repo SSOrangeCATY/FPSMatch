@@ -93,6 +93,10 @@ public abstract class BaseMap {
     public final void mapTick() {
         checkForVictory();
         tick();
+        capabilities.tick();
+        getMapTeams().getTeamsWithSpectator().forEach(team->{
+            team.getCapabilityMap().tick();
+        });
         syncToClient();
     }
 

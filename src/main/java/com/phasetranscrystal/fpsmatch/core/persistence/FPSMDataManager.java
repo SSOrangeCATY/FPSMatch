@@ -47,8 +47,8 @@ public class FPSMDataManager {
     @SuppressWarnings("unchecked")
     public <T> void saveData(T data, String fileName, boolean overwrite) {
         DataEntry<T> entry = getEntry((Class<T>)data.getClass());
-        Path dirPath = entry.holder.isGlobal() ? globalDataPath : levelDataPath;
-        entry.holder.getWriter(data, fileName, overwrite).accept(dirPath.toFile());
+        File file = getSaveFolder(data);
+        entry.holder.getWriter(data, fileName, overwrite).accept(file);
     }
 
     // 异步保存数据

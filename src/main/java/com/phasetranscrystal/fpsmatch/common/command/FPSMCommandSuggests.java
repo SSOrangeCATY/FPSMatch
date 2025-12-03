@@ -8,6 +8,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
@@ -22,7 +23,7 @@ import java.util.function.BiFunction;
 public class FPSMCommandSuggests {
     public static final String MAP_NAME_ARG = "map_name";
     public static final String GAME_TYPE_ARG = "game_type";
-    public static final String SHOP_NAME_ARG = "shop_name";
+    public static final String CAPABILITY_ARG = "capability";
     public static final String SHOP_TYPE_ARG = "shop_type";
     public static final String SHOP_SLOT_ARG = "shop_slot";
     public static final String TEAM_NAME_ARG = "team_name";
@@ -82,7 +83,6 @@ public class FPSMCommandSuggests {
     });
 
     public static final FPSMSuggestionProvider SHOP_TYPE_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, FPSMShop.getRegisteredShopTypes()));
-
     public static final FPSMSuggestionProvider SHOP_SET_SLOT_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("1","2","3","4","5")));
     public static final FPSMSuggestionProvider SHOP_SLOT_ADD_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
     {
@@ -114,7 +114,35 @@ public class FPSMCommandSuggests {
                 }
         ).orElse(FPSMCommandSuggests.getSuggestions(b, List.of()));
     });
+    public static final FPSMSuggestionProvider MAP_CAPABILITIES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
+            FPSMCommand.getMapCapabilities(c)
+                    .map(capMap-> FPSMCommandSuggests.getSuggestions(b,capMap.capabilitiesString()))
+                    .orElse(FPSMCommandSuggests.getSuggestions(b, List.of())));
 
+    public static final FPSMSuggestionProvider MAP_ADD_CAPABILITIES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
+            FPSMCommand.getMapCapabilities(c)
+                    .map(capMap->
+                            FPSMCommandSuggests.getSuggestions(b,FPSMCapabilityManager.getRegisteredCapabilities(FPSMCapabilityManager.CapabilityType.MAP)
+                             .stream()
+                             .filter(s->!capMap.contains((Class<? extends MapCapability>) s))
+                             .map(Class::getSimpleName).toList()))
+                    .orElse(FPSMCommandSuggests.getSuggestions(b, List.of())));
+
+
+    public static final FPSMSuggestionProvider TEAM_CAPABILITIES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
+            FPSMCommand.getTeamCapabilities(c)
+                    .map(capMap-> FPSMCommandSuggests.getSuggestions(b,capMap.capabilitiesString()))
+                    .orElse(FPSMCommandSuggests.getSuggestions(b, List.of())));
+
+
+    public static final FPSMSuggestionProvider TEAM_ADD_CAPABILITIES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
+            FPSMCommand.getTeamCapabilities(c)
+                    .map(capMap->
+                            FPSMCommandSuggests.getSuggestions(b,FPSMCapabilityManager.getRegisteredCapabilities(FPSMCapabilityManager.CapabilityType.TEAM)
+                                    .stream()
+                                    .filter(s->!capMap.contains((Class<? extends TeamCapability>) s))
+                                    .map(Class::getSimpleName).toList()))
+                    .orElse(FPSMCommandSuggests.getSuggestions(b, List.of())));
 
     public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
         @Override

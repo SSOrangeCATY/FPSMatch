@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.packet.GameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class MapTeams {
     protected final ServerLevel level;
@@ -40,7 +42,7 @@ public class MapTeams {
     public MapTeams(ServerLevel level, BaseMap map){
         this.level = level;
         this.map = map;
-        this.addTeam(TeamData.of("spectator",-1,List.of(SpawnPointCapability.class)),true)
+        this.addTeam(TeamData.of("spectator",-1),true)
                 .getCapabilityMap()
                 .ifPresent(SpawnPointCapability.class,cap->{
                     Vec3 vec3 = map.getMapArea().getAABB().getCenter();
@@ -293,7 +295,11 @@ public class MapTeams {
     }
 
     public List<ServerTeam> getNormalTeams(){
-        return this.teams.values().stream().filter(BaseTeam::isNormal).toList();
+        return this.teams.values().stream().filter(BaseTeam::isNormal).collect(Collectors.toList());
+    }
+
+    public List<ServerTeam> getTeamsWithSpectator(){
+        return new ArrayList<>(this.teams.values());
     }
 
     /**
@@ -532,17 +538,16 @@ public class MapTeams {
      * 如果未找到，则返回 null。
      *
      * @param teamName 队伍的完整名称
-     * @return 队伍对象，如果未找到则返回 null
+     * @return 队伍对象的 Optional 包装类
      */
-    @Nullable
-    public ServerTeam getTeamByFixedName(String teamName) {
+    public Optional<ServerTeam> getTeamByFixedName(String teamName) {
         AtomicReference<ServerTeam> team = new AtomicReference<>();
         teams.forEach((s, t) -> {
             if (t.getFixedName().equals(teamName)) {
                 team.set(t);
             }
         });
-        return team.get();
+        return Optional.ofNullable(team.get());
     }
 
     /**
@@ -777,6 +782,22 @@ public class MapTeams {
         Map<UUID, Map<UUID, Float>> hurtData = new HashMap<>();
         teams.values().forEach((t) -> t.getPlayersData().forEach((data) -> hurtData.put(data.getOwner(), data.getDamageData())));
         return hurtData;
+    }
+
+    public Map<String, CapabilityMap.CapabilityMapWrapper> getData(){
+        Map<String, CapabilityMap.CapabilityMapWrapper> capabilityMap = new HashMap<>();
+        teams.values().forEach((t) -> capabilityMap.put(t.getName(), t.getCapabilityMap().getData()));
+        return capabilityMap;
+    }
+
+    public void writeData(Map<String, CapabilityMap.CapabilityMapWrapper> capabilityMap){
+        capabilityMap.forEach((name, wrapper) -> {
+            if(teams.containsKey(name)){
+                teams.get(name).getCapabilityMap().write(wrapper);
+            }else{
+                FPSMatch.LOGGER.error("Team {} not found : capability is not instantiated", name);
+            }
+        });
     }
 
     /**

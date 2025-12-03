@@ -227,7 +227,10 @@ public class StartKitsCapability extends TeamCapability {
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",
                             itemStack.getDisplayName(), capability.team.name), true);
                     return 1;
-                }).orElse(0);
+                }).orElseGet(() -> {
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", StartKitsCapability.class.getSimpleName()));
+                    return 0;
+                });
             } catch (Exception e) {
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.kits.add.failed"));
                 return 0;
@@ -243,7 +246,10 @@ public class StartKitsCapability extends TeamCapability {
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.clear.success",
                         capability.team.name), true);
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", StartKitsCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         /**
@@ -258,7 +264,10 @@ public class StartKitsCapability extends TeamCapability {
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.list.success",
                         capability.getHolder().name, kits.size()), true);
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", StartKitsCapability.class.getSimpleName()));
+                return 0;
+            });
         }
     };
 }

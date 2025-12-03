@@ -87,6 +87,10 @@ public abstract class BaseTeam {
         return this.gameType + "_" + this.mapName + "_" + this.name;
     }
 
+    public String getName(){
+        return this.name;
+    }
+
     public Vector3f getColorVec3f() {
         return color;
     }

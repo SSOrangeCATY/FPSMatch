@@ -41,6 +41,11 @@ public class SpawnPointCapability extends TeamCapability {
     public static void register() {
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, SpawnPointCapability.class, new TeamCapability.Factory<>() {
             @Override
+            public boolean isOriginal() {
+                return true;
+            }
+
+            @Override
             public SpawnPointCapability create(BaseTeam team) {
                 return new SpawnPointCapability(team);
             }
@@ -162,51 +167,31 @@ public class SpawnPointCapability extends TeamCapability {
 
         private static int handleSpawnAdd(CommandContext<CommandSourceStack> context) {
             String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
-            
-            return FPSMCommand.getMapByName(context)
-                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
-                    .map(team -> {
-                        SpawnPointCapability spawnCap = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
-                        if (spawnCap == null) {
-                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
-                            return 0;
-                        }
-                        
-                        spawnCap.addSpawnPointData(getSpawnPointData(context));
-                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.add.success", teamName));
-                        return 1;
-                    })
-                    .orElseGet(() -> {
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
-                        return 0;
-                    });
+            return FPSMCommand.getTeamCapability(context, SpawnPointCapability.class).map(spawnCap -> {
+                spawnCap.addSpawnPointData(getSpawnPointData(context));
+                FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.add.success", teamName));
+                return 1;
+            }).orElseGet(() -> {
+                FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
+                return 0;
+            });
         }
 
         private static int handleSpawnClear(CommandContext<CommandSourceStack> context) {
             String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
             
-            return FPSMCommand.getMapByName(context)
-                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
-                    .map(team -> {
-                        SpawnPointCapability spawnCap = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
-                        if (spawnCap == null) {
-                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
-                            return 0;
-                        }
-                        
+            return FPSMCommand.getTeamCapability(context, SpawnPointCapability.class).map(spawnCap -> {
                         spawnCap.clearSpawnPointsData();
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clear.success", teamName));
                         return 1;
                     })
                     .orElseGet(() -> {
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
                         return 0;
                     });
         }
 
         private static int handleSpawnClearAll(CommandContext<CommandSourceStack> context) {
-            String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
-            
             return FPSMCommand.getMapByName(context)
                     .map(map -> {
                         map.getMapTeams().getTeamsWithSpec().forEach(team -> {
@@ -224,15 +209,7 @@ public class SpawnPointCapability extends TeamCapability {
         private static int handleSpawnSet(CommandContext<CommandSourceStack> context) {
             String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
             
-            return FPSMCommand.getMapByName(context)
-                    .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
-                    .map(team -> {
-                        SpawnPointCapability spawnCap = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
-                        if (spawnCap == null) {
-                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
-                            return 0;
-                        }
-                        
+            return  FPSMCommand.getTeamCapability(context, SpawnPointCapability.class).map(spawnCap -> {
                         try {
                             Vec2 from = Vec2Argument.getVec2(context, "from");
                             Vec2 to = Vec2Argument.getVec2(context, "to");
@@ -276,7 +253,7 @@ public class SpawnPointCapability extends TeamCapability {
                         }
                     })
                     .orElseGet(() -> {
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
                         return 0;
                     });
         }

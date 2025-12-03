@@ -1,13 +1,18 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
+import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 基础能力接口，定义所有能力的通用规范
@@ -35,7 +40,6 @@ public abstract class FPSMCapability<H> {
      */
     public void destroy() {}
 
-
     /**
      * 获取能力的持有者
      */
@@ -61,6 +65,14 @@ public abstract class FPSMCapability<H> {
      * @param <T> 能力类型
      */
     public interface Factory<H, T extends FPSMCapability<H>> {
+
+        /**
+         * 是否在初始化Holder的CapabilityMap时自动添加这个能力
+         */
+        default boolean isOriginal(){
+            return false;
+        }
+
         /**
          * 创建能力实例
          * @param holder 能力的持有者
@@ -87,9 +99,24 @@ public abstract class FPSMCapability<H> {
     }
 
     public interface Savable<T> {
+        String getName();
         Codec<T> codec();   // 获取数据的编解码器
         T write(T value);
-        T read();
+        @Nullable T read();
+
+        default JsonElement toJson(){
+            T result = read();
+            if(result == null) return JsonNull.INSTANCE;
+            return codec().encodeStart(JsonOps.INSTANCE, result).getOrThrow(false, e -> {
+                throw new DataPersistenceException("Error encoding data to JSON", e);
+            });
+        };
+
+        default void decode(JsonElement json){
+            write(codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
+                        throw new DataPersistenceException("Error decoding data from JSON", e);
+                }).getFirst());
+        };
     }
 
     /**

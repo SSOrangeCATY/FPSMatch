@@ -11,7 +11,6 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -296,7 +295,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
 
     @Override
     public FPSMShop<?> read() {
-        return getShop();
+        return shop;
     }
 
     @Override
@@ -496,7 +495,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                     context.getSource().sendFailure(Component.translatable("commands.fpsm.modify.shop.initialize.failed", typeId));
                     return 0;
                 }
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         /**
@@ -513,7 +515,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.shop.reset.success",
                         capability.team.name), true);
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         /**
@@ -531,7 +536,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.shop.sync.success",
                         capability.team.name), true);
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         /**
@@ -551,7 +559,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                         capability.getStartMoney(),
                         shop.playersData.size()), true);
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         // ------------------------------ 商店相关处理方法 ------------------------------
@@ -569,7 +580,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 capability.addListenerModule(moduleName, shopType, slotNum);
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.listener.add.success", moduleName));
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         private static int handleRemoveListenerModule(CommandContext<CommandSourceStack> context) {
@@ -586,7 +600,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 capability.removeListenerModule(moduleName, shopType, slotNum);
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.slot.listener.remove.success", moduleName));
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         private static int handleModifyShopGroupID(CommandContext<CommandSourceStack> context) {
@@ -603,7 +620,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 capability.setShopGroupID(group_id, shopType, slotNum);
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.slot.modify.group.success", shopType, slotNum, group_id));
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         private static int handleModifyCost(CommandContext<CommandSourceStack> context) {
@@ -620,7 +640,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 capability.setShopCost(cost, shopType, slotNum);
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.modify.cost.success", shopType, slotNum, cost));
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         private static int handleModifyItemWithoutValue(CommandContext<CommandSourceStack> context) {
@@ -639,8 +662,12 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                     FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.modify.item.success",
                             shopType, slotNum, player.getMainHandItem().getDisplayName()));
                     return 1;
-                }).orElse(0);
+                }).orElseGet(() -> {
+                    context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                    return 0;
+                });
             } catch (CommandSyntaxException e) {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.only.player"));
                 return 0;
             }
         }
@@ -661,7 +688,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.modify.item.success",
                         shopType, slotNum, itemStack.getDisplayName()));
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
 
         private static int handleGunModifyGunAmmoAmount(CommandContext<CommandSourceStack> context) {
@@ -681,7 +711,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.shop.modify.gun.success",
                         shopType, slotNum, itemStack.getDisplayName(), amount));
                 return 1;
-            }).orElse(0);
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
         }
     }
 }

@@ -1,9 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -18,7 +21,9 @@ public class FPSMCapabilityManager {
     }
 
     // 存储能力类型与对应工厂的映射（键：能力Class，值：工厂实例）
-    private static final Map<CapabilityType, Map<Class<? extends FPSMCapability<?>>, FPSMCapability.Factory<?, ?>>> CAPABILITY_FACTORIES = new HashMap<>();
+    private static final Map<CapabilityType, Map<Class<? extends FPSMCapability<?>>, FPSMCapability.Factory<?, ?>>> CAPABILITY_FACTORIES = new ConcurrentHashMap<>();
+
+    private static final Map<CapabilityType,List<Class<? extends FPSMCapability<?>>>> ORIGINAL_CAPABILITIES = new ConcurrentHashMap<>();
 
     /**
      * 注册能力工厂
@@ -33,6 +38,21 @@ public class FPSMCapabilityManager {
             throw new IllegalArgumentException("Capability " + capabilityClass.getSimpleName() + " already registered!");
         }
         CAPABILITY_FACTORIES.computeIfAbsent(type, k -> new HashMap<>()).put(capabilityClass, factory);
+        if(factory.isOriginal()){
+            ORIGINAL_CAPABILITIES.computeIfAbsent(type, k -> new ArrayList<>()).add(capabilityClass);
+        }
+    }
+
+    public static List<Class<? extends TeamCapability>> getOriginalTeamCapabilities(){
+        return ORIGINAL_CAPABILITIES.getOrDefault(CapabilityType.TEAM, Collections.emptyList()).stream()
+                .map(cap -> (Class<? extends TeamCapability>) cap)
+                .collect(Collectors.toList());
+    }
+
+    public static List<Class<? extends MapCapability>> getOriginalMapCapabilities(){
+        return ORIGINAL_CAPABILITIES.getOrDefault(CapabilityType.MAP, Collections.emptyList()).stream()
+                .map(cap -> (Class<? extends MapCapability>) cap)
+                .collect(Collectors.toList());
     }
 
     /**

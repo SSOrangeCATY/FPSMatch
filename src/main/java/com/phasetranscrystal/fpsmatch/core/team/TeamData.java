@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.team;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 
@@ -19,6 +20,12 @@ public record TeamData(String name, int limit, List<String> capabilities) {
 
     public TeamData(String name, int limit) {
         this(name, limit, new ArrayList<>());
+    }
+
+    public static TeamData of(String name, int limit) {
+        List<String> caps = new ArrayList<>();
+        caps.add(SpawnPointCapability.class.getSimpleName());
+        return new TeamData(name,limit,caps);
     }
 
     public static TeamData of(String name, int limit, List<Class<? extends TeamCapability>> capabilities) {

@@ -244,7 +244,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
                         return 1;
                     })
                     .orElseGet(() -> {
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.failed"));
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing", DemolitionModeCapability.class.getSimpleName()));
                         return 0;
                     });
         }

@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.persistence.datafixer.DataFixer;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +25,7 @@ import java.util.function.Supplier;
  * 它使用 {@link Codec} 来实现数据的编解码，并通过 Gson 进行 JSON 操作。
  * 实现该接口的类需要提供一个具体的 {@link Codec} 实例，用于定义数据的编解码逻辑。
  */
-public interface ISavePort<T> {
+public interface    ISavePort<T> {
     Codec<T> codec();   // 获取数据的编解码器
 
     /**
@@ -90,7 +91,9 @@ public interface ISavePort<T> {
     default JsonElement encodeToJson(T data) {
         JsonObject wrapper = new JsonObject();
         wrapper.addProperty("version", getVersion());
-        wrapper.add("data", codec().encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, DataPersistenceException::new));
+        wrapper.add("data", codec().encodeStart(JsonOps.INSTANCE, data).getOrThrow(false, throwable -> {
+            throw new DataPersistenceException("Failed to encode data to JSON", throwable);
+        }));
         return wrapper;
     }
 
@@ -179,12 +182,12 @@ public interface ISavePort<T> {
                             T data = this.decodeFromJson(element);
                             this.readHandler().accept(data);
                         } catch (Exception e) {
-                            e.fillInStackTrace();
+                            FPSMatch.LOGGER.error("error : {} data file is not a json file or doesn't exist.", file.getName(), e);
                         }
                     }
                 }
             } else {
-                System.out.println("error : " + directory.getName() + " data folder is not a directory or doesn't exist.");
+                FPSMatch.LOGGER.error("error : {} data folder is not a directory or doesn't exist.", directory.getName());
             }
         };
     }
@@ -233,10 +236,10 @@ public interface ISavePort<T> {
                         throw new RuntimeException(e);
                     }
                 } catch (Exception e) {
-                    e.fillInStackTrace();
+                    FPSMatch.LOGGER.error("error : {} data folder is not a directory or doesn't exist.", directory.getName(), e);
                 }
             } else {
-                System.out.println("error : " + directory.getName() + " data folder is not a directory or doesn't exist.");
+                FPSMatch.LOGGER.error("error : {} data folder is not a directory or doesn't exist.", directory.getName());
             }
         };
     }
