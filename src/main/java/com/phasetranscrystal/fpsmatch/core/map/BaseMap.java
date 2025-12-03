@@ -205,9 +205,6 @@ public abstract class BaseMap {
         FPSMCore.checkAndLeaveTeam(player);
         this.pullGameInfo(player);
         this.getMapTeams().joinTeam(teamName, player);
-        if (this instanceof ShopMap<?> shopMap && !teamName.equals("spectator")) {
-            shopMap.getShop(player).ifPresent(shop -> shop.syncShopData(player));
-        }
     }
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){

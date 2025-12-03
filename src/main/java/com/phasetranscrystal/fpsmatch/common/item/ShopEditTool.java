@@ -1,11 +1,12 @@
 package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.client.screen.EditorShopContainer;
+import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.EditToolSelectMapC2SPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -28,6 +29,7 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +43,19 @@ public class ShopEditTool extends Item {
         super(pProperties);
     }
 
+    public static Optional<FPSMShop<?>> getShop(ItemStack stack) {
+        if (stack.getItem() instanceof ShopEditTool shopEditTool) {
+            Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(stack, ShopEditTool.MAP_TAG));
+
+            if (map.isPresent()) {
+                return map.get().getMapTeams().getTeamByName(shopEditTool.getTag(stack, ShopEditTool.SHOP_TAG))
+                        .flatMap(team -> team.getCapabilityMap().get(ShopCapability.class)
+                                .map(ShopCapability::getShopSafe)).orElse(null);
+            }
+        }
+
+        return Optional.empty();
+    }
 
     public ItemStack setTag(ItemStack stack, String tagName, String value) {
         CompoundTag tag = stack.getOrCreateTag();
@@ -72,8 +87,14 @@ public class ShopEditTool extends Item {
                     }
                     preSelectedMap = iteractItem.getTag(itemInHand, MAP_TAG);
                     Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(preSelectedMap);
-                    if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-                        List<String> shopList = shopMap.getShopNames();
+                    if (map.isPresent()) {
+                        List<String> shopList = new ArrayList<>();
+                        map.get().getMapTeams().getNormalTeams().forEach(team->{
+                            team.getCapabilityMap().get(ShopCapability.class).ifPresent(cap->{
+                                if(cap.isInitialized()) shopList.add(cap.getShop().getName());
+                            });
+                        });
+
                         if (!shopList.isEmpty() && itemInHand.getOrCreateTag().contains(SHOP_TAG)) {
                             preSelectedShop = iteractItem.getTag(itemInHand, SHOP_TAG);
 

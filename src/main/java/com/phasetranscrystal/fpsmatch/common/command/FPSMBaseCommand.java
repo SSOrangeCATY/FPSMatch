@@ -8,7 +8,6 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
@@ -21,7 +20,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.phasetranscrystal.fpsmatch.common.command.FPSMCommand.*;

@@ -7,7 +7,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
@@ -95,8 +94,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     public void saveData(ServerPlayer serverPlayer) {
         if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
             Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
-            if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-                FPSMShop<?> shop = shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
+            if (map.isPresent()) {
+                FPSMShop<?> shop = ShopEditTool.getShop(guiItemStack).orElse(null);
                 if (shop == null) return;
                 //保存内容,先保存物品后设置内容
                 shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));

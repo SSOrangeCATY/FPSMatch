@@ -178,17 +178,17 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public final List<String> synchronizableCapabilitiesString(){
-        return values().stream().filter(cap -> cap instanceof FPSMCapability.Synchronizable).map(FPSMCapability::getName).collect(Collectors.toList());
+        return values().stream().filter(cap -> cap instanceof FPSMCapability.CapabilitySynchronizable).map(FPSMCapability::getName).collect(Collectors.toList());
     }
     /**
      * 序列化指定能力到网络缓冲区
      * @param capabilityClass 要序列化的能力类
      * @param buf 网络缓冲区
      */
-    public final <C extends FPSMCapability<H> & FPSMCapability.Synchronizable> void serializeCapability(Class<C> capabilityClass, FriendlyByteBuf buf) {
+    public final <C extends FPSMCapability<H> & FPSMCapability.CapabilitySynchronizable> void serializeCapability(Class<C> capabilityClass, FriendlyByteBuf buf) {
         get((Class<T>) capabilityClass).ifPresent(capability -> {
             buf.writeUtf(capabilityClass.getName());
-            ((FPSMCapability.Synchronizable) capability).writeToBuf(buf);
+            ((FPSMCapability.CapabilitySynchronizable) capability).writeToBuf(buf);
         });
     }
 
@@ -201,7 +201,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType()).ifPresent(capabilityClass -> {
             get(capabilityClass).ifPresentOrElse(
                     capability -> {
-                        if (capability instanceof FPSMCapability.Synchronizable synced) {
+                        if (capability instanceof FPSMCapability.CapabilitySynchronizable synced) {
                             synced.readFromBuf(buf);
                         }
                     },
@@ -229,9 +229,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      *
      * @return 需要同步的能力列表
      */
-    public final <C extends FPSMCapability<H> & FPSMCapability.Synchronizable> List<Class<C>> getSynchronizableCapabilityClasses() {
+    public final <C extends FPSMCapability<H> & FPSMCapability.CapabilitySynchronizable> List<Class<C>> getSynchronizableCapabilityClasses() {
         return values().stream()
-                .filter(capability -> capability instanceof FPSMCapability.Synchronizable)
+                .filter(capability -> capability instanceof FPSMCapability.CapabilitySynchronizable)
                 .map(cap -> (Class<C>) cap.getClass())
                 .collect(Collectors.toList());
     }

@@ -1,11 +1,9 @@
 package com.phasetranscrystal.fpsmatch.common.entity.drop;
 
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
@@ -264,18 +262,17 @@ public class MatchDropEntity extends Entity {
                     ItemStack copy = itemStack.copy();
                     copy.setCount(1);
                     itemStack.shrink(1);
-                    Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(pEntity);
-                    if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-                        shopMap.getShop(pEntity).ifPresent(shop -> {
-                            ShopData<?> shopData = shop.getPlayerShopData(pEntity.getUUID());
-                            Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
-                            if(pair != null){
-                                ShopSlot slot = pair.getSecond();
-                                slot.lock(copy.getCount());
-                                shop.syncShopData((ServerPlayer) pEntity, pair.getFirst().name(), slot);
-                            }
-                        });
-                    }
+
+                    ShopCapability.getShopByPlayer((ServerPlayer) pEntity).ifPresent(shop -> {
+                        ShopData<?> shopData = shop.getPlayerShopData(pEntity.getUUID());
+                        Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(copy);
+                        if(pair != null){
+                            ShopSlot slot = pair.getSecond();
+                            slot.lock(copy.getCount());
+                            shop.syncShopData((ServerPlayer) pEntity, pair.getFirst().name(), slot);
+                        }
+                    });
+
                     if(copy.getItem() instanceof IGun iGun){
                         Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(copy));
                         type.ifPresent(t->{

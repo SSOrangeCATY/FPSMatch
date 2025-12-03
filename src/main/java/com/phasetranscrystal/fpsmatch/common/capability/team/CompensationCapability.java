@@ -8,7 +8,7 @@ import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.function.Function;
 
-public class CompensationCapability extends TeamCapability implements FPSMCapability.Synchronizable {
+public class CompensationCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
     private final BaseTeam team;
     private int compensationFactor = 0;
     private Function<Integer,Integer> function = (i)-> Math.max(0, Math.min(i, 4));

@@ -1,11 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.google.gson.Gson;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
@@ -125,24 +122,25 @@ public class EditorShopContainer extends AbstractContainerMenu {
         }
     }
 
-    private FPSMShop<? extends Enum<?>> getShop() {
-        if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
-            Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
-            if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-                return shopMap.getShop(shopEditTool.getTag(guiItemStack, ShopEditTool.SHOP_TAG)).orElse(null);
-            }
+    private Optional<FPSMShop<?>> getShop() {
+        if (guiItemStack.getItem() instanceof ShopEditTool) {
+            ShopEditTool.getShop(guiItemStack);
         }
-        return null;
+
+        return Optional.empty();
     }
 
     public List<ShopSlot> getAllSlots() {
+        Optional<FPSMShop<?>> opt = this.getShop();
+        if(opt.isEmpty()) return List.of();
+        FPSMShop<?> shop = opt.get();
         //遍历 0 到 maxRow - 1 的索引，模拟逐行读取数据
         return IntStream.range(0,
-                        Objects.requireNonNull(this.getShop()).getDefaultShopDataMap().values().stream()
+                        Objects.requireNonNull(shop).getDefaultShopDataMap().values().stream()
                                 .mapToInt(List::size)
                                 .max().orElse(0))  // 获取最大行数
                 //按列顺序遍历行
-                .mapToObj(row -> this.getShop().getDefaultShopDataMap().entrySet().stream()//按列创建流
+                .mapToObj(row -> shop.getDefaultShopDataMap().entrySet().stream()//按列创建流
                         .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal())) // 确保列顺序
                         .map(Map.Entry::getValue)
                         .filter(slotList -> row < slotList.size())  // 过滤掉短列 【遗留问题，是否存在占位符？】

@@ -7,12 +7,13 @@ import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEve
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * 基础能力接口，定义所有能力的通用规范
  * @param <H> 能力的持有者类型（如BaseTeam、BaseMap）
  * @apiNote 更多功能拓展请见：
- * @see Synchronizable 允许网络同步功能
+ * @see CapabilitySynchronizable 允许网络同步功能
  * @see Savable 允许持久化数据
  */
 public abstract class FPSMCapability<H> {
@@ -33,6 +34,7 @@ public abstract class FPSMCapability<H> {
      * 销毁能力（持有者移除能力时调用）
      */
     public void destroy() {}
+
 
     /**
      * 获取能力的持有者
@@ -95,8 +97,14 @@ public abstract class FPSMCapability<H> {
      * @apiNote 你不应该在初始化能力时对Holder进行任何操作
      * @see FPSMCapability 使用init()方法对holder进行操作;
      * */
-    public interface Synchronizable {
+    public interface CapabilitySynchronizable {
         void readFromBuf(FriendlyByteBuf buf);
         void writeToBuf(FriendlyByteBuf buf);
+    }
+
+    public interface DataSynchronizable {
+        default void sync(){}
+
+        default void sync(Player player){}
     }
 }

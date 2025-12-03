@@ -3,9 +3,8 @@ package com.phasetranscrystal.fpsmatch.core.shop.slot;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
@@ -22,7 +21,6 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -365,10 +363,7 @@ public class ShopSlot{
      * 处理匹配的已有物品
      */
     private void handleMatchingItem(ServerPlayer player, ItemStack existingItem) {
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
-        if (!(map.isPresent() && map.get() instanceof ShopMap<?> shopMap)) return;
-
-        shopMap.getShop(player).ifPresent(shop -> {
+        ShopCapability.getShopByPlayer(player).ifPresent(shop -> {
             ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(existingItem);
             if (pair != null && ((INamedType)pair.getFirst()).dorpUnlock()) {

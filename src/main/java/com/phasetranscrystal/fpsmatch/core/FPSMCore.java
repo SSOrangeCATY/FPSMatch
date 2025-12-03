@@ -8,7 +8,6 @@ import com.phasetranscrystal.fpsmatch.core.event.FPSMReloadEvent;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;

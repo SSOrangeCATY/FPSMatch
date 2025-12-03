@@ -1,13 +1,13 @@
 package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.packet.GameTabStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import net.minecraft.ChatFormatting;
@@ -61,9 +61,7 @@ public class MapTeams {
 
 
     public void addSpawnPoint(ServerTeam team, SpawnPointData spawnPointData) {
-        team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> {
-            cap.addSpawnPointData(spawnPointData);
-        });
+        team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.addSpawnPointData(spawnPointData));
     }
 
     /**
@@ -105,10 +103,10 @@ public class MapTeams {
         attackTeam.reset();
         defendTeam.reset();
 
-        if(map instanceof ShopMap<?> shopMap){
-            shopMap.getShop(attackTeam.name).ifPresent(shop -> shop.resetPlayerData(attackTeam.getPlayerList()));
-            shopMap.getShop(defendTeam.name).ifPresent(shop -> shop.resetPlayerData(defendTeam.getPlayerList()));
-        }
+
+        attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(attackTeam.getPlayerList()));
+
+        defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
     }
 
     /**
@@ -537,7 +535,7 @@ public class MapTeams {
      * @return 队伍对象，如果未找到则返回 null
      */
     @Nullable
-    public ServerTeam getTeamByComplexName(String teamName) {
+    public ServerTeam getTeamByFixedName(String teamName) {
         AtomicReference<ServerTeam> team = new AtomicReference<>();
         teams.forEach((s, t) -> {
             if (t.getFixedName().equals(teamName)) {
@@ -555,7 +553,7 @@ public class MapTeams {
     public void reset() {
         this.resetLivingPlayers();
         this.teams.forEach((name, team) -> {
-            team.setScores(0);
+            team.reset();
             team.getPlayers().clear();
         });
         this.unableToSwitch.clear();
@@ -639,9 +637,7 @@ public class MapTeams {
     public void addHurtData(Player attackerId, UUID targetId, float damage) {
         getTeamByPlayer(attackerId)
                 .flatMap(t -> t.getPlayerData(attackerId.getUUID()))
-                .ifPresent(p -> {
-                    p.addDamageData(targetId, damage);
-                });
+                .ifPresent(p -> p.addDamageData(targetId, damage));
     }
 
     /**

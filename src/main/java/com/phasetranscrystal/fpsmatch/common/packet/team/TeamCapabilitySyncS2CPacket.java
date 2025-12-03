@@ -17,7 +17,7 @@ public record TeamCapabilitySyncS2CPacket(
     FriendlyByteBuf capabilityData
 ) {
 
-    public static <T extends TeamCapability & FPSMCapability.Synchronizable> TeamCapabilitySyncS2CPacket of(ServerTeam team, Class<T> clazz) {
+    public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> TeamCapabilitySyncS2CPacket of(ServerTeam team, Class<T> clazz) {
         FriendlyByteBuf dataBuf = new FriendlyByteBuf(Unpooled.buffer());
         dataBuf.writeUtf(clazz.getSimpleName());
         team.getCapabilityMap().serializeCapability(clazz,dataBuf);
@@ -28,7 +28,7 @@ public record TeamCapabilitySyncS2CPacket(
         );
     }
 
-    public static <T extends TeamCapability & FPSMCapability.Synchronizable> List<TeamCapabilitySyncS2CPacket> toList(ServerTeam team,List<Class<T>> classes){
+    public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> List<TeamCapabilitySyncS2CPacket> toList(ServerTeam team, List<Class<T>> classes){
         List<TeamCapabilitySyncS2CPacket> packets = new ArrayList<>();
         for (Class<T> clazz : classes) {
             packets.add(of(team,clazz));

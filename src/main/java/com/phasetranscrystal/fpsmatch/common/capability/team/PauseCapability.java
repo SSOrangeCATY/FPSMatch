@@ -7,7 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.FriendlyByteBuf;
 
-public class PauseCapability extends TeamCapability implements FPSMCapability.Synchronizable {
+public class PauseCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
     private final BaseTeam team;
 
     private int pauseTime = 0;

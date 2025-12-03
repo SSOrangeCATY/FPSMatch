@@ -4,7 +4,6 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -134,7 +133,7 @@ public class FPSMCapabilityManager {
                 try {
                     // 先创建基础实例，再检查是否为同步类型
                     FPSMCapability<H> instance = f.create(holder);
-                    if (instance instanceof FPSMCapability.Synchronizable syncedInstance) {
+                    if (instance instanceof FPSMCapability.CapabilitySynchronizable syncedInstance) {
                         syncedInstance.readFromBuf(buf);
                         return Optional.of(instance);
                     }

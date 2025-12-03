@@ -38,7 +38,15 @@ import java.util.Optional;
  * 商店能力：为队伍提供商店系统支持
  * 使用注册的商店类型系统，无需泛型
  */
-public class ShopCapability extends TeamCapability implements FPSMCapability.Savable<FPSMShop<?>> {
+public class ShopCapability extends TeamCapability implements FPSMCapability.Savable<FPSMShop<?>>, FPSMCapability.DataSynchronizable {
+
+    public static Optional<FPSMShop<?>> getShopByPlayer(ServerPlayer player) {
+        return FPSMCore.getInstance().getMapByPlayer(player)
+                .flatMap(map -> map.getMapTeams().getTeamByPlayer(player)
+                        .flatMap(team -> team.getCapabilityMap().get(ShopCapability.class)
+                                .flatMap(ShopCapability::getShopSafe)));
+    }
+
     private final ServerTeam team;
     private FPSMShop<?> shop;
     private String shopTypeId;
@@ -139,6 +147,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     public void resetPlayerData() {
         if (isInitialized()) {
             shop.resetPlayerData();
+            shop.syncShopData();
         }
     }
 
@@ -354,7 +363,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set item"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.item"));
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set dummy_ammo_amount"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.dummy_ammo_amount"));
 
-            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop initialize"), "*type", "*startMoney");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop initialize"), "*type", "startMoney");
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set"), "*type", "*slot", "*action");
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set listener_module add"), "*listener_module");
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set listener_module remove"), "*listener_module");

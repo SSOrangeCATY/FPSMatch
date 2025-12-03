@@ -6,9 +6,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -68,17 +68,16 @@ public class FPSMCommandSuggests {
     });
 
     public static final FPSMSuggestionProvider SHOP_ITEM_TYPES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
-        String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
-        String shopName = StringArgumentType.getString(c, SHOP_NAME_ARG);
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
         List<String> typeNames = new ArrayList<>();
-        if(map.isPresent() && map.get() instanceof ShopMap<?> shopMap){
-            shopMap.getShop(shopName).ifPresent(shop -> {
-                for (Enum<?> t : shop.getEnums()){
-                    typeNames.add(t.name().toLowerCase());
+        FPSMCommand.getTeamCapability(c,ShopCapability.class).ifPresent(
+                cap->{
+                    if(cap.isInitialized()){
+                        for (Enum<?> t : cap.getShop().getEnums()){
+                            typeNames.add(t.name().toLowerCase());
+                        }
+                    }
                 }
-            });
-        }
+        );
         return FPSMCommandSuggests.getSuggestions(b,typeNames);
     });
 
@@ -87,37 +86,34 @@ public class FPSMCommandSuggests {
     public static final FPSMSuggestionProvider SHOP_SET_SLOT_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("1","2","3","4","5")));
     public static final FPSMSuggestionProvider SHOP_SLOT_ADD_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
     {
-        String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
-        String shopName = StringArgumentType.getString(c, SHOP_NAME_ARG);
         String shopType = StringArgumentType.getString(c, SHOP_TYPE_ARG).toUpperCase(Locale.ROOT);
         int slotNum = IntegerArgumentType.getInteger(c,SHOP_SLOT_ARG) - 1;
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
-        if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-            Optional<FPSMShop<?>> optionalShop = shopMap.getShop(shopName);
-            if (optionalShop.isPresent()) {
-                List<String> stringList = FPSMCore.getInstance().getListenerModuleManager().getListenerModules();
-                stringList.removeAll(optionalShop.get().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames());
-                return FPSMCommandSuggests.getSuggestions(b, stringList);
-            }
-        }
-        return FPSMCommandSuggests.getSuggestions(b, new ArrayList<>());
+        return FPSMCommand.getTeamCapability(c,ShopCapability.class).map(
+                cap->{
+                    if(cap.isInitialized()){
+                        List<String> stringList = FPSMCore.getInstance().getListenerModuleManager().getListenerModules();
+                        stringList.removeAll(cap.getShop().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames());
+                        return FPSMCommandSuggests.getSuggestions(b, stringList);
+                    }
+                    return FPSMCommandSuggests.getSuggestions(b, List.of());
+                }
+        ).orElse(FPSMCommandSuggests.getSuggestions(b, List.of()));
     });
 
     public static final FPSMSuggestionProvider SHOP_SLOT_REMOVE_LISTENER_MODULES_SUGGESTION = new FPSMSuggestionProvider((c,b)->
     {
-        String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
-        String shopName = StringArgumentType.getString(c, SHOP_NAME_ARG);
         String shopType = StringArgumentType.getString(c, SHOP_TYPE_ARG).toUpperCase(Locale.ROOT);
-        int slotNum = IntegerArgumentType.getInteger(c,SHOP_SLOT_ARG) - 1;
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
-        if (map.isPresent() && map.get() instanceof ShopMap<?> shopMap) {
-            Optional<FPSMShop<?>> optionalShop = shopMap.getShop(shopName);
-            if (optionalShop.isPresent()) {
-                List<String> stringList = optionalShop.get().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames();
-                return getSuggestions(b, stringList);
-            }
-        }
-        return getSuggestions(b, new ArrayList<>());});
+        int slotNum = IntegerArgumentType.getInteger(c, SHOP_SLOT_ARG) - 1;
+        return FPSMCommand.getTeamCapability(c, ShopCapability.class).map(
+                cap -> {
+                    if (cap.isInitialized()) {
+                        List<String> stringList = cap.getShop().getDefaultShopSlotListByType(shopType).get(slotNum).getListenerNames();
+                        return getSuggestions(b, stringList);
+                    }
+                    return FPSMCommandSuggests.getSuggestions(b, List.of());
+                }
+        ).orElse(FPSMCommandSuggests.getSuggestions(b, List.of()));
+    });
 
 
     public record FPSMSuggestionProvider(BiFunction<CommandContext<CommandSourceStack>, SuggestionsBuilder, Suggestions> suggestions) implements SuggestionProvider<CommandSourceStack> {
