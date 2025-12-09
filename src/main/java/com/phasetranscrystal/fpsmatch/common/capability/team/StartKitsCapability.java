@@ -173,8 +173,12 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
     @Override
     public List<ItemStack> write(List<ItemStack> value) {
         teamKits.clear();
-        teamKits.addAll(value);
-        return value;
+        for (ItemStack itemStack : value) {
+            if(!itemStack.isEmpty()){
+                teamKits.add(itemStack);
+            }
+        }
+        return teamKits;
     }
 
     @Override
