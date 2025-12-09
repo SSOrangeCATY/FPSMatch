@@ -3,10 +3,12 @@ package com.phasetranscrystal.fpsmatch.common.capability.team;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -23,12 +25,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec2;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 
-public class SpawnPointCapability extends TeamCapability {
+public class SpawnPointCapability extends TeamCapability implements FPSMCapability.Savable<List<SpawnPointData>> {
     public final BaseTeam team;
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
 
@@ -129,6 +132,23 @@ public class SpawnPointCapability extends TeamCapability {
     @Override
     public boolean isImmutable(){
         return true;
+    }
+
+    @Override
+    public Codec<List<SpawnPointData>> codec() {
+        return SpawnPointData.CODEC.listOf();
+    }
+
+    @Override
+    public List<SpawnPointData> write(List<SpawnPointData> value) {
+        spawnPointsData.clear();
+        spawnPointsData.addAll(value);
+        return spawnPointsData;
+    }
+
+    @Override
+    public @Nullable List<SpawnPointData> read() {
+        return spawnPointsData;
     }
 
     static class SpawnPointCommand implements TeamCapability.Factory.Command {

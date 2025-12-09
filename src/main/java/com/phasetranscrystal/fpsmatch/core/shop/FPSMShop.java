@@ -291,6 +291,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     public void clearPlayerShopData() {
         this.playersData.clear();
     }
+
     public void clearPlayerShopData(UUID uuid) {
         this.playersData.remove(uuid);
     }

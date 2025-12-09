@@ -80,7 +80,6 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         });
     }
 
-
     public static void setPlayerMoney(BaseMap map, int money){
         map.getMapTeams().getNormalTeams().forEach(team -> {
             team.getCapabilityMap()
@@ -203,6 +202,13 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             throw new IllegalStateException("ShopCapability not initialized. Call initialize() first.");
         }
         return shop;
+    }
+
+    public void setShop(FPSMShop<?> shop) {
+        if(isInitialized()) {
+            this.shop.clearPlayerShopData();
+        }
+        this.shop = shop;
     }
 
     /**

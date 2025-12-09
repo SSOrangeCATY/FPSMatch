@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.persistence;
 
+import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.slf4j.Logger;
@@ -41,4 +42,5 @@ public class PersistenceUtils {
         String fixedFilename = fixFileName(filename);
         return cacheDir.resolve(fixedFilename + "." + type);
     }
+
 }

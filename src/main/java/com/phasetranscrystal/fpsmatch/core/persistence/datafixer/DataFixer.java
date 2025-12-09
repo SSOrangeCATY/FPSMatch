@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.persistence.datafixer;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 
 import java.util.HashMap;
@@ -46,7 +47,7 @@ public class DataFixer {
             throw new DataPersistenceException("Cannot downgrade data version from " + oldVersion + " to " + targetVersion);
         }
 
-        JsonElement currentJson = oldJson;
+        JsonElement currentJson = oldJson.getAsJsonObject();
         int currentVersion = oldVersion;
         Map<Integer, JsonFixer> fixers = jsonFixers.getOrDefault(dataClass, new HashMap<>());
 
@@ -67,6 +68,11 @@ public class DataFixer {
      */
     @FunctionalInterface
     public interface JsonFixer {
+        /**
+         * 修复Json数据
+         * @param oldJson 旧版本Json数据
+         * @return 修复后的新版本Json数据
+         */
         JsonElement apply(JsonElement oldJson);
     }
 }

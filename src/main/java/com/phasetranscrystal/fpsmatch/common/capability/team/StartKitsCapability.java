@@ -3,9 +3,11 @@ package com.phasetranscrystal.fpsmatch.common.capability.team;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.serialization.Codec;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -22,6 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * 队伍初始装备能力：封装单个队伍的初始装备存储、管理、发放逻辑
  */
-public class StartKitsCapability extends TeamCapability {
+public class StartKitsCapability extends TeamCapability implements FPSMCapability.Savable<List<ItemStack>> {
     private final BaseTeam team;
 
     private final ArrayList<ItemStack> teamKits = new ArrayList<>();
@@ -160,6 +163,23 @@ public class StartKitsCapability extends TeamCapability {
     @Override
     public void destroy() {
         clearTeamKits();
+    }
+
+    @Override
+    public Codec<List<ItemStack>> codec() {
+        return ItemStack.CODEC.listOf();
+    }
+
+    @Override
+    public List<ItemStack> write(List<ItemStack> value) {
+        teamKits.clear();
+        teamKits.addAll(value);
+        return value;
+    }
+
+    @Override
+    public @Nullable List<ItemStack> read() {
+        return teamKits;
     }
 
     protected static class StartKitsCommand implements Factory.Command {

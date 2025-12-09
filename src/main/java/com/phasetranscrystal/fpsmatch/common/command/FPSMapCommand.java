@@ -37,7 +37,7 @@ public class FPSMapCommand {
         
         // 注册map命令帮助
         helpManager.registerCommandHelp("fpsm map");
-        helpManager.registerCommandHelp("fpsm map create", Component.translatable("commands.fpsm.help.map.create"));
+        helpManager.registerCommandHelp("fpsm map create", Component.translatable("commands.fpsm.help.map.create") , Component.translatable("commands.fpsm.help.map.create.hover"));
         helpManager.registerCommandHelp("fpsm map modify", Component.translatable("commands.fpsm.help.map.modify"));
         helpManager.registerCommandHelp("fpsm map modify debug", Component.translatable("commands.fpsm.help.map.debug"));
         helpManager.registerCommandHelp("fpsm map modify debug start", Component.translatable("commands.fpsm.help.map.debug.start"));
@@ -66,43 +66,45 @@ public class FPSMapCommand {
         helpManager.registerCommandParameters("fpsm map modify team teams", "*" + FPSMCommandSuggests.TEAM_NAME_ARG);
         helpManager.registerCommandParameters("fpsm map modify team teams players", "*" + FPSMCommandSuggests.TARGETS_ARG, "*" + FPSMCommandSuggests.ACTION_ARG);
         return builder.getFirst()
-                .then(Commands.literal("create")
-                        .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
-                                .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)
-                                .then(Commands.argument(FPSMCommandSuggests.MAP_NAME_ARG, StringArgumentType.string())
-                                        .then(Commands.argument("from", BlockPosArgument.blockPos())
-                                                .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                                        .executes(FPSMapCommand::handleCreateMapWithoutSpawnPoint))))))
-                .then(Commands.literal("modify")
-                        .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
-                                .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)
-                                .then(Commands.argument(FPSMCommandSuggests.MAP_NAME_ARG, StringArgumentType.string())
-                                        .suggests(FPSMCommandSuggests.MAP_NAMES_WITH_GAME_TYPE_SUGGESTION)
-                                        // 调试操作
-                                        .then(Commands.literal("debug")
-                                                .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
-                                                        .suggests(FPSMCommandSuggests.MAP_DEBUG_SUGGESTION)
-                                                        .executes(FPSMapCommand::handleDebugAction)))
-                                        .then(buildMapCapabilityCommands(builder.getSecond()))
-                                        // 团队相关修改
-                                        .then(Commands.literal("team")
-                                                .then(Commands.literal("join")
-                                                        .executes(FPSMapCommand::handleJoinMapWithoutTarget)
-                                                        .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
-                                                                .executes(FPSMapCommand::handleJoinMapWithTarget)))
-                                                .then(Commands.literal("leave")
-                                                        .executes(FPSMapCommand::handleLeaveMapWithoutTarget)
-                                                        .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
-                                                                .executes(FPSMapCommand::handleLeaveMapWithTarget)))
-                                                .then(Commands.literal("teams")
-                                                        .then(Commands.argument(FPSMCommandSuggests.TEAM_NAME_ARG, StringArgumentType.string())
-                                                                .suggests(FPSMCommandSuggests.TEAM_NAMES_SUGGESTION)
-                                                                .then(buildTeamCapabilityCommands(builder.getSecond()))
-                                                                .then(Commands.literal("players")
-                                                                        .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
-                                                                                .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
-                                                                                        .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                        .executes(FPSMapCommand::handleTeamAction)
+                .then(Commands.literal("map")
+                        .then(Commands.literal("create")
+                                .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
+                                        .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)
+                                        .then(Commands.argument(FPSMCommandSuggests.MAP_NAME_ARG, StringArgumentType.string())
+                                                .then(Commands.argument("from", BlockPosArgument.blockPos())
+                                                        .then(Commands.argument("to", BlockPosArgument.blockPos())
+                                                                .executes(FPSMapCommand::handleCreateMapWithoutSpawnPoint))))))
+                        .then(Commands.literal("modify")
+                                .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
+                                        .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)
+                                        .then(Commands.argument(FPSMCommandSuggests.MAP_NAME_ARG, StringArgumentType.string())
+                                                .suggests(FPSMCommandSuggests.MAP_NAMES_WITH_GAME_TYPE_SUGGESTION)
+                                                // 调试操作
+                                                .then(Commands.literal("debug")
+                                                        .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
+                                                                .suggests(FPSMCommandSuggests.MAP_DEBUG_SUGGESTION)
+                                                                .executes(FPSMapCommand::handleDebugAction)))
+                                                .then(buildMapCapabilityCommands(builder.getSecond()))
+                                                // 团队相关修改
+                                                .then(Commands.literal("team")
+                                                        .then(Commands.literal("join")
+                                                                .executes(FPSMapCommand::handleJoinMapWithoutTarget)
+                                                                .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
+                                                                        .executes(FPSMapCommand::handleJoinMapWithTarget)))
+                                                        .then(Commands.literal("leave")
+                                                                .executes(FPSMapCommand::handleLeaveMapWithoutTarget)
+                                                                .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
+                                                                        .executes(FPSMapCommand::handleLeaveMapWithTarget)))
+                                                        .then(Commands.literal("teams")
+                                                                .then(Commands.argument(FPSMCommandSuggests.TEAM_NAME_ARG, StringArgumentType.string())
+                                                                        .suggests(FPSMCommandSuggests.TEAM_NAMES_SUGGESTION)
+                                                                        .then(buildTeamCapabilityCommands(builder.getSecond()))
+                                                                        .then(Commands.literal("players")
+                                                                                .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
+                                                                                        .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
+                                                                                                .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
+                                                                                                .executes(FPSMapCommand::handleTeamAction)
+                                                                                        )
                                                                                 )
                                                                         )
                                                                 )
@@ -110,8 +112,7 @@ public class FPSMapCommand {
                                                 )
                                         )
                                 )
-                        )
-                );
+                        ));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildMapCapabilityCommands(CommandBuildContext context) {

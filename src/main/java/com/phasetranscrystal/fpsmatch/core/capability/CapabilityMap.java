@@ -1,13 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
+import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.ExtraCodecs;
@@ -308,44 +310,73 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         });
     }
 
-    public void write(CapabilityMapWrapper wrapper) {
+    public void write(Wrapper wrapper) {
         this.write(wrapper.data());
     }
 
     public void write(Map<String, JsonElement> data) {
-        this.capabilities.keySet()
-                .stream()
-                .filter(key-> !data.containsKey(key.getSimpleName()))
-                .forEach(this::remove);
-
         data.forEach(this::write);
+
+        List<Class<? extends T>> toRemove = this.capabilities.keySet().stream()
+                .filter(cap -> !data.containsKey(cap.getSimpleName()))
+                .toList();
+
+        toRemove.forEach(this::remove);
     }
 
-    public Map<String, JsonElement> readSavable() {
-        return capabilities.values().stream()
-                .filter(FPSMCapability.Savable.class::isInstance)
-                .map(cap -> (FPSMCapability.Savable<?>) cap)
-                .collect(Collectors.toMap(FPSMCapability.Savable::getName, FPSMCapability.Savable::toJson));
+    public Wrapper getData() {
+        Map<String, JsonElement> map = new HashMap<>();
+
+        for (Map.Entry<Class<? extends T>, T> entry : capabilities.entrySet()) {
+            String key = entry.getKey().getSimpleName();
+            T capability = entry.getValue();
+
+            if (capability instanceof FPSMCapability.Savable<?> savable) {
+                try {
+                    map.put(key, savable.toJson());
+                } catch (Exception e) {
+                    FPSMatch.LOGGER.error("Failed to serialize capability: {}", key, e);
+                    map.put(key, new JsonPrimitive(""));
+                }
+            } else {
+                map.put(key, new JsonPrimitive(""));
+            }
+        }
+
+        return new Wrapper(map);
     }
 
-    public CapabilityMapWrapper getData() {
-        Map<String, JsonElement> map = this.readSavable();
-        this.capabilities.keySet().stream()
-                .filter(cap -> !map.containsKey(cap.getSimpleName()))
-                .forEach(cap -> {
-                    map.put(cap.getSimpleName(), JsonNull.INSTANCE);
-                });
-        return new CapabilityMapWrapper(map);
-    }
-
-    public record CapabilityMapWrapper(Map<String, JsonElement> data) {
+    public record Wrapper(Map<String, JsonElement> data) {
         public static Codec<Map<String, JsonElement>> DATA_CODEC = Codec.unboundedMap(Codec.STRING, ExtraCodecs.JSON);
-        public static Codec<CapabilityMapWrapper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.unboundedMap(Codec.STRING, ExtraCodecs.JSON).fieldOf("capabilities").forGetter(CapabilityMapWrapper::data)
-        ).apply(instance, CapabilityMapWrapper::new));
+        public static Codec<Wrapper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.unboundedMap(Codec.STRING, ExtraCodecs.JSON).fieldOf("capabilities").forGetter(Wrapper::data)
+        ).apply(instance, Wrapper::new));
 
-        public CapabilityMapWrapper {
-            data = new HashMap<>();
+
+        public JsonElement encode(){
+            return CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});
+        }
+
+        public static class Builder<H> {
+            private final Map<String, JsonElement> data = new HashMap<>();
+
+            public <T extends FPSMCapability<H>> Builder<H> add(Class<? extends T> clazz, JsonElement value) {
+                data.put(clazz.getSimpleName(), value);
+                return this;
+            }
+
+            public Builder<H> add(String key, JsonElement value) {
+                data.put(key, value);
+                return this;
+            }
+
+            public JsonElement encode(){
+                return DATA_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});
+            }
+
+            public Wrapper build() {
+                return new Wrapper(data);
+            }
         }
     }
 

@@ -41,7 +41,7 @@ public class FPSMBaseCommand {
         // 注册listener_module命令帮助
         helpManager.registerCommandHelp("fpsm listener_module");
         helpManager.registerCommandHelp("fpsm listener_module add", Component.translatable("commands.fpsm.help.listener.add"));
-        helpManager.registerCommandHelp("fpsm listener_module add change_item_module", Component.translatable("commands.fpsm.help.listener.add_change_item"));
+        helpManager.registerCommandHelp("fpsm listener_module add change_item_module", Component.translatable("commands.fpsm.help.listener.add_change_item"), Component.translatable("commands.fpsm.help.listener.add_change_item.hover"));
         helpManager.registerCommandParameters("fpsm listener_module add change_item_module", "*changed_cost", "*default_cost");
         
         return builder

@@ -784,13 +784,13 @@ public class MapTeams {
         return hurtData;
     }
 
-    public Map<String, CapabilityMap.CapabilityMapWrapper> getData(){
-        Map<String, CapabilityMap.CapabilityMapWrapper> capabilityMap = new HashMap<>();
+    public Map<String, CapabilityMap.Wrapper> getData(){
+        Map<String, CapabilityMap.Wrapper> capabilityMap = new HashMap<>();
         teams.values().forEach((t) -> capabilityMap.put(t.getName(), t.getCapabilityMap().getData()));
         return capabilityMap;
     }
 
-    public void writeData(Map<String, CapabilityMap.CapabilityMapWrapper> capabilityMap){
+    public void writeData(Map<String, CapabilityMap.Wrapper> capabilityMap){
         capabilityMap.forEach((name, wrapper) -> {
             if(teams.containsKey(name)){
                 teams.get(name).getCapabilityMap().write(wrapper);

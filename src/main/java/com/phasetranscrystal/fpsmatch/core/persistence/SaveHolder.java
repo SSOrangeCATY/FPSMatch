@@ -15,6 +15,8 @@ public class SaveHolder<T> implements ISavePort<T> {
     private final BiFunction<T, T, T> mergeHandler;
     private final String fileType;
 
+    private Class<T> clazz;
+
     private final int version;
     private final Supplier<T> initializer;
 
@@ -57,6 +59,14 @@ public class SaveHolder<T> implements ISavePort<T> {
         this.fileType = builder.fileType;
         this.version = builder.version;
         this.initializer = builder.initializer;
+    }
+
+    public void setHolderClass(Class<T> clazz) {
+        this.clazz = clazz;
+    }
+
+    public Class<?> getHolderClass() {
+        return clazz == null ? SaveHolder.class : clazz;
     }
 
     @Override public int getVersion() { return version; }

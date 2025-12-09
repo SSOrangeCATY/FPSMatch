@@ -40,6 +40,7 @@ public class FPSMDataManager {
     // 注册数据类型
     public <T> void registerData(Class<T> clazz, String folderName, SaveHolder<T> holder) {
         String fixedFolderName = PersistenceUtils.fixFileName(folderName);
+        holder.setHolderClass(clazz);
         registry.put(clazz, new DataEntry<>(fixedFolderName, holder));
     }
 
@@ -87,8 +88,7 @@ public class FPSMDataManager {
 
     public void readAllData() {
         registry.values().forEach(entry -> {
-            Path dirPath = entry.holder.isGlobal() ? globalDataPath : levelDataPath;
-            entry.holder.getReader().accept(dirPath.toFile());
+            entry.holder.getReader().accept(getSaveFolder(entry));
         });
     }
 
@@ -100,6 +100,10 @@ public class FPSMDataManager {
 
     public <T> File getSaveFolder(T savedData) {
         DataEntry<?> entry = getEntry(savedData.getClass());
+        return new File(entry.holder.isGlobal() ? globalDataPath.toString() : levelDataPath.toString(), entry.folderName);
+    }
+
+    private File getSaveFolder(DataEntry<?> entry) {
         return new File(entry.holder.isGlobal() ? globalDataPath.toString() : levelDataPath.toString(), entry.folderName);
     }
 }

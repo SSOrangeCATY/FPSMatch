@@ -42,9 +42,11 @@ public interface    ISavePort<T> {
 
     int getVersion();
 
+    Class<?> getHolderClass();
+
     // 获取数据初始化逻辑
     default Supplier<T> getInitializer() {
-        throw new UnsupportedOperationException("Default initializer not provided for " + getClass().getSimpleName());
+        throw new UnsupportedOperationException("Default initializer not provided for " + getHolderClass().getSimpleName());
     }
 
     /**
@@ -66,7 +68,7 @@ public interface    ISavePort<T> {
 
 
         return codec()
-                .decode(JsonOps.INSTANCE, DataFixer.getInstance().fixJson(getClass(), rawData, oldVersion, getVersion()))
+                .decode(JsonOps.INSTANCE, DataFixer.getInstance().fixJson(getHolderClass(), rawData, oldVersion, getVersion()))
                 .getOrThrow(false, e -> {
                     throw new DataPersistenceException("Failed to decode fixed data", e);
                 }).getFirst();

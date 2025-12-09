@@ -1,10 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.command;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +27,9 @@ public class FPSMHelpManager {
         private final String name;
         private final MutableComponent description;
         private final Map<String, CommandNode> children;
+
+        @Nullable
+        private MutableComponent hoverText;
         
         // 参数列表，用于存储命令参数
         private final List<Parameter> parameters = new ArrayList<>();
@@ -48,6 +49,14 @@ public class FPSMHelpManager {
             this.name = name;
             this.description = description;
             this.children = new TreeMap<>();
+            invalidateHash();
+        }
+
+        public CommandNode(String name, MutableComponent description, @Nullable MutableComponent hoverText) {
+            this.name = name;
+            this.description = description;
+            this.children = new TreeMap<>();
+            this.hoverText = hoverText;
             invalidateHash();
         }
         
@@ -77,7 +86,17 @@ public class FPSMHelpManager {
             parameters.add(new Parameter(parameter, required));
             invalidateHash();
         }
-        
+
+        public void setHoverText(MutableComponent hoverText) {
+            this.hoverText = hoverText;
+            invalidateHash();
+        }
+
+        @Nullable
+        public MutableComponent getHoverText() {
+            return hoverText;
+        }
+
         // 获取参数列表
         public List<Parameter> getParameters() {
             return parameters;
@@ -112,6 +131,7 @@ public class FPSMHelpManager {
                 int result = 31;
                 result = 31 * result + name.hashCode();
                 result = 31 * result + description.getString().hashCode();
+                result = 31 * result + (hoverText != null ? hoverText.getString().hashCode() : 0);
                 
                 // 计算参数的Hash
                 for (Parameter param : parameters) {
@@ -175,13 +195,23 @@ public class FPSMHelpManager {
 
         rootNode.addChild(new CommandNode("help", Component.translatable("commands.fpsm.help.basic.help")));
     }
-    
+
     /**
      * 注册命令帮助节点
      * @param commandPath 命令路径，如 "fpsm save"
      * @param description 命令描述
-     */
+     * */
     public void registerCommandHelp(String commandPath, MutableComponent description) {
+        this.registerCommandHelp(commandPath, description, null);
+    }
+
+    /**
+     * 注册命令帮助节点
+     * @param commandPath 命令路径，如 "fpsm save"
+     * @param description 命令描述
+     * @param hoverText 命令悬停文本(可选)
+     * */
+    public void registerCommandHelp(String commandPath, MutableComponent description, MutableComponent hoverText) {
         String[] pathParts = commandPath.split(" ");
         CommandNode currentNode = rootNode;
         
@@ -193,10 +223,7 @@ public class FPSMHelpManager {
             CommandNode child = currentNode.getChild(part);
             
             if (child == null) {
-                // 如果是最后一个部分，使用提供的描述
-                // 否则，使用空描述
-                MutableComponent nodeDescription = (i == pathParts.length - 1) ? description : Component.literal("");
-                child = new CommandNode(part, nodeDescription);
+                child = new CommandNode(part, description, hoverText);
                 currentNode.addChild(child);
             }
 
@@ -298,7 +325,13 @@ public class FPSMHelpManager {
                         .append(Component.literal("]").withStyle(ChatFormatting.GRAY));
             }
 
-            return displayLine.withStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/fpsm help toggle " + node.hashCode())));
+            Style style = Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/fpsm help toggle " + node.hashCode()));
+
+            if(node.hoverText != null){
+                style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, node.hoverText));
+            }
+
+            return displayLine.withStyle(style);
         }
     }
     

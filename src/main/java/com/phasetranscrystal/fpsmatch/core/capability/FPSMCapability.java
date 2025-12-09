@@ -2,6 +2,8 @@ package com.phasetranscrystal.fpsmatch.core.capability;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
@@ -104,19 +106,37 @@ public abstract class FPSMCapability<H> {
         T write(T value);
         @Nullable T read();
 
-        default JsonElement toJson(){
+        default JsonElement toJson() {
             T result = read();
-            if(result == null) return JsonNull.INSTANCE;
-            return codec().encodeStart(JsonOps.INSTANCE, result).getOrThrow(false, e -> {
+            return toJson(result);
+        }
+
+        default void decode(JsonElement json) {
+            if (json == null || json.isJsonNull()) {
+                return;
+            }
+
+            if (json.isJsonPrimitive()) {
+                JsonPrimitive primitive = json.getAsJsonPrimitive();
+                if (primitive.isString() && primitive.getAsString().isEmpty()) {
+                    return;
+                }
+            }
+
+            write(codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
+                throw new DataPersistenceException("Error decoding data from JSON", e);
+            }).getFirst());
+        }
+
+        default JsonElement toJson(T value) {
+            if (value == null) {
+                return new JsonPrimitive("");
+            }
+
+            return codec().encodeStart(JsonOps.INSTANCE, value).getOrThrow(false, e -> {
                 throw new DataPersistenceException("Error encoding data to JSON", e);
             });
-        };
-
-        default void decode(JsonElement json){
-            write(codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
-                        throw new DataPersistenceException("Error decoding data from JSON", e);
-                }).getFirst());
-        };
+        }
     }
 
     /**
