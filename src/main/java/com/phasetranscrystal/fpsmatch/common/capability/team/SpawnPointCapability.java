@@ -212,11 +212,8 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
         }
 
         private static int handleSpawnClearAll(CommandContext<CommandSourceStack> context) {
-            return FPSMCommand.getMapByName(context)
-                    .map(map -> {
-                        map.getMapTeams().getTeamsWithSpec().forEach(team -> {
-                            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
-                        });
+            return FPSMCommand.getTeamCapability(context, SpawnPointCapability.class).map(spawnCap -> {
+                        spawnCap.clearSpawnPointsData();
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clearall.success"));
                         return 1;
                     })

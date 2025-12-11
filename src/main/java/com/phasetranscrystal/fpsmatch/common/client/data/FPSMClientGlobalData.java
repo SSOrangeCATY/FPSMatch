@@ -6,6 +6,8 @@ import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.checkerframework.checker.units.qual.C;
 
@@ -123,7 +125,10 @@ public class FPSMClientGlobalData {
     }
 
     public boolean isSpectator(){
-        return currentTeam.equals("spectator");
+        LocalPlayer player = Minecraft.getInstance().player;
+        if(player == null) return false;
+
+        return currentTeam.equals("spectator") || player.isSpectator();
     }
 
     public void setCurrentTeam(String currentTeam) {

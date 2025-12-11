@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
@@ -174,13 +174,13 @@ public final class ServerTeam extends BaseTeam {
     }
 
     public void syncCapabilities(ServerPlayer player) {
-        for (TeamCapabilitySyncS2CPacket packet : TeamCapabilitySyncS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses())) {
+        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses())) {
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
         }
     }
 
     public void syncCapabilities(Collection<ServerPlayer> players) {
-        for (TeamCapabilitySyncS2CPacket packet : TeamCapabilitySyncS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses())) {
+        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses())) {
             for (ServerPlayer player : players) {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }

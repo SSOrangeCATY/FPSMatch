@@ -80,12 +80,12 @@ public class ShopEditTool extends Item {
                 List<String> mapList = FPSMCore.getInstance().getMapNames();
                 String preSelectedMap, preSelectedShop, newShop;
                 //设置选中的商店
-                if (!mapList.isEmpty() && itemInHand.getItem() instanceof ShopEditTool iteractItem) {
+                if (!mapList.isEmpty() && itemInHand.getItem() instanceof ShopEditTool interactItem) {
                     // 是否提前设置队伍,否则使用默认值
                     if (!itemInHand.getOrCreateTag().contains(MAP_TAG)) {
-                        iteractItem.setTag(itemInHand, MAP_TAG, mapList.get(0));
+                        interactItem.setTag(itemInHand, MAP_TAG, mapList.get(0));
                     }
-                    preSelectedMap = iteractItem.getTag(itemInHand, MAP_TAG);
+                    preSelectedMap = interactItem.getTag(itemInHand, MAP_TAG);
                     Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(preSelectedMap);
                     if (map.isPresent()) {
                         List<String> shopList = new ArrayList<>();
@@ -96,13 +96,13 @@ public class ShopEditTool extends Item {
                         });
 
                         if (!shopList.isEmpty() && itemInHand.getOrCreateTag().contains(SHOP_TAG)) {
-                            preSelectedShop = iteractItem.getTag(itemInHand, SHOP_TAG);
+                            preSelectedShop = interactItem.getTag(itemInHand, SHOP_TAG);
 
                             int preIndex = shopList.indexOf(preSelectedShop);
                             if (preIndex == shopList.size() - 1)
                                 newShop = shopList.get(0);
                             else newShop = shopList.get(preIndex + 1);
-                            iteractItem.setTag(itemInHand, SHOP_TAG, newShop);
+                            interactItem.setTag(itemInHand, SHOP_TAG, newShop);
                         } else {
                             //默认商店为空不设置TAG
                             if (shopList.isEmpty()) {
@@ -111,7 +111,7 @@ public class ShopEditTool extends Item {
                             }
                             //没有SHOP_TAG取第一个商店
                             newShop = shopList.get(0);
-                            iteractItem.setTag(itemInHand, SHOP_TAG, newShop);
+                            interactItem.setTag(itemInHand, SHOP_TAG, newShop);
                         }
                         serverPlayer.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.all_shops").withStyle(ChatFormatting.BOLD)
                                 .append(shopList.toString()).withStyle(ChatFormatting.GREEN)

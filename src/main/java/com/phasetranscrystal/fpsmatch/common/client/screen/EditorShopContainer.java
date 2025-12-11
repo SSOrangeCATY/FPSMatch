@@ -46,6 +46,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     {
         this(containerId, playerInventory, buf.readItem());
     }
+
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
         this.guiItemStack = stack;

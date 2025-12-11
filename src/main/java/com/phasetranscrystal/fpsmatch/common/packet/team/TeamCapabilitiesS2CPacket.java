@@ -12,24 +12,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public record TeamCapabilitySyncS2CPacket(
+public record TeamCapabilitiesS2CPacket(
     String teamName,
     FriendlyByteBuf capabilityData
 ) {
 
-    public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> TeamCapabilitySyncS2CPacket of(ServerTeam team, Class<T> clazz) {
+    public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> TeamCapabilitiesS2CPacket of(ServerTeam team, Class<T> clazz) {
         FriendlyByteBuf dataBuf = new FriendlyByteBuf(Unpooled.buffer());
         dataBuf.writeUtf(clazz.getSimpleName());
         team.getCapabilityMap().serializeCapability(clazz,dataBuf);
 
-        return new TeamCapabilitySyncS2CPacket(
+        return new TeamCapabilitiesS2CPacket(
                 team.name,
                 dataBuf
         );
     }
 
-    public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> List<TeamCapabilitySyncS2CPacket> toList(ServerTeam team, List<Class<T>> classes){
-        List<TeamCapabilitySyncS2CPacket> packets = new ArrayList<>();
+    public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> List<TeamCapabilitiesS2CPacket> toList(ServerTeam team, List<Class<T>> classes){
+        List<TeamCapabilitiesS2CPacket> packets = new ArrayList<>();
         for (Class<T> clazz : classes) {
             packets.add(of(team,clazz));
         }
@@ -37,20 +37,20 @@ public record TeamCapabilitySyncS2CPacket(
     }
 
 
-    public static void encode(TeamCapabilitySyncS2CPacket packet, FriendlyByteBuf packetBuffer) {
+    public static void encode(TeamCapabilitiesS2CPacket packet, FriendlyByteBuf packetBuffer) {
         packetBuffer.writeUtf(packet.teamName);
 
         packetBuffer.writeInt(packet.capabilityData.readableBytes());
         packetBuffer.writeBytes(packet.capabilityData);
     }
 
-    public static TeamCapabilitySyncS2CPacket decode(FriendlyByteBuf packetBuffer) {
+    public static TeamCapabilitiesS2CPacket decode(FriendlyByteBuf packetBuffer) {
         String teamName = packetBuffer.readUtf();
 
         int dataLength = packetBuffer.readInt();
         FriendlyByteBuf capabilityData = new FriendlyByteBuf(packetBuffer.readBytes(dataLength));
         
-        return new TeamCapabilitySyncS2CPacket(
+        return new TeamCapabilitiesS2CPacket(
             teamName, 
             capabilityData
         );

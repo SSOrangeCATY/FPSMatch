@@ -2,7 +2,8 @@ package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
-import com.phasetranscrystal.fpsmatch.common.packet.GameTabStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -363,11 +364,11 @@ public class MapTeams {
         if(!team.isSpectator()){
             // 将玩家的计分板数据同步给其他玩家
             team.getPlayerData(player.getUUID()).ifPresent(playerData ->
-                    this.syncToAll(new GameTabStatsS2CPacket(player.getUUID(), playerData, teamName))
+                    this.syncToAll(new TeamPlayerStatsS2CPacket(player.getUUID(), playerData, teamName))
             );
         }
         // 同步其他玩家的计分板数据
-        sync(player);
+        broadcast();
     }
 
     /**
@@ -379,6 +380,10 @@ public class MapTeams {
      */
     public void sync(ServerPlayer player){
         this.sync(List.of(player),true,false);
+    }
+
+    public void broadcast(){
+        this.sync(getOnline(),true,false);
     }
 
     /**
@@ -398,7 +403,7 @@ public class MapTeams {
         for (ServerTeam team : teams) {
             for (PlayerData playerData : team.getPlayersData()) {
                 if (force || playerData.isDirty()) {
-                    GameTabStatsS2CPacket packet = GameTabStatsS2CPacket.of(team, playerData);
+                    TeamPlayerStatsS2CPacket packet = TeamPlayerStatsS2CPacket.of(team, playerData);
                     for (ServerPlayer player : players) {
                         FPSMatch.sendToPlayer(player, packet);
                     }
@@ -464,12 +469,7 @@ public class MapTeams {
     public boolean checkTeam(String teamName) {
         if(teamName.equals("spectator")) return true;
 
-        if (this.teams.containsKey(teamName)) {
-            return true;
-        } else {
-            this.level.getServer().sendSystemMessage(Component.literal("[FPSM] 不合法的队伍名 -?>" + teamName + " 检查队伍名是否在FPSM中被定义。"));
-            return false;
-        }
+        return this.teams.containsKey(teamName);
     }
 
     /**
@@ -484,18 +484,6 @@ public class MapTeams {
         ServerTeam team = teams.get(teamName);
         if (team == null) return false;
         return team.getPlayerLimit() == -1 || team.getPlayerLimit() <= team.getPlayerList().size();
-    }
-
-
-    /**
-     * 获取所有队伍的列表。
-     * <p>
-     * 返回一个包含所有队伍对象的列表。
-     *
-     * @return 所有队伍的列表
-     */
-    public List<ServerTeam> getTeamsWithSpec(){
-        return teams.values().stream().toList();
     }
 
     /**
@@ -577,6 +565,8 @@ public class MapTeams {
                 .filter(t->t.hasPlayer(player.getUUID())).toList()
                 .forEach(t->t.leave(new FPSMPlayer(player)));
         this.playerName.remove(player.getUUID());
+
+        syncToAll(new TeamPlayerLeaveS2CPacket(player.getUUID()));
     }
     /**
      * 让玩家离开当前所在的队伍。

@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.packet;
+package com.phasetranscrystal.fpsmatch.common.packet.team;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -11,22 +11,22 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class GameTabStatsS2CPacket {
+public class TeamPlayerStatsS2CPacket {
     private final UUID uuid;
     private final PlayerData data;
     private final String team;
 
-    public static GameTabStatsS2CPacket of(ServerTeam team, PlayerData data){
-        return new GameTabStatsS2CPacket(data.getOwner(),data,team.name);
+    public static TeamPlayerStatsS2CPacket of(ServerTeam team, PlayerData data){
+        return new TeamPlayerStatsS2CPacket(data.getOwner(),data,team.name);
     }
 
-    public GameTabStatsS2CPacket(UUID uuid, PlayerData data, String team) {
+    public TeamPlayerStatsS2CPacket(UUID uuid, PlayerData data, String team) {
         this.uuid = uuid;
         this.data = data;
         this.team = team;
     }
 
-    public GameTabStatsS2CPacket(FriendlyByteBuf buf) {
+    public TeamPlayerStatsS2CPacket(FriendlyByteBuf buf) {
         this.uuid = buf.readUUID();
         Component name = buf.readComponent();
         int kills = buf.readInt();
@@ -60,7 +60,7 @@ public class GameTabStatsS2CPacket {
         this.team = buf.readUtf();
     }
 
-    public static void encode(GameTabStatsS2CPacket packet, FriendlyByteBuf buf) {
+    public static void encode(TeamPlayerStatsS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUUID(packet.uuid);
         buf.writeComponent(packet.data.name());
         buf.writeInt(packet.data.getKills());
@@ -78,8 +78,8 @@ public class GameTabStatsS2CPacket {
         buf.writeUtf(packet.team);
     }
 
-    public static GameTabStatsS2CPacket decode(FriendlyByteBuf buf) {
-        return new GameTabStatsS2CPacket(buf);
+    public static TeamPlayerStatsS2CPacket decode(FriendlyByteBuf buf) {
+        return new TeamPlayerStatsS2CPacket(buf);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

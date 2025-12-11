@@ -15,13 +15,14 @@ import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitySyncS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCapabilityEvent;
 import com.tacz.guns.client.gui.compat.ClothConfigScreen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -122,11 +123,12 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(EditToolSelectMapC2SPacket.class);
         PACKET_REGISTER.registerPacket(PullGameInfoC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
-        PACKET_REGISTER.registerPacket(GameTabStatsS2CPacket.class);
+        PACKET_REGISTER.registerPacket(TeamPlayerStatsS2CPacket.class);
+        PACKET_REGISTER.registerPacket(TeamPlayerLeaveS2CPacket.class);
         PACKET_REGISTER.registerPacket(OpenEditorC2SPacket.class);
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
-        PACKET_REGISTER.registerPacket(TeamCapabilitySyncS2CPacket.class);
+        PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
     }
 
