@@ -198,7 +198,25 @@ publishing {
         }
     }
 }
+//unobfJar
+tasks.register('unobfJar', Jar) {
+    from sourceSets.main.output
+    archiveClassifier = 'unobf'
+}
 
+configurations {
+    unobfElements {
+        canBeConsumed = true
+        canBeResolved = false
+
+        attributes.attribute(
+                Usage.USAGE_ATTRIBUTE,
+                objects.named(Usage, "java-runtime-unobf")
+        )
+
+        outgoing.artifact(tasks.unobfJar)
+    }
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
