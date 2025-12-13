@@ -44,7 +44,7 @@ public class FPSMCore {
     }
 
     public static FPSMCore getInstance(){
-        if(INSTANCE == null) throw new RuntimeException("fpsm not install.");
+        if(INSTANCE == null) throw new RuntimeException("FPSMatch is not install.");
         return INSTANCE;
     }
 
@@ -73,14 +73,14 @@ public class FPSMCore {
     public void registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
             if(getMapNames(type).contains(map.getMapName())){
-                FPSMatch.LOGGER.error("error : has same map name -> {}", map.getMapName());
+                FPSMatch.LOGGER.error("FPSMatch Core : has same map name -> {}", map.getMapName());
                 return;
             }
             List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
             maps.add(map);
             GAMES.put(type,maps);
         }else{
-            FPSMatch.LOGGER.error("error : unregister game type {}", type);
+            FPSMatch.LOGGER.error("FPSMatch Core : unregister game type {}", type);
         }
     }
 
@@ -146,7 +146,7 @@ public class FPSMCore {
             try{
                 map.mapTick();
             }catch(Exception e){
-                FPSMatch.LOGGER.error("{} map error: ", map.getMapName(), e);
+                FPSMatch.LOGGER.error("FPSMatch Core -> {} map error: ", map.getMapName(), e);
                 map.reset();
             }
         }));
@@ -186,7 +186,7 @@ public class FPSMCore {
                 try{
                     map.reload();
                 }catch (Exception e){
-                    FPSMatch.LOGGER.error("{} map reload error: ", map.getMapName(), e);
+                    FPSMatch.LOGGER.error("FPSMatch Core -> {} map reload error: ", map.getMapName(), e);
                 }
             }
         }

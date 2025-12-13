@@ -9,10 +9,10 @@
     "MixinDustParticleOptionsBase",
     "PlayerHurtSelfMixin",
     "PlayerKnockbackMixin",
-    "collisiobox.MixinRenderHeadShotAABB",
-    "spec.glow.MixinEntityUnified"
+    "collisiobox.MixinRenderHeadShotAABB"
   ],
   "client": [
+    "spec.glow.MixinEntityUnified",
     "ItemPickupSoundMixin",
     "MixinMinecraft",
     "MixinPlayerTabOverlay",

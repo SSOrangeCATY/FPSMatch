@@ -58,14 +58,18 @@ public interface    ISavePort<T> {
      * @return 解码后的数据
      */
     default T decodeFromJson(JsonElement json) {
-        JsonObject wrapper = json.getAsJsonObject();
-
-        int oldVersion = wrapper.has("version") ? wrapper.get("version").getAsInt() : 0;
-
-        JsonElement rawData = oldVersion == 0 ? json : wrapper.get("data");
+        int oldVersion;
+        JsonElement rawData;
+        if(!json.isJsonObject()){
+            oldVersion = 0;
+            rawData = json;
+        }else{
+            JsonObject wrapper = json.getAsJsonObject();
+            oldVersion = wrapper.has("version") ? wrapper.get("version").getAsInt() : 0;
+            rawData = wrapper.get("data");
+        }
 
         if(oldVersion == getVersion()) return decode(rawData);
-
 
         return codec()
                 .decode(JsonOps.INSTANCE, DataFixer.getInstance().fixJson(getHolderClass(), rawData, oldVersion, getVersion()))
