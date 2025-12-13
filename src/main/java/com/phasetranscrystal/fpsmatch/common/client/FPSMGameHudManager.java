@@ -36,6 +36,10 @@ public class FPSMGameHudManager implements IGuiOverlay{
         }
     }
 
+    public static boolean shouldRender(){
+        return enable && FPSMClient.getGlobalData().isInGame();
+    }
+
     public void registerHud(String gameType, IHudRenderer overlay){
         gameHudMap.computeIfAbsent(gameType, k -> new ArrayList<>()).add(overlay);
     }

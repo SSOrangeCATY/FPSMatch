@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
+import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -32,7 +33,6 @@ public class MapTeams {
     protected final ServerLevel level;
     protected final BaseMap map;
     private final Map<String, ServerTeam> teams = new HashMap<>();
-    private final Map<String,List<UUID>> unableToSwitch = new HashMap<>();
     public final Map<UUID,Component> playerName = new HashMap<>();
 
     /**
@@ -103,24 +103,13 @@ public class MapTeams {
         attackTeam.setScores(defendTeam.getScores());
         defendTeam.setScores(tempScore);
 
-        attackTeam.reset();
-        defendTeam.reset();
+        attackTeam.resetCapabilities();
+        defendTeam.resetCapabilities();
 
 
         attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(attackTeam.getPlayerList()));
 
         defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
-    }
-
-    /**
-     * 获取无法切换的队伍列表。
-     * <p>
-     * 返回一个 Map，键为队伍名称，值为无法切换的玩家 UUID 列表。
-     *
-     * @return 无法切换的队伍列表
-     */
-    public Map<String, List<UUID>> getUnableToSwitch() {
-        return unableToSwitch;
     }
 
     /**
@@ -401,6 +390,10 @@ public class MapTeams {
         Collection<ServerTeam> teams = this.teams.values();
 
         for (ServerTeam team : teams) {
+            FPSMAddTeamS2CPacket addTeamPacket = FPSMAddTeamS2CPacket.of(team);
+            for (ServerPlayer player : players) {
+                FPSMatch.sendToPlayer(player, addTeamPacket);
+            }
             for (PlayerData playerData : team.getPlayersData()) {
                 if (force || playerData.isDirty()) {
                     TeamPlayerStatsS2CPacket packet = TeamPlayerStatsS2CPacket.of(team, playerData);
@@ -544,12 +537,9 @@ public class MapTeams {
      * 包括重置所有队伍的伤害数据、存活状态、得分、玩家列表、连败次数、补偿因子和暂停时间。
      */
     public void reset() {
-        this.resetLivingPlayers();
         this.teams.forEach((name, team) -> {
-            team.reset();
-            team.getPlayers().clear();
+            team.clean();
         });
-        this.unableToSwitch.clear();
         this.playerName.clear();
     }
 

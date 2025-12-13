@@ -107,13 +107,9 @@ public abstract class BaseTeam {
         this.capabilities.resetAll();
     }
 
-    public void reset(){
+    public void clean(){
         this.resetCapabilities();
         this.setScores(0);
-    }
-
-    public void clean(){
-        this.reset();
         this.getPlayers().clear();
     }
 

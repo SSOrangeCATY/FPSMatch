@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.client.data;
 
 import com.google.common.collect.Maps;
 import com.mojang.datafixers.util.Pair;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -70,9 +71,18 @@ public class FPSMClientGlobalData {
 
     public void setTabData(String teamName, UUID uuid,PlayerData data){
         if(clientTeamData.containsKey(teamName)) {
-            clientTeamData.get(teamName).setPlayerData(uuid,data);
+            ClientTeam team = clientTeamData.get(teamName);
+            if(!team.hasPlayer(uuid)) {
+                clientTeamData
+                        .values()
+                        .stream()
+                        .filter(t -> t.hasPlayer(uuid))
+                        .toList()
+                        .forEach(t -> {t.delPlayer(uuid);});
+            }
+            team.setPlayerData(uuid,data);
         }else{
-            throw new IllegalArgumentException("Team " + teamName + " does not exist");
+            FPSMatch.LOGGER.error("ClientGlobalData: Team {} does not exist", teamName);
         }
     }
 
@@ -145,6 +155,10 @@ public class FPSMClientGlobalData {
 
     public boolean equalsGame(String type){
         return currentGameType.equals(type);
+    }
+
+    public boolean isInGame(){
+        return !equalsGame("none");
     }
 
     public void removePlayer(UUID uuid){
