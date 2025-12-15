@@ -128,7 +128,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<Integer> ofInt(String configName, int defaultValue) {
+    public static Setting<Integer> of(String configName, int defaultValue) {
         return new Setting<>(configName, Codec.INT, defaultValue);
     }
 
@@ -139,7 +139,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<Long> ofLong(String configName, long defaultValue) {
+    public static Setting<Long> of(String configName, long defaultValue) {
         return new Setting<>(configName, Codec.LONG, defaultValue);
     }
 
@@ -150,7 +150,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<Float> ofFloat(String configName, float defaultValue) {
+    public static Setting<Float> of(String configName, float defaultValue) {
         return new Setting<>(configName, Codec.FLOAT, defaultValue);
     }
 
@@ -161,7 +161,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<Double> ofDouble(String configName, double defaultValue) {
+    public static Setting<Double> of(String configName, double defaultValue) {
         return new Setting<>(configName, Codec.DOUBLE, defaultValue);
     }
 
@@ -172,7 +172,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<Byte> ofByte(String configName, byte defaultValue) {
+    public static Setting<Byte> of(String configName, byte defaultValue) {
         return new Setting<>(configName, Codec.BYTE, defaultValue);
     }
 
@@ -183,7 +183,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<Boolean> ofBoolean(String configName, boolean defaultValue) {
+    public static Setting<Boolean> of(String configName, boolean defaultValue) {
         return new Setting<>(configName, Codec.BOOL, defaultValue);
     }
 
@@ -194,7 +194,7 @@ public class Setting<T> {
      * @param defaultValue 默认值。
      * @return 配置项实例。
      */
-    public static Setting<String> ofString(String configName, String defaultValue) {
+    public static Setting<String> of(String configName, String defaultValue) {
         return new Setting<>(configName, Codec.STRING, defaultValue);
     }
 }

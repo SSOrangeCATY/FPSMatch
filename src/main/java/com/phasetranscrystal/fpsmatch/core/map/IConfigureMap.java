@@ -157,7 +157,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Integer> addSetting(String configName, int defaultValue) {
-        return addSetting(Setting.ofInt(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 
     /**
@@ -168,7 +168,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Long> addSetting(String configName, long defaultValue) {
-        return addSetting(Setting.ofLong(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 
     /**
@@ -179,7 +179,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Float> addSetting(String configName, float defaultValue) {
-        return addSetting(Setting.ofFloat(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 
     /**
@@ -190,7 +190,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Double> addSetting(String configName, double defaultValue) {
-        return addSetting(Setting.ofDouble(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 
     /**
@@ -201,7 +201,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Byte> addSetting(String configName, byte defaultValue) {
-        return addSetting(Setting.ofByte(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 
     /**
@@ -212,7 +212,7 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<Boolean> addSetting(String configName, boolean defaultValue) {
-        return addSetting(Setting.ofBoolean(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 
     /**
@@ -223,6 +223,6 @@ public interface IConfigureMap<T extends BaseMap> extends IMap<T> {
      * @return 添加的配置项。
      */
     default Setting<String> addSetting(String configName, String defaultValue) {
-        return addSetting(Setting.ofString(configName, defaultValue));
+        return addSetting(Setting.of(configName, defaultValue));
     }
 }

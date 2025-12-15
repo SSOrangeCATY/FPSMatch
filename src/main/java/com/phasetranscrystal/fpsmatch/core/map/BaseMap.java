@@ -249,25 +249,29 @@ public abstract class BaseMap {
         }
     }
 
-    public void clearPlayerInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
+    public void clearInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
         Player player = this.getServerLevel().getPlayerByUUID(uuid);
         if(player instanceof ServerPlayer serverPlayer){
-            this.clearPlayerInventory(serverPlayer,inventoryPredicate);
+            this.clearInventory(serverPlayer,inventoryPredicate);
         }
     }
 
-    public void clearPlayerInventory(ServerPlayer player, Predicate<ItemStack> predicate){
+    public void clearInventory(ServerPlayer player, Predicate<ItemStack> predicate){
         player.getInventory().clearOrCountMatchingItems(predicate, -1, player.inventoryMenu.getCraftSlots());
         player.containerMenu.broadcastChanges();
         player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
-    public void clearPlayerInventory(ServerPlayer player){
+    public void clearInventory(ServerPlayer player){
         player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
         player.containerMenu.broadcastChanges();
         player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
+    public void syncInventory(ServerPlayer player) {
+        player.inventoryMenu.slotsChanged(player.getInventory());
+        player.inventoryMenu.broadcastChanges();
+    }
     /**
      * 获取服务器世界
      * @return 服务器世界对象
@@ -358,6 +362,14 @@ public abstract class BaseMap {
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
         this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid ->
+            this.getPlayerByUUID(uuid).ifPresent(player ->
+                this.sendPacketToJoinedPlayer(player, packet, true)
+            )
+        );
+    }
+
+    public <MSG> void sendPacketToSpecPlayer(MSG packet){
+        this.getMapTeams().getSpecPlayers().forEach(uuid ->
             this.getPlayerByUUID(uuid).ifPresent(player ->
                 this.sendPacketToJoinedPlayer(player, packet, true)
             )
