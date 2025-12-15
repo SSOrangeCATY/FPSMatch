@@ -101,8 +101,8 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     @SubscribeEvent
     public static void onDataRegister(RegisterFPSMSaveDataEvent event) {
         event.registerData(ChangeShopItemModule.class, "ListenerModule", new SaveHolder.Builder<>(ChangeShopItemModule.CODEC)
-                .withReadHandler(ChangeShopItemModule::read)
-                .withWriteHandler((manager) ->
+                .withLoadHandler(ChangeShopItemModule::read)
+                .withSaveHandler((manager) ->
                         FPSMCore.getInstance().getListenerModuleManager().getRegistry().forEach((name, module) -> {
                             if (module instanceof ChangeShopItemModule cSIM) {
                                 manager.saveData(cSIM, cSIM.getName(),true);

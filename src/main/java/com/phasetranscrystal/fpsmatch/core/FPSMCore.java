@@ -52,6 +52,18 @@ public class FPSMCore {
         return INSTANCE != null;
     }
 
+    public boolean isRegistered(BaseMap map){
+        return isRegistered(map.getGameType(),map.getMapName());
+    }
+
+    public boolean isRegistered(String type){
+        return REGISTRY.containsKey(type);
+    }
+
+    public boolean isRegistered(String type, String name){
+        return REGISTRY.containsKey(type) && GAMES.containsKey(type) && getMapNames(type).contains(name);
+    }
+
     public boolean isInGame(Player player){
         return getMapByPlayer(player).isPresent();
     }

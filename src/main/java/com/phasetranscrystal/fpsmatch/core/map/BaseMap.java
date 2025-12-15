@@ -214,6 +214,8 @@ public abstract class BaseMap {
     }
 
     public void leave(ServerPlayer player) {
+        if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.LeaveEvent(this, player))) return;
+
         this.sendPacketToJoinedPlayer(player,new FPSMatchStatsResetS2CPacket(),true);
         player.setGameMode(GameType.ADVENTURE);
         this.getMapTeams().leaveTeam(player);
@@ -234,6 +236,8 @@ public abstract class BaseMap {
      * @param player 玩家对象
      */
     public void join(String teamName, ServerPlayer player) {
+        if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.JoinEvent(this, player))) return;
+
         FPSMCore.checkAndLeaveTeam(player);
         this.pullGameInfo(player);
         this.getMapTeams().joinTeam(teamName, player);
@@ -332,13 +336,18 @@ public abstract class BaseMap {
      * 重新加载地图逻辑
      * */
     public boolean reload(){
-        return !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ReloadEvent(this));
+        boolean flag = !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ReloadEvent(this));
+        if(flag){
+            loadConfig();
+        }
+        return flag;
     }
     
-    public boolean load(){
-        if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.LoadEvent(this))) return false;
+    public final void load(){
+        if(FPSMCore.getInstance().isRegistered(this)) return;
+
+        MinecraftForge.EVENT_BUS.post(new FPSMapEvent.LoadEvent(this));
         FPSMCore.getInstance().registerMap(this.getGameType(),this);
-        return true;
     }
 
 

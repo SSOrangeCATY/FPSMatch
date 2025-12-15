@@ -76,11 +76,6 @@ public class FPSMapEvent extends Event {
         public LoadEvent(BaseMap map) {
             super(map);
         }
-
-        @Override
-        public boolean isCancelable() {
-            return true;
-        }
     }
 
     /**
@@ -98,6 +93,30 @@ public class FPSMapEvent extends Event {
 
         public ServerPlayer getPlayer() {
             return player;
+        }
+
+        public static class JoinEvent extends PlayerEvent {
+
+            public JoinEvent(BaseMap map, ServerPlayer player) {
+                super(map, player);
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
+        }
+
+        public static class LeaveEvent extends PlayerEvent {
+
+            public LeaveEvent(BaseMap map, ServerPlayer player) {
+                super(map, player);
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
         }
 
         public static class HurtEvent extends PlayerEvent{

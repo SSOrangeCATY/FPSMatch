@@ -39,8 +39,8 @@ public class SaveHolder<T> implements ISavePort<T> {
 
         public Builder<T> withVersion(int version) { this.version = version; return this; }
         public Builder<T> withInitializer(Supplier<T> initializer) { this.initializer = initializer; return this; }
-        public Builder<T> withReadHandler(Consumer<T> handler) { this.readHandler = handler; return this; }
-        public Builder<T> withWriteHandler(Consumer<FPSMDataManager> handler) { this.writeHandler = handler; return this; }
+        public Builder<T> withLoadHandler(Consumer<T> handler) { this.readHandler = handler; return this; }
+        public Builder<T> withSaveHandler(Consumer<FPSMDataManager> handler) { this.writeHandler = handler; return this; }
         public Builder<T> isGlobal(boolean global) { this.isGlobal = global; return this; }
         public Builder<T> withMergeHandler(BiFunction<T, T, T> handler) { this.mergeHandler = handler; return this; }
         public Builder<T> withFileType(String type) { this.fileType = type; return this; }

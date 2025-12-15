@@ -117,7 +117,6 @@ public class FPSMEventHook {
                 BaseMap map = opt.get();
                 if(map.isStart()){
                     FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map,hurt,event.getSource(),event.getAmount());
-                    MinecraftForge.EVENT_BUS.post(hurtEvent);
 
                     if(MinecraftForge.EVENT_BUS.post(hurtEvent)){
                         event.setCanceled(true);
