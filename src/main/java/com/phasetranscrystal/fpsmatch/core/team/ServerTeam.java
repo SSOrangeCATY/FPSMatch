@@ -141,6 +141,12 @@ public final class ServerTeam extends BaseTeam {
         return players;
     }
 
+    public List<ServerPlayer> getOnline(){
+        List<ServerPlayer> onlinePlayers = new ArrayList<>();
+        players.values().forEach(data -> {data.getPlayer().ifPresent(onlinePlayers::add);});
+        return onlinePlayers;
+    }
+
     @Override
     public void clearAndPutPlayers(Map<UUID, PlayerData> players) {
         this.players.clear();

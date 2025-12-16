@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MapTeams {
@@ -292,6 +293,10 @@ public class MapTeams {
         return new ArrayList<>(this.teams.values());
     }
 
+
+    public Map<ServerTeam,List<PlayerData>> getJoinedPlayersMap(){
+        return this.teams.values().stream().collect(Collectors.toMap(Function.identity(), ServerTeam::getPlayersData));
+    }
     /**
      * 获取所有可进行游戏的玩家 UUID 列表。
      *
@@ -413,12 +418,22 @@ public class MapTeams {
      * 适用于游戏状态更新时的全局数据同步。
      */
     public void sync() {
-        sync(getOnline(),false, true);
+        sync(getOnlineWithSpec(),false, true);
+    }
+
+    public List<ServerPlayer> getOnlineWithSpec(){
+        List<ServerPlayer> allOnlinePlayers = new ArrayList<>();
+        for (ServerTeam team : teams.values()) {
+            for (PlayerData playerData : team.getPlayersData()) {
+                playerData.getPlayer().ifPresent(allOnlinePlayers::add);
+            }
+        }
+        return allOnlinePlayers;
     }
 
     public List<ServerPlayer> getOnline(){
         List<ServerPlayer> allOnlinePlayers = new ArrayList<>();
-        for (ServerTeam team : teams.values()) {
+        for (ServerTeam team : getNormalTeams()) {
             for (PlayerData playerData : team.getPlayersData()) {
                 playerData.getPlayer().ifPresent(allOnlinePlayers::add);
             }
