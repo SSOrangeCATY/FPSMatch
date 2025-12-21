@@ -41,11 +41,6 @@ public class FPSMapEvent extends Event {
         public ResetEvent(BaseMap map) {
             super(map);
         }
-
-        @Override
-        public boolean isCancelable() {
-            return false;
-        }
     }
 
     public static class StartEvent extends FPSMapEvent {
@@ -97,11 +92,6 @@ public class FPSMapEvent extends Event {
 
         public Player getKiller() {
             return killer;
-        }
-
-        @Override
-        public boolean isCancelable() {
-            return false;
         }
     }
 }
