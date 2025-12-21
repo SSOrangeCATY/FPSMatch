@@ -12,11 +12,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-public final class NamecardTexture extends SimpleTexture {
+public final class NameCardTexture extends SimpleTexture {
     private final File file;
     public int realWidth = 256, realHeight = 256;
 
-    public NamecardTexture(File file, ResourceLocation id){ super(id); this.file = file; }
+    public NameCardTexture(File file, ResourceLocation id){ super(id); this.file = file; }
 
     @Override protected @NotNull TextureImage getTextureImage(ResourceManager rm){
         try{
