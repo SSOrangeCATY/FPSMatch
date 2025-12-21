@@ -15,7 +15,7 @@ import org.checkerframework.checker.units.qual.C;
 import java.util.*;
 
 public class FPSMClientGlobalData {
-    private String currentMap = "fpsm_none";
+    private String currentMap = "none";
     private String currentGameType = "none";
     private String currentTeam = "none";
 
@@ -151,6 +151,10 @@ public class FPSMClientGlobalData {
 
     public boolean equalsMap(String map){
         return currentMap.equals(map);
+    }
+
+    public boolean isInMap(){
+        return !equalsMap("none");
     }
 
     public boolean equalsGame(String type){
