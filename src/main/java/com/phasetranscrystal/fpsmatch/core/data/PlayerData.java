@@ -284,6 +284,10 @@ public class PlayerData{
         return headshotKills;
     }
 
+    public float headshotPer(){
+        return (float) headshotKills / headshotKills;
+    }
+
     public void addHeadshotKill() {
         this.headshotKills++;
         markDirty();
