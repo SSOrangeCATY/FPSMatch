@@ -69,7 +69,7 @@ public class FPSMClientGlobalData {
         clientTeamData.put(team.name, team);
     }
 
-    public void setTabData(String teamName, UUID uuid,PlayerData data){
+    public void setTabData(String teamName,UUID uuid,PlayerData data){
         if(clientTeamData.containsKey(teamName)) {
             ClientTeam team = clientTeamData.get(teamName);
             if(!team.hasPlayer(uuid)) {
@@ -102,9 +102,20 @@ public class FPSMClientGlobalData {
         return getFullTabPlayerData(uuid).map(Pair::getFirst);
     }
 
+    public void leave(UUID uuid){
+        this.getTeamByUUID(uuid).ifPresent(team -> {
+            team.delPlayer(uuid);
+        });
+    }
+
+    public Optional<PlayerData> getPlayerTabData(String team, UUID uuid){
+        return getTeamByName(team).flatMap(teamData -> teamData.getPlayerData(uuid));
+    }
+
     public Optional<PlayerData> getPlayerTabData(UUID uuid){
         return getFullTabPlayerData(uuid).map(Pair::getSecond);
     }
+
 
     public void setPlayersMoney(UUID uuid, int money){
         playersMoney.put(uuid,money);
@@ -181,7 +192,7 @@ public class FPSMClientGlobalData {
 
     public int getKills(UUID uuid) {
         return this.getPlayerTabData(uuid)
-                .map(PlayerData::_kills)
+                .map(PlayerData::getTotalKills)
                 .orElse(0);
     }
 
@@ -193,7 +204,7 @@ public class FPSMClientGlobalData {
 
     public boolean isLiving(UUID uuid){
         return this.getPlayerTabData(uuid)
-                .map(PlayerData::isLivingNoOnlineCheck)
+                .map(PlayerData::isLiving)
                 .orElse(false);
     }
 
@@ -205,19 +216,19 @@ public class FPSMClientGlobalData {
 
     public int getDeaths(UUID uuid){
         return this.getPlayerTabData(uuid)
-                .map(PlayerData::getDeaths)
+                .map(PlayerData::getTotalDeaths)
                 .orElse(0);
     }
 
     public float getDamages(UUID uuid){
         return this.getPlayerTabData(uuid)
-                .map(PlayerData::getDamage)
+                .map(PlayerData::getTotalDamage)
                 .orElse(0F);
     }
 
     public int getAssists(UUID uuid){
         return this.getPlayerTabData(uuid)
-                .map(PlayerData::getAssists)
+                .map(PlayerData::getTotalAssists)
                 .orElse(0);
     }
 

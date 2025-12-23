@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -49,6 +50,10 @@ public class RenderUtil {
             return getTeamsPlayerInfo(mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList());
         }
         return new HashMap<>();
+    }
+
+    public static Optional<PlayerData> getPlayerData(PlayerInfo player) {
+        return FPSMClient.getGlobalData().getPlayerTabData(player.getProfile().getId());
     }
 
     public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo(List<PlayerInfo> playerInfoList) {

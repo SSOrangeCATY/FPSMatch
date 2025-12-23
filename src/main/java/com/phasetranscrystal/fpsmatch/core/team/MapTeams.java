@@ -358,7 +358,7 @@ public class MapTeams {
         if(!team.isSpectator()){
             // 将玩家的计分板数据同步给其他玩家
             team.getPlayerData(player.getUUID()).ifPresent(playerData ->
-                    this.syncToAll(new TeamPlayerStatsS2CPacket(player.getUUID(), playerData, teamName))
+                    this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData))
             );
         }
         // 同步其他玩家的计分板数据
@@ -377,7 +377,7 @@ public class MapTeams {
     }
 
     public void broadcast(){
-        this.sync(getOnline(),true,false);
+        this.sync(getOnlineWithSpec(),true,false);
     }
 
     /**
@@ -677,11 +677,12 @@ public class MapTeams {
         UUID mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
+
         for (PlayerData data : winnerTeam.getPlayersData()) {
-            int kills = data._kills() * 2;
-            kills += data._kills() * 2;
-            int assists = data._assists();
-            assists += data._assists();
+            data.saveRoundData();
+            int kills = data.getTotalKills() * 2;
+            int assists = data.getTotalAssists();
+
             int score = kills + assists;
             if (data.getOwner().equals(damageMvpId)) {
                 score += 2;
@@ -737,8 +738,8 @@ public class MapTeams {
             mvpId = this.getGameMvp(winnerTeam);
         } else {
             for (PlayerData data : winnerTeam.getPlayersData()) {
-                int kills = data._kills() * 2;
-                int assists = data._assists();
+                int kills = data.getTotalKills() * 2;
+                int assists = data.getTotalAssists();
                 int score = kills + assists;
                 if (data.getOwner().equals(damageMvpId)) {
                     score += 2;
@@ -769,7 +770,7 @@ public class MapTeams {
      */
     public Map<UUID,  Float> getLivingHurtData() {
         Map<UUID,Float> hurtData = new HashMap<>();
-        teams.values().forEach((t)-> t.getPlayersData().forEach((data)-> hurtData.put(data.getOwner(),data._damage())));
+        teams.values().forEach((t)-> t.getPlayersData().forEach((data)-> hurtData.put(data.getOwner(),data.getTotalDamage())));
         return hurtData;
     }
 
