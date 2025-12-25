@@ -84,6 +84,16 @@ public class FPSMCore {
         }
     }
 
+    public Optional<BaseMap> getMapByTypeWithName(String type,String name){
+        if(!checkGameType(type)) return Optional.empty();
+        if(!GAMES.containsKey(type)) return Optional.empty();
+        List<BaseMap> maps = GAMES.get(type);
+        for (BaseMap map : maps){
+            if(map.getMapName().equals(name)) return Optional.of(map);
+        }
+        return Optional.empty();
+    }
+
     public Optional<BaseMap> getMapByName(String name){
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list){

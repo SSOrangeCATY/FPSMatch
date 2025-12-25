@@ -43,7 +43,7 @@ public class PlayerData {
     //服务端独有字段
     private final Map<UUID, Float> damageData = new HashMap<>(); // 伤害明细
     private SpawnPointData spawnPointsData;
-    private boolean dirty; // 脏数据标记
+    private boolean dirty = true; // 脏数据标记
 
     //客户端独有字段
     @OnlyIn(Dist.CLIENT)

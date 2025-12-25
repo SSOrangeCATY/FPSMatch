@@ -7,11 +7,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public class SpawnPointData {
     public static final Codec<SpawnPointData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("Dimension").forGetter(spawnPointData -> spawnPointData.getDimension().location().toString()),
-            BlockPos.CODEC.optionalFieldOf("Position", BlockPos.of(0L)).forGetter(SpawnPointData::getPosition),
+            Vec3.CODEC.fieldOf("Position").forGetter(SpawnPointData::getPosition),
             Codec.FLOAT.fieldOf("Yaw").forGetter(SpawnPointData::getYaw),
             Codec.FLOAT.fieldOf("Pitch").forGetter(SpawnPointData::getPitch)
     ).apply(instance, (dimensionStr, position, yaw, pitch) -> {
@@ -20,13 +21,13 @@ public class SpawnPointData {
     }));
 
     ResourceKey<Level> dimension;
-    BlockPos position;
+    Vec3 position;
     float pYaw;
     float pPitch;
 
-    public SpawnPointData(ResourceKey<Level> pDimension, BlockPos pPosition, float pYaw, float pPitch) {
+    public SpawnPointData(ResourceKey<Level> pDimension, Vec3 position, float pYaw, float pPitch) {
         this.dimension = pDimension;
-        this.position = pPosition;
+        this.position = position;
         this.pYaw = pYaw;
         this.pPitch = pPitch;
     }
@@ -35,8 +36,12 @@ public class SpawnPointData {
         return dimension;
     }
 
-    public BlockPos getPosition() {
+    public Vec3 getPosition() {
         return position;
+    }
+
+    public BlockPos getBlockPos(){
+        return BlockPos.containing(position);
     }
 
     public float getPitch() {
@@ -47,14 +52,14 @@ public class SpawnPointData {
         return pYaw;
     }
 
-    public int getX(){
-        return position.getX();
+    public double getX(){
+        return position.x();
     }
-    public int getY(){
-        return position.getY();
+    public double getY(){
+        return position.y();
     }
-    public int getZ(){
-        return position.getZ();
+    public double getZ(){
+        return position.z();
     }
 
     @Override

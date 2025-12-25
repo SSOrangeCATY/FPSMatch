@@ -15,9 +15,12 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 
 public class GameEndTeleportCapability extends MapCapability implements FPSMCapability.Savable<SpawnPointData> {
 
@@ -82,19 +85,19 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         @Override
         public LiteralArgumentBuilder<CommandSourceStack> builder(LiteralArgumentBuilder<CommandSourceStack> builder, CommandBuildContext context) {
             return builder
-                    .then(Commands.argument("set", BlockPosArgument.blockPos())
+                    .then(Commands.argument("pos", Vec3Argument.vec3())
                     .executes(METPCommand::handleModifyMatchEndTeleportPoint));
         }
 
         @Override
         public void help(FPSMHelpManager helper) {
             helper.registerCommandHelp(FPSMHelpManager.withMapCapability("match_end_teleport_point"));
-            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("match_end_teleport_point set"), Component.translatable("commands.fpsm.help.capability.match_end_teleport_point.set"));
-            helper.registerCommandParameters(FPSMHelpManager.withMapCapability("match_end_teleport_point set"), "*point");
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("match_end_teleport_point pos"), Component.translatable("commands.fpsm.help.capability.match_end_teleport_point.set"));
+            helper.registerCommandParameters(FPSMHelpManager.withMapCapability("match_end_teleport_point pos"), "*point");
         }
 
         private static int handleModifyMatchEndTeleportPoint(CommandContext<CommandSourceStack> context) {
-            BlockPos point = BlockPosArgument.getBlockPos(context, "point").above();
+            Vec3 point = Vec3Argument.getVec3(context, "pos");
 
             return FPSMCommand.getMapCapability(context, GameEndTeleportCapability.class).map(
                     cap->{

@@ -84,14 +84,15 @@ public class FPSMCommand {
     }
 
     // 辅助方法
-    public static Optional<BaseMap> getMapByName(CommandContext<CommandSourceStack> context) {
+    public static Optional<BaseMap> getMap(CommandContext<CommandSourceStack> context) {
+        String gameType = StringArgumentType.getString(context, GAME_TYPE_ARG);
         String mapName = StringArgumentType.getString(context, MAP_NAME_ARG);
-        return FPSMCore.getInstance().getMapByName(mapName);
+        return FPSMCore.getInstance().getMapByTypeWithName(gameType,mapName);
     }
 
-    public static Optional<ServerTeam> getTeamByName(CommandContext<CommandSourceStack> context) {
+    public static Optional<ServerTeam> getTeam(CommandContext<CommandSourceStack> context) {
         String teamName = StringArgumentType.getString(context, TEAM_NAME_ARG);
-        Optional<BaseMap> mapOpt = getMapByName(context);
+        Optional<BaseMap> mapOpt = getMap(context);
         if (mapOpt.isPresent()) {
            return mapOpt.get().getMapTeams().getTeamByName(teamName);
         }else{
@@ -100,22 +101,22 @@ public class FPSMCommand {
     }
 
     public static Optional<CapabilityMap<BaseMap,MapCapability>> getMapCapabilities(CommandContext<CommandSourceStack> context) {
-        Optional<BaseMap> map = getMapByName(context);
+        Optional<BaseMap> map = getMap(context);
         return map.map(BaseMap::getCapabilityMap);
     }
 
     public static Optional<CapabilityMap<BaseTeam, TeamCapability>> getTeamCapabilities(CommandContext<CommandSourceStack> context) {
-        Optional<ServerTeam> map = getTeamByName(context);
+        Optional<ServerTeam> map = getTeam(context);
         return map.map(ServerTeam::getCapabilityMap);
     }
 
     public static <T extends TeamCapability> Optional<T> getTeamCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
-        Optional<ServerTeam> team = getTeamByName(context);
+        Optional<ServerTeam> team = getTeam(context);
         return team.flatMap(serverTeam -> serverTeam.getCapabilityMap().get(clazz));
     }
 
     public static <T extends MapCapability> Optional<T> getMapCapability(CommandContext<CommandSourceStack> context , Class<T> clazz) {
-        Optional<BaseMap> map = getMapByName(context);
+        Optional<BaseMap> map = getMap(context);
         return map.flatMap(baseMap -> baseMap.getCapabilityMap().get(clazz));
     }
 

@@ -48,7 +48,7 @@ public class MapTeams {
                 .getCapabilityMap()
                 .ifPresent(SpawnPointCapability.class,cap->{
                     Vec3 vec3 = map.getMapArea().getAABB().getCenter();
-                    cap.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),new BlockPos((int) vec3.x(), (int) vec3.y(), (int) vec3.z()),0,0));
+                    cap.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),vec3,0,0));
                 });
     }
 

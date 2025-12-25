@@ -252,7 +252,7 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
                                     BlockState block = context.getSource().getLevel().getBlockState(pos);
                                     if (block.isAir()) {
                                         newSpawnPoints.add(new SpawnPointData(
-                                                defaultData.getDimension(), pos,
+                                                defaultData.getDimension(), pos.getCenter().add(0,0.5,0),
                                                 defaultData.getYaw(), defaultData.getPitch()
                                         ));
                                     }
@@ -318,17 +318,16 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
 
         private static SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context) {
             Entity entity = context.getSource().getEntity();
-            BlockPos pos = BlockPos.containing(context.getSource().getPosition()).above();
 
             if (entity != null) {
                 return new SpawnPointData(
                         context.getSource().getLevel().dimension(),
-                        pos, entity.getXRot(), entity.getYRot()
+                        context.getSource().getPosition(), entity.getXRot(), entity.getYRot()
                 );
             } else {
                 return new SpawnPointData(
                         context.getSource().getLevel().dimension(),
-                        pos, 0f, 0f
+                        context.getSource().getPosition(), 0f, 0f
                 );
             }
         }

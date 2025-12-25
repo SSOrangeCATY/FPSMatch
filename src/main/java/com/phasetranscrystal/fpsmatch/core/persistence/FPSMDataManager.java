@@ -47,6 +47,7 @@ public class FPSMDataManager {
     // 同步保存数据
     @SuppressWarnings("unchecked")
     public <T> void saveData(T data, String fileName, boolean overwrite) {
+        if (!registry.containsKey(data.getClass())) return;
         DataEntry<T> entry = getEntry((Class<T>)data.getClass());
         File file = getSaveFolder(data);
         entry.holder.getWriter(data, fileName, overwrite).accept(file);

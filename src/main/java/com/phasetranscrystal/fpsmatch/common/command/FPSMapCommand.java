@@ -6,13 +6,11 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
-import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.commands.CommandBuildContext;
@@ -73,7 +71,7 @@ public class FPSMapCommand {
                                         .then(Commands.argument(FPSMCommandSuggests.MAP_NAME_ARG, StringArgumentType.string())
                                                 .then(Commands.argument("from", BlockPosArgument.blockPos())
                                                         .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                                                .executes(FPSMapCommand::handleCreateMapWithoutSpawnPoint))))))
+                                                                .executes(FPSMapCommand::handleCreateMap))))))
                         .then(Commands.literal("modify")
                                 .then(Commands.argument(FPSMCommandSuggests.GAME_TYPE_ARG, StringArgumentType.string())
                                         .suggests(FPSMCommandSuggests.GAME_TYPES_SUGGESTION)
@@ -150,7 +148,7 @@ public class FPSMapCommand {
         return root;
     }
 
-    private static int handleCreateMapWithoutSpawnPoint(CommandContext<CommandSourceStack> context) {
+    private static int handleCreateMap(CommandContext<CommandSourceStack> context) {
         String mapName = StringArgumentType.getString(context, FPSMCommandSuggests.MAP_NAME_ARG);
         String type = StringArgumentType.getString(context, FPSMCommandSuggests.GAME_TYPE_ARG);
         BlockPos pos1 = BlockPosArgument.getBlockPos(context, "from");
@@ -169,7 +167,7 @@ public class FPSMapCommand {
     private static int handleDebugAction(CommandContext<CommandSourceStack> context) {
         String action = StringArgumentType.getString(context, FPSMCommandSuggests.ACTION_ARG);
 
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .map(map -> {
                     switch (action) {
                         case "start":
@@ -206,7 +204,7 @@ public class FPSMapCommand {
 
     // ------------------------------ 团队相关处理方法 ------------------------------
     private static int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) {
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .map(map -> {
                     map.join(context.getSource().getPlayer());
                     return 1;
@@ -216,7 +214,7 @@ public class FPSMapCommand {
 
     private static int handleJoinMapWithTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, FPSMCommandSuggests.TARGETS_ARG);
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .map(map -> {
                     players.forEach(map::join);
                     return 1;
@@ -225,7 +223,7 @@ public class FPSMapCommand {
     }
 
     private static int handleLeaveMapWithoutTarget(CommandContext<CommandSourceStack> context) {
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .map(map -> {
                     map.leave(context.getSource().getPlayer());
                     return 1;
@@ -235,7 +233,7 @@ public class FPSMapCommand {
 
     private static int handleLeaveMapWithTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, FPSMCommandSuggests.TARGETS_ARG);
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .map(map -> {
                     players.forEach(map::leave);
                     return 1;
@@ -247,7 +245,7 @@ public class FPSMapCommand {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, FPSMCommandSuggests.TARGETS_ARG);
         String action = StringArgumentType.getString(context, FPSMCommandSuggests.ACTION_ARG);
 
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .map(map -> {
                     BaseTeam team = map.getMapTeams().getSpectatorTeam();
                     if (team == null) {
@@ -287,7 +285,7 @@ public class FPSMapCommand {
         String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
         String action = StringArgumentType.getString(context, FPSMCommandSuggests.ACTION_ARG);
 
-        return FPSMCommand.getMapByName(context)
+        return FPSMCommand.getMap(context)
                 .flatMap(map -> map.getMapTeams().getTeamByName(teamName)
                         .map(team -> {
                             switch (action) {

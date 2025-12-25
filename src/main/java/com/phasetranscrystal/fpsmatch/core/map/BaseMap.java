@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -40,7 +41,7 @@ public abstract class BaseMap {
     // 地图名称
     public final String mapName;
     // 游戏是否开始
-    public boolean isStart = false;
+    protected boolean isStart = false;
     // 是否处于调试模式
     private boolean isDebug = false;
     // 服务器世界
@@ -225,19 +226,17 @@ public abstract class BaseMap {
                 .flatMap(t -> t.getPlayerData(player.getUUID()))
                 .ifPresent(playerData -> {
                     SpawnPointData data = playerData.getSpawnPointsData();
-                    player.setRespawnPosition(data.getDimension(),data.getPosition(),0,true,false);
+                    player.setRespawnPosition(data.getDimension(),data.getBlockPos(),0,true,false);
                     teleportToPoint(player, data);
         });
-
     }
 
     public void teleportToPoint(ServerPlayer player, SpawnPointData data) {
-        BlockPos pos = data.getPosition();
-        if(!Level.isInSpawnableBounds(pos)) return;
+        if(!Level.isInSpawnableBounds(data.getBlockPos())) return;
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
         set.add(RelativeMovement.X_ROT);
         set.add(RelativeMovement.Y_ROT);
-        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), pos.getX(),pos.getY(),pos.getZ(), set, 0, 0)) {
+        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), data.getX(),data.getY(),data.getZ(), set, 0, 0)) {
             label23: {
                 if (player.isFallFlying()) {
                     break label23;
@@ -501,4 +500,7 @@ public abstract class BaseMap {
         this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
     }
 
+    public final boolean isStart(){
+        return this.isStart;
+    }
 }

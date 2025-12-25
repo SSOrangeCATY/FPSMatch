@@ -47,7 +47,9 @@ public final class ServerTeam extends BaseTeam {
         Player p = player.get();
         if (hasPlayer(p.getUUID())) {
             delPlayer(p.getUUID());
-            p.getScoreboard().removePlayerFromTeam(p.getScoreboardName(), getPlayerTeam());
+            if(getPlayerTeam().getPlayers().contains(p.getScoreboardName())){
+                p.getScoreboard().removePlayerFromTeam(p.getScoreboardName(), getPlayerTeam());
+            }
         }
         return true;
     }
@@ -62,7 +64,7 @@ public final class ServerTeam extends BaseTeam {
         players.values().forEach(data -> {
             if (data.isOnline()) {
                 data.setLiving(true);
-                data.save();
+                data.saveRoundData();
             }
         });
     }
