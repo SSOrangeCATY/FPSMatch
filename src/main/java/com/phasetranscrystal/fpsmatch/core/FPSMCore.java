@@ -52,6 +52,10 @@ public class FPSMCore {
         return INSTANCE != null;
     }
 
+    public boolean isInGame(Player player){
+        return getMapByPlayer(player).isPresent();
+    }
+
     public Optional<BaseMap> getMapByPlayer(Player player){
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list){

@@ -18,6 +18,7 @@ import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
+import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
@@ -538,5 +539,22 @@ public class FPSMUtil {
     public static ResourceLocation fetchSkin(UUID id, String name){
         return Minecraft.getInstance().getSkinManager()
                 .getInsecureSkinLocation(new GameProfile(id, name));
+    }
+
+
+    public static Optional<ServerPlayer> getAttackerFromDamageSource(DamageSource source) {
+        if (source.getEntity() instanceof ServerPlayer attacker) {
+            return Optional.of(attacker);
+        }
+
+        if(source.getDirectEntity() instanceof ServerPlayer attacker){
+            return Optional.of(attacker);
+        }
+
+        if (source.getEntity() instanceof ThrowableItemEntity throwable && throwable.getOwner() instanceof ServerPlayer owner) {
+            return Optional.of(owner);
+        }
+
+        return Optional.empty();
     }
 }

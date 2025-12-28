@@ -1,8 +1,15 @@
 package com.phasetranscrystal.fpsmatch.core.event;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import net.minecraft.world.entity.player.Player;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.Event;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 public class FPSMapEvent extends Event {
     private final BaseMap map;
@@ -76,22 +83,150 @@ public class FPSMapEvent extends Event {
         }
     }
 
-    public static class PlayerDeathEvent extends FPSMapEvent {
-        private final Player dead;
-        private final Player killer;
+    /**
+     * 你不能直接监听这个Event!!!!
+     * 未在游戏中的地图不会发布这个事件
+     * */
+    public static class PlayerEvent extends FPSMapEvent {
 
-        public PlayerDeathEvent(BaseMap map, Player dead, Player killer) {
+        private final ServerPlayer player;
+
+        PlayerEvent(BaseMap map, ServerPlayer player) {
             super(map);
-            this.dead = dead;
-            this.killer = killer;
+            this.player = player;
         }
 
-        public Player getDead() {
-            return dead;
+        public ServerPlayer getPlayer() {
+            return player;
         }
 
-        public Player getKiller() {
-            return killer;
+        public static class HurtEvent extends PlayerEvent{
+            private final DamageSource source;
+            private float amount;
+
+            public HurtEvent(BaseMap map, ServerPlayer player, DamageSource source, float amount) {
+                super(map, player);
+                this.source = source;
+                this.amount = amount;
+            }
+
+            public DamageSource getSource() {
+                return source;
+            }
+
+            public float getAmount() {
+                return amount;
+            }
+
+            public void setAmount(float amount) {
+                this.amount = amount;
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
+        }
+
+        public static class DeathEvent extends PlayerEvent {
+            private final DamageSource source;
+
+            public DeathEvent(BaseMap map, ServerPlayer dead, DamageSource source) {
+                super(map, dead);
+                this.source = source;
+            }
+
+            public DamageSource getSource() {
+                return source;
+            }
+
+            public Optional<ServerPlayer> getKiller() {
+                return FPSMUtil.getAttackerFromDamageSource(source);
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
+        }
+
+        public static class LoggedInEvent extends PlayerEvent {
+            public LoggedInEvent(BaseMap map, ServerPlayer player) {
+                super(map, player);
+            }
+        }
+
+        /*
+        * 可以被取消，取消后不会退出队伍，需要额外处理一些逻辑来应对这个情况
+        * */
+        public static class LoggedOutEvent extends PlayerEvent {
+            public LoggedOutEvent(BaseMap map, ServerPlayer player) {
+                super(map, player);
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
+        }
+
+        public static class PickupItemEvent extends PlayerEvent {
+            private final ItemEntity itemEntity;
+            private final ItemStack stack;
+
+            public PickupItemEvent(BaseMap map, ServerPlayer player, ItemEntity originalEntity, ItemStack stack) {
+                super(map, player);
+                this.itemEntity = originalEntity;
+                this.stack = stack;
+            }
+
+            public ItemEntity getItemEntity() {
+                return itemEntity;
+            }
+
+            public ItemStack getStack() {
+                return stack;
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
+        }
+
+        public static class TossItemEvent extends PlayerEvent {
+            private final ItemEntity item;
+            public TossItemEvent(BaseMap map, ServerPlayer player, ItemEntity item) {
+                super(map, player);
+                this.item = item;
+            }
+
+            public ItemEntity getItemEntity() {
+                return item;
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
+        }
+
+        public static class ChatEvent extends PlayerEvent {
+            private final String message;
+
+            public ChatEvent(BaseMap map, ServerPlayer player,String message) {
+                super(map, player);
+                this.message = message;
+            }
+
+            public String getMessage() {
+                return message;
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
+            }
         }
     }
 }

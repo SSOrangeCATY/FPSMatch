@@ -1,19 +1,25 @@
 package com.phasetranscrystal.fpsmatch.core.map;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
+import com.phasetranscrystal.fpsmatch.core.persistence.ISavePort;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,20 +29,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.*;
 import java.util.function.Predicate;
 
 /**
  * BaseMap 抽象类，表示游戏中的基础地图。
  */
+@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public abstract class BaseMap {
     // 地图名称
     public final String mapName;
@@ -48,6 +55,8 @@ public abstract class BaseMap {
     private final ServerLevel serverLevel;
     // 地图团队
     private final MapTeams mapTeams;
+
+    private final List<Setting<?>> settings = new ArrayList<>();
 
     private final CapabilityMap<BaseMap,MapCapability> capabilities;
     // 地图区域数据
@@ -75,6 +84,15 @@ public abstract class BaseMap {
             }
         }
     }
+
+    /**
+     * 获取当前地图的所有配置项集合。
+     *
+     * @return 配置项集合。
+     */
+    public Collection<Setting<?>> settings(){
+        return settings;
+    };
 
     /**
      * 添加团队
@@ -411,90 +429,6 @@ public abstract class BaseMap {
     public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
         return FPSMCore.getInstance().getPlayerByUUID(uuid);
     }
-    /**
-     * 玩家登录事件处理
-     * @param event 玩家登录事件
-     */
-    @SubscribeEvent
-    public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map.isEmpty()) {
-                if (!player.isCreative()) {
-                    player.heal(player.getMaxHealth());
-                    player.setGameMode(GameType.ADVENTURE);
-                }
-            }else{
-                map.get().getMapTeams().getTeamByPlayer(player)
-                        .flatMap(team -> team.getPlayerData(player.getUUID()))
-                        .ifPresent(playerData -> {
-                            playerData.setLiving(false);
-                            player.setGameMode(GameType.SPECTATOR);
-                        });
-            }
-        }
-    }
-
-    /**
-     * 玩家登出事件处理
-     * @param event 玩家登出事件
-     */
-    @SubscribeEvent
-    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            FPSMCore.checkAndLeaveTeam(player);
-        }
-    }
-
-    /**
-     * 玩家受伤事件处理
-     * @param event 玩家受伤事件
-     */
-    @SubscribeEvent
-    public static void onPlayerHurt(LivingHurtEvent event){
-        if(event.getEntity() instanceof ServerPlayer hurt){
-            Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(hurt);
-            if(map.isPresent() && map.get().isStart) {
-                DamageSource source = event.getSource();
-                ServerPlayer attacker;
-                if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
-                    attacker = sourcePlayer;
-                } else if (source.getDirectEntity() instanceof ServerPlayer sourcePlayer) {
-                    attacker = sourcePlayer;
-                } else {
-                    attacker = null;
-                }
-
-                boolean flag = attacker != null && !attacker.isDeadOrDying();
-
-                if (flag) {
-                    if(!attacker.getUUID().equals(hurt.getUUID())) map.get().getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
-                }else{
-                    if (attacker == null) return;
-                    event.setCanceled(true);
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerDeathEvent(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map.isPresent()) {
-                ServerPlayer attacker = null;
-                if (event.getSource().getEntity() instanceof ServerPlayer sourcePlayer) {
-                    attacker = sourcePlayer;
-                } else if (event.getSource().getDirectEntity() instanceof ServerPlayer sourcePlayer) {
-                    attacker = sourcePlayer;
-                }
-
-                if (attacker != null) {
-                    MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerDeathEvent(map.get(), player, attacker));
-                }
-            }
-        }
-    }
 
     public void pullGameInfo(ServerPlayer player){
         this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
@@ -503,4 +437,222 @@ public abstract class BaseMap {
     public final boolean isStart(){
         return this.isStart;
     }
+
+
+    /**
+     * 将所有配置项序列化为 JSON 格式。
+     * <p>
+     * 遍历所有配置项，并调用每个配置项的 {@link Setting#toJson()} 方法，
+     * 将其值编码为 JSON 元素并添加到一个 JSON 对象中。
+     *
+     * @return 包含所有配置项的 JSON 对象。
+     */
+    public JsonElement configToJson() {
+        JsonElement json = new JsonObject();
+        for (Setting<?> setting : settings()) {
+            json.getAsJsonObject().add(setting.getConfigName(), setting.toJson());
+        }
+        return json;
+    }
+
+    /**
+     * 从 JSON 格式反序列化配置项。
+     * <p>
+     * 遍历 JSON 对象中的每个键值对，并根据配置项的名称查找对应的配置项。
+     * 如果找到匹配的配置项，则调用其 {@link Setting#fromJson(JsonElement)} 方法进行反序列化。
+     * 如果未找到匹配的配置项，则记录警告日志。
+     *
+     * @param json 包含配置项的 JSON 对象。
+     */
+    public void configFromJson(JsonElement json) {
+        JsonObject jsonObject = json.getAsJsonObject();
+        for (Setting<?> setting : settings()) {
+            if (jsonObject.has(setting.getConfigName())) {
+                setting.fromJson(jsonObject.get(setting.getConfigName()));
+            } else {
+                FPSMatch.LOGGER.warn("Setting {} not found in config file.", setting.getConfigName());
+            }
+        }
+    }
+
+    /**
+     * 获取当前地图的配置文件路径。
+     * <p>
+     * 如果地图实现了 {@link ISavePort} 接口，则根据地图名称生成配置文件路径。
+     * 如果地图未实现该接口，则记录错误日志并返回 null。
+     *
+     * @return 配置文件路径，或 null（如果地图未实现 ISavedData 接口）。
+     */
+    public File getConfigFile() {
+        File file = FPSMCore.getInstance().getFPSMDataManager().getSaveFolder(this);
+        if(file == null){
+            FPSMatch.LOGGER.error("Failed to get config file for map {} because ：Map is not implement ISavedData interface.", this.getMapName());
+            return null;
+        } else {
+            return new File(file, this.getMapName() + ".cfg");
+        }
+
+    }
+
+    /**
+     * 加载地图配置文件。
+     * <p>
+     * 从配置文件路径读取 JSON 数据，并调用 {@link #configFromJson(JsonElement)} 方法反序列化配置项。
+     * 如果配置文件不存在或读取失败，则记录错误日志。
+     */
+    public void loadConfig() {
+        File dataFile = getConfigFile();
+        if (dataFile == null) return;
+        try {
+            if (dataFile.exists()) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                FileReader reader = new FileReader(dataFile);
+                this.configFromJson(gson.fromJson(reader, JsonElement.class));
+                reader.close();
+            }
+        } catch (Exception e) {
+            e.fillInStackTrace();
+        }
+    }
+
+    /**
+     * 保存地图配置文件。
+     * <p>
+     * 将所有配置项序列化为 JSON 格式，并写入到配置文件路径。
+     * 如果配置文件不存在，则创建新文件。
+     * 如果保存失败，则记录错误日志。
+     */
+    public void saveConfig() {
+        File dataFile = getConfigFile();
+        if (dataFile == null) return;
+        try {
+            if (!dataFile.exists() && !dataFile.createNewFile()) {
+                return;
+            }
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            FileWriter writer = new FileWriter(dataFile);
+            gson.toJson(this.configToJson(), writer);
+            writer.close();
+        } catch (Exception e) {
+            e.fillInStackTrace();
+        }
+    }
+
+    public <I> Setting<I> addSetting(Setting<I> setting) {
+        settings.add(setting);
+        return setting;
+    }
+
+    /**
+     * 添加一个整型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<Integer> addSetting(String configName, int defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+    /**
+     * 添加一个长整型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<Long> addSetting(String configName, long defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+    /**
+     * 添加一个浮点型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<Float> addSetting(String configName, float defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+    /**
+     * 添加一个双精度浮点型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<Double> addSetting(String configName, double defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+    /**
+     * 添加一个字节型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<Byte> addSetting(String configName, byte defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+    /**
+     * 添加一个布尔型配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<Boolean> addSetting(String configName, boolean defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+    /**
+     * 添加一个字符串配置项。
+     *
+     * @param configName 配置项名称。
+     * @param defaultValue 默认值。
+     * @return 添加的配置项。
+     */
+    public Setting<String> addSetting(String configName, String defaultValue) {
+        return addSetting(Setting.of(configName, defaultValue));
+    }
+
+
+    @SubscribeEvent
+    public static void onMapPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event){
+        BaseMap map = event.getMap();
+        Player hurt = event.getPlayer();
+        DamageSource source = event.getSource();
+        ServerPlayer attacker;
+        if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
+            attacker = sourcePlayer;
+        } else if (source.getDirectEntity() instanceof ServerPlayer sourcePlayer) {
+            attacker = sourcePlayer;
+        } else {
+            attacker = null;
+        }
+        boolean flag = attacker != null && !attacker.isDeadOrDying();
+
+        map.getMapTeams().getPlayerData(hurt.getUUID()).ifPresent(PlayerData::markDirty);
+
+        if (flag) {
+            if(!attacker.getUUID().equals(hurt.getUUID())) map.getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onMapPlayerLoggedInEvent(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
+        BaseMap map = event.getMap();
+        ServerPlayer player = event.getPlayer();
+        map.getMapTeams().getTeamByPlayer(player)
+                .flatMap(team -> team.getPlayerData(player.getUUID()))
+                .ifPresent(playerData -> {
+                    playerData.setLiving(false);
+                    player.setGameMode(GameType.SPECTATOR);
+                });
+    }
+
 }

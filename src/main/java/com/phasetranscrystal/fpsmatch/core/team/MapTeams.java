@@ -285,6 +285,14 @@ public class MapTeams {
         return Optional.of(reference.get());
     }
 
+    public Optional<PlayerData> getPlayerData(ServerPlayer player){
+        return getPlayerData(player.getUUID());
+    }
+
+    public Optional<PlayerData> getPlayerData(UUID uuid){
+        return this.teams.values().stream().flatMap(t -> t.getPlayersData().stream()).filter(p -> p.getOwner().equals(uuid)).findFirst();
+    }
+
     public List<ServerTeam> getNormalTeams(){
         return this.teams.values().stream().filter(BaseTeam::isNormal).collect(Collectors.toList());
     }

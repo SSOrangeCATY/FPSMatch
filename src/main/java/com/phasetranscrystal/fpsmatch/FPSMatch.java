@@ -26,6 +26,7 @@ import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.tacz.guns.client.gui.compat.ClothConfigScreen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -130,6 +131,14 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
+    }
+
+    public static <M> void sendTo(Player player,M message){
+        if(player.level().isClientSide){
+            sendToServer(message);
+        }else{
+            sendToPlayer((ServerPlayer)player, message);
+        }
     }
 
     public static <M> void sendToPlayer(ServerPlayer player,M message){

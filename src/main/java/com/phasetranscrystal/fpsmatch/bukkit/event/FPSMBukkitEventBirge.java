@@ -23,12 +23,12 @@ public class FPSMBukkitEventBirge {
     }
 
     @SubscribeEvent
-    public void onForgeKillEvent(FPSMapEvent.PlayerDeathEvent event) {
+    public void onForgeKillEvent(FPSMapEvent.PlayerEvent.DeathEvent event) {
         if(!FPSMBukkit.isBukkitEnvironment()) return;
-        Player forgeDead = event.getDead();
+        Player forgeDead = event.getPlayer();
         Player forgeKiller = event.getKiller();
         BukkitPlayerKillOnMapEvent bukkitEvent = new BukkitPlayerKillOnMapEvent(
-                event.getMap(), forgeDead.getUUID(), forgeKiller.getUUID()
+                event.getMap(), forgeDead.getUUID(), forgeKiller != null ? forgeKiller.getUUID() : null
         );
         Bukkit.getPluginManager().callEvent(bukkitEvent);
     }

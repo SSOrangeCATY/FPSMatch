@@ -15,9 +15,9 @@ public class BukkitPlayerKillOnMapEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
     private final BaseMap map;
     private final UUID dead;
-    private final UUID killer;
+    @Nullable private final UUID killer;
 
-    public BukkitPlayerKillOnMapEvent(BaseMap map, UUID dead, UUID killer) {
+    public BukkitPlayerKillOnMapEvent(BaseMap map, UUID dead, @Nullable UUID killer) {
         this.map = map;
         this.dead = dead;
         this.killer = killer;
@@ -26,8 +26,8 @@ public class BukkitPlayerKillOnMapEvent extends Event {
     public BaseMap getMap() { return map; }
     public UUID getDead() { return dead; }
     public @Nullable Player getDeadPlayer() { return Bukkit.getPlayer(dead); }
-    public UUID getKiller() { return killer; }
-    public @Nullable Player getKillerPlayer() { return Bukkit.getPlayer(killer); }
+    public @Nullable UUID getKiller() { return killer; }
+    public @Nullable Player getKillerPlayer() { return killer == null ? null : Bukkit.getPlayer(killer); }
 
     @Override
     public @NotNull HandlerList getHandlers() { return handlers; }
