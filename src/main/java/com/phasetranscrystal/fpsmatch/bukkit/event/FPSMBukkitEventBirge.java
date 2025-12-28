@@ -5,11 +5,15 @@ import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+
+import java.util.Optional;
 
 public class FPSMBukkitEventBirge {
 
@@ -26,9 +30,9 @@ public class FPSMBukkitEventBirge {
     public void onForgeKillEvent(FPSMapEvent.PlayerEvent.DeathEvent event) {
         if(!FPSMBukkit.isBukkitEnvironment()) return;
         Player forgeDead = event.getPlayer();
-        Player forgeKiller = event.getKiller();
+        Optional<ServerPlayer> forgeKiller = event.getKiller();
         BukkitPlayerKillOnMapEvent bukkitEvent = new BukkitPlayerKillOnMapEvent(
-                event.getMap(), forgeDead.getUUID(), forgeKiller != null ? forgeKiller.getUUID() : null
+                event.getMap(), forgeDead.getUUID(), forgeKiller.map(Entity::getUUID).orElse(null)
         );
         Bukkit.getPluginManager().callEvent(bukkitEvent);
     }
