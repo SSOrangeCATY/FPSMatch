@@ -14,7 +14,7 @@ public enum DropType {
             }
         }
         return false;
-    })),
+    }),0),
     SECONDARY_WEAPON((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.SECONDARY_WEAPON_PREDICATE) {
             if(predicate.test(stack)){
@@ -22,7 +22,7 @@ public enum DropType {
             }
         }
         return false;
-    })),
+    }),1),
     THIRD_WEAPON((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.THIRD_WEAPON_PREDICATE) {
             if(predicate.test(stack)){
@@ -30,7 +30,7 @@ public enum DropType {
             }
         }
         return false;
-    })),
+    }),2),
     THROW((stack -> {
         for (Predicate<ItemStack> predicate : FPSMUtil.THROW_PREDICATE) {
             if(predicate.test(stack)){
@@ -38,13 +38,15 @@ public enum DropType {
             }
         }
         return false;
-    })),
-    MISC((stack -> true));
+    }),4,5,6,7),
+    MISC((stack -> true),8);
 
     private final Predicate<ItemStack> predicate;
+    private final int[] slotIndex;
 
-    DropType(Predicate<ItemStack> predicate) {
+    DropType(Predicate<ItemStack> predicate, int... slotIndex) {
         this.predicate = predicate;
+        this.slotIndex = slotIndex;
     }
 
     public Predicate<Player> inventoryMatch(){
@@ -75,5 +77,9 @@ public enum DropType {
             }
         }
         return DropType.MISC;
+    }
+
+    public int[] getSlotIndex() {
+        return slotIndex;
     }
 }

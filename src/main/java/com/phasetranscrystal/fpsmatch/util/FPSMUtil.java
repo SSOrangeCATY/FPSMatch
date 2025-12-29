@@ -3,8 +3,10 @@ package com.phasetranscrystal.fpsmatch.util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
@@ -122,7 +124,7 @@ public class FPSMUtil {
         return getGunTypeByGunId(gunId).filter(MAIN_WEAPON::contains).isPresent();
     }
 
-    public static void sortPlayerInventory(Player player) {
+    public static boolean sortPlayerInventory(ServerPlayer player) {
         if (player.level().getGameRules().getRule(FPSMatchRule.RULE_AUTO_SORT_PLAYER_INV).get()) {
             Inventory inventory = player.getInventory();
 
@@ -135,7 +137,6 @@ public class FPSMUtil {
                 inventory.items.set(i, ItemStack.EMPTY);
             }
 
-            // 2. 按分类分组（操作副本）
             Map<List<Predicate<ItemStack>>, List<ItemStack>> categoryMap = new LinkedHashMap<>();
 
             categoryMap.put(MAIN_WEAPON_PREDICATE, new ArrayList<>());
@@ -146,10 +147,10 @@ public class FPSMUtil {
             categoryMap.put(MISC_PREDICATE, new ArrayList<>());
 
             for (ItemStack stack : allItems) {
-                categorized:{
+                categorized: {
                     for (Map.Entry<List<Predicate<ItemStack>>, List<ItemStack>> entry : categoryMap.entrySet()) {
                         for (Predicate<ItemStack> predicate : entry.getKey()) {
-                            if(predicate.test(stack)){
+                            if (predicate.test(stack)) {
                                 entry.getValue().add(stack);
                                 break categorized;
                             }
@@ -158,47 +159,43 @@ public class FPSMUtil {
                 }
             }
 
-            // 3. 安全合并堆叠（不修改原始数据）
             List<ItemStack> mainWeapons = mergeItemStacks(categoryMap.get(MAIN_WEAPON_PREDICATE));
             List<ItemStack> secondaryWeapons = mergeItemStacks(categoryMap.get(SECONDARY_WEAPON_PREDICATE));
             List<ItemStack> thirdWeapons = mergeItemStacks(categoryMap.get(THIRD_WEAPON_PREDICATE));
             List<ItemStack> c4Items = mergeItemStacks(categoryMap.get(C4_PREDICATE));
-            List<ItemStack> throwables = mergeItemStacks(categoryMap.get(THROW_PREDICATE));
+            List<ItemStack> throwable = mergeItemStacks(categoryMap.get(THROW_PREDICATE));
             List<ItemStack> miscItems = mergeItemStacks(categoryMap.get(MISC_PREDICATE));
 
-            // 4. 投掷物排序
-            throwables.sort(Comparator.comparing(stack ->
+            throwable.sort(Comparator.comparing(stack ->
                     stack.getHoverName().getString().toLowerCase()
             ));
 
-            // 5. 创建新物品分布
             Map<Integer, ItemStack> sortedSlots = new HashMap<>();
             List<ItemStack> remainingItems = new ArrayList<>();
 
-            // 6. 分配快捷栏位
-            assignToSlot(sortedSlots, mainWeapons, 0);
-            assignToSlot(sortedSlots, secondaryWeapons, 1);
-            assignToSlot(sortedSlots, thirdWeapons, 2);
-            assignToSlot(sortedSlots, c4Items, 3);
+            boolean flag1 = assignToSlot(sortedSlots, mainWeapons, 0);
+            boolean flag2 = assignToSlot(sortedSlots, secondaryWeapons, 1);
+            boolean flag3 = assignToSlot(sortedSlots, thirdWeapons, 2);
+            boolean flag4 = assignToSlot(sortedSlots, c4Items, 3);
+            boolean flag5 = assignToSlot(sortedSlots, miscItems, 8);
 
-            // 7. 分配投掷物 (5-9 槽)
-            int throwableSlot = 4;
-            for (ItemStack throwable : throwables) {
-                if (throwableSlot > 8) {
-                    remainingItems.add(throwable);
-                } else {
-                    sortedSlots.put(throwableSlot++, throwable);
+            if (!throwable.isEmpty()) {
+                int throwableSlot = 4;
+                for (ItemStack t : throwable) {
+                    if (throwableSlot > 7) {
+                        remainingItems.add(t);
+                    } else {
+                        sortedSlots.put(throwableSlot++, t);
+                    }
                 }
             }
 
-            // 8. 合并剩余物品
             remainingItems.addAll(mainWeapons);
             remainingItems.addAll(secondaryWeapons);
             remainingItems.addAll(thirdWeapons);
             remainingItems.addAll(c4Items);
             remainingItems.addAll(miscItems);
 
-            // 9. 应用新分布
             for (int i = 0; i < inventory.items.size(); i++) {
                 if (sortedSlots.containsKey(i)) {
                     inventory.items.set(i, sortedSlots.get(i));
@@ -206,9 +203,42 @@ public class FPSMUtil {
                     inventory.items.set(i, remainingItems.remove(0));
                 }
             }
+
+            int carriedSlot = inventory.selected;
+
+            if (inventory.items.get(carriedSlot).isEmpty()) {
+                int direction = 1;
+                int currentSlot = carriedSlot;
+                int attempts = 0;
+
+                while (attempts < 18) {
+                    currentSlot += direction;
+
+                    if (currentSlot > 8) {
+                        direction = -1;
+                        currentSlot = 8;
+                    } else if (currentSlot < 0) {
+                        direction = 1;
+                        currentSlot = 0;
+                    }
+
+                    if (!inventory.items.get(currentSlot).isEmpty()) {
+                        carriedSlot = currentSlot;
+                        break;
+                    }
+
+                    attempts++;
+                }
+            }
+
+            FPSMatch.sendToPlayer(player, new FPSMInventorySelectedS2CPacket(carriedSlot));
+
+            player.getInventory().setChanged();
+            player.inventoryMenu.broadcastChanges();
+            return true;
+        } else {
+            return false;
         }
-        player.getInventory().setChanged();
-        player.inventoryMenu.broadcastChanges();
     }
 
     // 安全的堆叠合并方法
@@ -244,10 +274,12 @@ public class FPSMUtil {
 
 
     // 分配物品到指定槽位
-    private static void assignToSlot(Map<Integer, ItemStack> map, List<ItemStack> items, int slot) {
+    private static boolean assignToSlot(Map<Integer, ItemStack> map, List<ItemStack> items, int slot) {
         if (!items.isEmpty()) {
             map.put(slot, items.remove(0));
+            return true;
         }
+        return false;
     }
 
     public static void setTotalDummyAmmo(ItemStack itemStack, IGun iGun, int amount){

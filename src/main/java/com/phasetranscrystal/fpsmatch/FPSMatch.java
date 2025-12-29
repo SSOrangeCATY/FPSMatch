@@ -131,6 +131,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMInventorySelectedS2CPacket.class);
     }
 
     public static <M> void sendTo(Player player,M message){

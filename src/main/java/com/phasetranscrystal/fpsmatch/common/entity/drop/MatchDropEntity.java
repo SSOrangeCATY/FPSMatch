@@ -262,7 +262,7 @@ public class MatchDropEntity extends Entity {
             }else{
                 inventory.add(replace);
             }
-            FPSMUtil.sortPlayerInventory(player);
+            FPSMUtil.sortPlayerInventory((ServerPlayer) player);
             this.discard();
             return InteractionResult.SUCCESS;
         }
@@ -303,7 +303,7 @@ public class MatchDropEntity extends Entity {
                         this.playSound(FPSMSoundRegister.getItemPickSound(copy.getItem()));
                     }
                     pEntity.addItem(copy);
-                    FPSMUtil.sortPlayerInventory(pEntity);
+                    FPSMUtil.sortPlayerInventory((ServerPlayer) pEntity);
                 }else{
                     this.discard();
                 }

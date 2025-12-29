@@ -16,6 +16,7 @@ import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMTeamEvent;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
@@ -120,22 +121,20 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
-        if(event.getEntity().level().isClientSide) return;
+    public static void onPlayerPickupItem(FPSMapEvent.PlayerEvent.PickupItemEvent event){
 
-        ShopCapability.getShopByPlayer((ServerPlayer) event.getEntity()).ifPresent(shop -> {
-            ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+        ServerPlayer player = event.getPlayer();
+        ShopCapability.getShopByPlayer((ServerPlayer) player).ifPresent(shop -> {
+            ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
             if(pair != null){
                 ShopSlot slot = pair.getSecond();
                 slot.lock(event.getStack().getCount());
-                shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst().name(),slot);
+                shop.syncShopData(player,pair.getFirst().name(),slot);
             }
         });
 
-        FPSMCore.getInstance().getMapByPlayer(event.getEntity()).ifPresent(map->
-                FPSMUtil.sortPlayerInventory(event.getEntity())
-        );
+        FPSMUtil.sortPlayerInventory(player);
     }
 
 
