@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -112,12 +113,12 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         }
     }
 
-    public String getListeners() {
-        return this.shopSlot.getListenerNames().toString();
+    public List<String> getListeners() {
+        return this.shopSlot.getListenerNames();
     }
 
-    public String getName() {
-        return this.shopSlot.process().getDisplayName().getString();
+    public boolean isGun(){
+        return this.slots.get(0).getItem().getItem() instanceof IGun;
     }
 
     public int getAmmo() {

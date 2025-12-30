@@ -2,9 +2,9 @@ package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.google.gson.Gson;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.common.item.EditorShopCapabilityProvider;
 import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -13,9 +13,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-
 import net.minecraft.world.inventory.ClickType;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.ItemStackHandler;
@@ -23,134 +21,243 @@ import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 
-
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.IntStream;
 
 public class EditorShopContainer extends AbstractContainerMenu {
     private static final int SLOT_SIZE = 18;
-    private static final int ROWS = EditorShopCapabilityProvider.ROWS;
-    private static final int COLS = EditorShopCapabilityProvider.COLS;
-    private static final int d = 10; // 设定间隔
-    public static final int PLAYER_INV_START = ROWS * COLS;
-    public static final int PLAYER_HOTBAR_END = ROWS * COLS + 36;
-    private static final int CUSTOM_CONTAINER_START = 0;
-    private static final int CUSTOM_CONTAINER_END = ROWS * COLS - 1;
-    private final ItemStack guiItemStack; // 存储打开 GUI 的物品
+    private int rows = 0;
+    private int cols = 0;
+    private static final int d = 10;
+
+    private final ItemStack guiItemStack;
     private final ItemStackHandler itemStackHandler;
-    private List<ShopSlot> shopSlots = new ArrayList<>();
 
+    private final int totalIndex;
 
-    public EditorShopContainer(int containerId, Inventory playerInventory,FriendlyByteBuf buf)
-    {
+    public Map<String, INamedType> getTypes() {
+        return types;
+    }
+
+    public int getTotalIndex() {
+        return totalIndex;
+    }
+
+    public ItemStackHandler getItemStackHandler() {
+        return itemStackHandler;
+    }
+
+    public int getCols() {
+        return cols;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    private final Map<String, INamedType> types = new HashMap<>();
+    private final FPSMShop<?> shop;
+
+    private static final int CUSTOM_CONTAINER_END = 45;
+
+    public EditorShopContainer(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         this(containerId, playerInventory, buf.readItem());
     }
 
     public EditorShopContainer(int containerId, Inventory playerInventory, ItemStack stack) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
-        this.guiItemStack = stack;
+        this.guiItemStack = stack.copy();
+
+        this.shop = ShopEditTool.getShop(this.guiItemStack).orElse(null);
+        int total = 0;
+        if (this.shop != null) {
+            List<?> types = shop.getEnums();
+            for (Object type : types) {
+                if (!(type instanceof INamedType named)) {
+                    continue;
+                }
+                rows++;
+                this.types.put(named.name(), named);
+
+                int slotCount = named.slotCount();
+                total += slotCount;
+                if (cols < slotCount) {
+                    cols = slotCount;
+                }
+            }
+        }
+
+        this.totalIndex = total;
+
         this.itemStackHandler = stack.getCapability(ForgeCapabilities.ITEM_HANDLER)
-                .filter(h -> h instanceof ItemStackHandler) // 确保是 ItemStackHandler
-                .map(h -> (ItemStackHandler) h) // 强制转换
-                .orElse(new ItemStackHandler(5 * 5)); // 默认提供一个空的 25 格存储
+                .filter(h -> h instanceof ItemStackHandler)
+                .map(h -> (ItemStackHandler) h)
+                .orElseGet(() -> new ItemStackHandler(this.totalIndex));
 
-        this.shopSlots = this.getAllSlots();
-        int startX = (176 - (COLS * (SLOT_SIZE + 4 * d) - d)) / 2; // 居中于默认 GUI 宽度 -d微调原理还不清楚
-        int startY = 18;
+        int slotSpan = SLOT_SIZE + 4 * d;
+        int start = 5;
 
-        // 创建 5×5 格子并加入间隔
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                ItemStack slotItem = this.shopSlots.get(col + row * COLS).process();
-                this.addSlot(new SlotItemHandler(
-                                        itemStackHandler,
-                                        col + row * COLS,
-                                        startX + col * (SLOT_SIZE + 4 * d), // **加上间隔 d**
-                                        startY + row * (SLOT_SIZE + d)  // **加上间隔 d**
-                                )
-                        )//从框架读取值
-                        .set(slotItem.isEmpty() ? ItemStack.EMPTY : slotItem)
-                ;
+        for (int row = 0; row < rows; row++) {
+            if (shop == null || types.isEmpty()) {
+                break;
+            }
+
+            List<String> typeNames = new ArrayList<>(types.keySet());
+            if (row >= typeNames.size()) {
+                break;
+            }
+            String type = typeNames.get(row);
+            INamedType namedType = types.get(type);
+            if (namedType == null) {
+                continue;
+            }
+
+            List<ShopSlot> shopSlots = this.shop.getDefaultShopSlotListByType(type);
+            for (int col = 0; col < namedType.slotCount(); col++) {
+
+                if (col >= namedType.slotCount()) {
+                    continue;
+                }
+                int slotIndex = getSlotIndex(type, col);
+
+                if (slotIndex < 0 || slotIndex >= itemStackHandler.getSlots()) {
+                    continue;
+                }
+
+                ShopSlot shopSlot = (shopSlots != null && col < shopSlots.size()) ? shopSlots.get(col) : null;
+                ItemStack slotItem = shopSlot == null ? ItemStack.EMPTY : shopSlot.process();
+
+                SlotItemHandler customSlot = new SlotItemHandler(
+                        itemStackHandler,
+                        slotIndex,
+                        start + col * slotSpan,
+                        start + row * (SLOT_SIZE + d)
+                );
+                this.addSlot(customSlot);
+
+                if (!slotItem.isEmpty()) {
+                    itemStackHandler.setStackInSlot(slotIndex, slotItem);
+                } else {
+                    itemStackHandler.setStackInSlot(slotIndex, ItemStack.EMPTY);
+                }
             }
         }
-
-        // **玩家物品栏（下移，避免与 GUI 重叠）**
-        addPlayerInventory(playerInventory, (176 - 9 * SLOT_SIZE - 4 * d) / 2, 163);// 居中于默认 GUI 宽度 -4d微调原理还不清楚
     }
-
-
-    private void addPlayerInventory(Inventory playerInventory, int x, int y) {
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, x + col * 18, y + row * 18));
-            }
-        }
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, x + col * 18, y + 58));
-        }
-    }
-
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return true;
+        return player.getInventory().contains(guiItemStack) || guiItemStack.equals(player.getMainHandItem())
+                || guiItemStack.equals(player.getOffhandItem());
     }
 
-    //打开二级菜单
-
     @Override
-    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int i) {
+    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int slotIndex) {
         return ItemStack.EMPTY;
+    }
+
+    private int getSlotIndex(String type, int col) {
+        if (type == null || types.isEmpty() || col < 0) {
+            return -1;
+        }
+
+        int index = 0;
+
+        for (Map.Entry<String, INamedType> entry : this.types.entrySet()) {
+            INamedType namedType = entry.getValue();
+            if (namedType == null) {
+                continue;
+            }
+            if (entry.getKey().equals(type)) {
+                if (col >= namedType.slotCount()) {
+                    return -1;
+                }
+                index += col;
+                break;
+            } else {
+                index += namedType.slotCount();
+            }
+        }
+
+        if (index >= this.totalIndex) {
+            return -1;
+        }
+        return index;
+    }
+
+    private ShopSlot getShopSlot(int index) {
+        if (shop == null || types.isEmpty() || index < 0 || index >= totalIndex) {
+            return null;
+        }
+
+        int currentIndex = 0;
+        for (Map.Entry<String, INamedType> entry : types.entrySet()) {
+            String type = entry.getKey();
+            INamedType namedType = entry.getValue();
+            if (namedType == null) {
+                continue;
+            }
+            int slotCount = namedType.slotCount();
+
+            if (index >= currentIndex && index < currentIndex + slotCount) {
+                int col = index - currentIndex;
+                List<ShopSlot> shopSlots = shop.getDefaultShopSlotListByType(type);
+                if (shopSlots != null && col < shopSlots.size()) {
+                    return shopSlots.get(col);
+                } else {
+                    return null;
+                }
+            }
+            currentIndex += slotCount;
+        }
+        return null;
     }
 
     @Override
     public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
-        boolean isCustomContainer = slotIndex >= CUSTOM_CONTAINER_START && slotIndex <= CUSTOM_CONTAINER_END;
+        boolean isCustomContainer = slotIndex >= 0 && slotIndex <= CUSTOM_CONTAINER_END;
         if (isCustomContainer) {
-            this.openSecondMenu(player, this.shopSlots.get(slotIndex), slotIndex);
+            ShopSlot targetShopSlot = getShopSlot(slotIndex);
+            if (targetShopSlot != null) {
+                this.openSecondMenu(player, targetShopSlot, slotIndex);
+            }
             return;
         }
         super.clicked(slotIndex, button, clickType, player);
     }
 
-    //关闭GUI时数据保存
     @Override
     public void removed(@NotNull Player pPlayer) {
         super.removed(pPlayer);
-        if (pPlayer instanceof ServerPlayer) {
+        if (pPlayer instanceof ServerPlayer && guiItemStack != null && itemStackHandler != null) {
             guiItemStack.getOrCreateTag().put("ShopItems", itemStackHandler.serializeNBT());
         }
     }
 
     private Optional<FPSMShop<?>> getShop() {
-        if (guiItemStack.getItem() instanceof ShopEditTool) {
-            ShopEditTool.getShop(guiItemStack);
+        if (guiItemStack == null || !(guiItemStack.getItem() instanceof ShopEditTool)) {
+            return Optional.empty();
         }
-
-        return Optional.empty();
+        return ShopEditTool.getShop(guiItemStack);
     }
 
     public List<ShopSlot> getAllSlots() {
         Optional<FPSMShop<?>> opt = this.getShop();
-        if(opt.isEmpty()) return List.of();
+        if (opt.isEmpty()) {
+            return new ArrayList<>();
+        }
         FPSMShop<?> shop = opt.get();
-        //遍历 0 到 maxRow - 1 的索引，模拟逐行读取数据
-        return IntStream.range(0,
-                        Objects.requireNonNull(shop).getDefaultShopDataMap().values().stream()
-                                .mapToInt(List::size)
-                                .max().orElse(0))  // 获取最大行数
-                //按列顺序遍历行
-                .mapToObj(row -> shop.getDefaultShopDataMap().entrySet().stream()//按列创建流
-                        .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal())) // 确保列顺序
-                        .map(Map.Entry::getValue)
-                        .filter(slotList -> row < slotList.size())  // 过滤掉短列 【遗留问题，是否存在占位符？】
-                        .map(slotList -> slotList.get(row)))  // 取出当前行的元素
-                .flatMap(Function.identity())  // 展开所有元素
-                .toList();  // 转换成 List<ShopSlot>
+
+        List<ShopSlot> allShopSlots = new ArrayList<>();
+        shop.getDefaultShopDataMap().entrySet().stream()
+                .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal()))
+                .forEach(entry -> allShopSlots.addAll(entry.getValue()));
+
+        return allShopSlots;
     }
 
     private void openSecondMenu(Player player, ShopSlot shopSlot, int repoIndex) {
+        if (player == null || shopSlot == null || repoIndex < 0) {
+            return;
+        }
         if (player instanceof ServerPlayer serverPlayer) {
             NetworkHooks.openScreen(serverPlayer,
                     new SimpleMenuProvider(
@@ -158,14 +265,17 @@ public class EditorShopContainer extends AbstractContainerMenu {
                             Component.translatable("gui.fpsm.edit_shop_slot.title")
                     ),
                     buf -> {
-                        // 在服务器端通过 buf 写入数据，传递给客户端
-                        String json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC,shopSlot));
-                        buf.writeUtf(json); // 写入 JSON 数据
+                        String json = "";
+                        try {
+                            json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, shopSlot));
+                        } catch (Exception e) {
+                            json = "";
+                        }
+                        buf.writeUtf(json);
                         buf.writeItem(guiItemStack);
                         buf.writeInt(repoIndex);
                     }
             );
         }
     }
-
 }

@@ -137,6 +137,14 @@ public class FPSMCore {
         return names;
     }
 
+    public List<String> getMapNamesWithType(String type){
+        List<String> names = new ArrayList<>();
+        if (GAMES.containsKey(type)) {
+            GAMES.values().forEach(list -> list.forEach((map) -> names.add(map.getMapName())));
+        }
+        return names;
+    }
+
     public List<String> getMapNames(String type){
         List<String> names = new ArrayList<>();
         List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
