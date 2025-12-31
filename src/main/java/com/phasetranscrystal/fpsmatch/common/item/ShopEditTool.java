@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.item;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.client.screen.EditorShopContainer;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
@@ -26,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ShopEditTool extends EditToolItem {
     public ShopEditTool(Properties pProperties) {
         super(pProperties);
