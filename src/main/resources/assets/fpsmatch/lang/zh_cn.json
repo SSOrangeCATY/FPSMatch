@@ -148,7 +148,7 @@
   "message.fpsm.shop_edit_tool.missing_map_by_type": "[%s] 游戏类型中没有可用的地图！",
   "message.fpsm.shop_edit_tool.missing_shop": "没有可用商店！",
   "message.fpsm.shop_edit_tool.missing_map": "没有可用地图！",
-  "message.fpsm.shop_edit_tool.clear": "已清除商店编辑工具数据",
+  "message.fpsm.tool.clear": "已清除商店编辑工具数据",
   "message.fpsmatch.error.no_spawn_points": "没有队伍出生点来开始游戏",
   "message.fpsmatch.error.not_enough_spawn_points": "没有足够的队伍出生点来开始游戏",
   "gui.fpsm.shop_editor.title": "商店内容编辑器",

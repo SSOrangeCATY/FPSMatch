@@ -160,7 +160,7 @@
   "message.fpsm.shop_edit_tool.switch_mode": "Edit Mode: %s",
   "message.fpsm.shop_edit_tool.switch_map": "Map: %s",
   "message.fpsm.shop_edit_tool.switch_team": "Team: %s",
-  "message.fpsm.shop_edit_tool.clear": "Cleared ShopEditTool Data",
+  "message.fpsm.tool.clear": "Cleared Tool Data",
 
   "message.fpsmatch.error.no_spawn_points": "There is no spawn-points for the game to start",
   "message.fpsmatch.error.not_enough_spawn_points": "There are not enough spawn-points for the game to start",

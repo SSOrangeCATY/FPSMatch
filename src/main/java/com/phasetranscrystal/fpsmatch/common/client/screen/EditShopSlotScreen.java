@@ -138,11 +138,15 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
 
-        if(!menu.isGun() && this.isAmmoFiledAdded){
-            this.removeWidget(this.ammoFiled);
+        if(!menu.isGun()){
+            if(this.isAmmoFiledAdded){
+                this.removeWidget(this.ammoFiled);
+                this.isAmmoFiledAdded = false;
+            }
         }else {
             if (!this.isAmmoFiledAdded && this.ammoFiled != null) {
                 this.addRenderableWidget(this.ammoFiled);
+                this.isAmmoFiledAdded = true;
             }
         }
 

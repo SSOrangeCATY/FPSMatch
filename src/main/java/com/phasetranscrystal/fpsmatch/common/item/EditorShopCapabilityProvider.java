@@ -16,7 +16,6 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
     public static final int COLS = 5;
     private final ItemStack shopEditToolStack;
     private final ItemStackHandler itemStackHandler = new ItemStackHandler(ROWS * COLS) {
-        //填写内容变更时的处理
         @Override
         protected void onContentsChanged(int slot) {
             super.onContentsChanged(slot);
@@ -32,7 +31,7 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
             itemStackHandler.deserializeNBT(tag.getCompound("ShopItems"));
         }
     }
-    //direction 为 方块访问提供面参数，物品默认为null
+
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
         return capability == ForgeCapabilities.ITEM_HANDLER ? lazyOptional.cast() : LazyOptional.empty();

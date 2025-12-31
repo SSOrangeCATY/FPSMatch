@@ -727,6 +727,10 @@ public class MapTeams {
         return flag.get() == 0;
     }
 
+    public boolean isSameTeam(Player p1, Player p2){
+        return getSameTeamPlayerUUIDs(p1).contains(p2.getUUID());
+    }
+
     /**
      * 获取当前轮次的 MVP 玩家数据。
      * <p>

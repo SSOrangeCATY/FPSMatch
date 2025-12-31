@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet.shop;
 
+import com.phasetranscrystal.fpsmatch.common.item.EditToolItem;
 import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
@@ -31,14 +32,16 @@ public class EditToolSelectMapC2SPacket {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
             ItemStack item = player.getMainHandItem();
-            if (!(item.getItem() instanceof ShopEditTool tool)) return;
+            if (!(item.getItem() instanceof EditToolItem tool)) return;
             int clickCount = tool.getIntTag(item,ShopEditTool.DOUBLE_CLICK_COUNT_TAG);
             if(isShift) {
+                tool.setIntTag(item,ShopEditTool.DOUBLE_CLICK_COUNT_TAG,clickCount+1);
                 if(clickCount >= 2){
                     tool.removeTag(item, ShopEditTool.TYPE_TAG);
                     tool.removeTag(item, ShopEditTool.MAP_TAG);
                     tool.removeTag(item, ShopEditTool.TEAM_TAG);
-                    player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.clear").withStyle(ChatFormatting.DARK_AQUA),true);
+                    tool.setIntTag(item,ShopEditTool.DOUBLE_CLICK_COUNT_TAG,0);
+                    player.displayClientMessage(Component.translatable("message.fpsm.tool.clear").withStyle(ChatFormatting.DARK_AQUA),true);
                 }
             }else{
                 tool.switchEditMode(player);
