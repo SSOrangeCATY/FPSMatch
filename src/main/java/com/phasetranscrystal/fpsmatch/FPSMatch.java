@@ -121,7 +121,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMusicPlayS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicStopS2CPacket.class);
         PACKET_REGISTER.registerPacket(SaveSlotDataC2SPacket.class);
-        PACKET_REGISTER.registerPacket(EditToolSelectMapC2SPacket.class);
+        PACKET_REGISTER.registerPacket(EditToolClickC2SPacket.class);
         PACKET_REGISTER.registerPacket(PullGameInfoC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamPlayerStatsS2CPacket.class);

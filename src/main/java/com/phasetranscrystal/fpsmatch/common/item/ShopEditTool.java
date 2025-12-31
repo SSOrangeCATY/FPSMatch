@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.client.screen.EditorShopContainer;
+import com.phasetranscrystal.fpsmatch.common.item.edit.EditToolItem;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -17,7 +18,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
