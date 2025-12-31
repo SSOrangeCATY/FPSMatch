@@ -32,7 +32,7 @@ public abstract class EditToolItem extends Item {
 
     public static final String TYPE_TAG = "SelectedType";
     public static final String MAP_TAG = "SelectedMap";
-    public static final String TEAM_TAG = "SelectedShop";
+    public static final String TEAM_TAG = "SelectedTeam";
     public static final String DOUBLE_CLICK_COUNT_TAG = "DoubleClickCount";
     public static final String DOUBLE_CLICK_LAST_TICK_TAG = "DoubleClickLastTick";
 
