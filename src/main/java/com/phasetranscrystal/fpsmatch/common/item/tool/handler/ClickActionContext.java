@@ -1,6 +1,6 @@
-package com.phasetranscrystal.fpsmatch.common.item.edit.handler;
+package com.phasetranscrystal.fpsmatch.common.item.tool.handler;
 
-import com.phasetranscrystal.fpsmatch.common.item.edit.EditToolItem;
+import com.phasetranscrystal.fpsmatch.common.item.tool.EditToolItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 

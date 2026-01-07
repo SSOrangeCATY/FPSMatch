@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.item.edit.handler;
+package com.phasetranscrystal.fpsmatch.common.item.tool.handler;
 
 public enum ClickAction {
         LEFT_CLICK,

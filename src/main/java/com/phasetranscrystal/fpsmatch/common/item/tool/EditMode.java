@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.common.item.edit;
+package com.phasetranscrystal.fpsmatch.common.item.tool;
 
 public enum EditMode {
         TYPE,

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.item.edit.EditToolItem;
-import com.phasetranscrystal.fpsmatch.common.item.edit.handler.ClickAction;
+import com.phasetranscrystal.fpsmatch.common.item.tool.EditToolItem;
+import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickAction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;

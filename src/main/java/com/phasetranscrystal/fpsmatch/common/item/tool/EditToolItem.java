@@ -1,9 +1,9 @@
-package com.phasetranscrystal.fpsmatch.common.item.edit;
+package com.phasetranscrystal.fpsmatch.common.item.tool;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.item.edit.handler.ClickAction;
-import com.phasetranscrystal.fpsmatch.common.item.edit.handler.ClickActionContext;
-import com.phasetranscrystal.fpsmatch.common.item.edit.handler.EditToolClickHandler;
+import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickAction;
+import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickActionContext;
+import com.phasetranscrystal.fpsmatch.common.item.tool.handler.EditToolClickHandler;
 import com.phasetranscrystal.fpsmatch.common.packet.EditToolClickC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -71,7 +71,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
                 EditMode nextMode = getNextEditMode(currentMode);
                 context.tool().setEditMode(context.stack(), nextMode);
                 context.player().displayClientMessage(
-                        Component.translatable("message.fpsm.shop_edit_tool.switch_mode",
+                        Component.translatable("message.fpsm.edit_tool.switch_mode",
                                 getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
             }
         }
@@ -87,9 +87,9 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
 
     private Component getModeName(EditMode mode) {
         return switch (mode) {
-            case TYPE -> Component.translatable("message.fpsm.shop_edit_tool.mode.type");
-            case MAP -> Component.translatable("message.fpsm.shop_edit_tool.mode.map");
-            case TEAM -> Component.translatable("message.fpsm.shop_edit_tool.mode.team");
+            case TYPE -> Component.translatable("message.fpsm.edit_tool.mode.type");
+            case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
+            case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
         };
     }
 
@@ -98,7 +98,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
         context.tool().removeTag(context.stack(), MAP_TAG);
         context.tool().removeTag(context.stack(), TEAM_TAG);
         context.player().displayClientMessage(
-                Component.translatable("message.fpsm.tool.clear").withStyle(ChatFormatting.DARK_AQUA), true);
+                Component.translatable("message.fpsm.edit_tool.clear").withStyle(ChatFormatting.DARK_AQUA), true);
     }
 
     protected void handleRightClick(ClickActionContext context) {
@@ -143,7 +143,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
         }
         try {
             return EditMode.valueOf(tag.getString(EDIT_MODE_TAG));
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             setEditMode(stack, EditMode.TYPE);
             return EditMode.TYPE;
         }
@@ -219,7 +219,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
             case MAP -> {
                 String currentType = editTool.getTag(stack, TYPE_TAG);
                 if (currentType.isEmpty()) {
-                    player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.missing_type")
+                    player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
                             .withStyle(ChatFormatting.RED), true);
                     return;
                 }
@@ -229,9 +229,9 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
                 String type = editTool.getTag(stack, TYPE_TAG);
                 String map = editTool.getTag(stack, MAP_TAG);
                 if (type.isEmpty() || map.isEmpty()) {
-                    String msg = type.isEmpty() ? "message.fpsm.shop_edit_tool.missing_type"
-                            : "message.fpsm.shop_edit_tool.missing_map";
-                    player.displayClientMessage(Component.translatable(msg)
+                    MutableComponent msg = type.isEmpty() ? Component.translatable("message.fpsm.edit_tool.missing_type")
+                            : Component.translatable("message.fpsm.edit_tool.missing_map");
+                    player.displayClientMessage(msg
                             .withStyle(ChatFormatting.RED), true);
                     return;
                 }
@@ -243,7 +243,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
     public void modifyType(EditToolItem editTool, ItemStack stack, ServerPlayer player) {
         List<String> typeList = getAvailableMapTypes();
         if (typeList.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.missing_type")
+            player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
                     .withStyle(ChatFormatting.RED), true);
             return;
         }
@@ -254,14 +254,14 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
         String newType = typeList.get(currentIndex);
 
         editTool.setTag(stack, TYPE_TAG, newType);
-        player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.switch_type", newType)
+        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_type", newType)
                 .withStyle(ChatFormatting.LIGHT_PURPLE), true);
 
         List<String> newMapList = getMapsByType(newType);
         String currentMap = editTool.getTag(stack, MAP_TAG);
         if (!newMapList.contains(currentMap) && !newMapList.isEmpty()) {
             editTool.setTag(stack, MAP_TAG, newMapList.get(0));
-            player.sendSystemMessage(Component.translatable("message.fpsm.shop_edit_tool.map_reset_after_type_switch",
+            player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.map_reset_after_type_switch",
                     newMapList.get(0)).withStyle(ChatFormatting.YELLOW));
             editTool.removeTag(stack, TEAM_TAG);
         } else if (newMapList.isEmpty()) {
@@ -273,7 +273,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
     public void modifyMap(EditToolItem editTool, ItemStack stack, ServerPlayer player, String currentType) {
         List<String> mapList = getMapsByType(currentType);
         if (mapList.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.missing_map_by_type", currentType)
+            player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_map_by_type", currentType)
                     .withStyle(ChatFormatting.RED), true);
             return;
         }
@@ -284,7 +284,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
         String newMap = mapList.get(currentIndex);
 
         editTool.setTag(stack, MAP_TAG, newMap);
-        player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.switch_map", newMap)
+        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_map", newMap)
                 .withStyle(ChatFormatting.AQUA), true);
 
         editTool.removeTag(stack, TEAM_TAG);
@@ -293,7 +293,7 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
     public void modifyTeam(EditToolItem editTool, ItemStack stack, ServerPlayer player, String type, String map) {
         List<String> teamList = getTeamsByMap(type, map);
         if (teamList.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.missing_shop")
+            player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_team")
                     .withStyle(ChatFormatting.RED), true);
             return;
         }
@@ -304,20 +304,20 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
         String newTeam = teamList.get(currentIndex);
 
         editTool.setTag(stack, TEAM_TAG, newTeam);
-        player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.switch_team", newTeam)
+        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_team", newTeam)
                 .withStyle(ChatFormatting.GREEN), true);
     }
 
     public String getMissingTagMessage(ItemStack stack) {
         EditToolItem editTool = (EditToolItem) stack.getItem();
         if (editTool.getTag(stack, TYPE_TAG).isEmpty()) {
-            return Component.translatable("message.fpsm.shop_edit_tool.missing_type").getString();
+            return Component.translatable("message.fpsm.edit_tool.missing_type").getString();
         }
         if (editTool.getTag(stack, MAP_TAG).isEmpty()) {
-            return Component.translatable("message.fpsm.shop_edit_tool.missing_map").getString();
+            return Component.translatable("message.fpsm.edit_tool.missing_map").getString();
         }
         if (editTool.getTag(stack, TEAM_TAG).isEmpty()) {
-            return Component.translatable("message.fpsm.shop_edit_tool.missing_shop").getString();
+            return Component.translatable("message.fpsm.edit_tool.missing_team").getString();
         }
         return "";
     }
@@ -347,11 +347,11 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
 
         editTool.setEditMode(stack, newMode);
         Component modeName = switch (newMode) {
-            case TYPE -> Component.translatable("message.fpsm.shop_edit_tool.mode.type");
-            case MAP -> Component.translatable("message.fpsm.shop_edit_tool.mode.map");
-            case TEAM -> Component.translatable("message.fpsm.shop_edit_tool.mode.team");
+            case TYPE -> Component.translatable("message.fpsm.edit_tool.mode.type");
+            case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
+            case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
         };
-        player.displayClientMessage(Component.translatable("message.fpsm.shop_edit_tool.switch_mode", modeName)
+        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_mode", modeName)
                 .withStyle(ChatFormatting.DARK_AQUA), true);
     }
 
@@ -371,9 +371,9 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
 
         EditMode currentMode = editTool.getCurrentEditMode(pStack);
         MutableComponent modeName = switch (currentMode) {
-            case TYPE -> Component.translatable("message.fpsm.shop_edit_tool.mode.type");
-            case MAP -> Component.translatable("message.fpsm.shop_edit_tool.mode.map");
-            case TEAM -> Component.translatable("message.fpsm.shop_edit_tool.mode.team");
+            case TYPE -> Component.translatable("message.fpsm.edit_tool.mode.type");
+            case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
+            case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
         };
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.selected.mode")
                 .append(": ")
