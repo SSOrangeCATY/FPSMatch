@@ -49,14 +49,14 @@ public abstract class EditToolItem extends FPSMToolItem {
         if(context.isDoubleClicked()){
             if (context.isShiftKeyDown()) {
                 clearAllSelections(context);
-            } else {
-                EditMode currentMode = this.getCurrentEditMode(context.stack());
-                EditMode nextMode = getNextEditMode(currentMode);
-                this.setEditMode(context.stack(), nextMode);
-                context.player().displayClientMessage(
-                        Component.translatable("message.fpsm.edit_tool.switch_mode",
-                                getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
             }
+        }else{
+            EditMode currentMode = this.getCurrentEditMode(context.stack());
+            EditMode nextMode = getNextEditMode(currentMode);
+            this.setEditMode(context.stack(), nextMode);
+            context.player().displayClientMessage(
+                    Component.translatable("message.fpsm.edit_tool.switch_mode",
+                            getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
         }
     }
 
@@ -66,9 +66,12 @@ public abstract class EditToolItem extends FPSMToolItem {
             EditMode currentMode = this.getCurrentEditMode(context.stack());
             this.modifyCurrentModeContent(context.stack(),
                     context.player(), currentMode);
+        }else{
+            this.doEdit(context);
         }
     }
 
+    public abstract void doEdit(ClickActionContext context);
 
     private EditMode getNextEditMode(EditMode currentMode) {
         return switch (currentMode) {

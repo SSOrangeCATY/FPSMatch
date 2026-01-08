@@ -1,16 +1,17 @@
 package com.phasetranscrystal.fpsmatch.compat;
 
+import club.pisquad.minecraft.csgrenades.api.CSGrenadesAPI;
 import club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
-import club.pisquad.minecraft.csgrenades.registery.ModDamageType;
-import club.pisquad.minecraft.csgrenades.registery.ModItems;
+import club.pisquad.minecraft.csgrenades.registry.ModDamageType;
+import club.pisquad.minecraft.csgrenades.registry.ModItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
-
 import java.util.Map;
+
 
 public class CounterStrikeGrenadesCompat {
 
@@ -47,4 +48,7 @@ public class CounterStrikeGrenadesCompat {
         return main instanceof CounterStrikeGrenadeItem || off instanceof CounterStrikeGrenadeItem;
     }
 
+    public static boolean isPlayerFlashed(Player player){
+        return CSGrenadesAPI.isPlayerFlashed(player);
+    }
 }

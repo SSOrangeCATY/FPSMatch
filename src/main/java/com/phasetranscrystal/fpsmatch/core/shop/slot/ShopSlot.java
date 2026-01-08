@@ -257,7 +257,7 @@ public class ShopSlot{
      * @return 是否可以购买
      */
     public boolean canBuy(int money) {
-        return money >= cost && boughtCount < maxBuyCount;
+        return money == -1 || (money >= cost && boughtCount < maxBuyCount);
     }
 
     /**
@@ -342,7 +342,7 @@ public class ShopSlot{
 
         FPSMUtil.addItemToPlayerInventory(player, itemStack);
 
-        return money - cost;
+        return money == -1 ? money : money - cost;
     }
 
     /**

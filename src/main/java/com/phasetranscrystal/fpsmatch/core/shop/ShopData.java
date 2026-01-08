@@ -152,6 +152,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 减少的金钱数量
      */
     public void reduceMoney(int money) {
+        if(unlimited()) return;
         this.money = Math.max(0, this.money -= Math.max(0, money));
     }
 
@@ -161,6 +162,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 增加的金钱数量
      */
     public void addMoney(int money) {
+        if(unlimited()) return;
         this.money = Math.min(getMaxMoney(), this.money += Math.max(0, money));
     }
 
@@ -181,6 +183,10 @@ public class ShopData<T extends Enum<T> & INamedType> {
      */
     public int getMoney() {
         return this.money;
+    }
+
+    public boolean unlimited(){
+        return this.money == -1;
     }
 
     /**
@@ -216,14 +222,9 @@ public class ShopData<T extends Enum<T> & INamedType> {
      */
     protected void handleBuy(ServerPlayer player, ShopSlot currentSlot) {
         boolean check = this.broadcastCostCheckEvent(player, currentSlot);
-        if (check || this.money >= currentSlot.getCost()) {
+        if (check || currentSlot.canBuy(this.money)) {
             this.broadcastGroupChangeEvent(player, currentSlot, 1);
-
-            if (!currentSlot.canBuy(this.money)) {
-                return;
-            }
-
-            this.money = currentSlot.buy(player, this.money);
+            this.setMoney(currentSlot.buy(player, this.money));
         }
     }
 
@@ -319,7 +320,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
         groupSlot.forEach(slot -> {
             ShopSlotChangeEvent event = new ShopSlotChangeEvent(slot, player, this.money, flag);
             slot.onGroupSlotChanged(event);
-            this.money = event.getMoney();
+            this.setMoney(event.getMoney());
         });
     }
 

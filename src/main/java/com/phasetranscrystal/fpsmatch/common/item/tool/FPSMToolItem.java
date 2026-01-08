@@ -13,6 +13,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -53,6 +55,13 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
             case LEFT_CLICK -> onLeftClick(context);
             case RIGHT_CLICK -> onRightClick(context);
         }
+    }
+
+    @Override
+    public final @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand interactionHand) {
+        if(level.isClientSide()) return InteractionResultHolder.pass(player.getItemInHand(interactionHand));
+        this.handleClick(player.getItemInHand(interactionHand),(ServerPlayer) player,false,player.isShiftKeyDown(),ClickAction.RIGHT_CLICK);
+        return InteractionResultHolder.success(player.getItemInHand(interactionHand));
     }
 
     protected abstract void onLeftClick(ClickActionContext context);

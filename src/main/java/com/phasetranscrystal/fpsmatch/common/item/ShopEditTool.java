@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.item;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.client.screen.EditorShopContainer;
 import com.phasetranscrystal.fpsmatch.common.item.tool.EditToolItem;
+import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickActionContext;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
@@ -28,6 +29,29 @@ import java.util.Optional;
 public class ShopEditTool extends EditToolItem {
     public ShopEditTool(Properties pProperties) {
         super(pProperties);
+    }
+
+    @Override
+    public void doEdit(ClickActionContext context) {
+        ServerPlayer serverPlayer = context.player();
+        ItemStack itemStack = context.stack();
+
+        if (!serverPlayer.isShiftKeyDown()) {
+            String missingMsg = getMissingTagMessage(itemStack);
+            if (!missingMsg.isEmpty()) {
+                serverPlayer.sendSystemMessage(Component.literal(missingMsg).withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // 打开商店编辑器界面
+            NetworkHooks.openScreen(serverPlayer,
+                    new SimpleMenuProvider(
+                            (windowId, inv, p) -> new EditorShopContainer(windowId, inv, itemStack),
+                            Component.translatable("gui.fpsm.shop_editor.title")
+                    ),
+                    buf -> buf.writeItem(itemStack)
+            );
+        }
     }
 
     /**
@@ -65,37 +89,6 @@ public class ShopEditTool extends EditToolItem {
                 (team) -> team.getCapabilityMap().get(ShopCapability.class)
                         .map(ShopCapability::isInitialized)
                         .orElse(false));
-    }
-
-    @Override
-    public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, @NotNull InteractionHand pUsedHand) {
-        ItemStack itemInHand = pPlayer.getItemInHand(pUsedHand);
-
-        if (pLevel.isClientSide()) {
-            return InteractionResultHolder.success(itemInHand);
-        }
-
-        ServerPlayer serverPlayer = (ServerPlayer) pPlayer;
-        ShopEditTool editTool = (ShopEditTool) itemInHand.getItem();
-
-        if (!serverPlayer.isShiftKeyDown()) {
-            String missingMsg = getMissingTagMessage(itemInHand);
-            if (!missingMsg.isEmpty()) {
-                serverPlayer.sendSystemMessage(Component.literal(missingMsg).withStyle(ChatFormatting.RED));
-                return InteractionResultHolder.success(itemInHand);
-            }
-
-            // 打开商店编辑器界面
-            NetworkHooks.openScreen(serverPlayer,
-                    new SimpleMenuProvider(
-                            (windowId, inv, p) -> new EditorShopContainer(windowId, inv, itemInHand),
-                            Component.translatable("gui.fpsm.shop_editor.title")
-                    ),
-                    buf -> buf.writeItem(itemInHand)
-            );
-        }
-
-        return InteractionResultHolder.success(itemInHand);
     }
 
     @Override
