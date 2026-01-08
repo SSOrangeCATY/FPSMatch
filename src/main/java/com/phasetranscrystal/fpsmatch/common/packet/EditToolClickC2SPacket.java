@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
 import com.phasetranscrystal.fpsmatch.common.item.tool.EditToolItem;
+import com.phasetranscrystal.fpsmatch.common.item.tool.FPSMToolItem;
 import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickAction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,7 +39,7 @@ public class EditToolClickC2SPacket {
             if (player == null) return;
             ItemStack item = player.getMainHandItem();
             
-            if (!(item.getItem() instanceof EditToolItem tool)) return;
+            if (!(item.getItem() instanceof FPSMToolItem tool)) return;
 
 
             int clickCount = tool.getIntTag(item, EditToolItem.DOUBLE_CLICK_COUNT_TAG) + 1;
@@ -50,7 +51,7 @@ public class EditToolClickC2SPacket {
                 tool.setIntTag(item, EditToolItem.DOUBLE_CLICK_COUNT_TAG, clickCount);
             }
 
-            tool.handleClick(tool,item,player,isDoubleClicked, isShiftKeyDown, action);
+            tool.handleClick(item,player,isDoubleClicked, isShiftKeyDown, action);
         });
         ctx.get().setPacketHandled(true);
     }

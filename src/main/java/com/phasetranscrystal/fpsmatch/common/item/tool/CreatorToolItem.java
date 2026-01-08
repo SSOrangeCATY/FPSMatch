@@ -1,5 +1,10 @@
 package com.phasetranscrystal.fpsmatch.common.item.tool;
 
-public class CreatorToolItem {
+public abstract class CreatorToolItem extends FPSMToolItem{
+
+    public CreatorToolItem(Properties pProperties) {
+        super(pProperties);
+    }
+
 
 }

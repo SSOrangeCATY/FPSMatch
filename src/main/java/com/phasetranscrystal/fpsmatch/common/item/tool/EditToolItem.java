@@ -15,7 +15,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -31,7 +30,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public abstract class EditToolItem extends Item implements EditToolClickHandler {
+public abstract class EditToolItem extends FPSMToolItem {
     public static final String TYPE_TAG = "SelectedType";
     public static final String MAP_TAG = "SelectedMap";
     public static final String TEAM_TAG = "SelectedTeam";
@@ -46,36 +45,30 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
     }
 
     @Override
-    public final void handleClick(EditToolItem tool, ItemStack stack, ServerPlayer player,
-                            boolean isDoubleClicked, boolean isShiftKeyDown, ClickAction action) {
-
-        ClickActionContext context = new ClickActionContext(tool, stack, player,
-                isDoubleClicked, isShiftKeyDown, action);
-
-        switch (action) {
-            case LEFT_CLICK:
-                handleLeftClick(context);
-                break;
-            case RIGHT_CLICK:
-                handleRightClick(context);
-                break;
-        }
-    }
-
-    protected void handleLeftClick(ClickActionContext context) {
+    protected void onLeftClick(ClickActionContext context) {
         if(context.isDoubleClicked()){
             if (context.isShiftKeyDown()) {
                 clearAllSelections(context);
             } else {
-                EditMode currentMode = context.tool().getCurrentEditMode(context.stack());
+                EditMode currentMode = this.getCurrentEditMode(context.stack());
                 EditMode nextMode = getNextEditMode(currentMode);
-                context.tool().setEditMode(context.stack(), nextMode);
+                this.setEditMode(context.stack(), nextMode);
                 context.player().displayClientMessage(
                         Component.translatable("message.fpsm.edit_tool.switch_mode",
                                 getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
             }
         }
     }
+
+    @Override
+    protected void onRightClick(ClickActionContext context) {
+        if(context.isShiftKeyDown()){
+            EditMode currentMode = this.getCurrentEditMode(context.stack());
+            this.modifyCurrentModeContent(context.stack(),
+                    context.player(), currentMode);
+        }
+    }
+
 
     private EditMode getNextEditMode(EditMode currentMode) {
         return switch (currentMode) {
@@ -94,46 +87,13 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
     }
 
     protected void clearAllSelections(ClickActionContext context) {
-        context.tool().removeTag(context.stack(), TYPE_TAG);
-        context.tool().removeTag(context.stack(), MAP_TAG);
-        context.tool().removeTag(context.stack(), TEAM_TAG);
+        this.removeTag(context.stack(), TYPE_TAG);
+        this.removeTag(context.stack(), MAP_TAG);
+        this.removeTag(context.stack(), TEAM_TAG);
         context.player().displayClientMessage(
                 Component.translatable("message.fpsm.edit_tool.clear").withStyle(ChatFormatting.DARK_AQUA), true);
     }
 
-    protected void handleRightClick(ClickActionContext context) {
-        if(context.isShiftKeyDown()){
-            EditMode currentMode = context.tool().getCurrentEditMode(context.stack());
-            context.tool().modifyCurrentModeContent(context.tool(), context.stack(),
-                    context.player(), currentMode);
-        }
-    }
-
-
-    public void setTag(ItemStack stack, String tagName, String value) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putString(tagName, value);
-    }
-
-    public String getTag(ItemStack stack, String tagName) {
-        CompoundTag tag = stack.getOrCreateTag();
-        return tag.contains(tagName) ? tag.getString(tagName) : "";
-    }
-
-    public int getIntTag(ItemStack stack, String tagName) {
-        CompoundTag tag = stack.getOrCreateTag();
-        return tag.contains(tagName) ? tag.getInt(tagName) : 0;
-    }
-
-    public void setIntTag(ItemStack stack, String tagName, int value) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt(tagName, value);
-    }
-
-    public void removeTag(ItemStack stack, String tagName){
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.remove(tagName);
-    }
 
     public EditMode getCurrentEditMode(ItemStack stack) {
         CompoundTag tag = stack.getOrCreateTag();
@@ -151,10 +111,6 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
 
     public void setEditMode(ItemStack stack, EditMode mode) {
         setTag(stack, EDIT_MODE_TAG, mode.name());
-    }
-
-    public List<String> getAvailableMapTypes() {
-        return FPSMCore.getInstance().getGameTypes();
     }
 
     public List<String> getMapsByType(String mapType) {
@@ -181,53 +137,27 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
     public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity,
                               int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if(level.isClientSide) return;
 
-        if (!(stack.getItem() instanceof EditToolItem editTool)) {
-            return;
-        }
-
-        // 双击检测逻辑
-        if(!stack.getOrCreateTag().contains(DOUBLE_CLICK_COUNT_TAG)) {
-            editTool.setIntTag(stack, DOUBLE_CLICK_COUNT_TAG, 0);
-        }
-        if(!stack.getOrCreateTag().contains(DOUBLE_CLICK_LAST_TICK_TAG)) {
-            editTool.setIntTag(stack, DOUBLE_CLICK_LAST_TICK_TAG, 0);
-        }
-
-        if(!stack.getOrCreateTag().contains(EDIT_MODE_TAG)) {
-            editTool.setEditMode(stack, EditMode.TYPE);
-        }
-
-        int lastClickTick = editTool.getIntTag(stack, DOUBLE_CLICK_LAST_TICK_TAG);
-        int clickCount = editTool.getIntTag(stack, DOUBLE_CLICK_COUNT_TAG);
-
-        if(clickCount > 0){
-            lastClickTick++;
-            setIntTag(stack, DOUBLE_CLICK_LAST_TICK_TAG, lastClickTick);
-
-            if(lastClickTick > DOUBLE_CLICK_TICK_LIMIT) {
-                editTool.setIntTag(stack, DOUBLE_CLICK_COUNT_TAG, 0);
-                editTool.setIntTag(stack, DOUBLE_CLICK_LAST_TICK_TAG, 0);
-            }
+        if (!stack.getOrCreateTag().contains(EDIT_MODE_TAG)) {
+            this.setEditMode(stack, EditMode.TYPE);
         }
     }
 
-    public void modifyCurrentModeContent(EditToolItem editTool, ItemStack stack, ServerPlayer player, EditMode currentMode) {
+    public void modifyCurrentModeContent(ItemStack stack, ServerPlayer player, EditMode currentMode) {
         switch (currentMode) {
-            case TYPE -> modifyType(editTool, stack, player);
+            case TYPE -> modifyType(stack, player);
             case MAP -> {
-                String currentType = editTool.getTag(stack, TYPE_TAG);
+                String currentType = this.getTag(stack, TYPE_TAG);
                 if (currentType.isEmpty()) {
                     player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
                             .withStyle(ChatFormatting.RED), true);
                     return;
                 }
-                modifyMap(editTool, stack, player, currentType);
+                modifyMap(stack, player, currentType);
             }
             case TEAM -> {
-                String type = editTool.getTag(stack, TYPE_TAG);
-                String map = editTool.getTag(stack, MAP_TAG);
+                String type = this.getTag(stack, TYPE_TAG);
+                String map = this.getTag(stack, MAP_TAG);
                 if (type.isEmpty() || map.isEmpty()) {
                     MutableComponent msg = type.isEmpty() ? Component.translatable("message.fpsm.edit_tool.missing_type")
                             : Component.translatable("message.fpsm.edit_tool.missing_map");
@@ -235,12 +165,12 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
                             .withStyle(ChatFormatting.RED), true);
                     return;
                 }
-                modifyTeam(editTool, stack, player, type, map);
+                modifyTeam(stack, player, type, map);
             }
         }
     }
 
-    public void modifyType(EditToolItem editTool, ItemStack stack, ServerPlayer player) {
+    public void modifyType(ItemStack stack, ServerPlayer player) {
         List<String> typeList = getAvailableMapTypes();
         if (typeList.isEmpty()) {
             player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
@@ -248,29 +178,29 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
             return;
         }
 
-        String currentType = editTool.getTag(stack, TYPE_TAG);
+        String currentType = this.getTag(stack, TYPE_TAG);
         int currentIndex = typeList.indexOf(currentType);
         currentIndex = (currentIndex + 1) % typeList.size();
         String newType = typeList.get(currentIndex);
 
-        editTool.setTag(stack, TYPE_TAG, newType);
+        this.setTag(stack, TYPE_TAG, newType);
         player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_type", newType)
                 .withStyle(ChatFormatting.LIGHT_PURPLE), true);
 
         List<String> newMapList = getMapsByType(newType);
-        String currentMap = editTool.getTag(stack, MAP_TAG);
+        String currentMap = this.getTag(stack, MAP_TAG);
         if (!newMapList.contains(currentMap) && !newMapList.isEmpty()) {
-            editTool.setTag(stack, MAP_TAG, newMapList.get(0));
+            this.setTag(stack, MAP_TAG, newMapList.get(0));
             player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.map_reset_after_type_switch",
                     newMapList.get(0)).withStyle(ChatFormatting.YELLOW));
-            editTool.removeTag(stack, TEAM_TAG);
+            this.removeTag(stack, TEAM_TAG);
         } else if (newMapList.isEmpty()) {
-            editTool.removeTag(stack, MAP_TAG);
-            editTool.removeTag(stack, TEAM_TAG);
+            this.removeTag(stack, MAP_TAG);
+            this.removeTag(stack, TEAM_TAG);
         }
     }
 
-    public void modifyMap(EditToolItem editTool, ItemStack stack, ServerPlayer player, String currentType) {
+    public void modifyMap(ItemStack stack, ServerPlayer player, String currentType) {
         List<String> mapList = getMapsByType(currentType);
         if (mapList.isEmpty()) {
             player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_map_by_type", currentType)
@@ -278,19 +208,19 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
             return;
         }
 
-        String currentMap = editTool.getTag(stack, MAP_TAG);
+        String currentMap = this.getTag(stack, MAP_TAG);
         int currentIndex = mapList.indexOf(currentMap);
         currentIndex = (currentIndex + 1) % mapList.size();
         String newMap = mapList.get(currentIndex);
 
-        editTool.setTag(stack, MAP_TAG, newMap);
+        this.setTag(stack, MAP_TAG, newMap);
         player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_map", newMap)
                 .withStyle(ChatFormatting.AQUA), true);
 
-        editTool.removeTag(stack, TEAM_TAG);
+        this.removeTag(stack, TEAM_TAG);
     }
 
-    public void modifyTeam(EditToolItem editTool, ItemStack stack, ServerPlayer player, String type, String map) {
+    public void modifyTeam(ItemStack stack, ServerPlayer player, String type, String map) {
         List<String> teamList = getTeamsByMap(type, map);
         if (teamList.isEmpty()) {
             player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_team")
@@ -298,12 +228,12 @@ public abstract class EditToolItem extends Item implements EditToolClickHandler 
             return;
         }
 
-        String currentTeam = editTool.getTag(stack, TEAM_TAG);
+        String currentTeam = this.getTag(stack, TEAM_TAG);
         int currentIndex = teamList.indexOf(currentTeam);
         currentIndex = (currentIndex == -1 || currentIndex + 1 >= teamList.size()) ? 0 : currentIndex + 1;
         String newTeam = teamList.get(currentIndex);
 
-        editTool.setTag(stack, TEAM_TAG, newTeam);
+        this.setTag(stack, TEAM_TAG, newTeam);
         player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_team", newTeam)
                 .withStyle(ChatFormatting.GREEN), true);
     }

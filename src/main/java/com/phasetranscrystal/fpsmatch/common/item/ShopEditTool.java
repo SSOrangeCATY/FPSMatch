@@ -2,9 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.client.screen.EditorShopContainer;
-import com.phasetranscrystal.fpsmatch.common.item.tool.EditMode;
 import com.phasetranscrystal.fpsmatch.common.item.tool.EditToolItem;
-import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickActionContext;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
@@ -70,51 +68,6 @@ public class ShopEditTool extends EditToolItem {
     }
 
     @Override
-    public void handleLeftClick(ClickActionContext context) {
-        if (context.isDoubleClicked()) {
-            if (context.isShiftKeyDown()) {
-                clearAllSelections(context);
-            } else {
-                EditMode currentMode = context.tool().getCurrentEditMode(context.stack());
-                EditMode nextMode = getNextEditMode(currentMode);
-                context.tool().setEditMode(context.stack(), nextMode);
-                context.player().displayClientMessage(
-                        Component.translatable("message.fpsm.edit_tool.switch_mode",
-                                getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
-            }
-        }
-    }
-
-    @Override
-    public void handleRightClick(ClickActionContext context) {
-        if (context.isShiftKeyDown()) {
-            EditMode currentMode = context.tool().getCurrentEditMode(context.stack());
-            modifyCurrentModeContent(context.tool(), context.stack(), context.player(), currentMode);
-        }
-    }
-
-    private EditMode getNextEditMode(EditMode currentMode) {
-        return switch (currentMode) {
-            case TYPE -> EditMode.MAP;
-            case MAP -> EditMode.TEAM;
-            case TEAM -> EditMode.TYPE;
-        };
-    }
-
-    private Component getModeName(EditMode mode) {
-        return switch (mode) {
-            case TYPE -> Component.translatable("message.fpsm.edit_tool.mode.type");
-            case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
-            case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
-        };
-    }
-
-    @Override
-    public void modifyCurrentModeContent(EditToolItem editTool, ItemStack stack, ServerPlayer player, EditMode currentMode) {
-        super.modifyCurrentModeContent(editTool, stack, player, currentMode);
-    }
-
-    @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, @NotNull InteractionHand pUsedHand) {
         ItemStack itemInHand = pPlayer.getItemInHand(pUsedHand);
 
@@ -161,22 +114,5 @@ public class ShopEditTool extends EditToolItem {
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.clear").withStyle(ChatFormatting.YELLOW));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.switch_map").withStyle(ChatFormatting.YELLOW));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.open_editor").withStyle(ChatFormatting.YELLOW));
-    }
-
-    /**
-     * 获取缺失标签的错误信息
-     */
-    public String getMissingTagMessage(ItemStack stack) {
-        EditToolItem editTool = (EditToolItem) stack.getItem();
-        if (editTool.getTag(stack, TYPE_TAG).isEmpty()) {
-            return Component.translatable("message.fpsm.edit_tool.missing_type").getString();
-        }
-        if (editTool.getTag(stack, MAP_TAG).isEmpty()) {
-            return Component.translatable("message.fpsm.edit_tool.missing_map").getString();
-        }
-        if (editTool.getTag(stack, TEAM_TAG).isEmpty()) {
-            return Component.translatable("message.fpsm.edit_tool.missing_team").getString();
-        }
-        return "";
     }
 }
