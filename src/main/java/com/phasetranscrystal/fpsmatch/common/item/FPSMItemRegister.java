@@ -35,6 +35,8 @@ public class FPSMItemRegister {
     public static final RegistryObject<Item> BULLETPROOF_ARMOR = ITEMS.register("bulletproof_armor", () -> new BulletproofArmor(new Item.Properties().stacksTo(1),false));
     public static final RegistryObject<Item> BULLETPROOF_WITH_HELMET = ITEMS.register("bulletproof_with_helmet", () -> new BulletproofArmor(new Item.Properties().stacksTo(1),true));
 
+    public static final RegistryObject<MapCreatorTool> MAP_CREATOR_TOOL = ITEMS.register("map_creator_tool", () -> new MapCreatorTool(new Item.Properties()));
+
     static {
         TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");
         FPSM_TAB = TABS.register("other", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.tab.fpsm"))
