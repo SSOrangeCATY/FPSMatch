@@ -10,9 +10,12 @@ import java.util.List;
 import java.util.UUID;
 
 public class TeamSwitchRestrictionCapability extends TeamCapability {
-    private final BaseTeam team;
 
     private final List<UUID> unableToSwitchPlayers = new ArrayList<>();
+
+    public TeamSwitchRestrictionCapability(BaseTeam team) {
+        super(team);
+    }
 
     @Override
     public void tick() {
@@ -22,10 +25,6 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
                 removeUnableToSwitchPlayer(playerId);
             });
         }
-    }
-
-    private TeamSwitchRestrictionCapability(BaseTeam team) {
-        this.team = team;
     }
 
     public static void register() {
@@ -57,10 +56,5 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
     @Override
     public void destroy() {
         clearUnableToSwitchPlayers();
-    }
-
-    @Override
-    public BaseTeam getHolder(){
-        return team;
     }
 }

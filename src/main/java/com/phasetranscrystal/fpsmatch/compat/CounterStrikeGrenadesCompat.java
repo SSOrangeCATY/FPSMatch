@@ -37,7 +37,9 @@ public class CounterStrikeGrenadesCompat {
             return new ItemStack(items.getMOLOTOV_ITEM().get());
         }else if(damageSource.is(types.getSMOKEGRENADE_HIT())){
             return new ItemStack(items.getSMOKE_GRENADE_ITEM().get());
-        }else {
+        }else if(damageSource.is(types.getDECOY_GRENADE_HIT())){
+            return new ItemStack(items.getDECOY_GRENADE_ITEM().get());
+        }else{
             return ItemStack.EMPTY;
         }
     }

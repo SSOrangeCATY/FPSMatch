@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.event;
+package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.world.entity.player.Player;

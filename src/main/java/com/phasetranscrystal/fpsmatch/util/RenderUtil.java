@@ -21,6 +21,7 @@ import java.util.*;
 import static com.phasetranscrystal.fpsmatch.common.client.FPSMClient.PLAYER_COMPARATOR;
 
 public class RenderUtil {
+    public static int WHITE = 0xFFFFFFFF;
 
     public static Vector3f color(int color) {
         float r = ((color >> 16) & 0xFF) / 255.0f;

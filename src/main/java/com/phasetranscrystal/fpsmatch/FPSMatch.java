@@ -14,10 +14,7 @@ import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.*;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
@@ -132,6 +129,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMInventorySelectedS2CPacket.class);
+        PACKET_REGISTER.registerPacket(TeamChatMessageC2SPacket.class);
     }
 
     public static <M> void sendTo(Player player,M message){

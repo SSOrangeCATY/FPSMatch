@@ -15,10 +15,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
@@ -38,12 +35,10 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
         });
     }
 
-    private final BaseMap map;
-
     private SpawnPointData pos;
 
     private GameEndTeleportCapability(BaseMap map) {
-        this.map = map;
+        super(map);
     }
 
     public void setPoint(SpawnPointData data) {
@@ -52,11 +47,6 @@ public class GameEndTeleportCapability extends MapCapability implements FPSMCapa
 
     public SpawnPointData getPoint() {
         return pos;
-    }
-
-    @Override
-    public BaseMap getHolder() {
-        return map;
     }
 
     @Override

@@ -14,16 +14,21 @@ import java.util.function.Supplier;
 
 public record TeamCapabilitiesS2CPacket(
     String teamName,
+    String capName,
     FriendlyByteBuf capabilityData
 ) {
 
     public static <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> TeamCapabilitiesS2CPacket of(ServerTeam team, Class<T> clazz) {
         FriendlyByteBuf dataBuf = new FriendlyByteBuf(Unpooled.buffer());
-        dataBuf.writeUtf(clazz.getSimpleName());
         team.getCapabilityMap().serializeCapability(clazz,dataBuf);
+
+        if (dataBuf.writerIndex() > 1048576) {
+            throw new IllegalArgumentException("Packet may not be larger than 1048576 bytes");
+        }
 
         return new TeamCapabilitiesS2CPacket(
                 team.name,
+                clazz.getSimpleName(),
                 dataBuf
         );
     }
@@ -39,28 +44,26 @@ public record TeamCapabilitiesS2CPacket(
 
     public static void encode(TeamCapabilitiesS2CPacket packet, FriendlyByteBuf packetBuffer) {
         packetBuffer.writeUtf(packet.teamName);
-
-        packetBuffer.writeInt(packet.capabilityData.readableBytes());
-        packetBuffer.writeBytes(packet.capabilityData);
+        packetBuffer.writeUtf(packet.capName);
+        packetBuffer.writeBytes(packet.capabilityData.slice());
     }
 
     public static TeamCapabilitiesS2CPacket decode(FriendlyByteBuf packetBuffer) {
         String teamName = packetBuffer.readUtf();
-
-        int dataLength = packetBuffer.readInt();
-        FriendlyByteBuf capabilityData = new FriendlyByteBuf(packetBuffer.readBytes(dataLength));
-        
-        return new TeamCapabilitiesS2CPacket(
-            teamName, 
-            capabilityData
-        );
+        String capName = packetBuffer.readUtf();
+        int i = packetBuffer.readableBytes();
+        if (i >= 0 && i <= 1048576) {
+            return new TeamCapabilitiesS2CPacket(teamName, capName, new FriendlyByteBuf(packetBuffer.readBytes(i)));
+        } else {
+            throw new IllegalArgumentException("Packet may not be larger than 1048576 bytes");
+        }
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             FPSMClient.getGlobalData().getTeamByName(teamName).ifPresent(team -> {
-                team.getCapabilityMap().deserializeCapability(capabilityData);
+                team.getCapabilityMap().deserializeCapability(capName,capabilityData);
             });
             capabilityData.release();
         });

@@ -48,6 +48,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
 
     public static CapabilityMap<BaseTeam, TeamCapability> ofTeamCapability(BaseTeam team) {
         CapabilityMap<BaseTeam, TeamCapability> capMap = new CapabilityMap<>(team, TeamCapability.class);
+
+        if (team.isClientSide()) return capMap;
+
         for (Class<? extends TeamCapability> cap : FPSMCapabilityManager.getOriginalTeamCapabilities()) {
             capMap.add(cap);
         }
@@ -223,7 +226,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      */
     public final <C extends FPSMCapability<H> & FPSMCapability.CapabilitySynchronizable> void serializeCapability(Class<C> capabilityClass, FriendlyByteBuf buf) {
         get((Class<T>) capabilityClass).ifPresent(capability -> {
-            buf.writeUtf(capabilityClass.getName());
             ((FPSMCapability.CapabilitySynchronizable) capability).writeToBuf(buf);
         });
     }
@@ -233,8 +235,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      *
      * @param buf 网络缓冲区
      */
-    public final void deserializeCapability(FriendlyByteBuf buf) {
-        String className = buf.readUtf();
+    public final void deserializeCapability(String className, FriendlyByteBuf buf) {
         FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType()).ifPresent(capabilityClass -> {
             get(capabilityClass).ifPresentOrElse(
                     capability -> {
@@ -267,9 +268,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      *
      * @return 需要同步的能力列表
      */
-    public final <C extends FPSMCapability<H> & FPSMCapability.CapabilitySynchronizable> List<Class<C>> getSynchronizableCapabilityClasses() {
+    public final <C extends FPSMCapability<H> & FPSMCapability.CapabilitySynchronizable> List<Class<C>> getSynchronizableCapabilityClasses(boolean check) {
         return values().stream()
-                .filter(capability -> capability instanceof FPSMCapability.CapabilitySynchronizable)
+                .filter(capability -> capability instanceof FPSMCapability.CapabilitySynchronizable sync && (sync.isDirty() || !check))
                 .map(cap -> (Class<C>) cap.getClass())
                 .collect(Collectors.toList());
     }

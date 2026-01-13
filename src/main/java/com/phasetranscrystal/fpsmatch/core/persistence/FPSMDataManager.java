@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.persistence;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.loading.FMLLoader;
 

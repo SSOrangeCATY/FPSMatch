@@ -15,8 +15,8 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
-import com.phasetranscrystal.fpsmatch.core.event.FPSMTeamEvent;
-import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
@@ -37,7 +37,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -50,6 +49,7 @@ import java.util.UUID;
  * 使用注册的商店类型系统，无需泛型
  */
 public class ShopCapability extends TeamCapability implements FPSMCapability.Savable<FPSMShop<?>>, FPSMCapability.DataSynchronizable {
+
     public static Optional<FPSMShop<?>> getShopByPlayer(ServerPlayer player) {
         return FPSMCore.getInstance().getMapByPlayer(player)
                 .flatMap(map -> map.getMapTeams().getTeamByPlayer(player)
@@ -94,14 +94,13 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         });
     }
 
-        private final ServerTeam team;
     private FPSMShop<?> shop;
     private String shopTypeId;
     private int startMoney = 800;
     private boolean initialized = false;
 
-    public ShopCapability(ServerTeam team) {
-        this.team = team;
+    public ShopCapability(BaseTeam team) {
+        super(team);
     }
 
     @SubscribeEvent
@@ -274,11 +273,6 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         if (isInitialized()) {
             shop.syncShopMoneyData();
         }
-    }
-
-    @Override
-    public BaseTeam getHolder() {
-        return team;
     }
 
     @Override

@@ -66,7 +66,7 @@ public interface    ISavePort<T> {
         }else{
             JsonObject wrapper = json.getAsJsonObject();
             oldVersion = wrapper.has("version") ? wrapper.get("version").getAsInt() : 0;
-            rawData = wrapper.get("data");
+            rawData =  wrapper.has("data") ? wrapper.get("data") : json;
         }
 
         if(oldVersion == getVersion()) return decode(rawData);

@@ -4,12 +4,11 @@ import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
-import com.phasetranscrystal.fpsmatch.core.event.FPSMTeamEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.common.MinecraftForge;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.joml.Vector3f;
 
 import java.util.*;

@@ -8,13 +8,12 @@ import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.FriendlyByteBuf;
 
 public class PauseCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
-    private final BaseTeam team;
-
+    private boolean dirty = false;
     private int pauseTime = 0;
     private boolean needPause = false;
 
-    private PauseCapability(BaseTeam team) {
-        this.team = team;
+    public PauseCapability(BaseTeam team) {
+        super(team);
     }
 
     public static void register() {
@@ -34,17 +33,20 @@ public class PauseCapability extends TeamCapability implements FPSMCapability.Ca
 
     public void setPauseTime(int t) {
         this.pauseTime = t;
+        dirty = true;
     }
 
     public void resetPauseIfNeed() {
         if (this.needPause) {
             this.needPause = false;
             this.pauseTime--;
+            this.dirty = true;
         }
     }
 
     public void setNeedPause(boolean needPause) {
         this.needPause = needPause;
+        this.dirty = true;
     }
 
     public boolean needPause() {
@@ -65,11 +67,17 @@ public class PauseCapability extends TeamCapability implements FPSMCapability.Ca
     public void reset() {
         this.pauseTime = 0;
         this.needPause = false;
+        this.dirty = true;
     }
 
     @Override
     public void destroy() {
         reset();
+    }
+
+    @Override
+    public boolean isDirty() {
+        return this.dirty;
     }
 
     @Override
@@ -82,10 +90,7 @@ public class PauseCapability extends TeamCapability implements FPSMCapability.Ca
     public void writeToBuf(FriendlyByteBuf buf) {
         buf.writeInt(this.pauseTime);
         buf.writeBoolean(this.needPause);
+        this.dirty = false;
     }
 
-    @Override
-    public BaseTeam getHolder() {
-        return team;
-    }
 }

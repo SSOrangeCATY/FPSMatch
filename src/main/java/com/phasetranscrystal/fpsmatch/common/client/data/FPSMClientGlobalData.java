@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -145,6 +146,10 @@ public class FPSMClientGlobalData {
         return currentTeam;
     }
 
+    public Optional<ClientTeam> getCurrentClientTeam(){
+        return this.getTeamByName(getCurrentTeam());
+    }
+
     public boolean isSpectator(){
         LocalPlayer player = Minecraft.getInstance().player;
         if(player == null) return false;
@@ -174,6 +179,10 @@ public class FPSMClientGlobalData {
 
     public boolean isInGame(){
         return !equalsGame("none");
+    }
+
+    public boolean isInNormalTeam(){
+        return this.getTeamByName(getCurrentTeam()).map(BaseTeam::isNormal).orElse(false);
     }
 
     public void removePlayer(UUID uuid){

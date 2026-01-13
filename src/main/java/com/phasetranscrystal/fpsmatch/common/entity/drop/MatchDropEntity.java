@@ -45,6 +45,8 @@ import java.util.Random;
 public class MatchDropEntity extends Entity {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerDropItem(ItemTossEvent event){
+        if(event.getPlayer().level().isClientSide) return;
+
         ItemStack itemStack = event.getEntity().getItem();
         FPSMCore.getInstance().getMapByPlayer(event.getPlayer()).ifPresent(map->
                 {

@@ -1,5 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.team;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamChatMessageC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
@@ -96,9 +98,13 @@ public final class ClientTeam extends BaseTeam {
         this.players.putAll(players);
     }
 
+    public void sendMessage(Component message) {
+        this.sendMessage(message,false);
+    }
+
     @Override
     public void sendMessage(Component message, boolean onlyLiving) {
-
+        FPSMatch.sendToServer(new TeamChatMessageC2SPacket(message));
     }
 
     @Override

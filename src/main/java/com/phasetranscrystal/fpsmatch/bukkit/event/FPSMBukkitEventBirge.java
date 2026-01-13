@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.bukkit.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
-import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;

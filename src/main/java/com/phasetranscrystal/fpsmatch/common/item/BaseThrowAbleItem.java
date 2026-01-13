@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.item;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMThrowGrenadeEvent;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
 import com.phasetranscrystal.fpsmatch.core.function.IHolder;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
@@ -47,12 +49,12 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
     public void releaseUsing(@NotNull ItemStack pStack, Level level, @NotNull LivingEntity pEntityLiving, int pTimeLeft) {
         if(level.isClientSide){
             if (isLeftPressed && isRightPressed) {
-                handleThrow(level, ThrowType.MID);
+                handleThrow(level,pEntityLiving,pStack, ThrowType.MID);
             } else {
                 if (!isRightPressed && isLeftPressed) {
-                    handleThrow(level, ThrowType.HIGH);
+                    handleThrow(level,pEntityLiving,pStack, ThrowType.HIGH);
                 } else {
-                    handleThrow(level, ThrowType.LOW);
+                    handleThrow(level,pEntityLiving,pStack, ThrowType.LOW);
                 }
             }
         }
@@ -98,8 +100,10 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
         return InteractionResultHolder.consume(itemstack);
     }
 
-    public void handleThrow(Level level, ThrowType type) {
+    public void handleThrow(Level level,LivingEntity entity, ItemStack stack, ThrowType type) {
         if (level.isClientSide) {
+            if(MinecraftForge.EVENT_BUS.post(new FPSMThrowGrenadeEvent(entity,stack,type))) return;
+
             FPSMatch.INSTANCE.sendToServer(new ThrowEntityC2SPacket(type));
             this.isLeftPressed = false;
             this.isRightPressed = false;

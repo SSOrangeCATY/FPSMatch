@@ -37,7 +37,6 @@ public class EditorShopCapabilityProvider implements ICapabilityProvider {
         return capability == ForgeCapabilities.ITEM_HANDLER ? lazyOptional.cast() : LazyOptional.empty();
     }
 
-
     public void save() {
         CompoundTag tag = shopEditToolStack.getOrCreateTag();
         tag.put("ShopItems", itemStackHandler.serializeNBT());

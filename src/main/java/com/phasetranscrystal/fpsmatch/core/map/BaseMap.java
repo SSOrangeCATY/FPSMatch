@@ -14,7 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.ISavePort;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
@@ -113,9 +113,7 @@ public abstract class BaseMap {
         checkForVictory();
         tick();
         capabilities.tick();
-        getMapTeams().getTeamsWithSpectator().forEach(team->{
-            team.getCapabilityMap().tick();
-        });
+        getMapTeams().getTeamsWithSpectator().forEach(ServerTeam::tick);
         syncToClient();
     }
 

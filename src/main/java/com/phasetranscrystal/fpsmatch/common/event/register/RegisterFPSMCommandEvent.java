@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.event.register;
+package com.phasetranscrystal.fpsmatch.common.event.register;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;

@@ -4,6 +4,8 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -182,20 +184,30 @@ public final class ServerTeam extends BaseTeam {
     }
 
     public void syncCapabilities(ServerPlayer player) {
-        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses())) {
+        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses(false))) {
             FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
         }
     }
 
-    public void syncCapabilities(Collection<ServerPlayer> players) {
-        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,this.getCapabilityMap().getSynchronizableCapabilityClasses())) {
+    public <T extends TeamCapability & FPSMCapability.CapabilitySynchronizable> void syncCapabilities(Collection<ServerPlayer> players) {
+        if(players.isEmpty()) return;
+        List<Class<T>> caps = this.getCapabilityMap().getSynchronizableCapabilityClasses(true);
+        if(caps.isEmpty()) return;
+
+        for (TeamCapabilitiesS2CPacket packet : TeamCapabilitiesS2CPacket.toList(this,caps)) {
             for (ServerPlayer player : players) {
                 FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
             }
         }
     }
 
+
     public BaseMap getMap(){
         return map;
+    }
+
+    public void tick() {
+        this.getCapabilityMap().tick();
+        this.syncCapabilities(getOnline());
     }
 }

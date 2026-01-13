@@ -12,7 +12,6 @@
     "collisiobox.MixinRenderHeadShotAABB"
   ],
   "client": [
-    "spec.glow.MixinEntityUnified",
     "ItemPickupSoundMixin",
     "MixinMinecraft",
     "MixinPlayerTabOverlay",
@@ -21,7 +20,9 @@
     "ban3prs.Ban3rdPerson",
     "collisiobox.MixinEntityRenderDispatcher",
     "nametag.HidePlayerNameTagMixin",
+    "nametag.NameTagRenderMixin",
     "sound.SoundEngineMixin",
+    "spec.glow.MixinEntityUnified",
     "spec.glow.MixinKeyMappingBlockSpectatorOutlines",
     "spec.teammate.CameraInvokerMixin",
     "spec.teammate.KeyboardHandlerMixin"

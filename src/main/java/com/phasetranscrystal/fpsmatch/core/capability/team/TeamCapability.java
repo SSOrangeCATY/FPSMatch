@@ -7,5 +7,14 @@ import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
  * 持有者固定为BaseTeam，继承基础能力接口
  */
 public abstract class TeamCapability extends FPSMCapability<BaseTeam> {
+    protected final BaseTeam team;
 
+    public TeamCapability(BaseTeam team) {
+        this.team = team;
+    }
+
+    @Override
+    public final BaseTeam getHolder() {
+        return team;
+    }
 }

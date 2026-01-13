@@ -32,12 +32,12 @@ import java.util.*;
 
 
 public class SpawnPointCapability extends TeamCapability implements FPSMCapability.Savable<List<SpawnPointData>> {
-    public final BaseTeam team;
     private final List<SpawnPointData> spawnPointsData = new ArrayList<>();
 
-    private SpawnPointCapability(BaseTeam team) {
-        this.team = team;
+    public SpawnPointCapability(BaseTeam team) {
+        super(team);
     }
+
     /**
      * 注册能力到全局管理器
      */
@@ -122,11 +122,6 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
     @Override
     public void destroy() {
         clearSpawnPointsData();
-    }
-
-    @Override
-    public BaseTeam getHolder() {
-        return team;
     }
 
     @Override

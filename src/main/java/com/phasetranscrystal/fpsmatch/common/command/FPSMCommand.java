@@ -9,7 +9,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;

@@ -46,19 +46,12 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
         });
     }
 
-    private final BaseMap map;
-
     private final Data data = new Data();
 
     private BlastBombEntity c4;
 
     private DemolitionModeCapability(BaseMap map) {
-        this.map = map;
-    }
-
-    @Override
-    public BaseMap getHolder() {
-        return map;
+        super(map);
     }
 
     /**

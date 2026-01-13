@@ -1,14 +1,12 @@
 package com.phasetranscrystal.fpsmatch.core.capability;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -25,7 +23,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class FPSMCapability<H> {
 
-    public void tick(){};
+    public void tick(){
+    };
 
     /**
      * 初始化能力（持有者添加能力时调用）
@@ -145,6 +144,7 @@ public abstract class FPSMCapability<H> {
      * @see FPSMCapability 使用init()方法对holder进行操作;
      * */
     public interface CapabilitySynchronizable {
+        boolean isDirty();
         void readFromBuf(FriendlyByteBuf buf);
         void writeToBuf(FriendlyByteBuf buf);
     }

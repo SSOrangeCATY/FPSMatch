@@ -1,4 +1,4 @@
-package com.phasetranscrystal.fpsmatch.core.event.register;
+package com.phasetranscrystal.fpsmatch.common.event.register;
 
 import com.mojang.datafixers.util.Function3;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;

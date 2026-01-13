@@ -34,13 +34,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 队伍初始装备能力：封装单个队伍的初始装备存储、管理、发放逻辑
  */
 public class StartKitsCapability extends TeamCapability implements FPSMCapability.Savable<List<ItemStack>> {
-    private final BaseTeam team;
 
     private final ArrayList<ItemStack> teamKits = new ArrayList<>();
 
-    private StartKitsCapability(ServerTeam team) {
-        this.team = team;
+    public StartKitsCapability(BaseTeam team) {
+        super(team);
     }
+
 
     /**
      * 注册能力到全局管理器
@@ -153,11 +153,6 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
         for (PlayerData data : team.getPlayersData()) {
             data.getPlayer().ifPresent(this::givePlayerKits);
         }
-    }
-
-    @Override
-    public BaseTeam getHolder() {
-        return team;
     }
 
     @Override

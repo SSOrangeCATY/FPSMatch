@@ -9,12 +9,12 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.util.function.Function;
 
 public class CompensationCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
-    private final BaseTeam team;
+    private boolean dirty = false;
     private int compensationFactor = 0;
     private Function<Integer,Integer> function = (i)-> Math.max(0, Math.min(i, 4));
 
     private CompensationCapability(BaseTeam team) {
-        this.team = team;
+        super(team);
     }
 
     public static void register() {
@@ -32,11 +32,18 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
 
     public void setCompensationFactor(int factor) {
         this.compensationFactor = function.apply(factor);
+        dirty = true;
     }
 
     @Override
     public void reset() {
         compensationFactor = 0;
+        dirty = true;
+    }
+
+    @Override
+    public boolean isDirty() {
+        return dirty;
     }
 
     @Override
@@ -47,10 +54,6 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
     @Override
     public void writeToBuf(FriendlyByteBuf buf) {
         buf.writeInt(compensationFactor);
-    }
-
-    @Override
-    public BaseTeam getHolder() {
-        return team;
+        dirty = false;
     }
 }
