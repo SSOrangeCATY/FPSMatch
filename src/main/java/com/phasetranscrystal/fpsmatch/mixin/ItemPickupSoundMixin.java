@@ -33,7 +33,7 @@ public class ItemPickupSoundMixin {
 
         if (entity instanceof ItemEntity itemEntity) {
             SoundEvent sound;
-            if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemEntity.getItem().getItem())){
+            if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemEntity.getItem().getItem())){
                 sound = FPSMSoundRegister.getKnifePickupSound();
             }else{
                 sound = FPSMSoundRegister.getItemPickSound(itemEntity.getItem().getItem());

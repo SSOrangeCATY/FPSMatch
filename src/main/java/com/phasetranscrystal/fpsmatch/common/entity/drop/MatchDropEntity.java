@@ -185,7 +185,7 @@ public class MatchDropEntity extends Entity {
                 });
             } else {
                 SoundEvent sound;
-                if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
                     sound = FPSMSoundRegister.getKnifeDropSound();
                 }else{
                     sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());

@@ -18,6 +18,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -38,11 +40,9 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         setTimeoutTicks(-1);
         if(this.getOwner() instanceof Player player){
             Optional<BaseMap> baseMap = FPSMCore.getInstance().getMapByPlayer(player);
-            if(baseMap.isPresent()){
-                baseMap.get().getMapTeams().getTeamByPlayer(player).ifPresent(t->{
-                    this.setParticleOptions(new DustParticleOptions(t.getColorVec3f(), 10F));
-                });
-            }
+            baseMap.flatMap(map -> map.getMapTeams().getTeamByPlayer(player)).ifPresent(t -> {
+                this.setParticleOptions(new DustParticleOptions(t.getColorVec3f(), 10F));
+            });
         }
     }
 
@@ -76,6 +76,25 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
             serverLevel.sendParticles(ParticleTypes.SMOKE,
                     getX(), getY(), getZ(), 30,
                     0.5, 0.5, 0.5, 0.2);
+        }
+    }
+
+
+    public boolean isInSmokeArea(Vec3 positon){
+        return isInSmokeArea(positon.x, positon.y, positon.z);
+    }
+
+    public boolean isInSmokeArea(double testX, double testY, double testZ) {
+        double dx = testX - this.getX();
+        double dy = testY - this.getY();
+        double dz = testZ - this.getZ();
+
+        double distanceSquared = dx*dx + dy*dy + dz*dz;
+
+        if (level().getBlockState(this.blockPosition().below()).isAir()) {
+            return distanceSquared <= 16.0 && dy <= 0.2;
+        } else {
+            return distanceSquared <= 16.0;
         }
     }
 

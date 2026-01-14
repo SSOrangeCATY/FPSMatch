@@ -72,7 +72,7 @@ public class FPSMUtil {
 
         addThrowablePredicate((itemStack -> itemStack.getItem() instanceof IThrowEntityAble));
         addThrowablePredicate((itemStack -> {
-            if (FPSMImpl.findEquipmentMod()){
+            if (FPSMImpl.findLrtacticalMod()){
                 try{
                     return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable;
                 }catch (Exception e){
@@ -98,7 +98,7 @@ public class FPSMUtil {
             if(itemStack.getItem() instanceof IGun gun){
                 return getGunTypeByGunId(gun.getGunId(itemStack)).filter(gunTabType -> gunTabType == GunTabType.RPG).isPresent();
             }else{
-                if (FPSMImpl.findEquipmentMod()){
+                if (FPSMImpl.findLrtacticalMod()){
                     try{
                         return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IMeleeWeapon;
                     }catch (Exception e){
@@ -478,7 +478,7 @@ public class FPSMUtil {
             });
         }else{
             SoundEvent sound;
-            if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+            if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
                 sound = FPSMSoundRegister.getKnifeBoughtSound();
             }else{
                 sound = FPSMSoundRegister.getItemBoughtSound(itemStack.getItem());

@@ -19,7 +19,6 @@
     "accessor.SoundEngineAccessor",
     "ban3prs.Ban3rdPerson",
     "collisiobox.MixinEntityRenderDispatcher",
-    "nametag.HidePlayerNameTagMixin",
     "nametag.NameTagRenderMixin",
     "sound.SoundEngineMixin",
     "spec.glow.MixinEntityUnified",

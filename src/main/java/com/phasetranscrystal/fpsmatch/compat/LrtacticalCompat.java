@@ -4,15 +4,20 @@ import me.xjqsh.lrtactical.api.LrTacticalAPI;
 import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
 import me.xjqsh.lrtactical.api.item.IThrowable;
 import me.xjqsh.lrtactical.client.resource.display.MeleeDisplayInstance;
+import me.xjqsh.lrtactical.entity.SmokeGrenadeEntity;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -85,5 +90,41 @@ public class LrtacticalCompat {
             }
         }
         return null;
+    }
+
+    public static boolean isInSmokeGrenadeArea(Level level, AABB checker, Vec3 position){
+        List<SmokeGrenadeEntity> s2 = level.getEntitiesOfClass(SmokeGrenadeEntity.class, checker);
+        for (SmokeGrenadeEntity smokeGrenade : s2) {
+            if(isInSmokeGrenadeArea(smokeGrenade, position)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isInSmokeGrenadeArea(SmokeGrenadeEntity smokeGrenade, Vec3 position) {
+        if (smokeGrenade.tickCount < 40) {
+            return false;
+        }
+
+        double grenadeX = smokeGrenade.getX();
+        double grenadeY = smokeGrenade.getY();
+        double grenadeZ = smokeGrenade.getZ();
+
+        double testX = position.x;
+        double testY = position.y;
+        double testZ = position.z;
+
+        double maxOffsetX = 5.5;
+        double maxOffsetZ = 5.5;
+        double maxOffsetY = 4.5;
+
+        double dx = Math.abs(testX - grenadeX);
+        double dy = testY - grenadeY;
+        double dz = Math.abs(testZ - grenadeZ);
+
+        return dx <= maxOffsetX &&
+                dz <= maxOffsetZ &&
+                dy >= 0 && dy <= maxOffsetY;
     }
 }

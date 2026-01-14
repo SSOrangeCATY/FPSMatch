@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.mixin.nametag;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.fpsmatch.common.client.event.PlayerNameTagRenderEvent;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -26,6 +27,7 @@ public abstract class NameTagRenderMixin {
                                       MultiBufferSource bufferSource,
                                       int packedLight,
                                       CallbackInfo ci) {
+        if(FPSMConfig.Server.disableRenderNameTag.get()) ci.cancel();
 
         PlayerNameTagRenderEvent.Pre event = new PlayerNameTagRenderEvent.Pre(
                 player, poseStack, bufferSource, packedLight, 0.0f
@@ -50,5 +52,7 @@ public abstract class NameTagRenderMixin {
         PlayerNameTagRenderEvent.Post event = new PlayerNameTagRenderEvent.Post(
                 player, poseStack, bufferSource, packedLight, 0.0f
         );
+
+        MinecraftForge.EVENT_BUS.post(event);
     }
 }

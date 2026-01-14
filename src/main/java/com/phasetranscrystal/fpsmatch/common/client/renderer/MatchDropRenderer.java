@@ -39,7 +39,7 @@ public class MatchDropRenderer implements EntityRendererProvider<MatchDropEntity
                 poseStack.pushPose();
                 ItemStack itemStack = entity.getItem();
                 BakedModel bakedModel = itemRenderer.getModel(itemStack, entity.level(), null, entity.getId());
-                boolean isSpecialItem = itemStack.getItem() instanceof IGun || (FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack));
+                boolean isSpecialItem = itemStack.getItem() instanceof IGun || (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack));
                 poseStack.translate(0, 0.25F, 0);
                 if (isSpecialItem) {
                     poseStack.mulPose(Axis.XP.rotationDegrees(90));

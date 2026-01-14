@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.compat.impl;
 import net.minecraftforge.fml.ModList;
 
 public class FPSMImpl {
-    public static boolean findEquipmentMod(){
+    public static boolean findLrtacticalMod(){
        return ModList.get().isLoaded("lrtactical");
     }
 

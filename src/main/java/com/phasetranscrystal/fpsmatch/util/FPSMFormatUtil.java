@@ -52,7 +52,7 @@ public class FPSMFormatUtil {
             return gid.getPath().toUpperCase(Locale.ROOT);
         }
 
-        if(FPSMImpl.findEquipmentMod()){
+        if(FPSMImpl.findLrtacticalMod()){
             String i18n = LrtacticalCompat.i18n(st);
             if(i18n != null) return i18n;
         }

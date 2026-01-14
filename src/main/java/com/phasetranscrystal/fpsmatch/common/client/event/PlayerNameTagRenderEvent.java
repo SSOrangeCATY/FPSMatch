@@ -12,7 +12,7 @@ public class PlayerNameTagRenderEvent extends Event {
     private final int packedLight;
     private final float partialTick;
 
-    PlayerNameTagRenderEvent(Player player, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
+    private PlayerNameTagRenderEvent(Player player, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
         this.player = player;
         this.poseStack = poseStack;
         this.bufferSource = bufferSource;
@@ -43,12 +43,12 @@ public class PlayerNameTagRenderEvent extends Event {
 
     public static class Pre extends PlayerNameTagRenderEvent {
 
-        public Pre(Player player,  PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
+        public Pre(Player player, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, float partialTick) {
             super(player, poseStack, bufferSource, packedLight, partialTick);
         }
 
         @Override
-        public boolean isCancelable(){
+        public boolean isCancelable() {
             return true;
         }
     }
@@ -59,7 +59,7 @@ public class PlayerNameTagRenderEvent extends Event {
         }
 
         @Override
-        public boolean isCancelable(){
+        public boolean isCancelable() {
             return false;
         }
     }
