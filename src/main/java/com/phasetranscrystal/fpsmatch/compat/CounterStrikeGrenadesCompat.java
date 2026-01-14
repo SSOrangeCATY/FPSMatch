@@ -8,6 +8,7 @@ import club.pisquad.minecraft.csgrenades.registry.ModDamageType;
 import club.pisquad.minecraft.csgrenades.registry.ModItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +19,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 public class CounterStrikeGrenadesCompat {
@@ -61,20 +63,23 @@ public class CounterStrikeGrenadesCompat {
         return CSGrenadesAPI.isPlayerFlashed(player);
     }
 
-    public static boolean isInSmokeGrenadeArea(Level level, AABB checker , Vec3 pos) {
-        List<SmokeGrenadeEntity> smokes = level.getEntitiesOfClass(SmokeGrenadeEntity.class,checker);
+    public static boolean isInSmokeGrenadeArea(List<Entity> entities , AABB checker) {
+        List<SmokeGrenadeEntity> smokes = entities.stream()
+                .filter(entity -> entity instanceof SmokeGrenadeEntity)
+                .map(entity -> (SmokeGrenadeEntity)entity)
+                .toList();
+
         for (SmokeGrenadeEntity smoke : smokes) {
-            if(isInSmoke(pos, smoke)){
-                return true;
-            }
+            if(isInSmoke(checker,smoke)) return true;
         }
+
         return false;
     }
 
-    public static boolean isInSmoke(Vec3 position, SmokeGrenadeEntity smoke){
+    public static boolean isInSmoke(AABB checker, SmokeGrenadeEntity smoke){
         double smokeRadius = ModConfig.SmokeGrenade.SMOKE_RADIUS.get().doubleValue();
         double smokeFallingHeight = ModConfig.SmokeGrenade.SMOKE_MAX_FALLING_HEIGHT.get().doubleValue();
         AABB smokeCloudBoundingBox = new AABB(smoke.blockPosition()).inflate(smokeRadius).expandTowards(0.0, -smokeFallingHeight, 0.0);
-        return smokeCloudBoundingBox.contains(position);
+        return smokeCloudBoundingBox.intersects(checker);
     }
 }

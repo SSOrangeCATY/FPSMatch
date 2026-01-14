@@ -28,6 +28,7 @@ import java.util.Optional;
 public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
     private static final EntityDataAccessor<ParticleOptions> PARTICLE_OPTIONS = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.PARTICLE);
     private static final EntityDataAccessor<Integer> Particle_COOLDOWN = SynchedEntityData.defineId(SmokeShellEntity.class, EntityDataSerializers.INT);
+
     public SmokeShellEntity(EntityType<? extends SmokeShellEntity> type, Level level) {
         super(type, level);
         this.noCulling = true;
@@ -79,23 +80,32 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
         }
     }
 
+    public boolean isInSmokeArea(AABB checker) {
+        if (this.getParticleCoolDown() > 0) return false;
 
-    public boolean isInSmokeArea(Vec3 positon){
-        return isInSmokeArea(positon.x, positon.y, positon.z);
-    }
+        int r = 4;
+        double offset = 0.2;
 
-    public boolean isInSmokeArea(double testX, double testY, double testZ) {
-        double dx = testX - this.getX();
-        double dy = testY - this.getY();
-        double dz = testZ - this.getZ();
-
-        double distanceSquared = dx*dx + dy*dy + dz*dz;
-
+        double x = this.getX();
+        double y = this.getY();
+        double z = this.getZ();
+        double minY, maxY;
         if (level().getBlockState(this.blockPosition().below()).isAir()) {
-            return distanceSquared <= 16.0 && dy <= 0.2;
+            minY = y - r - offset;
+            maxY = y + offset;
         } else {
-            return distanceSquared <= 16.0;
+            minY = y - offset;
+            maxY = y + r + offset;
         }
+
+        return new AABB(
+                x - r - offset,
+                minY,
+                z - r - offset,
+                x + r + offset,
+                maxY,
+                z + r + offset
+        ).intersects(checker);
     }
 
     public int getParticleCoolDown() {

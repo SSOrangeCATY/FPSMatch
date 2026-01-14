@@ -7,6 +7,7 @@ import me.xjqsh.lrtactical.client.resource.display.MeleeDisplayInstance;
 import me.xjqsh.lrtactical.entity.SmokeGrenadeEntity;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -92,17 +93,21 @@ public class LrtacticalCompat {
         return null;
     }
 
-    public static boolean isInSmokeGrenadeArea(Level level, AABB checker, Vec3 position){
-        List<SmokeGrenadeEntity> s2 = level.getEntitiesOfClass(SmokeGrenadeEntity.class, checker);
-        for (SmokeGrenadeEntity smokeGrenade : s2) {
-            if(isInSmokeGrenadeArea(smokeGrenade, position)) {
+    public static boolean isInSmokeGrenadeArea(List<Entity> entities , AABB checker){
+        List<SmokeGrenadeEntity> smokes = entities.stream()
+                .filter(entity -> entity instanceof SmokeGrenadeEntity)
+                .map(entity -> (SmokeGrenadeEntity)entity)
+                .toList();
+
+        for (SmokeGrenadeEntity smoke : smokes) {
+            if(isInSmokeGrenadeArea(smoke,checker)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean isInSmokeGrenadeArea(SmokeGrenadeEntity smokeGrenade, Vec3 position) {
+    private static boolean isInSmokeGrenadeArea(SmokeGrenadeEntity smokeGrenade, AABB areaToCheck) {
         if (smokeGrenade.tickCount < 40) {
             return false;
         }
@@ -111,20 +116,19 @@ public class LrtacticalCompat {
         double grenadeY = smokeGrenade.getY();
         double grenadeZ = smokeGrenade.getZ();
 
-        double testX = position.x;
-        double testY = position.y;
-        double testZ = position.z;
-
         double maxOffsetX = 5.5;
         double maxOffsetZ = 5.5;
         double maxOffsetY = 4.5;
 
-        double dx = Math.abs(testX - grenadeX);
-        double dy = testY - grenadeY;
-        double dz = Math.abs(testZ - grenadeZ);
-
-        return dx <= maxOffsetX &&
-                dz <= maxOffsetZ &&
-                dy >= 0 && dy <= maxOffsetY;
+        // 创建烟雾弹影响区域 AABB
+        AABB smokeArea = new AABB(
+                grenadeX - maxOffsetX,
+                grenadeY,
+                grenadeZ - maxOffsetZ,
+                grenadeX + maxOffsetX,
+                grenadeY + maxOffsetY,
+                grenadeZ + maxOffsetZ
+        );
+        return smokeArea.intersects(areaToCheck);
     }
 }
