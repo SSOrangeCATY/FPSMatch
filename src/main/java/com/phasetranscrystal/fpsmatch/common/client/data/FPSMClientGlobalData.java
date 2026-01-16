@@ -154,7 +154,7 @@ public class FPSMClientGlobalData {
         LocalPlayer player = Minecraft.getInstance().player;
         if(player == null) return false;
 
-        return currentTeam.equals("spectator") || player.isSpectator();
+        return equalsTeam("spectator") || player.isSpectator();
     }
 
     public void setCurrentTeam(String currentTeam) {
@@ -163,6 +163,10 @@ public class FPSMClientGlobalData {
 
     public boolean equalsTeam(String team){
         return currentTeam.equals(team);
+    }
+
+    public boolean isInTeam(){
+        return !equalsTeam("none");
     }
 
     public boolean equalsMap(String map){

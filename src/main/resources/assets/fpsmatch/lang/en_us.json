@@ -25,7 +25,8 @@
   "key.fpsm.hud.custom.on": "Custom Game Hud On",
   "key.fpsm.hud.custom.off": "Custom Game Hud Off",
   "key.fpsm.switch_previous_item.desc": "switch previous",
-
+  "key.fpsm.open.team_chat.desc": "Open Team Chat",
+  "key.fpsm.open.team_chat.failed.no_team": "Cannot open team chat because you are not in a team",
   "commands.fpsm.debug.success": "FPSMatch Debug Mode : %1$s",
   "commands.fpsm.save.success": "[FPSMatch] Saved successfully.",
   "commands.fpsm.sync.success": "[FPSMatch] Sync operation completed successfully.",
