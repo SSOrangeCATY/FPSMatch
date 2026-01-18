@@ -321,9 +321,16 @@ public class FPSMUtil {
         return 0;
     }
 
-    /**
-     * use dummy ammo
-     * */
+    public static ItemStack fixGunItem(@NotNull ItemStack itemStack) {
+        if(itemStack.getItem() instanceof IGun iGun){
+            fixGunItem(itemStack,iGun);
+            return itemStack;
+        }
+        return itemStack;
+    }
+        /**
+         * use dummy ammo
+         * */
     public static void fixGunItem(@NotNull ItemStack itemStack, @NotNull IGun iGun) {
         Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(gunIndexOptional.isPresent()){

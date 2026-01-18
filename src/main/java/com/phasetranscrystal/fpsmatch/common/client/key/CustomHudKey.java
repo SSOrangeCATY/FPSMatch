@@ -26,7 +26,7 @@ public class CustomHudKey {
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_U,
+            GLFW.GLFW_KEY_N,
             "key.category.fpsm");
 
     @SubscribeEvent
