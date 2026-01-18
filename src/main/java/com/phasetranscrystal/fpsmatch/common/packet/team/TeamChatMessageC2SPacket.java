@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet.team;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;

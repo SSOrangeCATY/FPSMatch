@@ -24,8 +24,6 @@
   "key.fpsm.hud.custom.on": "自定义游戏UI 开启",
   "key.fpsm.hud.custom.off": "自定义游戏UI 关闭",
   "key.fpsm.switch_previous_item.desc": "切换上一快捷栏",
-  "key.fpsm.open.team_chat.desc": "打开团队聊天",
-  "key.fpsm.open.team_chat.failed.no_team": "因为未加入队伍，所以无法打开团队聊天",
   "commands.fpsm.debug.success": "FPSMatch 调试模式：%1$s",
   "commands.fpsm.save.success": "[FPSMatch] 保存成功",
   "commands.fpsm.sync.success": "[FPSMatch] 同步操作成功完成",
