@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.entity;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.FlashBombEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.GrenadeEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.IncendiaryGrenadeEntity;

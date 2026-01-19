@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.common.capability.FPSMCapabilityRegister;
 import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
@@ -17,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.*;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
+import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
@@ -41,6 +43,8 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /*
     <FPSMatch>
@@ -85,6 +89,7 @@ public class FPSMatch {
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
         FPSMCapabilityRegister.register();
+        registerThrowables();
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
         context.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());
@@ -104,6 +109,15 @@ public class FPSMatch {
                 }
             }
         });
+    }
+
+    private static void registerThrowables() {
+        ThrowableRegistry.registerSubType("grenade", 1);
+        ThrowableRegistry.registerSubType("flashbang", 1);
+        ThrowableRegistry.registerSubType("smoke", 1);
+        ThrowableRegistry.registerSubType("molotov", 1);
+        ThrowableRegistry.registerSubType("decoy", 1);
+        ThrowableRegistry.registerSubType("incendiary", 1);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -130,6 +144,18 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMInventorySelectedS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamChatMessageC2SPacket.class);
+
+        event.enqueueWork(()->{
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(),ThrowableRegistry.GRENADE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(),ThrowableRegistry.SMOKE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
+
+            if(FPSMImpl.findCounterStrikeGrenadesMod()){
+                CounterStrikeGrenadesCompat.init();
+            }
+        });
     }
 
     public static <M> void sendTo(Player player,M message){

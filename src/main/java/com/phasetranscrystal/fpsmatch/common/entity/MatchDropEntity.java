@@ -1,14 +1,14 @@
-package com.phasetranscrystal.fpsmatch.common.entity.drop;
+package com.phasetranscrystal.fpsmatch.common.entity;
 
 import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
+import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
@@ -279,7 +279,11 @@ public class MatchDropEntity extends Entity {
 
     public void playerTouch(@NotNull Player pEntity) {
         if (!this.level().isClientSide) {
-            if(this.pickupDelay == 0 && this.getDropType().inventoryMatch().test(pEntity)){
+            DropType type = this.getDropType();
+
+            if(type == DropType.THROW && !type.canPickupThrowable(pEntity,this.getItem())) return;
+
+            if(this.pickupDelay == 0 && type.inventoryMatch().test(pEntity)){
                 ItemStack itemStack = this.getItem();
                 if (!itemStack.isEmpty()) {
                     ItemStack copy = itemStack.copy();
@@ -297,8 +301,8 @@ public class MatchDropEntity extends Entity {
                     });
 
                     if(copy.getItem() instanceof IGun iGun){
-                        Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(copy));
-                        type.ifPresent(t->{
+                        Optional<GunTabType> opt = FPSMUtil.getGunTypeByGunId(iGun.getGunId(copy));
+                        opt.ifPresent(t->{
                             this.playSound(FPSMSoundRegister.getGunPickupSound(t));
                         });
                     }else{

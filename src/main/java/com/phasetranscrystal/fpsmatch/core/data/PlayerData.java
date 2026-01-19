@@ -41,7 +41,7 @@ public class PlayerData {
     private float _damage = 0.0f; // 本回合伤害
 
     //服务端独有字段
-    private final Map<UUID, Float> damageData = new HashMap<>(); // 伤害明细
+    private final Map<UUID, Damage> damageData = new HashMap<>(); // 伤害明细
     private SpawnPointData spawnPointsData;
     private boolean dirty = true; // 脏数据标记
 
@@ -91,6 +91,10 @@ public class PlayerData {
 
     public int getScores() {
         return scores;
+    }
+
+    public float getHpServer(){
+        return getPlayer().map(p->this.isLivingServer() ? p.getHealth() : 0.0f).orElse(0.0f);
     }
 
     // 击杀数
@@ -327,12 +331,20 @@ public class PlayerData {
         return spawnPointsData;
     }
 
-    public Map<UUID, Float> getDamageData() {
+    public Map<UUID, Damage> getDamageData() {
         return damageData;
     }
 
+    public Map<UUID, Float> getDamages(){
+        Map<UUID, Float> damages = new HashMap<>();
+        for (Map.Entry<UUID, Damage> entry : damageData.entrySet()) {
+            damages.put(entry.getKey(),entry.getValue().damage);
+        }
+        return damages;
+    }
+
     public void addDamageData(UUID hurtPlayer, float damage) {
-        this.damageData.merge(hurtPlayer, damage, Float::sum);
+        this.getDamageData().computeIfAbsent(hurtPlayer,k->new Damage()).addDamage(damage);
         addDamage(damage);
     }
 
@@ -463,5 +475,20 @@ public class PlayerData {
         float maxHealth = player.get().getMaxHealth();
         float currentHealth = player.get().getHealth();
         return maxHealth <= 0 ? 0.0f : currentHealth / maxHealth;
+    }
+
+    public static class Damage{
+        public int count = 0;
+        public float damage = 0;
+
+        public void merge(Damage other) {
+            this.count += other.count;
+            this.damage += other.damage;
+        }
+
+        public void addDamage(float damage) {
+            this.count++;
+            this.damage += damage;
+        }
     }
 }

@@ -3,6 +3,9 @@ package com.phasetranscrystal.fpsmatch.config;
 import net.minecraftforge.common.ForgeConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class FPSMConfig {
     public static class Server {
         public static ForgeConfigSpec.BooleanValue lock3PersonCamera;
@@ -66,7 +69,6 @@ public class FPSMConfig {
         public final ForgeConfigSpec.IntValue thirdWeaponCount;
         public final ForgeConfigSpec.IntValue throwableCount;
 
-        // -throwable-
         // Flash Bomb
         public final ForgeConfigSpec.IntValue flashBombRadius;
         // Grenade
@@ -111,6 +113,7 @@ public class FPSMConfig {
 
             builder.push("throwable");
             {
+
                 flashBombRadius = builder.comment(
                         "闪光弹致盲生效半径",
                         "Effective blinding radius of flash bombs"

@@ -10,7 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
+import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;

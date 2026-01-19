@@ -788,7 +788,7 @@ public class MapTeams {
 
     public Map<UUID, Map<UUID, Float>> getDamageMap() {
         Map<UUID, Map<UUID, Float>> hurtData = new HashMap<>();
-        teams.values().forEach((t) -> t.getPlayersData().forEach((data) -> hurtData.put(data.getOwner(), data.getDamageData())));
+        teams.values().forEach((t) -> t.getPlayersData().forEach((data) -> hurtData.put(data.getOwner(), data.getDamages())));
         return hurtData;
     }
 
@@ -806,6 +806,36 @@ public class MapTeams {
                 FPSMatch.LOGGER.error("Team {} not found : capability is not instantiated", name);
             }
         });
+    }
+    public Map<UUID, PlayerData.Damage> getDamageReceivedByPlayer(){
+        Map<UUID, PlayerData.Damage> damageMap = new HashMap<>();
+        for (ServerTeam team : getNormalTeams()) {
+            for (PlayerData data : team.getPlayersData()) {
+                Map<UUID, PlayerData.Damage> map = data.getDamageData();
+                for (Map.Entry<UUID, PlayerData.Damage> entry : map.entrySet()) {
+                    damageMap.computeIfAbsent(entry.getKey(),k-> new PlayerData.Damage()).merge(entry.getValue());
+                }
+            }
+        }
+
+        return damageMap;
+    }
+
+
+    public Map<UUID,Float> getRemainHealth(){
+        Map<UUID,Float> remainHealth = new HashMap<>();
+
+        for (ServerTeam team : getNormalTeams()) {
+            for (PlayerData data : team.getPlayersData()) {
+                remainHealth.put(data.getOwner(),data.getHpServer());
+            }
+        }
+
+        return remainHealth;
+    }
+
+    public Component getPlayerName(UUID uuid){
+        return playerName.getOrDefault(uuid, Component.literal(String.valueOf(uuid)));
     }
 
     /**

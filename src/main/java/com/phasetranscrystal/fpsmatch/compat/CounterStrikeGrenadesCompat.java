@@ -6,6 +6,7 @@ import club.pisquad.minecraft.csgrenades.entity.SmokeGrenadeEntity;
 import club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
 import club.pisquad.minecraft.csgrenades.registry.ModDamageType;
 import club.pisquad.minecraft.csgrenades.registry.ModItems;
+import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -15,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
@@ -24,13 +26,15 @@ import java.util.stream.Collectors;
 
 public class CounterStrikeGrenadesCompat {
 
-    public static void registerKillIcon(Map<ResourceLocation, String> registry){
-        ModItems instance = ModItems.INSTANCE;
-        registry.put(ForgeRegistries.ITEMS.getKey(instance.getHEGRENADE_ITEM().get()),"grenade");
-        registry.put(ForgeRegistries.ITEMS.getKey(instance.getINCENDIARY_ITEM().get()),"ct_incendiary_grenade");
-        registry.put(ForgeRegistries.ITEMS.getKey(instance.getMOLOTOV_ITEM().get()),"t_incendiary_grenade");
-        registry.put(ForgeRegistries.ITEMS.getKey(instance.getSMOKE_GRENADE_ITEM().get()),"smoke_shell");
-        registry.put(ForgeRegistries.ITEMS.getKey(instance.getFLASH_BANG_ITEM().get()),"flash_bomb");
+    public static void init() {
+        ModItems items = ModItems.INSTANCE;
+
+        ThrowableRegistry.registerItemToSubType(items.getFLASH_BANG_ITEM().get(),ThrowableRegistry.FLASH_BANG);
+        ThrowableRegistry.registerItemToSubType(items.getDECOY_GRENADE_ITEM().get(),ThrowableRegistry.DECOY);
+        ThrowableRegistry.registerItemToSubType(items.getHEGRENADE_ITEM().get(),ThrowableRegistry.GRENADE);
+        ThrowableRegistry.registerItemToSubType(items.getSMOKE_GRENADE_ITEM().get(),ThrowableRegistry.SMOKE);
+        ThrowableRegistry.registerItemToSubType(items.getMOLOTOV_ITEM().get(),ThrowableRegistry.MOLOTOV);
+        ThrowableRegistry.registerItemToSubType(items.getINCENDIARY_ITEM().get(),ThrowableRegistry.MOLOTOV);
     }
 
     public static ItemStack getItemFromDamageSource(DamageSource damageSource){

@@ -133,7 +133,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
             if (copy.getItem() instanceof ArmorItem armorItem) {
                 player.setItemSlot(armorItem.getEquipmentSlot(), copy);
             } else {
-                player.getInventory().add(copy);
+                player.getInventory().add(FPSMUtil.fixGunItem(copy));
             }
         });
 
@@ -145,7 +145,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
     /**
      * 为当前队伍的所有在线玩家发放初始装备
      */
-    public void giveAllTeamPlayersKits() {
+    public void giveAllPlayersKits() {
         BaseMap map = ((ServerTeam) team).getMap();
         if (map == null) return;
 
