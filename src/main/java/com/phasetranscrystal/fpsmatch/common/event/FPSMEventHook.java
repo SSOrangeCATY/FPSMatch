@@ -3,8 +3,11 @@ package com.phasetranscrystal.fpsmatch.common.event;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
@@ -12,6 +15,7 @@ import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -137,6 +141,38 @@ public class FPSMEventHook {
                 }
             }
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onMapPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event){
+        BaseMap map = event.getMap();
+        Player hurt = event.getPlayer();
+        DamageSource source = event.getSource();
+        ServerPlayer attacker;
+        if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
+            attacker = sourcePlayer;
+        } else if (source.getDirectEntity() instanceof ServerPlayer sourcePlayer) {
+            attacker = sourcePlayer;
+        } else {
+            attacker = null;
+        }
+        boolean flag = attacker != null && !attacker.isDeadOrDying();
+
+        if (flag) {
+            if(!attacker.getUUID().equals(hurt.getUUID())) map.getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onMapPlayerLoggedInEvent(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
+        BaseMap map = event.getMap();
+        ServerPlayer player = event.getPlayer();
+        map.getMapTeams().getTeamByPlayer(player)
+                .flatMap(team -> team.getPlayerData(player.getUUID()))
+                .ifPresent(playerData -> {
+                    playerData.setLiving(false);
+                    player.setGameMode(GameType.SPECTATOR);
+                });
     }
 
 }

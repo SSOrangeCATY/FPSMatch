@@ -44,8 +44,6 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 /*
     <FPSMatch>
     Copyright (C) <2025>  <SSOrangeCATY>
@@ -130,6 +128,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMatchGameTypeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMSoundPlayS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicPlayS2CPacket.class);
+        PACKET_REGISTER.registerPacket(FPSMSoundPlayC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMusicStopS2CPacket.class);
         PACKET_REGISTER.registerPacket(SaveSlotDataC2SPacket.class);
         PACKET_REGISTER.registerPacket(EditToolClickC2SPacket.class);

@@ -23,6 +23,7 @@ import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Player;
@@ -209,6 +210,10 @@ public abstract class BaseMap {
      */
     public MapTeams getMapTeams() {
         return mapTeams;
+    }
+
+    public RandomSource getRandom(){
+        return getServerLevel().getRandom();
     }
 
     public void leave(ServerPlayer player) {
@@ -403,7 +408,7 @@ public abstract class BaseMap {
     public <MSG> void sendPacketToTeamPlayer(ServerTeam team ,MSG packet,boolean living){
         team.getPlayersData().forEach(data ->
             data.getPlayer().ifPresent(player->{
-                if (data.isLiving() == living) {
+                if (data.isLiving() || !living) {
                     this.sendPacketToJoinedPlayer(player, packet, true);
                 }
             })
@@ -625,41 +630,6 @@ public abstract class BaseMap {
      */
     public Setting<String> addSetting(String configName, String defaultValue) {
         return addSetting(Setting.of(configName, defaultValue));
-    }
-
-
-    @SubscribeEvent
-    public static void onMapPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event){
-        BaseMap map = event.getMap();
-        Player hurt = event.getPlayer();
-        DamageSource source = event.getSource();
-        ServerPlayer attacker;
-        if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
-            attacker = sourcePlayer;
-        } else if (source.getDirectEntity() instanceof ServerPlayer sourcePlayer) {
-            attacker = sourcePlayer;
-        } else {
-            attacker = null;
-        }
-        boolean flag = attacker != null && !attacker.isDeadOrDying();
-
-        map.getMapTeams().getPlayerData(hurt.getUUID()).ifPresent(PlayerData::markDirty);
-
-        if (flag) {
-            if(!attacker.getUUID().equals(hurt.getUUID())) map.getMapTeams().addHurtData(attacker, hurt.getUUID(), Math.min(hurt.getHealth(), event.getAmount()));
-        }
-    }
-
-    @SubscribeEvent
-    public static void onMapPlayerLoggedInEvent(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
-        BaseMap map = event.getMap();
-        ServerPlayer player = event.getPlayer();
-        map.getMapTeams().getTeamByPlayer(player)
-                .flatMap(team -> team.getPlayerData(player.getUUID()))
-                .ifPresent(playerData -> {
-                    playerData.setLiving(false);
-                    player.setGameMode(GameType.SPECTATOR);
-                });
     }
 
 }
