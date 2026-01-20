@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 public class CompensationCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
     private boolean dirty = false;
-    private int compensationFactor = 0;
+    private int compensationFactor = 1;
     private Function<Integer,Integer> function = (i)-> Math.max(1, Math.min(i, 4));
 
     public CompensationCapability(BaseTeam team) {
@@ -36,7 +36,7 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
 
     @Override
     public void reset() {
-        compensationFactor = 0;
+        compensationFactor = 1;
         dirty = true;
     }
 

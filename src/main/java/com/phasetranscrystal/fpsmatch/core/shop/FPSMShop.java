@@ -269,7 +269,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         if (this.playersData.containsKey(uuid)) {
             return this.playersData.get(uuid);
         }else{
-            return this.getDefaultAndPutData(uuid);
+            return this.getDefaultAndPutData(uuid,true);
         }
     }
 
@@ -304,10 +304,17 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     }
 
     public void resetPlayerData(){
-        this.playersData.keySet().forEach(this::getDefaultAndPutData);
+        this.resetPlayerData(false);
+    }
+
+    public void resetPlayerData(boolean reset){
+        this.playersData.keySet().forEach(uuid->{
+            getDefaultAndPutData(uuid,reset);
+        });
         this.syncShopData();
         this.syncShopMoneyData();
     }
+
 
     /**
      * 获取所有玩家的商店数据。
@@ -434,6 +441,10 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     }
 
     public ShopData<T> getDefaultAndPutData(UUID uuid) {
+        return this.getDefaultAndPutData(uuid, false);
+    }
+
+    public ShopData<T> getDefaultAndPutData(UUID uuid, boolean resetMoney) {
         Map<T, List<ShopSlot>> modifiableMap = new HashMap<>(this.defaultShopData);
 
         Map<T, List<ShopSlot>> protectedMap = new HashMap<>();
@@ -442,7 +453,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         }
 
         ShopData<T> finalData;
-        if(this.playersData.containsKey(uuid)){
+        if(this.playersData.containsKey(uuid) && !resetMoney){
             finalData = new ShopData<>(protectedMap, this.typeCount , this.playersData.get(uuid).getMoney());
         }else{
             finalData = new ShopData<>(protectedMap, this.typeCount , this.startMoney);
