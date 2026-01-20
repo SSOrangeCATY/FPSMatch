@@ -87,7 +87,6 @@ public class FPSMatch {
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
         FPSMatchRule.init();
         FPSMCapabilityRegister.register();
-        registerThrowables();
         context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
         context.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());
@@ -109,14 +108,6 @@ public class FPSMatch {
         });
     }
 
-    private static void registerThrowables() {
-        ThrowableRegistry.registerSubType("grenade", 1);
-        ThrowableRegistry.registerSubType("flashbang", 1);
-        ThrowableRegistry.registerSubType("smoke", 1);
-        ThrowableRegistry.registerSubType("molotov", 1);
-        ThrowableRegistry.registerSubType("decoy", 1);
-        ThrowableRegistry.registerSubType("incendiary", 1);
-    }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         PACKET_REGISTER.registerPacket(ShopDataSlotS2CPacket.class);
