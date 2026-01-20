@@ -15,7 +15,7 @@ public class ThrowableRegistry {
     private static final Map<ThrowableSubType, Integer> SUBTYPE_LIMITS = new ConcurrentHashMap<>();
 
     public static final ThrowableSubType GRENADE = ThrowableRegistry.registerSubType("grenade", 1);
-    public static final ThrowableSubType FLASH_BANG = ThrowableRegistry.registerSubType("flash_bang", 1);
+    public static final ThrowableSubType FLASH_BANG = ThrowableRegistry.registerSubType("flash_bang", 2);
     public static final ThrowableSubType SMOKE = ThrowableRegistry.registerSubType("smoke", 1);
     public static final ThrowableSubType MOLOTOV = ThrowableRegistry.registerSubType("molotov", 1);
     public static final ThrowableSubType DECOY = ThrowableRegistry.registerSubType("decoy", 1);
