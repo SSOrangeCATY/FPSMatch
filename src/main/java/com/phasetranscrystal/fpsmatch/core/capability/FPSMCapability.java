@@ -65,6 +65,7 @@ public abstract class FPSMCapability<H> {
      * @param <H> 持有者类型
      * @param <T> 能力类型
      */
+    @FunctionalInterface
     public interface Factory<H, T extends FPSMCapability<H>> {
 
         /**

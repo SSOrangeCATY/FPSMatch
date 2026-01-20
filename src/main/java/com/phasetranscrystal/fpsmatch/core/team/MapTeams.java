@@ -301,10 +301,10 @@ public class MapTeams {
         return new ArrayList<>(this.teams.values());
     }
 
-
     public Map<ServerTeam,List<PlayerData>> getJoinedPlayersMap(){
         return this.teams.values().stream().collect(Collectors.toMap(Function.identity(), ServerTeam::getPlayersData));
     }
+
     /**
      * 获取所有可进行游戏的玩家 UUID 列表。
      *

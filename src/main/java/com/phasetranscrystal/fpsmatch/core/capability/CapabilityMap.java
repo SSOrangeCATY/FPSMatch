@@ -85,7 +85,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 是否添加成功
      */
     public final <C extends T> boolean add(Class<C> capabilityClass) {
-        if(contains(capabilityClass)) return false;
+        if(contains(capabilityClass)){
+            return FPSMCapabilityManager.getRawFactory(capabilityClass).map(FPSMCapability.Factory::isOriginal).orElse(false);
+        }
         return FPSMCapabilityManager.createInstance(this.getHolder(), capabilityClass).map(this::addDirectly).orElse(false);
     }
 
@@ -317,12 +319,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
 
     public void write(Map<String, JsonElement> data) {
         data.forEach(this::write);
-
-        List<Class<? extends T>> toRemove = this.capabilities.keySet().stream()
-                .filter(cap -> !data.containsKey(cap.getSimpleName()))
-                .toList();
-
-        toRemove.forEach(this::remove);
     }
 
     public Wrapper getData() {

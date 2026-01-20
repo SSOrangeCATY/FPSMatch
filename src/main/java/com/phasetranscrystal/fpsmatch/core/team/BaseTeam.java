@@ -37,6 +37,7 @@ public abstract class BaseTeam {
         return capabilities;
     }
 
+
     public boolean join(FPSMPlayer player){
        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player.get()));
     };

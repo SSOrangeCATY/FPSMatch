@@ -123,7 +123,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     public static void onPlayerPickupItem(FPSMapEvent.PlayerEvent.PickupItemEvent event){
 
         ServerPlayer player = event.getPlayer();
-        ShopCapability.getShopByPlayer((ServerPlayer) player).ifPresent(shop -> {
+        ShopCapability.getShopByPlayer(player).ifPresent(shop -> {
             ShopData<?> shopData = shop.getPlayerShopData(player.getUUID());
             Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
             if(pair != null){
@@ -378,7 +378,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      * 注册能力到全局管理器
      */
     public static void register() {
-        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, ShopCapability.class, new Factory<BaseTeam, ShopCapability>() {
+        FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, ShopCapability.class, new Factory<>() {
             @Override
             public ShopCapability create(BaseTeam team) {
                 if (team instanceof ServerTeam serverTeam) {

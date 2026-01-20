@@ -11,9 +11,9 @@ import java.util.function.Function;
 public class CompensationCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
     private boolean dirty = false;
     private int compensationFactor = 0;
-    private Function<Integer,Integer> function = (i)-> Math.max(0, Math.min(i, 4));
+    private Function<Integer,Integer> function = (i)-> Math.max(1, Math.min(i, 4));
 
-    private CompensationCapability(BaseTeam team) {
+    public CompensationCapability(BaseTeam team) {
         super(team);
     }
 
@@ -22,7 +22,6 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
     }
 
     public void setFunction(Function<Integer,Integer> function) {
-        if(this.team.isClientSide()) return;
         this.function = function;
     }
 

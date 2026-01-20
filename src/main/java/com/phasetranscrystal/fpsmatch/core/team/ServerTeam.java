@@ -155,6 +155,11 @@ public final class ServerTeam extends BaseTeam {
     public void clearAndPutPlayers(Map<UUID, PlayerData> players) {
         this.players.clear();
         this.players.putAll(players);
+        players.values().forEach(data -> {
+            data.getPlayer().ifPresent(onlinePlayer -> {
+                onlinePlayer.level().getScoreboard().addPlayerToTeam(onlinePlayer.getScoreboardName(), getPlayerTeam());
+            });
+        });
     }
 
     @Override
