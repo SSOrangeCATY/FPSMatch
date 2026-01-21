@@ -638,14 +638,14 @@ public class MapTeams {
      * 根据攻击者和目标玩家的 UUID，记录伤害值。
      * 如果攻击者未加入任何队伍，则不会记录任何数据。
      *
-     * @param attackerId 攻击者玩家对象
-     * @param targetId 目标玩家的 UUID
+     * @param attacker 攻击者玩家对象
+     * @param target 目标玩家的 UUID
      * @param damage 伤害值
      */
-    public void addHurtData(Player attackerId, UUID targetId, float damage) {
-        getTeamByPlayer(attackerId)
-                .flatMap(t -> t.getPlayerData(attackerId.getUUID()))
-                .ifPresent(p -> p.addDamageData(targetId, damage));
+    public void addHurtData(ServerPlayer attacker, ServerPlayer target, float damage) {
+        getTeamByPlayer(attacker)
+                .flatMap(t -> t.getPlayerData(attacker.getUUID()))
+                .ifPresent(p -> p.addDamageData(target.getUUID(), Math.min(target.getHealth(), damage)));
     }
 
     /**
@@ -688,8 +688,8 @@ public class MapTeams {
 
         for (PlayerData data : winnerTeam.getPlayersData()) {
             data.saveRoundData();
-            int kills = data.getTotalKills() * 2;
-            int assists = data.getTotalAssists();
+            int kills = data.getKills() * 2;
+            int assists = data.getAssists();
 
             int score = kills + assists;
             if (data.getOwner().equals(damageMvpId)) {
@@ -750,8 +750,8 @@ public class MapTeams {
             mvpId = this.getGameMvp(winnerTeam);
         } else {
             for (PlayerData data : winnerTeam.getPlayersData()) {
-                int kills = data.getTotalKills() * 2;
-                int assists = data.getTotalAssists();
+                int kills = data.getKills() * 2;
+                int assists = data.getAssists();
                 int score = kills + assists;
                 if (data.getOwner().equals(damageMvpId)) {
                     score += 2;
@@ -782,7 +782,7 @@ public class MapTeams {
      */
     public Map<UUID,  Float> getLivingHurtData() {
         Map<UUID,Float> hurtData = new HashMap<>();
-        teams.values().forEach((t)-> t.getPlayersData().forEach((data)-> hurtData.put(data.getOwner(),data.getTotalDamage())));
+        teams.values().forEach((t)-> t.getPlayersData().forEach((data)-> hurtData.put(data.getOwner(),data.getDamage())));
         return hurtData;
     }
 

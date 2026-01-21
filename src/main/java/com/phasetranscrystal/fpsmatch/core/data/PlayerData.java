@@ -22,8 +22,6 @@ public class PlayerData {
     private static final Gson GSON = new Gson();
     private final UUID owner;
     private final Component name;
-    public final boolean enableRounds; // 是否启用回合模式
-
     //基础字段（客户端/服务端共用，客户端仅访问）
     private int scores = 0;
     private int kills = 0;
@@ -44,6 +42,7 @@ public class PlayerData {
     private final Map<UUID, Damage> damageData = new HashMap<>(); // 伤害明细
     private SpawnPointData spawnPointsData;
     private boolean dirty = true; // 脏数据标记
+    public final boolean enableRounds; // 是否启用回合模式
 
     //客户端独有字段
     @OnlyIn(Dist.CLIENT)
@@ -98,8 +97,8 @@ public class PlayerData {
     }
 
     // 击杀数
-    public int getTotalKills() {
-        return enableRounds ? (kills + _kills) : kills;
+    public int getKills() {
+        return kills;
     }
 
     public int getTempKills(){
@@ -107,8 +106,8 @@ public class PlayerData {
     }
 
     // 死亡数
-    public int getTotalDeaths() {
-        return enableRounds ? (deaths + _deaths) : deaths;
+    public int getDeaths() {
+        return deaths;
     }
 
     public int getTempDeaths(){
@@ -116,8 +115,8 @@ public class PlayerData {
     }
 
     // 助攻数
-    public int getTotalAssists() {
-        return enableRounds ? (assists + _assists) : assists;
+    public int getAssists() {
+        return assists;
     }
 
     public int getTempAssists(){
@@ -125,8 +124,8 @@ public class PlayerData {
     }
 
     // 总伤害
-    public float getTotalDamage() {
-        return enableRounds ? (damage + _damage) : damage;
+    public float getDamage() {
+        return damage;
     }
 
     public float getTempDamage(){
@@ -139,14 +138,14 @@ public class PlayerData {
 
     // 爆头率
     public float getHeadshotRate() {
-        int totalKills = getTotalKills();
-        return totalKills > 0 ? (float) headshotKills / totalKills : 0.0f;
+        int Kills = getKills();
+        return Kills > 0 ? (float) headshotKills / Kills : 0.0f;
     }
 
     //KD
     public float getKD() {
-        int totalDeaths = getTotalDeaths();
-        return totalDeaths > 0 ? (float) getTotalKills() / totalDeaths : 0.0f;
+        int Deaths = getDeaths();
+        return Deaths > 0 ? (float) getKills() / Deaths : 0.0f;
     }
 
     // 客户端用的存活状态
@@ -245,20 +244,10 @@ public class PlayerData {
         }
         markDirty();
     }
-
-    //  基础字段直接操作（服务端用） 
-    public void setTotalKills(int totalKills) {
-        this.kills = totalKills;
-        markDirty();
-    }
+    
 
     public void setTempKills(int tempKills) {
         this._kills = tempKills;
-        markDirty();
-    }
-
-    public void setTotalDeaths(int totalDeaths) {
-        this.deaths = totalDeaths;
         markDirty();
     }
 
@@ -267,18 +256,8 @@ public class PlayerData {
         markDirty();
     }
 
-    public void setTotalAssists(int totalAssists) {
-        this.assists = totalAssists;
-        markDirty();
-    }
-
     public void setTempAssists(int tempAssists) {
         this._assists = tempAssists;
-        markDirty();
-    }
-
-    public void setTotalDamage(float totalDamage) {
-        this.damage = totalDamage;
         markDirty();
     }
 
@@ -422,10 +401,10 @@ public class PlayerData {
     public PlayerData copy(Player targetPlayer, boolean enableRounds) {
         PlayerData copy = new PlayerData(targetPlayer, enableRounds);
         copy.setScores(this.scores);
-        copy.setTotalKills(this.getTotalKills());
-        copy.setTotalDeaths(this.getTotalDeaths());
-        copy.setTotalAssists(this.getTotalAssists());
-        copy.setTotalDamage(this.getTotalDamage());
+        copy.setKills(this.getKills());
+        copy.setDeaths(this.getDeaths());
+        copy.setAssists(this.getAssists());
+        copy.setDamage(this.getDamage());
         copy.setMvpCount(this.mvpCount);
         copy.setLiving(this.isLiving);
         copy.setHeadshotKills(this.headshotKills);
@@ -433,17 +412,17 @@ public class PlayerData {
     }
 
     public void merge(PlayerData other) {
-        this.setTotalKills(this.getTotalKills() + other.getTotalKills());
-        this.setTotalDeaths(this.getTotalDeaths() + other.getTotalDeaths());
-        this.setTotalAssists(this.getTotalAssists() + other.getTotalAssists());
-        this.setTotalDamage(this.getTotalDamage() + other.getTotalDamage());
+        this.setKills(this.getKills() + other.getKills());
+        this.setDeaths(this.getDeaths() + other.getDeaths());
+        this.setAssists(this.getAssists() + other.getAssists());
+        this.setDamage(this.getDamage() + other.getDamage());
         this.setHeadshotKills(this.headshotKills + other.headshotKills);
     }
 
     // 客户端Tab栏展示用
     @OnlyIn(Dist.CLIENT)
     public String getTabString() {
-        return getTotalKills() + "/" + getTotalDeaths() + "/" + getTotalAssists();
+        return getKills() + "/" + getDeaths() + "/" + getAssists();
     }
 
     public String info() {
@@ -457,10 +436,10 @@ public class PlayerData {
         info.put("enableRounds", enableRounds);
         info.put("living", isLiving);
         info.put("scores", scores);
-        info.put("totalKills", getTotalKills());
-        info.put("totalDeaths", getTotalDeaths());
-        info.put("totalAssists", getTotalAssists());
-        info.put("totalDamage", getTotalDamage());
+        info.put("Kills", getKills());
+        info.put("Deaths", getDeaths());
+        info.put("Assists", getAssists());
+        info.put("Damage", getDamage());
         info.put("headshotKills", headshotKills);
         info.put("mvpCount", mvpCount);
         info.put("hp", FPSMCore.initialized() ? healthPercentServer() : hp);

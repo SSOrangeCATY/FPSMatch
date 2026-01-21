@@ -54,7 +54,7 @@ public class RenderUtil {
     }
 
     public static Optional<PlayerData> getPlayerData(PlayerInfo player) {
-        return FPSMClient.getGlobalData().getPlayerTabData(player.getProfile().getId());
+        return FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId());
     }
 
     public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo(List<PlayerInfo> playerInfoList) {
@@ -62,9 +62,9 @@ public class RenderUtil {
 
         for (PlayerInfo info : playerInfoList) {
             UUID uuid = info.getProfile().getId();
-            FPSMClient.getGlobalData().getPlayerTeam(uuid).ifPresent(team -> {
-                FPSMClient.getGlobalData().getPlayerTabData(uuid).ifPresent(tabData -> {
-                    teamPlayers.computeIfAbsent(team,k -> new ArrayList<>()).add(info);
+            FPSMClient.getGlobalData().getTeamByUUID(uuid).ifPresent(team -> {
+                team.getPlayerData(uuid).ifPresent(tabData -> {
+                    teamPlayers.computeIfAbsent(team.name,k -> new ArrayList<>()).add(info);
                 });
             });
         }

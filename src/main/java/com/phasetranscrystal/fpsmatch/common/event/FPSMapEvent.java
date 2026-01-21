@@ -159,12 +159,36 @@ public class FPSMapEvent extends Event {
             }
 
             public Optional<ServerPlayer> getKiller() {
-                return FPSMUtil.getAttackerFromDamageSource(source);
+                return getMap().getAttackerFromDamageSource(source);
             }
 
             @Override
             public boolean isCancelable() {
                 return true;
+            }
+        }
+
+        public static class KillEvent extends PlayerEvent {
+            private final DamageSource source;
+            private final ServerPlayer dead;
+
+            public KillEvent(BaseMap map, ServerPlayer killer, ServerPlayer dead, DamageSource source) {
+                super(map, killer);
+                this.source = source;
+                this.dead = dead;
+            }
+
+            public DamageSource getSource() {
+                return source;
+            }
+
+            public ServerPlayer getDead() {
+                return dead;
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return false;
             }
         }
 

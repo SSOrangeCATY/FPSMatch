@@ -11,11 +11,13 @@ import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
@@ -31,6 +33,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -580,20 +583,44 @@ public class FPSMUtil {
                 .getInsecureSkinLocation(new GameProfile(id, name));
     }
 
+    /**
+     * 检查实体是否为追踪实体并返回其拥有者
+     */
+    public static ServerPlayer getOwnerIfTraceable(Entity... entities) {
+        for (Entity entity : entities) {
+            if (entity instanceof TraceableEntity traceable) {
+                Entity owner = traceable.getOwner();
+                if (owner instanceof ServerPlayer serverPlayer) {
+                    return serverPlayer;
+                }
+            }
+        }
+        return null;
+    }
 
-    public static Optional<ServerPlayer> getAttackerFromDamageSource(DamageSource source) {
-        if (source.getEntity() instanceof ServerPlayer attacker) {
-            return Optional.of(attacker);
+    /**
+     * 计算助攻玩家（符合伤害阈值的首个助攻者）
+     *
+     * @param deadPlayer 死亡玩家
+     * @return 助攻玩家数据（可能为空）
+     */
+    public static Optional<PlayerData> calculateAssistPlayer(BaseMap map, ServerPlayer deadPlayer, float minAssistDamageRatio) {
+        MapTeams mapTeams = map.getMapTeams();
+
+        if (mapTeams.getTeamByPlayer(deadPlayer).isEmpty()) return Optional.empty();
+
+        Map<UUID, Float> hurtDataMap = mapTeams.getDamageMap().getOrDefault(deadPlayer.getUUID(), null);
+        if (hurtDataMap == null || hurtDataMap.isEmpty()) {
+            return Optional.empty();
         }
 
-        if(source.getDirectEntity() instanceof ServerPlayer attacker){
-            return Optional.of(attacker);
-        }
-
-        if (source.getEntity() instanceof ThrowableItemEntity throwable && throwable.getOwner() instanceof ServerPlayer owner) {
-            return Optional.of(owner);
-        }
-
-        return Optional.empty();
+        float minAssistDamage = deadPlayer.getMaxHealth() * minAssistDamageRatio;
+        return hurtDataMap.entrySet().stream()
+                .filter(entry -> entry.getValue() > minAssistDamage)
+                .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .limit(1)
+                .findAny()
+                .flatMap(entry -> mapTeams.getTeamByPlayer(entry.getKey())
+                        .flatMap(team -> team.getPlayerData(entry.getKey())));
     }
 }

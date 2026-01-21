@@ -22,7 +22,7 @@ public record ShopMoneyS2CPacket(UUID owner, int money) {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             if (Minecraft.getInstance().player != null) {
-                FPSMClient.getGlobalData().setPlayersMoney(this.owner, money);
+                FPSMClient.getGlobalData().setPlayerMoney(this.owner, money);
             }
         });
         ctx.get().setPacketHandled(true);

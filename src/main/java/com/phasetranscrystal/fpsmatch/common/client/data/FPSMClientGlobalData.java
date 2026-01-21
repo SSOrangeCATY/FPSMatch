@@ -1,7 +1,4 @@
 package com.phasetranscrystal.fpsmatch.common.client.data;
-
-import com.google.common.collect.Maps;
-import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
@@ -11,127 +8,289 @@ import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
-import org.checkerframework.checker.units.qual.C;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
+@ThreadSafe
 public class FPSMClientGlobalData {
-    private String currentMap = "none";
-    private String currentGameType = "none";
-    private String currentTeam = "none";
+    // 常量定义
+    public static final String NONE_VALUE = "none";
+    public static final String SPECTATOR_TEAM = "spectator";
+    public static final String DEFAULT_MAP = "fpsm_none";
 
-    private final Map<String, List<ClientShopSlot>> clientShopData = Maps.newHashMap();
-    private final Map<UUID,Integer> playersMoney = new HashMap<>();
-    public final Map<String, ClientTeam> clientTeamData = Maps.newHashMap();
+    private volatile String currentMap = NONE_VALUE;
+    private volatile String currentGameType = NONE_VALUE;
+    private volatile String currentTeam = NONE_VALUE;
+
+    private final Map<String, List<ClientShopSlot>> clientShopData = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> playersMoney = new ConcurrentHashMap<>();
+    private final Map<String, ClientTeam> clientTeamData = new ConcurrentHashMap<>();
+
+    // 记录类用于简化数据传递
+    public record PlayerTeamData(@Nullable String teamName, @Nullable PlayerData playerData) {
+        public boolean isValid() {
+            return teamName != null && playerData != null;
+        }
+    }
+
+    // === 商店数据相关方法 ===
 
     /**
-     * 获取指定类型和索引的商店槽位数据
-     * @param type 商店类型
-     * @param index 槽位索引
-     * @return 对应的商店槽位数据，如果索引无效返回空槽位
+     * 获取指定类型和索引的商店槽位数据，如果索引无效或不存在则返回空槽位
      */
-    public ClientShopSlot getSlotData(String type, int index) {
+    @NotNull
+    public ClientShopSlot getSlotData(@NotNull String type, int index) {
         if (index < 0) {
             return ClientShopSlot.empty();
         }
 
-        List<ClientShopSlot> shopSlots = clientShopData.computeIfAbsent(type, k -> new ArrayList<>());
+        List<ClientShopSlot> shopSlots = clientShopData.computeIfAbsent(type,
+                k -> Collections.synchronizedList(new ArrayList<>()));
 
-        while (shopSlots.size() <= index) {
-            shopSlots.add(ClientShopSlot.empty());
+        synchronized (shopSlots) {
+            while (shopSlots.size() <= index) {
+                shopSlots.add(ClientShopSlot.empty());
+            }
+            return shopSlots.get(index);
         }
-
-        return shopSlots.get(index);
     }
 
     /**
      * 安全获取槽位数据，不会自动填充空槽位
      */
-    public Optional<ClientShopSlot> getSlotDataIfPresent(String type, int index) {
-        if (index < 0 || !clientShopData.containsKey(type)) {
+    @NotNull
+    public Optional<ClientShopSlot> getSlotDataIfPresent(@NotNull String type, int index) {
+        if (index < 0) {
             return Optional.empty();
         }
+
         List<ClientShopSlot> slots = clientShopData.get(type);
-        return index < slots.size() ? Optional.of(slots.get(index)) : Optional.empty();
-    }
-
-    public Optional<ClientTeam> getTeamByName(String teamName) {
-        return Optional.ofNullable(clientTeamData.getOrDefault(teamName,null));
-    }
-
-    public Optional<ClientTeam> getTeamByUUID(UUID uuid){
-        for (ClientTeam team : clientTeamData.values()) {
-            if(team.hasPlayer(uuid)) return Optional.of(team);
+        if (slots == null || index >= slots.size()) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        synchronized (slots) {
+            return Optional.ofNullable(slots.get(index));
+        }
     }
 
-    public void addTeam(ClientTeam team) {
+    // === 队伍数据相关方法 ===
+
+    public List<ClientTeam> getTeams(){
+        return new ArrayList<>(clientTeamData.values());
+    }
+
+    @NotNull
+    public Optional<ClientTeam> getTeamByName(@NotNull String teamName) {
+        return Optional.ofNullable(clientTeamData.get(teamName));
+    }
+
+    @NotNull
+    public Optional<ClientTeam> getTeamByUUID(@NotNull UUID uuid) {
+        return clientTeamData.values().stream()
+                .filter(team -> team.hasPlayer(uuid))
+                .findFirst();
+    }
+
+    public void addTeam(@NotNull ClientTeam team) {
         clientTeamData.put(team.name, team);
     }
 
-    public void setTabData(String teamName,UUID uuid,PlayerData data){
-        if(clientTeamData.containsKey(teamName)) {
-            ClientTeam team = clientTeamData.get(teamName);
-            if(!team.hasPlayer(uuid)) {
-                clientTeamData
-                        .values()
-                        .stream()
-                        .filter(t -> t.hasPlayer(uuid))
-                        .toList()
-                        .forEach(t -> {t.delPlayer(uuid);});
-            }
-            team.setPlayerData(uuid,data);
-        }else{
+    /**
+     * 更新玩家队伍数据，如果玩家在其他队伍则会自动移除
+     */
+    public boolean updatePlayerTeamData(@NotNull String teamName, @NotNull UUID uuid,
+                                        @NotNull PlayerData data) {
+        ClientTeam targetTeam = clientTeamData.get(teamName);
+        if (targetTeam == null) {
             FPSMatch.LOGGER.error("ClientGlobalData: Team {} does not exist", teamName);
+            return false;
         }
+
+        // 从原队伍移除
+        removePlayerFromAllTeams(uuid);
+
+        // 添加到新队伍
+        targetTeam.setPlayerData(uuid, data);
+        return true;
     }
 
-    public Optional<Pair<String, PlayerData>> getFullTabPlayerData(UUID uuid){
-        for (Map.Entry<String, ClientTeam> teamEntry : clientTeamData.entrySet()) {
-            String teamName = teamEntry.getKey();
-            ClientTeam team = teamEntry.getValue();
-            Optional<PlayerData> playerData = team.getPlayerData(uuid);
+    /**
+     * 从所有队伍中移除玩家
+     */
+    private void removePlayerFromAllTeams(@NotNull UUID uuid) {
+        clientTeamData.values().forEach(team -> team.delPlayer(uuid));
+    }
+
+    @NotNull
+    public Optional<PlayerTeamData> getPlayerTeamData(@NotNull UUID uuid) {
+        for (Map.Entry<String, ClientTeam> entry : clientTeamData.entrySet()) {
+            Optional<PlayerData> playerData = entry.getValue().getPlayerData(uuid);
             if (playerData.isPresent()) {
-                return Optional.of(Pair.of(teamName, playerData.get()));
+                return Optional.of(new PlayerTeamData(entry.getKey(), playerData.get()));
             }
         }
         return Optional.empty();
     }
 
-    public Optional<String> getPlayerTeam(UUID uuid){
-        return getFullTabPlayerData(uuid).map(Pair::getFirst);
+    @NotNull
+    public Optional<String> getPlayerTeamName(@NotNull UUID uuid) {
+        return getPlayerTeamData(uuid).map(PlayerTeamData::teamName);
     }
 
-    public void leave(UUID uuid){
-        this.getTeamByUUID(uuid).ifPresent(team -> {
-            team.delPlayer(uuid);
-        });
+    public void leaveTeam(@NotNull UUID uuid) {
+        getTeamByUUID(uuid).ifPresent(team -> team.delPlayer(uuid));
     }
 
-    public Optional<PlayerData> getPlayerTabData(String team, UUID uuid){
-        return getTeamByName(team).flatMap(teamData -> teamData.getPlayerData(uuid));
+    @NotNull
+    public Optional<PlayerData> getPlayerData(@NotNull UUID uuid) {
+        return getPlayerTeamData(uuid).map(PlayerTeamData::playerData);
     }
 
-    public Optional<PlayerData> getPlayerTabData(UUID uuid){
-        return getFullTabPlayerData(uuid).map(Pair::getSecond);
+    public Optional<PlayerData> getLocalData(){
+        return getPlayerTeamData(Minecraft.getInstance().player.getUUID()).map(PlayerTeamData::playerData);
     }
 
-
-    public void setPlayersMoney(UUID uuid, int money){
-        playersMoney.put(uuid,money);
+    @NotNull
+    public Optional<PlayerData> getPlayerData(@NotNull String teamName, @NotNull UUID uuid) {
+        return getTeamByName(teamName)
+                .flatMap(team -> team.getPlayerData(uuid));
     }
 
-    public int getPlayerMoney(UUID uuid){
-        return playersMoney.getOrDefault(uuid,0);
+    // === 金钱相关方法 ===
+
+    public void setPlayerMoney(@NotNull UUID uuid, int money) {
+        playersMoney.put(uuid, money);
     }
+
+    public int getPlayerMoney(@NotNull UUID uuid) {
+        return playersMoney.getOrDefault(uuid, 0);
+    }
+
+    // === 状态判断方法 ===
+
+    public boolean isSpectator() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return false;
+        }
+        return isSpectatorTeam() || player.isSpectator();
+    }
+
+    public boolean isSpectatorTeam() {
+        return SPECTATOR_TEAM.equals(currentTeam);
+    }
+
+    public boolean isInTeam() {
+        return !NONE_VALUE.equals(currentTeam);
+    }
+
+    public boolean isInMap() {
+        return !NONE_VALUE.equals(currentMap);
+    }
+
+    public boolean isInGame() {
+        return !NONE_VALUE.equals(currentGameType);
+    }
+
+    public boolean isInNormalTeam() {
+        return getTeamByName(currentTeam)
+                .map(BaseTeam::isNormal)
+                .orElse(false);
+    }
+
+    public boolean isSameTeam(@NotNull Player p1, @NotNull Player p2) {
+        Optional<String> team1 = getPlayerTeamName(p1.getUUID());
+        Optional<String> team2 = getPlayerTeamName(p2.getUUID());
+        return team1.isPresent() && team2.isPresent() &&
+                team1.get().equals(team2.get());
+    }
+
+    // === 玩家统计数据的便捷方法 ===
+
+    public int getKills(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::getKills)
+                .orElse(0);
+    }
+
+    public int getHeadshots(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::getHeadshotKills)
+                .orElse(0);
+    }
+
+    public boolean isLiving(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::isLiving)
+                .orElse(false);
+    }
+
+    public int getMvpCount(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::getMvpCount)
+                .orElse(0);
+    }
+
+    public int getDeaths(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::getDeaths)
+                .orElse(0);
+    }
+
+    public float getDamage(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::getDamage)
+                .orElse(0F);
+    }
+
+    public int getAssists(@NotNull UUID uuid) {
+        return getPlayerData(uuid)
+                .map(PlayerData::getAssists)
+                .orElse(0);
+    }
+
+    public int getLivingWithTeam(String team) {
+        int living = 0;
+        for (var clientTeam : clientTeamData.values()) {
+            if (clientTeam.name.equals(team)) {
+                for (var data :clientTeam.players.values()){
+                    if (data.isLiving()) living++;
+                }
+            }
+        }
+        return living;
+    }
+
+    // === 状态管理方法 ===
+
+    public void removePlayer(@NotNull UUID uuid) {
+        removePlayerFromAllTeams(uuid);
+        playersMoney.remove(uuid);
+    }
+
+    public void reset() {
+        this.currentMap = NONE_VALUE;
+        this.currentGameType = NONE_VALUE;
+        this.currentTeam = NONE_VALUE;
+        this.playersMoney.clear();
+        this.clientShopData.clear();
+        this.clientTeamData.clear();
+    }
+
+    // === Getter/Setter ===
 
     public String getCurrentMap() {
         return currentMap;
     }
 
     public void setCurrentMap(String currentMap) {
-        this.currentMap = currentMap;
+        this.currentMap = Objects.requireNonNullElse(currentMap, NONE_VALUE);
     }
 
     public String getCurrentGameType() {
@@ -139,116 +298,38 @@ public class FPSMClientGlobalData {
     }
 
     public void setCurrentGameType(String currentGameType) {
-        this.currentGameType = currentGameType;
+        this.currentGameType = Objects.requireNonNullElse(currentGameType, NONE_VALUE);
     }
 
     public String getCurrentTeam() {
         return currentTeam;
     }
 
-    public Optional<ClientTeam> getCurrentClientTeam(){
-        return this.getTeamByName(getCurrentTeam());
-    }
-
-    public boolean isSpectator(){
-        LocalPlayer player = Minecraft.getInstance().player;
-        if(player == null) return false;
-
-        return equalsTeam("spectator") || player.isSpectator();
+    @NotNull
+    public Optional<ClientTeam> getCurrentClientTeam() {
+        return getTeamByName(currentTeam);
     }
 
     public void setCurrentTeam(String currentTeam) {
-        this.currentTeam = currentTeam;
+        this.currentTeam = Objects.requireNonNullElse(currentTeam, NONE_VALUE);
     }
 
-    public boolean equalsTeam(String team){
-        return currentTeam.equals(team);
-    }
+    // === 相等性检查 ===
 
-    public boolean isInTeam(){
-        return !equalsTeam("none");
-    }
-
-    public boolean equalsMap(String map){
+    public boolean isCurrentMap(String map) {
         return currentMap.equals(map);
     }
 
-    public boolean isInMap(){
-        return !equalsMap("none");
+    public boolean isCurrentGameType(String gameType) {
+        return currentGameType.equals(gameType);
     }
 
-    public boolean equalsGame(String type){
-        return currentGameType.equals(type);
+    public boolean isCurrentTeam(String team) {
+        return currentTeam.equals(team);
     }
+    
 
-    public boolean isInGame(){
-        return !equalsGame("none");
+    public Map<UUID, Integer> getAllPlayersMoney() {
+        return Collections.unmodifiableMap(playersMoney);
     }
-
-    public boolean isInNormalTeam(){
-        return this.getTeamByName(getCurrentTeam()).map(BaseTeam::isNormal).orElse(false);
-    }
-
-    public void removePlayer(UUID uuid){
-        clientTeamData.values().forEach(team -> team.delPlayer(uuid));
-        playersMoney.remove(uuid);
-    }
-
-    public void reset(){
-        this.currentMap = "fpsm_none";
-        this.currentGameType = "none";
-        this.currentTeam = "none";
-        this.playersMoney.clear();
-        this.clientShopData.clear();
-        this.clientTeamData.clear();
-    }
-
-    public int getKills(UUID uuid) {
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::getTotalKills)
-                .orElse(0);
-    }
-
-    public int getHeadshots(UUID uuid) {
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::getHeadshotKills)
-                .orElse(0);
-    }
-
-    public boolean isLiving(UUID uuid){
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::isLiving)
-                .orElse(false);
-    }
-
-    public int getMvpCount(UUID uuid){
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::getMvpCount)
-                .orElse(0);
-    }
-
-    public int getDeaths(UUID uuid){
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::getTotalDeaths)
-                .orElse(0);
-    }
-
-    public float getDamages(UUID uuid){
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::getTotalDamage)
-                .orElse(0F);
-    }
-
-    public int getAssists(UUID uuid){
-        return this.getPlayerTabData(uuid)
-                .map(PlayerData::getTotalAssists)
-                .orElse(0);
-    }
-
-    public boolean isSameTeam(Player p1, Player p2) {
-        String team1 = this.getPlayerTeam(p1.getUUID()).orElse(null);
-        String team2 = this.getPlayerTeam(p2.getUUID()).orElse(null);
-        return team1 != null && team1.equals(team2);
-    }
-
 }

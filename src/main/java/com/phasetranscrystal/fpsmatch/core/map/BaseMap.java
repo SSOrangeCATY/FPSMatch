@@ -9,7 +9,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
@@ -20,6 +19,7 @@ import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,7 +31,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,6 +57,8 @@ public abstract class BaseMap {
     private final MapTeams mapTeams;
 
     private final List<Setting<?>> settings = new ArrayList<>();
+
+    protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
 
     private final CapabilityMap<BaseMap,MapCapability> capabilities;
     // 地图区域数据
@@ -121,7 +122,9 @@ public abstract class BaseMap {
     /**
      * 同步数据到客户端
      */
-    public abstract void syncToClient();
+    public void syncToClient(){
+        this.getMapTeams().sync();
+    };
 
     /**
      * 每个 tick 的操作
@@ -450,6 +453,32 @@ public abstract class BaseMap {
         return this.isStart;
     }
 
+    /**
+     * 验证攻击是否有效
+     */
+    public boolean isValidAttack(ServerPlayer attacker, ServerPlayer hurt) {
+        return attacker != null &&
+                !attacker.isDeadOrDying() &&
+                !attacker.getUUID().equals(hurt.getUUID());
+    }
+
+    /**
+     * 从伤害源中提取服务器玩家攻击者
+     */
+    public Optional<ServerPlayer> getAttackerFromDamageSource(DamageSource source) {
+        // 检查主要攻击者
+        if (source.getEntity() instanceof ServerPlayer serverPlayer) {
+            return Optional.of(serverPlayer);
+        }
+
+        // 检查直接攻击实体
+        if (source.getDirectEntity() instanceof ServerPlayer serverPlayer) {
+            return Optional.of(serverPlayer);
+        }
+
+        // 检查追踪实体的拥有者
+        return Optional.ofNullable(FPSMUtil.getOwnerIfTraceable(source.getEntity(), source.getDirectEntity()));
+    }
 
     /**
      * 将所有配置项序列化为 JSON 格式。
@@ -632,4 +661,8 @@ public abstract class BaseMap {
         return addSetting(Setting.of(configName, defaultValue));
     }
 
+
+    public float getMinAssistDamageRatio() {
+        return minAssistDamageRatio.get();
+    }
 }
