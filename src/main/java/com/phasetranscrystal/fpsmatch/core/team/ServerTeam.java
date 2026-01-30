@@ -7,7 +7,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,25 +31,23 @@ public final class ServerTeam extends BaseTeam {
     }
 
     @Override
-    public boolean join(FPSMPlayer player) {
+    public boolean join(Player player) {
         if(!super.join(player)) return false;
-        if(player.isClientSide()) return false;
-        Player p = player.get();
-        player.get().getScoreboard().addPlayerToTeam(p.getScoreboardName(), getPlayerTeam());
-        players.put(p.getUUID(), new PlayerData(p));
-        sync((ServerPlayer) p);
+        if(player.level().isClientSide()) return false;
+        player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), getPlayerTeam());
+        players.put(player.getUUID(), new PlayerData(player));
+        sync((ServerPlayer) player);
         return true;
     }
 
     @Override
-    public boolean leave(FPSMPlayer player) {
+    public boolean leave(Player player) {
         if(!super.leave(player)) return false;
-        if(player.isClientSide()) return false;
-        Player p = player.get();
-        if (hasPlayer(p.getUUID())) {
-            delPlayer(p.getUUID());
-            if(getPlayerTeam().getPlayers().contains(p.getScoreboardName())){
-                p.getScoreboard().removePlayerFromTeam(p.getScoreboardName(), getPlayerTeam());
+        if(player.level().isClientSide()) return false;
+        if (hasPlayer(player.getUUID())) {
+            delPlayer(player.getUUID());
+            if(getPlayerTeam().getPlayers().contains(player.getScoreboardName())){
+                player.getScoreboard().removePlayerFromTeam(player.getScoreboardName(), getPlayerTeam());
             }
         }
         return true;

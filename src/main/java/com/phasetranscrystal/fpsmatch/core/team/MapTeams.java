@@ -9,12 +9,10 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -368,7 +366,7 @@ public class MapTeams {
     private void playerJoin(ServerPlayer player, String teamName) {
         // 获取队伍
         ServerTeam team = this.teams.get(teamName);
-        team.join(new FPSMPlayer(player));
+        team.join(player);
 
         if(!team.isSpectator()){
             // 将玩家的计分板数据同步给其他玩家
@@ -581,9 +579,11 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void leaveTeam(ServerPlayer player) {
-        this.teams.values().stream()
-                .filter(t->t.hasPlayer(player.getUUID())).toList()
-                .forEach(t->t.leave(new FPSMPlayer(player)));
+        for (ServerTeam team : teams.values()) {
+            if(team.hasPlayer(player.getUUID())) {
+                team.leave(player);
+            }
+        }
         this.playerName.remove(player.getUUID());
 
         syncToAll(new TeamPlayerLeaveS2CPacket(player.getUUID()));

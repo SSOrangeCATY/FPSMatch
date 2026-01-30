@@ -2,11 +2,11 @@ package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.common.MinecraftForge;
 import org.joml.Vector3f;
@@ -38,11 +38,11 @@ public abstract class BaseTeam {
     }
 
 
-    public boolean join(FPSMPlayer player){
-       return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player.get()));
+    public boolean join(Player player){
+       return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player));
     };
-    public boolean leave(FPSMPlayer player){
-        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player.get()));
+    public boolean leave(Player player){
+        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player));
     };
     public abstract void delPlayer(UUID player);
     public abstract void resetLiving();

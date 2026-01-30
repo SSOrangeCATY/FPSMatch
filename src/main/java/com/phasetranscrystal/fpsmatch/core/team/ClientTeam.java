@@ -4,9 +4,9 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamChatMessageC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.entity.FPSMPlayer;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.*;
 
@@ -22,9 +22,9 @@ public final class ClientTeam extends BaseTeam {
     }
 
     @Override
-    public boolean join(FPSMPlayer player) {
+    public boolean join(Player player) {
         if(!super.join(player)) return false;
-        this.players.put(player.uuid(),new PlayerData(player.uuid(),player.get().getDisplayName()));
+        this.players.put(player.getUUID(),new PlayerData(player.getUUID(),player.getDisplayName()));
         return true;
     }
 
@@ -37,9 +37,9 @@ public final class ClientTeam extends BaseTeam {
     }
 
     @Override
-    public boolean leave(FPSMPlayer player) {
+    public boolean leave(Player player) {
         if(!super.leave(player)) return false;
-        this.delPlayer(player.uuid());
+        this.delPlayer(player.getUUID());
         return true;
     }
 
