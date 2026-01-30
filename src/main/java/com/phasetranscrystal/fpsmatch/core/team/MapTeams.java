@@ -293,6 +293,13 @@ public class MapTeams {
         return this.teams.values().stream().flatMap(t -> t.getPlayersData().stream()).filter(p -> p.getOwner().equals(uuid)).findFirst();
     }
 
+    /**
+    * 获取除removal以外的队伍
+    * */
+    public List<ServerTeam> getNormalTeams(ServerTeam removal){
+        return this.getNormalTeams().stream().filter(t->!removal.equals(t)).toList();
+    }
+
     public List<ServerTeam> getNormalTeams(){
         return this.teams.values().stream().filter(BaseTeam::isNormal).collect(Collectors.toList());
     }

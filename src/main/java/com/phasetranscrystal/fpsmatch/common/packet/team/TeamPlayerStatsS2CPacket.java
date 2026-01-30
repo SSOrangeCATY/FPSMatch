@@ -45,7 +45,7 @@ public class TeamPlayerStatsS2CPacket {
                 data.getAssists(),
                 data.getDamage(),
                 data.getMvpCount(),
-                data.isLivingServer(),
+                data.isLivingOnServer(),
                 data.getHeadshotKills(),
                 data.healthPercentServer(),
                 data.enableRounds,

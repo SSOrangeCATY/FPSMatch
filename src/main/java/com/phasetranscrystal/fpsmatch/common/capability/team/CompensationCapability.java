@@ -10,8 +10,8 @@ import java.util.function.Function;
 
 public class CompensationCapability extends TeamCapability implements FPSMCapability.CapabilitySynchronizable {
     private boolean dirty = false;
-    private int compensationFactor = 1;
-    private Function<Integer,Integer> function = (i)-> Math.max(1, Math.min(i, 4));
+    private int compensationFactor = 0;
+    private Function<Integer,Integer> setter = (i)-> Math.max(1, Math.min(i, 4));
 
     public CompensationCapability(BaseTeam team) {
         super(team);
@@ -21,16 +21,28 @@ public class CompensationCapability extends TeamCapability implements FPSMCapabi
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, CompensationCapability.class, CompensationCapability::new);
     }
 
-    public void setFunction(Function<Integer,Integer> function) {
-        this.function = function;
+    public void withSetter( Function<Integer,Integer> setter) {
+        this.setter = setter;
     }
 
-    public int getCompensationFactor() {
+    public Function<Integer, Integer> getSetter() {
+        return setter;
+    }
+
+    public void add(int factor){
+        setFactor(compensationFactor + factor);
+    }
+
+    public void reduce(int factor){
+        setFactor(compensationFactor - factor);
+    }
+
+    public int getFactor() {
         return compensationFactor;
     }
 
-    public void setCompensationFactor(int factor) {
-        this.compensationFactor = function.apply(factor);
+    public void setFactor(int factor) {
+        this.compensationFactor = setter == null ? factor : setter.apply(factor);
         dirty = true;
     }
 

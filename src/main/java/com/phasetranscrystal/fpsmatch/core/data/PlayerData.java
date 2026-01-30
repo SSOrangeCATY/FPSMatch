@@ -93,7 +93,7 @@ public class PlayerData {
     }
 
     public float getHpServer(){
-        return getPlayer().map(p->this.isLivingServer() ? p.getHealth() : 0.0f).orElse(0.0f);
+        return getPlayer().map(p->this.isLivingOnServer() ? p.getHealth() : 0.0f).orElse(0.0f);
     }
 
     // 击杀数
@@ -148,14 +148,12 @@ public class PlayerData {
         return Deaths > 0 ? (float) getKills() / Deaths : 0.0f;
     }
 
-    // 客户端用的存活状态
-    @OnlyIn(Dist.CLIENT)
     public boolean isLiving() {
         return isLiving;
     }
 
     // 服务端用的存活状态（含在线检查）
-    public boolean isLivingServer() {
+    public boolean isLivingOnServer() {
         return isLiving && isOnline();
     }
 
