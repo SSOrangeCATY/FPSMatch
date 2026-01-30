@@ -26,16 +26,15 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.*;
 
 
-
 public class FPSMapCommand {
     // 构建map modify命令树
     public static LiteralArgumentBuilder<CommandSourceStack> init(Pair<LiteralArgumentBuilder<CommandSourceStack>, CommandBuildContext> builder) {
         // 获取HelpManager实例
         FPSMHelpManager helpManager = FPSMHelpManager.getInstance();
-        
+
         // 注册map命令帮助
         helpManager.registerCommandHelp("fpsm map");
-        helpManager.registerCommandHelp("fpsm map create", Component.translatable("commands.fpsm.help.map.create") , Component.translatable("commands.fpsm.help.map.create.hover"));
+        helpManager.registerCommandHelp("fpsm map create", Component.translatable("commands.fpsm.help.map.create"), Component.translatable("commands.fpsm.help.map.create.hover"));
         helpManager.registerCommandHelp("fpsm map modify", Component.translatable("commands.fpsm.help.map.modify"));
         helpManager.registerCommandHelp("fpsm map modify debug", Component.translatable("commands.fpsm.help.map.debug"));
         helpManager.registerCommandHelp("fpsm map modify debug start", Component.translatable("commands.fpsm.help.map.debug.start"));
@@ -94,14 +93,15 @@ public class FPSMapCommand {
                                                                 .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
                                                                         .executes(FPSMapCommand::handleLeaveMapWithTarget)))
                                                         .then(Commands.literal("teams")
-                                                                .then(Commands.literal("spectator")                                                                        .then(Commands.literal("players")
-                                                                        .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
-                                                                                .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
-                                                                                        .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
-                                                                                        .executes(FPSMapCommand::handleSpecTeamAction)
+                                                                .then(Commands.literal("spectator")
+                                                                        .then(Commands.literal("players")
+                                                                                .then(Commands.argument(FPSMCommandSuggests.TARGETS_ARG, EntityArgument.players())
+                                                                                        .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
+                                                                                                .suggests(FPSMCommandSuggests.TEAM_ACTION_SUGGESTION)
+                                                                                                .executes(FPSMapCommand::handleSpecTeamAction)
+                                                                                        )
                                                                                 )
-                                                                        )
-                                                                ))
+                                                                        ))
                                                                 .then(Commands.argument(FPSMCommandSuggests.TEAM_NAME_ARG, StringArgumentType.string())
                                                                         .suggests(FPSMCommandSuggests.TEAM_NAMES_SUGGESTION)
                                                                         .then(buildTeamCapabilityCommands(builder.getSecond()))
