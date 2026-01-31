@@ -62,6 +62,15 @@ public class MapTeams {
     }
 
 
+    public void tick(){
+        List<ServerPlayer> online = getOnlineWithSpec();
+        for (ServerTeam team : teams.values()) {
+            team.tick();
+            team.syncCapabilities(online);
+        }
+        sync(online);
+    }
+
     public void addSpawnPoint(ServerTeam team, SpawnPointData spawnPointData) {
         team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.addSpawnPointData(spawnPointData));
     }
@@ -430,8 +439,8 @@ public class MapTeams {
      * 同步后会清除脏数据标记，表示数据已经完成全量同步。
      * 适用于游戏状态更新时的全局数据同步。
      */
-    public void sync() {
-        sync(getOnlineWithSpec(),false, true);
+    public void sync(Collection<ServerPlayer> players) {
+        sync(players,false, true);
     }
 
     public List<ServerPlayer> getOnlineWithSpec(){

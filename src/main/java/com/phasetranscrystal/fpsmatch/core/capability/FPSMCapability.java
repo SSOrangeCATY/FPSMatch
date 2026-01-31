@@ -18,7 +18,9 @@ import org.jetbrains.annotations.Nullable;
  * 基础能力接口，定义所有能力的通用规范
  * @param <H> 能力的持有者类型（如BaseTeam、BaseMap）
  * @apiNote 更多功能拓展请见：
- * @see CapabilitySynchronizable 允许网络同步功能
+ * @see Factory 注册在Manager的能力工厂 - 当command方法不为null时自动在指令树注册命令
+ * @see CapabilitySynchronizable 允许网络同步整个能力到客户端的功能
+ * @see DataSynchronizable 允许能力数据同步到客户端的功能
  * @see Savable 允许持久化数据
  */
 public abstract class FPSMCapability<H> {

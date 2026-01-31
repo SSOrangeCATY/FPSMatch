@@ -210,6 +210,5 @@ public final class ServerTeam extends BaseTeam {
 
     public void tick() {
         this.getCapabilityMap().tick();
-        this.syncCapabilities(getOnline());
     }
 }

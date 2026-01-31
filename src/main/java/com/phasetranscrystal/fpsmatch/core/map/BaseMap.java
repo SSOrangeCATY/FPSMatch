@@ -114,8 +114,8 @@ public abstract class BaseMap {
     public final void mapTick() {
         checkForVictory();
         tick();
+        getMapTeams().tick();
         capabilities.tick();
-        getMapTeams().getTeamsWithSpectator().forEach(ServerTeam::tick);
         syncToClient();
     }
 
@@ -123,7 +123,6 @@ public abstract class BaseMap {
      * 同步数据到客户端
      */
     public void syncToClient(){
-        this.getMapTeams().sync();
     };
 
     /**
