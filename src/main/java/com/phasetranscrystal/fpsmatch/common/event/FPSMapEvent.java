@@ -131,6 +131,10 @@ public class FPSMapEvent extends Event {
             public DamageSource getSource() {
                 return source;
             }
+            public Optional<ServerPlayer> getAttacker() {
+                return this.getMap().getAttackerFromDamageSource(this.source);
+            }
+
 
             public float getAmount() {
                 return amount;
@@ -158,7 +162,7 @@ public class FPSMapEvent extends Event {
                 return source;
             }
 
-            public Optional<ServerPlayer> getKiller() {
+            public Optional<ServerPlayer> getAttacker() {
                 return getMap().getAttackerFromDamageSource(source);
             }
 
