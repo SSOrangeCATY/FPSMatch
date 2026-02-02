@@ -30,7 +30,7 @@ public class FPSMBukkitEventBirge {
     public void onForgeKillEvent(FPSMapEvent.PlayerEvent.DeathEvent event) {
         if(!FPSMBukkit.isBukkitEnvironment()) return;
         Player forgeDead = event.getPlayer();
-        Optional<ServerPlayer> forgeKiller = event.getKiller();
+        Optional<ServerPlayer> forgeKiller = event.getAttacker();
         BukkitPlayerKillOnMapEvent bukkitEvent = new BukkitPlayerKillOnMapEvent(
                 event.getMap(), forgeDead.getUUID(), forgeKiller.map(Entity::getUUID).orElse(null)
         );

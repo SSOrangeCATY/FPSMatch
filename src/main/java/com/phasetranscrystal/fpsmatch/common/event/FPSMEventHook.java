@@ -9,9 +9,7 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
@@ -164,7 +162,7 @@ public class FPSMEventHook {
                     data.addDeath();
                 });
 
-                Optional<ServerPlayer> optional = deathEvent.getKiller();
+                Optional<ServerPlayer> optional = deathEvent.getAttacker();
                 if (optional.isPresent()) {
                     ServerPlayer killer = optional.get();
 
