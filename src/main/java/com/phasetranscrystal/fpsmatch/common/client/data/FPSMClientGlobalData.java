@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.client.data;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -14,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 @ThreadSafe
 public class FPSMClientGlobalData {
@@ -104,12 +102,12 @@ public class FPSMClientGlobalData {
     /**
      * 更新玩家队伍数据，如果玩家在其他队伍则会自动移除
      */
-    public boolean updatePlayerTeamData(@NotNull String teamName, @NotNull UUID uuid,
-                                        @NotNull PlayerData data) {
+    public void updatePlayerTeamData(@NotNull String teamName, @NotNull UUID uuid,
+                                     @NotNull PlayerData data) {
         ClientTeam targetTeam = clientTeamData.get(teamName);
         if (targetTeam == null) {
             FPSMatch.LOGGER.error("ClientGlobalData: Team {} does not exist", teamName);
-            return false;
+            return;
         }
 
         // 从原队伍移除
@@ -117,7 +115,6 @@ public class FPSMClientGlobalData {
 
         // 添加到新队伍
         targetTeam.setPlayerData(uuid, data);
-        return true;
     }
 
     /**

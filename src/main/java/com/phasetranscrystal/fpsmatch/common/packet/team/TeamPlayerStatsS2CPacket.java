@@ -47,19 +47,14 @@ public class TeamPlayerStatsS2CPacket {
                 data.getMvpCount(),
                 data.isLivingOnServer(),
                 data.getHeadshotKills(),
-                data.healthPercentServer(),
-                data.enableRounds,
-                data.getTempKills(),
-                data.getTempDeaths(),
-                data.getTempAssists(),
-                data.getTempDamage()
+                data.healthPercentServer()
         );
     }
 
     public TeamPlayerStatsS2CPacket(UUID playerUuid, String teamName, Component playerName,
                                     int scores, int Kills, int Deaths, int Assists,
                                     float Damage, int mvpCount, boolean isLiving, int headshotKills,
-                                    float healthPercent, boolean enableRounds, int tempKills, int tempDeaths, int tempAssists, float tempDamage) {
+                                    float healthPercent) {
         this.uuid = playerUuid;
         this.teamName = teamName;
         this.playerName = playerName;

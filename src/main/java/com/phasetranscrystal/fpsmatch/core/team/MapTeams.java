@@ -98,7 +98,7 @@ public class MapTeams {
      * @param attackTeam 攻击方队伍
      * @param defendTeam 防守方队伍
      */
-    public static void switchAttackAndDefend(BaseMap map , ServerTeam attackTeam, ServerTeam defendTeam) {
+    public void switchAttackAndDefend(BaseMap map , ServerTeam attackTeam, ServerTeam defendTeam) {
         if(map == null || attackTeam == null || defendTeam == null) return;
 
         //交换玩家
@@ -118,6 +118,8 @@ public class MapTeams {
         attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(attackTeam.getPlayerList()));
 
         defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
+
+        broadcast();
     }
 
     /**
@@ -377,12 +379,9 @@ public class MapTeams {
         ServerTeam team = this.teams.get(teamName);
         team.join(player);
 
-        if(!team.isSpectator()){
-            // 将玩家的计分板数据同步给其他玩家
-            team.getPlayerData(player.getUUID()).ifPresent(playerData ->
-                    this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData))
-            );
-        }
+        team.getPlayerData(player.getUUID()).ifPresent(playerData ->
+                this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData))
+        );
         // 同步其他玩家的计分板数据
         broadcast();
     }
@@ -464,7 +463,7 @@ public class MapTeams {
     }
 
     public <M> void syncToAll(M msg){
-        for (ServerPlayer player : getOnline()) {
+        for (ServerPlayer player : getOnlineWithSpec()) {
             FPSMatch.sendToPlayer(player, msg);
         }
     }
@@ -513,7 +512,10 @@ public class MapTeams {
     public boolean teamIsFull(String teamName) {
         ServerTeam team = teams.get(teamName);
         if (team == null) return false;
-        return team.getPlayerLimit() == -1 || team.getPlayerLimit() <= team.getPlayerList().size();
+        if (team.getPlayerLimit() == -1) {
+            return false;
+        }
+        return team.getPlayerLimit() <= team.getPlayerList().size();
     }
 
     /**
