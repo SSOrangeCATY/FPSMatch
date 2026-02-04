@@ -82,6 +82,8 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    mavenLocal()
+    mavenCentral()
     maven {
         name = 'Curse Maven'
         url = "https://www.cursemaven.com"
