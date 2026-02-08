@@ -15,6 +15,7 @@ import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 /**
  * 服务器端队伍实现类，处理所有服务器端队伍逻辑
@@ -107,7 +108,7 @@ public final class ServerTeam extends BaseTeam {
     public List<UUID> getLivingPlayers() {
         List<UUID> uuids = new ArrayList<>();
         players.values().forEach(data -> {
-            if (data.isLiving()) {
+            if (data.isLivingOnServer()) {
                 uuids.add(data.getOwner());
             }
         });
@@ -150,11 +151,17 @@ public final class ServerTeam extends BaseTeam {
 
     @Override
     public void clearAndPutPlayers(Map<UUID, PlayerData> players) {
+        this.clearAndPutPlayers(players,(t,d)->{});
+    }
+
+    public void clearAndPutPlayers(Map<UUID, PlayerData> players, BiConsumer<ServerTeam,PlayerData> offline) {
         this.players.clear();
         this.players.putAll(players);
         players.values().forEach(data -> {
-            data.getPlayer().ifPresent(onlinePlayer -> {
+            data.getPlayer().ifPresentOrElse(onlinePlayer -> {
                 onlinePlayer.level().getScoreboard().addPlayerToTeam(onlinePlayer.getScoreboardName(), getPlayerTeam());
+            },()->{
+                offline.accept(this,data);
             });
         });
     }

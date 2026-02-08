@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.core.team;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
+import com.phasetranscrystal.fpsmatch.common.capability.team.TeamSwitchRestrictionCapability;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
@@ -103,8 +104,8 @@ public class MapTeams {
 
         //交换玩家
         Map<UUID, PlayerData> tempPlayers = new HashMap<>(attackTeam.getPlayers());
-        attackTeam.clearAndPutPlayers(defendTeam.getPlayers());
-        defendTeam.clearAndPutPlayers(tempPlayers);
+        attackTeam.clearAndPutPlayers(defendTeam.getPlayers(),this::addToUnableSwitch);
+        defendTeam.clearAndPutPlayers(tempPlayers,this::addToUnableSwitch);
 
         // 交换得分
         int tempScore = attackTeam.getScores();
@@ -120,6 +121,12 @@ public class MapTeams {
         defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
 
         broadcast();
+    }
+
+    public void addToUnableSwitch(ServerTeam team, PlayerData data) {
+        team.getCapabilityMap().get(TeamSwitchRestrictionCapability.class).ifPresent(cap->{
+            cap.addUnableToSwitchPlayer(data.getOwner());
+        });
     }
 
     /**
@@ -619,14 +626,16 @@ public class MapTeams {
      * 返回一个 Map，键为队伍名称，值为该队伍存活玩家的 UUID 列表。
      * 如果某个队伍没有存活玩家，则不会将其加入返回的 Map 中。
      *
-     * @return 包含所有队伍存活玩家数据的 Map
+     * @return 包含所有普通队伍存活玩家数据的 Map
      */
     public Map<ServerTeam, List<UUID>> getTeamsLiving() {
         Map<ServerTeam, List<UUID>> teamsLiving = new HashMap<>();
         teams.forEach((s, t) -> {
-            List<UUID> list = t.getLivingPlayers();
-            if (!list.isEmpty()) {
-                teamsLiving.put(t, list);
+            if(t.isNormal()){
+                List<UUID> list = t.getLivingPlayers();
+                if (!list.isEmpty()) {
+                    teamsLiving.put(t, list);
+                }
             }
         });
         return teamsLiving;

@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.capability.team;
 
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -20,10 +21,11 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
     @Override
     public void tick() {
         for (UUID playerId : unableToSwitchPlayers){
-            FPSMCore.getInstance().getPlayerByUUID(playerId).ifPresent(player -> {
-                player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
-                removeUnableToSwitchPlayer(playerId);
-            });
+            team.getPlayerData(playerId).flatMap(PlayerData::getPlayer)
+                    .ifPresent(player -> {
+                        player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
+                        removeUnableToSwitchPlayer(playerId);
+                    });
         }
     }
 
@@ -32,7 +34,7 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
     }
 
     public void addUnableToSwitchPlayer(UUID playerUUID) {
-        if (!unableToSwitchPlayers.contains(playerUUID)) {
+        if (!isUnableToSwitch(playerUUID)) {
             unableToSwitchPlayers.add(playerUUID);
         }
     }
