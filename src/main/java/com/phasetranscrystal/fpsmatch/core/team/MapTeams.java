@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.team;
 
+import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.TeamSwitchRestrictionCapability;
@@ -150,11 +151,11 @@ public class MapTeams {
      * 遍历所有队伍，并调用队伍的随机出生点分配方法。
      */
     public boolean randomSpawnPoints(){
-        AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+        AtomicBoolean flag = new AtomicBoolean(true);
         this.teams.forEach(((s, t) -> {
-            if(atomicBoolean.get()) atomicBoolean.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
+            if(flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
         }));
-        return atomicBoolean.get();
+        return flag.get();
     }
 
     /**
@@ -299,6 +300,18 @@ public class MapTeams {
         }
 
         return Optional.of(reference.get());
+    }
+    public Optional<Pair<ServerTeam,PlayerData>> getPlayerTeamAndData(ServerPlayer player){
+        return getPlayerTeamAndData(player.getUUID());
+    }
+
+    public Optional<Pair<ServerTeam,PlayerData>> getPlayerTeamAndData(UUID player){
+        for (ServerTeam team : this.teams.values()) {
+            if(!team.isNormal()) continue;
+            Optional<Pair<ServerTeam,PlayerData>> opt = team.getPlayerData(player).map(data -> Pair.of(team, data));
+            if(opt.isPresent()) return opt;
+        }
+        return Optional.empty();
     }
 
     public Optional<PlayerData> getPlayerData(ServerPlayer player){

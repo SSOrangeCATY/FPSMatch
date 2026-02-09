@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.compat.tacz.client.fakeitem;
 
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -49,6 +50,24 @@ public class ClientFakeItemManager {
 
     // tick更新确保假物品状态正确
     public static void tickUpdate(LocalPlayer player) {
+        if (!isHoldingFake || player == null) {
+            return;
+        }
+        Inventory inv = player.getInventory();
+        int selected = inv.selected;
+        if (selected == fakeSlotIndex) {
+            return;
+        }
+        if (selected < 0 || selected >= inv.items.size()) {
+            return;
+        }
+        if (fakeSlotIndex >= 0 && fakeSlotIndex < inv.items.size()) {
+            inv.items.set(fakeSlotIndex, oldStack);
+        }
+        fakeSlotIndex = selected;
+        oldStack = inv.items.get(fakeSlotIndex).copy();
+        inv.items.set(fakeSlotIndex, mirrorStack.copy());
+
         if (!isHoldingFake || fakeSlotIndex < 0 || fakeSlotIndex >= player.getInventory().items.size()) return;
         if (!player.getInventory().items.get(fakeSlotIndex).equals(mirrorStack)) {
             updatePlayerInventory(player);

@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.compat.tacz.client.event;
 
+import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import com.phasetranscrystal.fpsmatch.compat.tacz.client.animation.GunAnimationController;
 import com.phasetranscrystal.fpsmatch.compat.tacz.client.fakeitem.ClientFakeItemManager;
 import com.phasetranscrystal.fpsmatch.compat.tacz.client.test.TaczSpecScreenShake;
@@ -23,6 +24,8 @@ public class SpectatorEventHandler {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
+        if(shouldSkipSpecHandlers()) return;
+
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
 
@@ -44,6 +47,8 @@ public class SpectatorEventHandler {
     @SubscribeEvent
     public static void onGunFire(GunFireEvent event) {
         if (!event.getLogicalSide().isClient()) return;
+        if(shouldSkipSpecHandlers()) return;
+
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.isSpectator()) return;
 
@@ -57,6 +62,8 @@ public class SpectatorEventHandler {
     @SubscribeEvent
     public static void onGunReload(GunReloadEvent event) {
         if (!event.getLogicalSide().isClient()) return;
+        if(shouldSkipSpecHandlers()) return;
+
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || !player.isSpectator()) return;
 
@@ -87,6 +94,12 @@ public class SpectatorEventHandler {
     // 处理震屏逻辑
     @SubscribeEvent
     public static void onComputeCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+        if(shouldSkipSpecHandlers()) return;
         TaczSpecScreenShake.handleCameraAngles(event);
+    }
+
+    private static boolean shouldSkipSpecHandlers() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        return SpectatorView.isSpectatingOther(player);
     }
 }

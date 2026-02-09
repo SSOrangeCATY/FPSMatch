@@ -312,6 +312,10 @@ public class PlayerData {
         return damageData;
     }
 
+    public boolean isHurtTo(UUID player){
+        return damageData.containsKey(player);
+    }
+
     public Map<UUID, Float> getDamages(){
         Map<UUID, Float> damages = new HashMap<>();
         for (Map.Entry<UUID, Damage> entry : damageData.entrySet()) {
