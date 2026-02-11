@@ -139,7 +139,7 @@ dependencies {
     modImplementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
     modRuntimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"
     modImplementation "maven.modrinth:cloth-config:${cloth_config_version}"
-    additionalRuntimeClasspath(modCompileOnly('org.apache.commons:commons-math3:3.6.1'))
+    modCompileOnly('org.apache.commons:commons-math3:3.6.1');
 
     modCompileOnly "org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT"
     // JetBrains annotations for @NotNull and other annotations
