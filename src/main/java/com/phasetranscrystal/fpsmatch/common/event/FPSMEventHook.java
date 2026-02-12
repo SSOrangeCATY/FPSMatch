@@ -134,7 +134,13 @@ public class FPSMEventHook {
                     return;
                 }
 
-                if (event.getAmount() <= 0) return;
+                event.setAmount(hurtEvent.getAmount());
+
+                if (event.getAmount() <= 0){
+                    event.setCanceled(true);
+                    return;
+                }
+
                 map.getAttackerFromDamageSource(event.getSource()).ifPresent(attacker->{
                     if (!map.isValidAttack(attacker, hurt)) return;
                     map.getMapTeams().addHurtData(attacker, hurt, event.getAmount());
