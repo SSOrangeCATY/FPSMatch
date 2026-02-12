@@ -57,6 +57,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                                 .flatMap(ShopCapability::getShopSafe)));
     }
 
+    public static Optional<FPSMShop<?>> getShop(ServerTeam team) {
+        return team.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe);
+    }
+
     public static Optional<ShopData<?>> getPlayerShopData(BaseMap map, UUID player) {
         return map.getMapTeams().getTeamByPlayer(player)
                 .flatMap(team -> team.getCapabilityMap().get(ShopCapability.class)

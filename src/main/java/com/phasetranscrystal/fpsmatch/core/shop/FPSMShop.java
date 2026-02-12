@@ -10,7 +10,6 @@ import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -281,8 +280,34 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param player 玩家
      * @return 玩家的商店数据
      */
-    public ShopData<T> getPlayerShopData(Player player) {
+    public ShopData<T> getPlayerShopData(ServerPlayer player) {
         return this.getPlayerShopData(player.getUUID());
+    }
+
+    public Optional<ShopData<T>> getPlayerShopDataSafe(ServerPlayer player) {
+        return getPlayerShopDataSafe(player.getUUID());
+    }
+
+    public Optional<ShopData<T>> getPlayerShopDataSafe(UUID player) {
+        if (this.playersData.containsKey(player)) {
+            return Optional.of(this.playersData.get(player));
+        }
+        return Optional.empty();
+    }
+
+    public void reduceMoney(ServerPlayer player, int amount) {
+        this.getPlayerShopDataSafe(player).ifPresent(shopData-> shopData.reduceMoney(amount));
+        this.syncShopMoneyData(player);
+    }
+
+    public void addMoney(UUID player, int amount) {
+        this.getPlayerShopDataSafe(player).ifPresent(shopData-> shopData.addMoney(amount));
+        this.syncShopMoneyData(player);
+    }
+
+    public void addMoney(ServerPlayer player, int amount) {
+        this.getPlayerShopDataSafe(player).ifPresent(shopData-> shopData.addMoney(amount));
+        this.syncShopMoneyData(player);
     }
 
     /**
@@ -308,9 +333,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     }
 
     public void resetPlayerData(boolean reset){
-        this.playersData.keySet().forEach(uuid->{
-            getDefaultAndPutData(uuid,reset);
-        });
+        this.playersData.keySet().forEach(uuid-> getDefaultAndPutData(uuid,reset));
         this.syncShopData();
         this.syncShopMoneyData();
     }

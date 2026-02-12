@@ -23,30 +23,30 @@ public class FPSMConfig {
 
             lockSpecKeyHandle = builder.comment(
                     "阻止旁观者原版按键"
-            ).define("LockSpecKeyHandle", false);
+            ).define("LockSpecKeyHandle", true);
 
             disableDefaultGlow = builder.comment(
                     "禁用原版的发光效果"
-            ).define("DisableDefaultGlow", false);
+            ).define("DisableDefaultGlow", true);
 
             disableSpecGlowKey = builder.comment(
                     "禁用旁观者模式的发光按键"
-            ).define("DisableSpecGlowKey", false);
+            ).define("DisableSpecGlowKey", true);
 
             disableRenderNameTag = builder.comment(
                     "禁止玩家头顶名称的渲染"
-            ).define("DisableRenderNameTag", false);
+            ).define("DisableRenderNameTag", true);
 
             builder.comment("如果取消了碰撞箱的渲染则爆头碰撞箱也不会渲染了");
             builder.comment("Disabling hit box rendering will also hide the headshot hit box");
 
             disableRenderHitBox = builder.comment(
                     "禁止渲染碰撞箱"
-            ).define("disableRenderHitBox", false);
+            ).define("disableRenderHitBox", true);
 
             disableRenderHeadShotHitBox = builder.comment(
                     "禁止渲染爆头碰撞箱"
-            ).define("disableRenderHeadShotHitBox", false);
+            ).define("disableRenderHeadShotHitBox", true);
         }
 
     }
