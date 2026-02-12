@@ -120,7 +120,7 @@ public class FPSMEventHook {
      *
      * @param event 玩家受伤事件
      */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerHurt(LivingHurtEvent event) {
         if (event.getEntity() instanceof ServerPlayer hurt) {
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(hurt);
@@ -149,7 +149,7 @@ public class FPSMEventHook {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
