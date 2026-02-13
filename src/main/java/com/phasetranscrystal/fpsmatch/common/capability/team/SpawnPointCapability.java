@@ -115,11 +115,6 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
     }
 
     @Override
-    public void reset() {
-        randomSpawnPoints();
-    }
-
-    @Override
     public void destroy() {
         clearSpawnPointsData();
     }

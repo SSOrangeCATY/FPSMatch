@@ -41,7 +41,6 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
         super(team);
     }
 
-
     /**
      * 注册能力到全局管理器
      */

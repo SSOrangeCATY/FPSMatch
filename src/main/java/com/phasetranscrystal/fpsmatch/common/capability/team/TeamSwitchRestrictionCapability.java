@@ -1,15 +1,18 @@
 package com.phasetranscrystal.fpsmatch.common.capability.team;
 
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TeamSwitchRestrictionCapability extends TeamCapability {
 
     private final List<UUID> unableToSwitchPlayers = new ArrayList<>();
@@ -18,15 +21,19 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
         super(team);
     }
 
-    @Override
-    public void tick() {
-        for (UUID playerId : unableToSwitchPlayers){
-            team.getPlayerData(playerId).flatMap(PlayerData::getPlayer)
-                    .ifPresent(player -> {
-                        player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
-                        removeUnableToSwitchPlayer(playerId);
+    @SubscribeEvent
+    public static void onJoin(FPSMapEvent.PlayerEvent.LoggedInEvent event) {
+        ServerPlayer player = event.getPlayer();
+        UUID playerUUID = player.getUUID();
+        event.getMap().getMapTeams().getTeamByPlayer(player).ifPresent(t->{
+            t.getCapabilityMap().get(TeamSwitchRestrictionCapability.class)
+                    .ifPresent(cap->{
+                        if(cap.isUnableToSwitch(playerUUID)){
+                            player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), t.getPlayerTeam());
+                            cap.removeUnableToSwitchPlayer(playerUUID);
+                        };
                     });
-        }
+        });
     }
 
     public static void register() {

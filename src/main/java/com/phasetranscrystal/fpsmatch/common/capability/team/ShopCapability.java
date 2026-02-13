@@ -39,6 +39,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -48,6 +49,7 @@ import java.util.UUID;
  * 商店能力：为队伍提供商店系统支持
  * 使用注册的商店类型系统，无需泛型
  */
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ShopCapability extends TeamCapability implements FPSMCapability.Savable<FPSMShop<?>>, FPSMCapability.DataSynchronizable {
 
     public static Optional<FPSMShop<?>> getShopByPlayer(ServerPlayer player) {

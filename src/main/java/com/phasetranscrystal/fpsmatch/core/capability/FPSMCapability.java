@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * @see CapabilitySynchronizable 允许网络同步整个能力到客户端的功能
  * @see DataSynchronizable 允许能力数据同步到客户端的功能
  * @see Savable 允许持久化数据
+ * @apiNote FPSMCapability中的
  */
 public abstract class FPSMCapability<H> {
 

@@ -113,10 +113,6 @@ public class MapTeams {
         attackTeam.setScores(defendTeam.getScores());
         defendTeam.setScores(tempScore);
 
-        attackTeam.resetCapabilities();
-        defendTeam.resetCapabilities();
-
-
         attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(attackTeam.getPlayerList()));
 
         defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
@@ -153,7 +149,7 @@ public class MapTeams {
     public boolean randomSpawnPoints(){
         AtomicBoolean flag = new AtomicBoolean(true);
         this.teams.forEach(((s, t) -> {
-            if(flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
+            if(t.isNormal() && flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
         }));
         return flag.get();
     }
@@ -182,7 +178,7 @@ public class MapTeams {
     public void resetSpawnPoints(String teamName){
         ServerTeam team = this.teams.getOrDefault(teamName, null);
         if (team == null) return;
-        team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset);
+        team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData);
     }
 
     /**
@@ -191,7 +187,7 @@ public class MapTeams {
      * 遍历所有队伍，并调用队伍的出生点数据重置方法。
      */
     public void resetAllSpawnPoints(){
-        this.teams.forEach((s,t)-> t.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::reset));
+        this.teams.forEach((s,t)-> t.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(SpawnPointCapability::clearSpawnPointsData));
     }
 
     public ServerTeam addTeam(TeamData data, boolean isSpectator){
