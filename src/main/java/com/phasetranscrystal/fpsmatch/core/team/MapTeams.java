@@ -117,6 +117,7 @@ public class MapTeams {
 
         defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
 
+        randomSpawnPoints();
         broadcast();
     }
 
