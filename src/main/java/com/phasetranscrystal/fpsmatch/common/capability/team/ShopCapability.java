@@ -75,12 +75,6 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 .map(shop -> shop.getPlayerShopData(player));
     }
 
-    public static void syncShopData(BaseMap map){
-        map.getMapTeams().getNormalTeams().forEach(team -> {
-            team.getCapabilityMap().get(ShopCapability.class).ifPresent(ShopCapability::sync);
-        });
-    }
-
     public static void setPlayerMoney(BaseMap map, UUID playerUUID, int money){
         getPlayerShopData(map, playerUUID).ifPresent(shopData -> {
             shopData.setMoney(money);
@@ -259,16 +253,14 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     @Override
     public void sync(){
         if (isInitialized()) {
-            shop.syncShopMoneyData();
-            shop.syncShopData();
+            shop.sync();
         }
     }
 
     @Override
     public void sync(Player player){
         if (isInitialized() && player instanceof ServerPlayer serverPlayer) {
-            shop.syncShopMoneyData(serverPlayer);
-            shop.syncShopData(serverPlayer);
+            shop.sync(serverPlayer);
         }
     }
 

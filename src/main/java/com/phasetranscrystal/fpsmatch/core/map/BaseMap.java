@@ -660,8 +660,14 @@ public abstract class BaseMap {
         return addSetting(Setting.of(configName, defaultValue));
     }
 
+    public Optional<Setting<?>> findSetting(String settingName) {
+        return settings().stream()
+                .filter(setting -> setting.getConfigName().equals(settingName))
+                .findFirst();
+    }
 
     public float getMinAssistDamageRatio() {
         return minAssistDamageRatio.get();
     }
+
 }

@@ -226,5 +226,24 @@
   "config.fpsmatch.common.throwable.incendiary_grenade_damage.tooltip": "Damage value of incendiary grenades",
   "config.fpsmatch.common.throwable.smoke_shell_living_time": "Smoke Shell Living Time",
   "config.fpsmatch.common.throwable.smoke_shell_living_time.tooltip": "Survival time after smoke bomb activation (ticks). 20 ticks = 1 second",
-  "gui.fpsm.dummy_ammo": "dummy ammo"
+  "gui.fpsm.dummy_ammo": "dummy ammo",
+
+  "commands.fpsm.settings.list.empty": "Map %s has no settings configured.",
+  "commands.fpsm.settings.list.header": "Settings for map %s:",
+  "commands.fpsm.settings.get.success": "Setting '%s' = %s (map: %s)",
+  "commands.fpsm.settings.set.success": "Setting '%s' has been set to %s (map: %s)",
+  "commands.fpsm.settings.set.invalidType": "Invalid value type for setting '%s': %s",
+  "commands.fpsm.settings.set.error": "Error setting '%s' to %s: %s",
+  "commands.fpsm.settings.notFound": "Setting '%s' not found",
+  "commands.fpsm.settings.save.success": "Settings saved to file for map %s",
+  "commands.fpsm.settings.load.success": "Settings loaded from file for map %s",
+  "commands.fpsm.settings.reset.success": "Setting '%s' reset to default value",
+  "commands.fpsm.settings.resetAll.success": "All settings reset to default values for map %s",
+
+  "commands.fpsm.help.map.settings": "Manage map settings",
+  "commands.fpsm.help.map.settings.list": "List all settings of the map",
+  "commands.fpsm.help.map.settings.get": "Get a specific setting value",
+  "commands.fpsm.help.map.settings.set": "Set a specific setting value",
+  "commands.fpsm.help.map.settings.save": "Save settings to file",
+  "commands.fpsm.help.map.settings.load": "Load settings from file"
 }

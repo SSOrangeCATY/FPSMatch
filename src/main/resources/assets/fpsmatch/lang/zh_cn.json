@@ -213,5 +213,26 @@
   "message.fpsm.edit_tool.mode.team": "队伍",
   "message.fpsm.edit_tool.switch_mode": "编辑模式: %s",
   "message.fpsm.edit_tool.switch_team": "队伍: %s",
-  "message.fpsm.edit_tool.switch_map": "地图: %s"
+  "message.fpsm.edit_tool.switch_map": "地图: %s",
+  "message.fpsm.map_edit_tool.switch_mode": "编辑模式: ",
+  "message.fpsm.map_edit_tool.switch_mode.region": "区域选择",
+  "message.fpsm.map_edit_tool.switch_mode.spawn_point": "添加出生点",
+
+  "commands.fpsm.settings.list.empty": "地图 %s 没有配置任何设置项。",
+  "commands.fpsm.settings.list.header": "地图 %s 的设置项列表：",
+  "commands.fpsm.settings.get.success": "设置项 '%s' = %s (地图: %s)",
+  "commands.fpsm.settings.set.success": "设置项 '%s' 已设置为 %s (地图: %s)",
+  "commands.fpsm.settings.set.invalidType": "设置项 '%s' 的值类型无效: %s",
+  "commands.fpsm.settings.set.error": "设置项 '%s' 设置为 %s 时出错: %s",
+  "commands.fpsm.settings.notFound": "未找到设置项 '%s'",
+  "commands.fpsm.settings.save.success": "地图 %s 的设置项已保存到文件",
+  "commands.fpsm.settings.load.success": "地图 %s 的设置项已从文件加载",
+  "commands.fpsm.settings.reset.success": "设置项 '%s' 已重置为默认值",
+  "commands.fpsm.settings.resetAll.success": "地图 %s 的所有设置项已重置为默认值",
+  "commands.fpsm.help.map.settings": "管理地图设置项",
+  "commands.fpsm.help.map.settings.list": "列出地图的所有设置项",
+  "commands.fpsm.help.map.settings.get": "获取指定设置项的值",
+  "commands.fpsm.help.map.settings.set": "设置指定设置项的值",
+  "commands.fpsm.help.map.settings.save": "将设置项保存到文件",
+  "commands.fpsm.help.map.settings.load": "从文件加载设置项"
 }

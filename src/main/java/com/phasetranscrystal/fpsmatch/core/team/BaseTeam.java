@@ -41,6 +41,7 @@ public abstract class BaseTeam {
     public boolean join(Player player){
        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player));
     };
+
     public boolean leave(Player player){
         return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player));
     };

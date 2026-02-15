@@ -144,6 +144,7 @@ dependencies {
     modCompileOnly "org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT"
     // JetBrains annotations for @NotNull and other annotations
     modCompileOnly "org.jetbrains:annotations:24.0.1"
+    modCompileOnly "com.mohistmc:mohistdev:1.20.1"
     //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

@@ -9,10 +9,11 @@ import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -20,10 +21,13 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.*;
+
+import static net.minecraft.network.chat.CommonComponents.*;
 
 
 public class FPSMapCommand {
@@ -54,6 +58,18 @@ public class FPSMapCommand {
         // 注册team capability命令帮助
         helpManager.registerCommandHelp("fpsm map modify team teams capability", Component.translatable("commands.fpsm.help.category.capability"));
 
+        helpManager.registerCommandHelp("fpsm map modify settings", Component.translatable("commands.fpsm.help.map.settings"));
+        helpManager.registerCommandHelp("fpsm map modify settings list", Component.translatable("commands.fpsm.help.map.settings.list"));
+        helpManager.registerCommandHelp("fpsm map modify settings get", Component.translatable("commands.fpsm.help.map.settings.get"));
+        helpManager.registerCommandHelp("fpsm map modify settings set", Component.translatable("commands.fpsm.help.map.settings.set"));
+        helpManager.registerCommandHelp("fpsm map modify settings save", Component.translatable("commands.fpsm.help.map.settings.save"));
+        helpManager.registerCommandHelp("fpsm map modify settings load", Component.translatable("commands.fpsm.help.map.settings.load"));
+
+        helpManager.registerCommandParameters("fpsm map modify settings get",
+                "*" + FPSMCommandSuggests.SETTING_ARG);
+        helpManager.registerCommandParameters("fpsm map modify settings set",
+                "*" + FPSMCommandSuggests.SETTING_ARG, "*value");
+
         // 注册命令参数
         helpManager.registerCommandParameters("fpsm map create", "*" + FPSMCommandSuggests.GAME_TYPE_ARG, "*" + FPSMCommandSuggests.MAP_NAME_ARG, "*from", "*to");
         helpManager.registerCommandParameters("fpsm map modify", "*" + FPSMCommandSuggests.GAME_TYPE_ARG, "*" + FPSMCommandSuggests.MAP_NAME_ARG);
@@ -82,6 +98,7 @@ public class FPSMapCommand {
                                                                 .suggests(FPSMCommandSuggests.MAP_DEBUG_SUGGESTION)
                                                                 .executes(FPSMapCommand::handleDebugAction)))
                                                 .then(buildMapCapabilityCommands(builder.getSecond()))
+                                                .then(buildSettingsCommands())
                                                 // 团队相关修改
                                                 .then(Commands.literal("team")
                                                         .then(Commands.literal("join")
@@ -323,6 +340,210 @@ public class FPSMapCommand {
                         }))
                 .orElseGet(() -> {
                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.map.notFound"));
+                    return 0;
+                });
+    }
+
+    /**
+     * 构建settings命令树
+     */
+    private static LiteralArgumentBuilder<CommandSourceStack> buildSettingsCommands() {
+        return Commands.literal("settings")
+                // 列出所有配置项
+                .then(Commands.literal("list")
+                        .executes(FPSMapCommand::handleListSettings))
+                // 获取特定配置项的值
+                .then(Commands.literal("get")
+                        .then(Commands.argument(FPSMCommandSuggests.SETTING_ARG, StringArgumentType.string())
+                                .suggests(FPSMCommandSuggests.MAP_SETTINGS_SUGGESTION_PROVIDER)
+                                .executes(FPSMapCommand::handleGetSetting)))
+                // 修改配置项的值
+                .then(Commands.literal("set")
+                        .then(Commands.argument(FPSMCommandSuggests.SETTING_ARG, StringArgumentType.string())
+                                .suggests(FPSMCommandSuggests.MAP_SETTINGS_SUGGESTION_PROVIDER)
+                                .then(Commands.argument("value", StringArgumentType.greedyString())
+                                        .executes(FPSMapCommand::handleSetSetting))))
+                // 保存配置到文件
+                .then(Commands.literal("save")
+                        .executes(FPSMapCommand::handleSaveSettings))
+                // 从文件加载配置
+                .then(Commands.literal("load")
+                        .executes(FPSMapCommand::handleLoadSettings))
+                // 重置为默认值
+                .then(Commands.literal("reset")
+                        .then(Commands.argument(FPSMCommandSuggests.SETTING_ARG, StringArgumentType.string())
+                                .suggests(FPSMCommandSuggests.MAP_SETTINGS_SUGGESTION_PROVIDER)
+                                .executes(FPSMapCommand::handleResetSetting))
+                        .then(Commands.literal("all")
+                                .executes(FPSMapCommand::handleResetAllSettings)));
+    }
+
+    /**
+     * 处理列出所有配置项的命令
+     */
+    private static int handleListSettings(CommandContext<CommandSourceStack> context) {
+        return FPSMCommand.getMap(context)
+                .map(map -> {
+                    Collection<Setting<?>> settings = map.settings();
+                    if (settings.isEmpty()) {
+                        FPSMCommand.sendSuccess(context.getSource(),
+                                Component.translatable("commands.fpsm.settings.list.empty", map.getMapName()));
+                        return 1;
+                    }
+
+                    MutableComponent builder = Component.literal("");
+                    builder.append(Component.translatable("commands.fpsm.settings.list.header", map.getMapName()).withStyle(ChatFormatting.BOLD));
+                    builder.append(NEW_LINE);
+
+                    for (Setting<?> setting : settings) {
+                        String valueStr = String.valueOf(setting.get());
+                        builder.append(NEW_LINE);
+                        MutableComponent info = Component.literal("[" + setting.get().getClass().getSimpleName() + "]").withStyle(ChatFormatting.GRAY,ChatFormatting.BOLD);
+                        MutableComponent name = Component.literal(setting.getConfigName()).withStyle(ChatFormatting.WHITE,ChatFormatting.BOLD);
+                        MutableComponent value = Component.literal(valueStr).withStyle(ChatFormatting.GREEN,ChatFormatting.BOLD);;
+
+                        builder.append(info.append(SPACE).append(name).append(SPACE).append(value));
+                    }
+
+                    context.getSource().sendSuccess(() -> builder, true);
+                    return 1;
+                })
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.map.notFound"));
+                    return 0;
+                });
+    }
+
+    /**
+     * 处理获取特定配置项值的命令
+     */
+    private static int handleGetSetting(CommandContext<CommandSourceStack> context) {
+        String settingName = StringArgumentType.getString(context, FPSMCommandSuggests.SETTING_ARG);
+
+        return FPSMCommand.getMap(context)
+                .flatMap(map -> map.findSetting(settingName)
+                        .map(setting -> {
+                            String valueStr = String.valueOf(setting.get());
+                            FPSMCommand.sendSuccess(context.getSource(),
+                                    Component.translatable("commands.fpsm.settings.get.success",
+                                            settingName, valueStr, map.getMapName()));
+                            return 1;
+                        }))
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.settings.notFound", settingName));
+                    return 0;
+                });
+    }
+
+    /**
+     * 处理设置配置项值的命令
+     */
+    private static int handleSetSetting(CommandContext<CommandSourceStack> context) {
+        String settingName = StringArgumentType.getString(context, FPSMCommandSuggests.SETTING_ARG);
+        String valueStr = StringArgumentType.getString(context, "value");
+
+        return FPSMCommand.getMap(context)
+                .flatMap(map -> map.findSetting(settingName)
+                        .map(setting -> {
+                            try {
+                                if (setting.parse(valueStr)) {
+                                    FPSMCommand.sendSuccess(context.getSource(),
+                                            Component.translatable("commands.fpsm.settings.set.success",
+                                                    settingName, valueStr, map.getMapName()));
+                                    return 1;
+                                } else {
+                                    FPSMCommand.sendFailure(context.getSource(),
+                                            Component.translatable("commands.fpsm.settings.set.invalidType",
+                                                    settingName, valueStr));
+                                    return 0;
+                                }
+                            } catch (Exception e) {
+                                FPSMCommand.sendFailure(context.getSource(),
+                                        Component.translatable("commands.fpsm.settings.set.error",
+                                                settingName, valueStr, e.getMessage()));
+                                return 0;
+                            }
+                        }))
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.settings.notFound", settingName));
+                    return 0;
+                });
+    }
+
+    /**
+     * 处理保存配置到文件的命令
+     */
+    private static int handleSaveSettings(CommandContext<CommandSourceStack> context) {
+        return FPSMCommand.getMap(context)
+                .map(map -> {
+                    map.saveConfig();
+                    FPSMCommand.sendSuccess(context.getSource(),
+                            Component.translatable("commands.fpsm.settings.save.success", map.getMapName()));
+                    return 1;
+                })
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.map.notFound"));
+                    return 0;
+                });
+    }
+
+    /**
+     * 处理从文件加载配置的命令
+     */
+    private static int handleLoadSettings(CommandContext<CommandSourceStack> context) {
+        return FPSMCommand.getMap(context)
+                .map(map -> {
+                    map.loadConfig();
+                    FPSMCommand.sendSuccess(context.getSource(),
+                            Component.translatable("commands.fpsm.settings.load.success", map.getMapName()));
+                    return 1;
+                })
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.map.notFound"));
+                    return 0;
+                });
+    }
+
+    /**
+     * 处理重置特定配置项到默认值的命令
+     */
+    private static int handleResetSetting(CommandContext<CommandSourceStack> context) {
+        String settingName = StringArgumentType.getString(context, FPSMCommandSuggests.SETTING_ARG);
+
+        return FPSMCommand.getMap(context)
+                .flatMap(map -> map.findSetting(settingName)
+                        .map(setting -> {
+                            setting.reset();
+                            FPSMCommand.sendSuccess(context.getSource(),
+                                    Component.translatable("commands.fpsm.settings.reset.success", settingName));
+                            return 1;
+                        }))
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.settings.notFound", settingName));
+                    return 0;
+                });
+    }
+
+    /**
+     * 处理重置所有配置项到默认值的命令
+     */
+    private static int handleResetAllSettings(CommandContext<CommandSourceStack> context) {
+        return FPSMCommand.getMap(context)
+                .map(map -> {
+                    map.settings().forEach(Setting::reset);
+                    FPSMCommand.sendSuccess(context.getSource(),
+                            Component.translatable("commands.fpsm.settings.resetAll.success", map.getMapName()));
+                    return 1;
+                })
+                .orElseGet(() -> {
+                    FPSMCommand.sendFailure(context.getSource(),
+                            Component.translatable("commands.fpsm.map.notFound"));
                     return 0;
                 });
     }

@@ -25,6 +25,7 @@ public final class ServerTeam extends BaseTeam {
 
     public final Map<UUID, PlayerData> players = new HashMap<>();
     private final BaseMap map;
+    private boolean enableRounds = false;
 
     public ServerTeam(BaseMap map, String name, int playerLimit, PlayerTeam playerTeam) {
         super(map.getGameType(), map.getMapName(), name, playerLimit, playerTeam);
@@ -36,7 +37,7 @@ public final class ServerTeam extends BaseTeam {
         if(!super.join(player)) return false;
         if(player.level().isClientSide()) return false;
         player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), getPlayerTeam());
-        players.put(player.getUUID(), new PlayerData(player));
+        players.put(player.getUUID(), new PlayerData(player,this.enableRounds));
         sync((ServerPlayer) player);
         return true;
     }
@@ -103,7 +104,6 @@ public final class ServerTeam extends BaseTeam {
         });
         return onlinePlayers;
     }
-
 
     public List<UUID> getLivingPlayers() {
         List<UUID> uuids = new ArrayList<>();
@@ -210,6 +210,9 @@ public final class ServerTeam extends BaseTeam {
         }
     }
 
+    public void setEnableRounds(boolean enableRounds) {
+        this.enableRounds = enableRounds;
+    }
 
     public BaseMap getMap(){
         return map;

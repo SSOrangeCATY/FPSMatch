@@ -1,0 +1,5 @@
+name: BukkitFPSMatch
+main: com.phasetranscrystal.fpsmatch.bukkit.plugin.BukkitFPSMatch
+version: 1
+author: SSOrangeCATY
+api-version: '1.20'

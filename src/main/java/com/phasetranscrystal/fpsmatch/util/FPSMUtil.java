@@ -22,7 +22,6 @@ import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
-import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
@@ -42,6 +41,7 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -623,4 +623,10 @@ public class FPSMUtil {
                 .flatMap(entry -> mapTeams.getTeamByPlayer(entry.getKey())
                         .flatMap(team -> team.getPlayerData(entry.getKey())));
     }
+
+    //服务端
+    public static boolean isOp(GameProfile profile) {
+        return ServerLifecycleHooks.getCurrentServer().getPlayerList().isOp(profile);
+    }
+
 }

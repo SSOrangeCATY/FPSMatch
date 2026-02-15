@@ -9,6 +9,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacke
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
+import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -114,10 +115,10 @@ public class MapTeams {
         defendTeam.setScores(tempScore);
 
         attackTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(attackTeam.getPlayerList()));
-
         defendTeam.getCapabilityMap().get(ShopCapability.class).flatMap(ShopCapability::getShopSafe).ifPresent(shop-> shop.resetPlayerData(defendTeam.getPlayerList()));
 
         randomSpawnPoints();
+        syncCapabilities();
         broadcast();
     }
 
@@ -416,6 +417,16 @@ public class MapTeams {
 
     public void broadcast(){
         this.sync(getOnlineWithSpec(),true,false);
+    }
+
+    public void syncCapabilities(){
+        for (ServerTeam team : this.teams.values()) {
+            CapabilityMap<BaseTeam, TeamCapability> map = team.getCapabilityMap();
+            map.stream()
+                    .filter(cap-> cap instanceof FPSMCapability.DataSynchronizable)
+                    .map(FPSMCapability.DataSynchronizable.class::cast)
+                    .forEach(FPSMCapability.DataSynchronizable::sync);
+        }
     }
 
     /**
@@ -749,6 +760,7 @@ public class MapTeams {
      */
     public void startNewRound() {
         this.resetLivingPlayers();
+        this.syncCapabilities();
     }
 
     /**

@@ -9,6 +9,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
+import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
@@ -29,6 +30,7 @@ public class FPSMCommandSuggests {
     public static final String TEAM_NAME_ARG = "team_name";
     public static final String ACTION_ARG = "action";
     public static final String TARGETS_ARG = "targets";
+    public static final String SETTING_ARG = "setting";
     
     public static final FPSMSuggestionProvider GAME_TYPES_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getGameTypes()));
     public static final FPSMSuggestionProvider MAP_NAMES_WITH_GAME_TYPE_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getMapNames(StringArgumentType.getString(c, GAME_TYPE_ARG))));
@@ -67,6 +69,16 @@ public class FPSMCommandSuggests {
 
         return FPSMCommandSuggests.getSuggestions(b,capabilities);
     });
+
+    public static final SuggestionProvider<CommandSourceStack> MAP_SETTINGS_SUGGESTION_PROVIDER =
+            (context, builder) -> FPSMCommand.getMap(context)
+                    .map(map -> {
+                        map.settings().stream()
+                                .map(Setting::getConfigName)
+                                .forEach(builder::suggest);
+                        return builder.buildFuture();
+                    })
+                    .orElse(Suggestions.empty());
 
     public static final FPSMSuggestionProvider SHOP_ITEM_TYPES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
         List<String> typeNames = new ArrayList<>();

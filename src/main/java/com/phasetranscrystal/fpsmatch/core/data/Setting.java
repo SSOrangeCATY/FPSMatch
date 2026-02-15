@@ -3,7 +3,10 @@ package com.phasetranscrystal.fpsmatch.core.data;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import net.minecraft.network.FriendlyByteBuf;
+
+import java.util.function.Function;
 
 /**
  * 用于存储和管理配置项的通用类。
@@ -27,15 +30,19 @@ public class Setting<T> {
      */
     private final Codec<T> codec;
 
+    private final Function<String, T> parser;
+
     /**
      * 配置项的名称，用于标识配置项。
      */
     private final String configName;
 
     /**
-     * 当前配置值。S
+     * 当前配置值。
      */
     private T value;
+
+    private final T defaultValue;
 
     /**
      * 构造一个新的配置项实例。
@@ -48,6 +55,23 @@ public class Setting<T> {
         this.configName = configName;
         this.codec = codec;
         this.value = defaultValue;
+        this.defaultValue = defaultValue;
+        this.parser = null;
+    }
+
+    /**
+     * 构造一个新的配置项实例。
+     *
+     * @param configName 配置项的名称。
+     * @param codec      用于处理配置值的编解码器。
+     * @param defaultValue 配置项的默认值。
+     */
+    public Setting(String configName, Codec<T> codec, T defaultValue, Function<String, T> parser) {
+        this.configName = configName;
+        this.codec = codec;
+        this.value = defaultValue;
+        this.defaultValue = defaultValue;
+        this.parser = parser;
     }
 
     /**
@@ -68,6 +92,10 @@ public class Setting<T> {
     public T set(T value) {
         this.value = value;
         return value;
+    }
+
+    public T getDefaultValue(){
+        return defaultValue;
     }
 
     /**
@@ -112,6 +140,19 @@ public class Setting<T> {
         }).getFirst();
     }
 
+    public boolean parse(String value){
+        if(value == null) return false;
+        if(parser == null) return false;
+
+        try{
+            this.value = parser.apply(value);
+            return true;
+        }catch(Exception e){
+            FPSMatch.LOGGER.error(e.getMessage());
+            return false;
+        }
+    }
+
     public void readFromBuf(FriendlyByteBuf buf){
         value = buf.readJsonWithCodec(codec);
     }
@@ -129,7 +170,7 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Integer> of(String configName, int defaultValue) {
-        return new Setting<>(configName, Codec.INT, defaultValue);
+        return new Setting<>(configName, Codec.INT, defaultValue, Integer::parseInt);
     }
 
     /**
@@ -140,7 +181,7 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Long> of(String configName, long defaultValue) {
-        return new Setting<>(configName, Codec.LONG, defaultValue);
+        return new Setting<>(configName, Codec.LONG, defaultValue, Long::parseLong);
     }
 
     /**
@@ -151,7 +192,7 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Float> of(String configName, float defaultValue) {
-        return new Setting<>(configName, Codec.FLOAT, defaultValue);
+        return new Setting<>(configName, Codec.FLOAT, defaultValue, Float::parseFloat);
     }
 
     /**
@@ -162,7 +203,7 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Double> of(String configName, double defaultValue) {
-        return new Setting<>(configName, Codec.DOUBLE, defaultValue);
+        return new Setting<>(configName, Codec.DOUBLE, defaultValue, Double::parseDouble);
     }
 
     /**
@@ -173,7 +214,7 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Byte> of(String configName, byte defaultValue) {
-        return new Setting<>(configName, Codec.BYTE, defaultValue);
+        return new Setting<>(configName, Codec.BYTE, defaultValue, Byte::parseByte);
     }
 
     /**
@@ -184,7 +225,7 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Boolean> of(String configName, boolean defaultValue) {
-        return new Setting<>(configName, Codec.BOOL, defaultValue);
+        return new Setting<>(configName, Codec.BOOL, defaultValue, Boolean::parseBoolean);
     }
 
     /**
@@ -195,6 +236,10 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<String> of(String configName, String defaultValue) {
-        return new Setting<>(configName, Codec.STRING, defaultValue);
+        return new Setting<>(configName, Codec.STRING, defaultValue,(str)->str);
+    }
+
+    public void reset() {
+        this.value = getDefaultValue();
     }
 }

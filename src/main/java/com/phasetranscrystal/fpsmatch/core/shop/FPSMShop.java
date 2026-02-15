@@ -256,6 +256,15 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopDataSlotS2CPacket(type, shopSlot));
     }
 
+    public void sync(){
+        this.syncShopData();
+        this.syncShopMoneyData();
+    }
+
+    public void sync(ServerPlayer player){
+        this.syncShopData(player);
+        this.syncShopMoneyData(player);
+    }
     /**
      * 获取玩家的商店数据。
      * <p>
@@ -323,9 +332,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
 
     public void resetPlayerData(List<UUID> uuids){
         this.clearPlayerShopData();
-        uuids.forEach(this::getDefaultAndPutData);
-        this.syncShopData();
-        this.syncShopMoneyData();
+        uuids.forEach(uuid -> this.getDefaultAndPutData(uuid, true));
     }
 
     public void resetPlayerData(){
@@ -334,8 +341,6 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
 
     public void resetPlayerData(boolean reset){
         this.playersData.keySet().forEach(uuid-> getDefaultAndPutData(uuid,reset));
-        this.syncShopData();
-        this.syncShopMoneyData();
     }
 
 
@@ -463,8 +468,8 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         return map.get(type);
     }
 
-    public ShopData<T> getDefaultAndPutData(UUID uuid) {
-        return this.getDefaultAndPutData(uuid, false);
+    public void getDefaultAndPutData(UUID uuid) {
+        this.getDefaultAndPutData(uuid, false);
     }
 
     public ShopData<T> getDefaultAndPutData(UUID uuid, boolean resetMoney) {

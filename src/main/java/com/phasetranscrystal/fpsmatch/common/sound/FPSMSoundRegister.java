@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.sound;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.tacz.guns.api.item.GunTabType;
+import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -23,12 +24,10 @@ public class FPSMSoundRegister {
     public static final RegistryObject<SoundEvent> BOOM = SOUNDS.register("boom", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "boom")));
 
     private static final Map<GunTabType, SoundEvent> GUN_PICKUP_REGISTRY = new ConcurrentHashMap<>();
-    private static final Map<GunTabType, SoundEvent> GUN_BOUGHT_REGISTRY = new ConcurrentHashMap<>();
     private static final Map<GunTabType, SoundEvent> GUN_DROP_REGISTRY = new ConcurrentHashMap<>();
 
     private static final Map<Item, SoundEvent> ITEM_PICKUP_REGISTRY = new ConcurrentHashMap<>();
     private static final Map<Item, SoundEvent> ITEM_DROP_REGISTRY = new ConcurrentHashMap<>();
-    private static final Map<Item, SoundEvent> ITEM_BOUGHT_REGISTRY = new ConcurrentHashMap<>();
 
     private static SoundEvent KNIFE_PICKUP_SOUND = SoundEvents.ITEM_PICKUP;
     private static SoundEvent KNIFE_DROP_SOUND = SoundEvents.STONE_BUTTON_CLICK_ON;
@@ -80,28 +79,12 @@ public class FPSMSoundRegister {
         return ITEM_DROP_REGISTRY.getOrDefault(item, SoundEvents.STONE_HIT);
     }
 
-    public static SoundEvent getItemBoughtSound(Item item) {
-        return ITEM_BOUGHT_REGISTRY.getOrDefault(item, SoundEvents.STONE_HIT);
-    }
-
-    public static void registerItemBoughtSound(Item item, SoundEvent sound) {
-        ITEM_BOUGHT_REGISTRY.put(item, sound);
-    }
-
     public static SoundEvent getGunPickupSound(GunTabType gunType) {
         return GUN_PICKUP_REGISTRY.getOrDefault(gunType, SoundEvents.ITEM_PICKUP);
     }
 
     public static void registerGunPickupSound(GunTabType gunType, SoundEvent sound) {
         GUN_PICKUP_REGISTRY.put(gunType, sound);
-    }
-
-    public static SoundEvent getGunBoughtSound(GunTabType gunType) {
-        return GUN_BOUGHT_REGISTRY.getOrDefault(gunType, SoundEvents.STONE_HIT);
-    }
-
-    public static void registerGunBoughtSound(GunTabType gunType, SoundEvent sound) {
-        GUN_BOUGHT_REGISTRY.put(gunType, sound);
     }
 
     public static SoundEvent getGunDropSound(GunTabType gunType) {
@@ -112,15 +95,14 @@ public class FPSMSoundRegister {
         GUN_DROP_REGISTRY.put(gunType, sound);
     }
 
-    public static void registerGunSounds(GunTabType gunType, SoundEvent pickupSound, SoundEvent boughtSound, SoundEvent dropSound) {
+    public static void registerGunSounds(GunTabType gunType, SoundEvent pickupSound, SoundEvent dropSound) {
         registerGunPickupSound(gunType, pickupSound);
-        registerGunBoughtSound(gunType, boughtSound);
         registerGunDropSound(gunType, dropSound);
     }
 
-    public static void registerItemSounds(Item item, SoundEvent pickupSound, SoundEvent dropSound, SoundEvent boughtSound) {
+    public static void registerItemSounds(Item item, SoundEvent pickupSound, SoundEvent dropSound) {
         registerItemPickupSound(item, pickupSound);
         registerItemDropSound(item, dropSound);
-        registerItemBoughtSound(item, boughtSound);
     }
+
 }
