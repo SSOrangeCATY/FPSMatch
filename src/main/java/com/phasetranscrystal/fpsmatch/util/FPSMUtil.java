@@ -7,9 +7,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
@@ -26,7 +24,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -481,21 +478,6 @@ public class FPSMUtil {
      * 将物品添加到玩家库存
      */
     public static void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
-        if(itemStack.getItem() instanceof IGun iGun){
-            Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
-            type.ifPresent(t->{
-                player.level().playSound(player,player.getOnPos(), FPSMSoundRegister.getGunBoughtSound(t),player.getSoundSource(),1,1);
-            });
-        }else{
-            SoundEvent sound;
-            if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
-                sound = FPSMSoundRegister.getKnifeBoughtSound();
-            }else{
-                sound = FPSMSoundRegister.getItemBoughtSound(itemStack.getItem());
-            }
-            player.level().playSound(player,player.getOnPos(), sound, player.getSoundSource(),1,1);
-        }
-
         if (itemStack.getItem() instanceof ArmorItem armorItem) {
             player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
         } else {
