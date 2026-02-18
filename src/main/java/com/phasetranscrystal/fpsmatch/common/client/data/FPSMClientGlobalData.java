@@ -29,6 +29,12 @@ public class FPSMClientGlobalData {
     private final Map<UUID, Integer> playersMoney = new ConcurrentHashMap<>();
     private final Map<String, ClientTeam> clientTeamData = new ConcurrentHashMap<>();
 
+    private final DebugData debugData = new DebugData();
+
+    public DebugData getDebugData() {
+        return debugData;
+    }
+
     // 记录类用于简化数据传递
     public record PlayerTeamData(@Nullable String teamName, @Nullable PlayerData playerData) {
         public boolean isValid() {

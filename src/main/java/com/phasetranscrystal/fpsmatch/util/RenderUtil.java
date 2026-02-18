@@ -13,6 +13,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Scoreboard;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -48,13 +50,25 @@ public class RenderUtil {
     public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            return getTeamsPlayerInfo(mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList());
+            return getTeamsPlayerInfo(getPlayerInfos());
         }
         return new HashMap<>();
     }
 
+    public static List<PlayerInfo> getPlayerInfos(){
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            return mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList();
+        }
+        return new ArrayList<>();
+    }
+
     public static Optional<PlayerData> getPlayerData(PlayerInfo player) {
         return FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId());
+    }
+
+    public static Scoreboard getScoreboard(){
+        return Minecraft.getInstance().level.getScoreboard();
     }
 
     public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo(List<PlayerInfo> playerInfoList) {

@@ -68,7 +68,12 @@ public class FPSMCore {
         return getMapByPlayer(player).isPresent();
     }
 
+
     public Optional<BaseMap> getMapByPlayer(Player player){
+        return getMapByPlayer(player.getUUID());
+    }
+    
+    public Optional<BaseMap> getMapByPlayer(UUID player){
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list){
                 if(map.checkGameHasPlayer(player)) return Optional.of(map);

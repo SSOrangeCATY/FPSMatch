@@ -422,8 +422,7 @@ public class FPSMHelpManager {
      * @return 构建好的命令树帮助消息
      */
     public MutableComponent buildCommandTreeHelp() {
-        List<MutableComponent> commandTree = getCommandTree();
-        return buildHelpMessage(Component.translatable("commands.fpsm.help.header"), commandTree);
+        return buildHelpMessage(Component.translatable("commands.fpsm.help.header"), getCommandTree());
     }
     
     /**

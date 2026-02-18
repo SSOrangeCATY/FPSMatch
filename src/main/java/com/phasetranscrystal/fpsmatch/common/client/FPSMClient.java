@@ -45,6 +45,7 @@ public class FPSMClient {
         // 注册键位
         event.register(CustomHudKey.KEY);
         event.register(SwitchPreviousItemKey.KEY);
+        event.register(ClearRenderableAreasKey.KEY);
     }
 
     @SubscribeEvent

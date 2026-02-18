@@ -1,16 +1,23 @@
 package com.phasetranscrystal.fpsmatch.core.shop;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMShopEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
-import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -115,6 +122,8 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
 
     public final int typeCount;
 
+    public final List<AreaData> areas;
+
     /**
      * 获取默认金钱。
      *
@@ -132,7 +141,6 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     public String getName() {
         return name;
     }
-
     /**
      * 构造函数，用于创建一个新的 FPSMShop 实例（自定义默认商店数据和初始金钱）。
      *
@@ -147,8 +155,24 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         this.startMoney = startMoney;
         this.name = name;
         this.codec = withCodec(enumClass);
-        FPSMatch.LOGGER.info("FPSMShop: Creating {} instance , Map size : {}", name , data.size());
-        FPSMatch.LOGGER.info("Shop Data: {}", FPSMCodec.encodeToJson(this.codec,this).toString());
+        this.areas = new ArrayList<>();
+    }
+
+    /**
+     * 构造函数，用于创建一个新的 FPSMShop 实例（自定义默认商店数据和初始金钱）。
+     *
+     * @param name 商店名称
+     * @param data 默认商店数据
+     * @param startMoney 玩家初始金钱
+     */
+    public FPSMShop(Class<T> enumClass , String name, Map<T, ArrayList<ShopSlot>> data, int startMoney, List<AreaData> areas) {
+        this.enumClass = enumClass;
+        this.typeCount = getEnums().size();
+        this.defaultShopData = data;
+        this.startMoney = startMoney;
+        this.name = name;
+        this.codec = withCodec(enumClass);
+        this.areas = areas;
     }
 
     public List<T> getEnums(){
@@ -448,14 +472,28 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         this.resetPlayerData();
     }
 
+
+    public ImmutableMap<T, ImmutableList<ShopSlot>> getShopDataByRaw(){
+        Map<T, List<ShopSlot>> modifiableMap = new HashMap<>(this.defaultShopData);
+
+        ImmutableMap.Builder<T, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
+
+        modifiableMap.forEach((k, v) -> {
+            List<ShopSlot> shopSlots = new ArrayList<>();
+            v.forEach(shopSlot -> shopSlots.add(shopSlot.copy()));
+            builder.put(k, ImmutableList.copyOf(shopSlots));
+        });
+
+        return builder.build();
+    }
+
     /**
      * 获取默认商店数据。
      *
      * @return 默认商店数据
      */
     public ShopData<T> getDefaultShopData() {
-        Map<T, ArrayList<ShopSlot>> map = new HashMap<>(this.defaultShopData);
-        return new ShopData<>(map, this.typeCount, this.startMoney);
+        return new ShopData<>(getShopDataByRaw(), this.typeCount, this.startMoney);
     }
 
     public List<ShopSlot> getDefaultShopSlotListByType(String type){
@@ -473,22 +511,17 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     }
 
     public ShopData<T> getDefaultAndPutData(UUID uuid, boolean resetMoney) {
-        Map<T, List<ShopSlot>> modifiableMap = new HashMap<>(this.defaultShopData);
-
-        Map<T, List<ShopSlot>> protectedMap = new HashMap<>();
-        for (Map.Entry<T, List<ShopSlot>> entry : modifiableMap.entrySet()) {
-            protectedMap.put(entry.getKey(), List.copyOf(entry.getValue()));
-        }
-
-        ShopData<T> finalData;
+        int money;
         if(this.playersData.containsKey(uuid) && !resetMoney){
-            finalData = new ShopData<>(protectedMap, this.typeCount , this.playersData.get(uuid).getMoney());
+            money = this.playersData.get(uuid).getMoney();
         }else{
-            finalData = new ShopData<>(protectedMap, this.typeCount , this.startMoney);
+            money = this.startMoney;
         }
-
-        this.playersData.put(uuid, finalData);
-        return finalData;
+        FPSMShopEvent.DataInit<T> event = new FPSMShopEvent.DataInit<>(this,uuid, getShopDataByRaw(),money);
+        MinecraftForge.EVENT_BUS.post(event);
+        ShopData<T> data = new ShopData<>(event.getData(), this.typeCount, money);
+        this.playersData.put(uuid, data);
+        return data;
     }
 
     /**
@@ -546,14 +579,41 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
                 Codec.unboundedMap(
                         Codec.STRING,
                         ShopSlot.CODEC.listOf()
-                ).fieldOf("shopData").forGetter(FPSMShop::getDefaultShopDataMapString)
-        ).apply(instance, (n, defaultMoney, shopData) -> {
+                ).fieldOf("shopData").forGetter(FPSMShop::getDefaultShopDataMapString),
+                AreaData.CODEC.listOf().optionalFieldOf("areas",new ArrayList<>()).forGetter(FPSMShop::getAreas)
+        ).apply(instance, (n, defaultMoney, shopData, areas) -> {
             Map<E, ArrayList<ShopSlot>> d = new HashMap<>();
             shopData.forEach((t, l) -> {
                 ArrayList<ShopSlot> list = new ArrayList<>(l);
                 d.put(E.valueOf(enumClass,t), list);
             });
-            return new FPSMShop<>(enumClass, n, d, defaultMoney);
+            return new FPSMShop<>(enumClass, n, d, defaultMoney,areas);
         }));
+    }
+
+    public List<AreaData> getAreas() {
+        return List.copyOf(this.areas);
+    }
+
+    public void displayAreas(ServerPlayer player){
+        int i = 1;
+        for (AreaData data : this.areas) {
+            FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(Component.literal("SHOP_AREA_"+ i), data));
+        }
+    }
+
+    public boolean isInArea(Entity entity){
+        for (AreaData areaData : this.areas) {
+            if(areaData.isEntityInArea(entity)) return true;
+        }
+        return this.areas.isEmpty();
+    }
+
+    public void addArea(AreaData areaData){
+        this.areas.add(areaData);
+    }
+
+    public void clearAreas(){
+        this.areas.clear();
     }
 }

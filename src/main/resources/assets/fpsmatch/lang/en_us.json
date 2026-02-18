@@ -245,5 +245,13 @@
   "commands.fpsm.help.map.settings.get": "Get a specific setting value",
   "commands.fpsm.help.map.settings.set": "Set a specific setting value",
   "commands.fpsm.help.map.settings.save": "Save settings to file",
-  "commands.fpsm.help.map.settings.load": "Load settings from file"
+  "commands.fpsm.help.map.settings.load": "Load settings from file",
+
+  "commands.fpsm.modify.shop.clear_areas.success": "Successfully cleared all shop areas",
+  "commands.fpsm.modify.shop.clear_areas.failed": "Failed to clear shop areas",
+  "commands.fpsm.modify.shop.add_area.success": "Successfully added shop area from %s to %s",
+  "commands.fpsm.modify.shop.add_area.failed": "Failed to add shop area",
+  "commands.fpsm.modify.shop.display.success": "Display shop areas successes!",
+  "commands.fpsm.modify.shop.display.failed": "Failed to display shop area",
+  "key.fpsm.clear_renderable_areas.desc": "Clear Renderable Areas"
 }

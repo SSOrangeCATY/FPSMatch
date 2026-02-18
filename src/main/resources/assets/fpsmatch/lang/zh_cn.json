@@ -234,5 +234,10 @@
   "commands.fpsm.help.map.settings.get": "获取指定设置项的值",
   "commands.fpsm.help.map.settings.set": "设置指定设置项的值",
   "commands.fpsm.help.map.settings.save": "将设置项保存到文件",
-  "commands.fpsm.help.map.settings.load": "从文件加载设置项"
+  "commands.fpsm.help.map.settings.load": "从文件加载设置项",
+
+  "commands.fpsm.modify.shop.clear_areas.success": "成功清除所有商店区域",
+  "commands.fpsm.modify.shop.clear_areas.failed": "无法清除商店区域",
+  "commands.fpsm.modify.shop.add_area.success": "成功添加商店区域从 %s 到 %s",
+  "commands.fpsm.modify.shop.add_area.failed": "无法添加商店区域"
 }

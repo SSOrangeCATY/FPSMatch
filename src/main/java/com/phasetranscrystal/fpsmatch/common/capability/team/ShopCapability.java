@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
@@ -17,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
@@ -31,15 +33,19 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -57,6 +63,10 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 .flatMap(map -> map.getMapTeams().getTeamByPlayer(player)
                         .flatMap(team -> team.getCapabilityMap().get(ShopCapability.class)
                                 .flatMap(ShopCapability::getShopSafe)));
+    }
+
+    public static Optional<FPSMShop<?>> getShopByPlayer(BaseMap map, ServerPlayer player){
+        return map.getMapTeams().getTeamByPlayer(player).flatMap(t -> t.getCapabilityMap().get(ShopCapability.class).map(ShopCapability::getShopSafe)).orElse(null);
     }
 
     public static Optional<FPSMShop<?>> getShop(ServerTeam team) {
@@ -164,12 +174,8 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             this.startMoney = startMoney;
             this.shop = FPSMShop.createWithTypeId(shopTypeId, team.name, startMoney);
             this.initialized = true;
-
-            FPSMatch.LOGGER.info("ShopCapability: Initialized shop for team {} with type {} and start money {}",
-                    team.name, shopTypeId, startMoney);
             return true;
         } catch (Exception e) {
-            FPSMatch.LOGGER.error("Failed to initialize shop for team {}: {}", team.name, e.getMessage());
             this.initialized = false;
             return false;
         }
@@ -180,6 +186,31 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      */
     public boolean isInitialized() {
         return initialized && shop != null;
+    }
+
+    public boolean isInArea(Entity entity){
+        return this.initialized && getShop().isInArea(entity);
+    }
+
+    public boolean addArea(AreaData data){
+        return getShopSafe().map(shop->{
+            shop.addArea(data);
+            return true;
+        }).orElse(false);
+    }
+
+    public boolean clearAreas(){
+        return getShopSafe().map(shop->{
+            shop.clearAreas();
+            return true;
+        }).orElse(false);
+    }
+
+    public boolean displayAreas(ServerPlayer player){
+        return getShopSafe().map(shop->{
+            shop.displayAreas(player);
+            return true;
+        }).orElse(false);
     }
 
     /**
@@ -417,6 +448,13 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                             .executes(ShopCommand::handleSync))
                     .then(Commands.literal("info")
                             .executes(ShopCommand::handleInfo))
+                    .then(Commands.literal("areas")
+                            .then(Commands.literal("add")
+                                    .then(Commands.argument("pos1", BlockPosArgument.blockPos())
+                                            .then(Commands.argument("pos2", BlockPosArgument.blockPos()))
+                                            .executes(ShopCommand::handleAddArea)))
+                            .then(Commands.literal("display").executes(ShopCommand::handleDisplayAreas))
+                            .then(Commands.literal("clear").executes(ShopCommand::handleClearAreas)))
                     .then(Commands.literal("modify")
                             .then(Commands.literal("set")
                                     .then(Commands.argument(FPSMCommandSuggests.SHOP_TYPE_ARG, StringArgumentType.string())
@@ -447,6 +485,76 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                                                                     .executes(ShopCommand::handleGunModifyGunAmmoAmount)))))));
         }
 
+        private static int handleDisplayAreas(CommandContext<CommandSourceStack> context) {
+            ServerPlayer player = context.getSource().getPlayer();
+            if(player == null){
+                context.getSource().sendSuccess(() ->
+                        Component.translatable("commands.fpsm.only.player"), true);
+                return 0;
+            }
+
+            return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(cap -> {
+                if (cap.displayAreas(player)) {
+                    context.getSource().sendSuccess(() ->
+                            Component.translatable("commands.fpsm.modify.shop.display.success"), true);
+                    return 1;
+                } else {
+                    context.getSource().sendFailure(
+                            Component.translatable("commands.fpsm.modify.shop.display.failed"));
+                    return 0;
+                }
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(
+                        Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
+        }
+
+        /**
+         * 清除所有商店区域
+         */
+        private static int handleClearAreas(CommandContext<CommandSourceStack> context) {
+            return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(cap -> {
+                if (cap.clearAreas()) {
+                    context.getSource().sendSuccess(() ->
+                            Component.translatable("commands.fpsm.modify.shop.clear_areas.success"), true);
+                    return 1;
+                } else {
+                    context.getSource().sendFailure(
+                            Component.translatable("commands.fpsm.modify.shop.clear_areas.failed"));
+                    return 0;
+                }
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(
+                        Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
+        }
+
+        /**
+         * 添加商店区域
+         */
+        private static int handleAddArea(CommandContext<CommandSourceStack> context) {
+            BlockPos pos1 = BlockPosArgument.getBlockPos(context, "pos1");
+            BlockPos pos2 = BlockPosArgument.getBlockPos(context, "pos2");
+
+            return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(cap -> {
+                if (cap.addArea(new AreaData(pos1, pos2))) {
+                    context.getSource().sendSuccess(() ->
+                            Component.translatable("commands.fpsm.modify.shop.add_area.success",
+                                    pos1.toShortString(), pos2.toShortString()), true);
+                    return 1;
+                } else {
+                    context.getSource().sendFailure(
+                            Component.translatable("commands.fpsm.modify.shop.add_area.failed"));
+                    return 0;
+                }
+            }).orElseGet(() -> {
+                context.getSource().sendFailure(
+                        Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
+                return 0;
+            });
+        }
         @Override
         public void help(FPSMHelpManager helper) {
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop initialize"), Component.translatable("commands.fpsm.help.capability.shop.initialize"));
@@ -712,6 +820,29 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                 context.getSource().sendFailure(Component.translatable("commands.fpsm.capability.missing", ShopCapability.class.getSimpleName()));
                 return 0;
             });
+        }
+    }
+
+    public static class Data{
+        public final FPSMShop<?> shop;
+        public AreaData data;
+
+        public Data(FPSMShop<?> shop) {
+            this.shop = shop;
+        }
+
+        public Data(FPSMShop<?> shop, AreaData data) {
+            this.shop = shop;
+            this.data = data;
+        }
+
+        @Nullable
+        public AreaData getData() {
+            return data;
+        }
+
+        public FPSMShop<?> getShop() {
+            return shop;
         }
     }
 }

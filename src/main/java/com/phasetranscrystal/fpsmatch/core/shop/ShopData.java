@@ -50,7 +50,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      *
      * @param shopData 商店数据
      */
-    private  <E extends List<ShopSlot>> ShopData(Map<T, E> shopData, int checker) {
+    private  <E extends ImmutableList<ShopSlot>> ShopData(Map<T, E> shopData, int checker) {
         // 检查数据是否合法
         checkData(shopData,checker);
         this.setDoneData(shopData);
@@ -61,18 +61,11 @@ public class ShopData<T extends Enum<T> & INamedType> {
      *
      * @param shopData 商店数据
      */
-    public <E extends List<ShopSlot>> void setDoneData(Map<T, E> shopData) {
-        // 创建一个不可变 Map 的构建器
-        ImmutableMap.Builder<T, ImmutableList<ShopSlot>> builder = ImmutableMap.builder();
-        // 将传入的 Map 转换为不可变 Map
-        shopData.forEach((k, v) -> {
-            List<ShopSlot> shopSlots = new ArrayList<>();
-            v.forEach(shopSlot -> shopSlots.add(shopSlot.copy()));
-            builder.put(k, ImmutableList.copyOf(shopSlots));
-        });
+    public <E extends ImmutableList<ShopSlot>> void setDoneData(Map<T, E> shopData) {
+
         // 赋值给 data 字段
         data.clear();
-        data.putAll(builder.build());
+        data.putAll(shopData);
 
         // 遍历 data 中的每个值，即每个类型的商店槽位列表
         data.values().forEach(shopSlots -> {
@@ -96,7 +89,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param shopData 商店数据
      * @param money 玩家初始金钱
      */
-    public <E extends List<ShopSlot>> ShopData(Map<T, E> shopData,int checker, int money) {
+    public <E extends ImmutableList<ShopSlot>> ShopData(Map<T, E> shopData,int checker, int money) {
         this(shopData,checker);
         this.money = money;
     }
