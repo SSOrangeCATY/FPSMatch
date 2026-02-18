@@ -239,5 +239,16 @@
   "commands.fpsm.modify.shop.clear_areas.success": "成功清除所有商店区域",
   "commands.fpsm.modify.shop.clear_areas.failed": "无法清除商店区域",
   "commands.fpsm.modify.shop.add_area.success": "成功添加商店区域从 %s 到 %s",
-  "commands.fpsm.modify.shop.add_area.failed": "无法添加商店区域"
+  "commands.fpsm.modify.shop.add_area.failed": "无法添加商店区域",
+  "commands.fpsm.modify.shop.display.success": "成功显示商店区域",
+  "commands.fpsm.modify.shop.display.failed": "无法显示商店区域",
+  "key.fpsm.clear_renderable_areas.desc": "清除可渲染区域",
+  "commands.fpsm.help.map.areas.display": "显示地图区域",
+  "commands.fpsm.help.map.areas.display.hover": "（默认）按F12清除区域渲染",
+  "commands.fpsm.modify.map.area.display.success": "成功显示地图区域",
+  "commands.fpsm.modify.map.area.display.failed": "无法显示地图区域",
+  "commands.fpsm.help.capability.shop.areas.add": "添加商店区域，需要指定两个对角坐标点",
+  "commands.fpsm.help.capability.shop.areas.add.hover": "如果没有商店区域，则默认可以在全图范围内开启商店",
+  "commands.fpsm.help.capability.shop.areas.display": "显示当前商店的所有已配置区域",
+  "commands.fpsm.help.capability.shop.areas.clear": "清除所有商店区域的渲染显示"
 }

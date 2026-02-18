@@ -65,6 +65,9 @@ public class FPSMapCommand {
         helpManager.registerCommandHelp("fpsm map modify settings save", Component.translatable("commands.fpsm.help.map.settings.save"));
         helpManager.registerCommandHelp("fpsm map modify settings load", Component.translatable("commands.fpsm.help.map.settings.load"));
 
+        helpManager.registerCommandHelp("fpsm map modify areas display", Component.translatable("commands.fpsm.help.map.areas.display"),Component.translatable("commands.fpsm.help.map.areas.display.hover"));
+
+
         helpManager.registerCommandParameters("fpsm map modify settings get",
                 "*" + FPSMCommandSuggests.SETTING_ARG);
         helpManager.registerCommandParameters("fpsm map modify settings set",
@@ -97,6 +100,7 @@ public class FPSMapCommand {
                                                         .then(Commands.argument(FPSMCommandSuggests.ACTION_ARG, StringArgumentType.string())
                                                                 .suggests(FPSMCommandSuggests.MAP_DEBUG_SUGGESTION)
                                                                 .executes(FPSMapCommand::handleDebugAction)))
+                                                .then(Commands.literal("area").then(Commands.literal("display").executes(FPSMapCommand::handleDisplayMapArea)))
                                                 .then(buildMapCapabilityCommands(builder.getSecond()))
                                                 .then(buildSettingsCommands())
                                                 // 团队相关修改
@@ -136,6 +140,25 @@ public class FPSMapCommand {
                                         )
                                 )
                         ));
+    }
+
+    private static int handleDisplayMapArea(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = context.getSource().getPlayer();
+        if(player == null) {
+            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.only.player"));
+            return 0;
+        }
+
+        return FPSMCommand.getMap(context)
+                .map(map -> {
+                    map.displayAreas(player);
+                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.map.area.display.success"));
+                    return 1;
+                })
+                .orElseGet(()->{
+                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.map.area.display.failed"));
+                    return 0;
+                });
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> buildMapCapabilityCommands(CommandBuildContext context) {

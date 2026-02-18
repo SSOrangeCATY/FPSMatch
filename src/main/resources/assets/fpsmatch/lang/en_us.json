@@ -253,5 +253,13 @@
   "commands.fpsm.modify.shop.add_area.failed": "Failed to add shop area",
   "commands.fpsm.modify.shop.display.success": "Display shop areas successes!",
   "commands.fpsm.modify.shop.display.failed": "Failed to display shop area",
-  "key.fpsm.clear_renderable_areas.desc": "Clear Renderable Areas"
+  "key.fpsm.clear_renderable_areas.desc": "Clear Renderable Areas",
+  "commands.fpsm.help.map.areas.display": "Display map areas",
+  "commands.fpsm.help.map.areas.display.hover": "(Default) press f12 to clear area render",
+  "commands.fpsm.modify.map.area.display.success": "Display map areas successes!",
+  "commands.fpsm.modify.map.area.display.failed": "Failed to display map area",
+  "commands.fpsm.help.capability.shop.areas.add": "Add a shop area, requires two diagonal corner coordinates",
+  "commands.fpsm.help.capability.shop.areas.add.hover": "If no shop area is defined, shops can be opened anywhere in the world by default",
+  "commands.fpsm.help.capability.shop.areas.display": "Display all configured areas of the current shop",
+  "commands.fpsm.help.capability.shop.areas.clear": "Clear the rendering display of all shop areas"
 }

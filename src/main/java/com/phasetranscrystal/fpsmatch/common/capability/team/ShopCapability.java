@@ -569,6 +569,9 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set cost"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.cost"));
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set item"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.item"));
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop modify set dummy_ammo_amount"), Component.translatable("commands.fpsm.help.capability.shop.modify.set.dummy_ammo_amount"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop areas add"), Component.translatable("commands.fpsm.help.capability.shop.areas.add"),Component.translatable("commands.fpsm.help.capability.shop.areas.add.hover"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop areas display"), Component.translatable("commands.fpsm.help.capability.shop.areas.display"));
+            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("shop areas clear"), Component.translatable("commands.fpsm.help.capability.shop.areas.clear"));
 
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop initialize"), "*type", "startMoney");
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set"), "*type", "*slot", "*action");
@@ -578,6 +581,9 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set cost"), "*cost");
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set item"), "item");
             helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop modify set dummy_ammo_amount"), "*amount");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop areas add"), "*pos1", "*pos2");
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop areas display"));
+            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("shop areas clear"));
         }
 
         /**
