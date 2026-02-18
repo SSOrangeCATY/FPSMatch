@@ -48,7 +48,7 @@ public class MapTeams {
         this.addTeam(TeamData.of("spectator",-1),true)
                 .getCapabilityMap()
                 .ifPresent(SpawnPointCapability.class,cap->{
-                    Vec3 vec3 = map.getMapArea().getAABB().getCenter();
+                    Vec3 vec3 = map.getMapArea().aabb().getCenter();
                     cap.addSpawnPointData(new SpawnPointData(map.getServerLevel().dimension(),vec3,0,0));
                 });
     }

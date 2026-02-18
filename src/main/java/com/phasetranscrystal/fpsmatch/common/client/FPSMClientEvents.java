@@ -1,15 +1,19 @@
 package com.phasetranscrystal.fpsmatch.common.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderableArea;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
@@ -31,14 +35,31 @@ public class FPSMClientEvents
     }
 
     @SubscribeEvent
-    public static void onLevelRender(RenderLevelStageEvent event){
-        if(event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+    public static void onLevelRender(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) return;
+
         List<RenderableArea> areas = FPSMClient.getGlobalData().getDebugData().getAreas();
-        PoseStack stack = event.getPoseStack();
-        MultiBufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
         if (areas.isEmpty()) return;
-        for (RenderableArea renderable : areas) {
-            renderable.area().renderArea(bufferSource,stack);
+
+        PoseStack poseStack = event.getPoseStack();
+        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+
+        poseStack.pushPose();
+
+        try {
+            Camera camera = event.getCamera();
+            Vec3 cameraPos = camera.getPosition();
+
+            poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+
+            for (RenderableArea renderable : areas) {
+                renderable.area().renderArea(poseStack, bufferSource);
+            }
+
+            bufferSource.endBatch();
+        } finally {
+            poseStack.popPose();
         }
     }
+
 }

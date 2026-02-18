@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -17,11 +18,29 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nonnull;
 
 
-public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
+public class AreaData {
     public static final Codec<AreaData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BlockPos.CODEC.optionalFieldOf("Position1", BlockPos.of(0L)).forGetter(AreaData::pos1),
             BlockPos.CODEC.optionalFieldOf("Position2", BlockPos.of(0L)).forGetter(AreaData::pos2)
     ).apply(instance, AreaData::new));
+
+    private final BlockPos pos1;
+    private final BlockPos pos2;
+    private final AABB aabb;
+
+    public AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2){
+        this.pos1 = pos1;
+        this.pos2 = pos2;
+        this.aabb = new AABB(pos1, pos2);
+    }
+
+    public BlockPos pos1() {
+        return pos1;
+    }
+
+    public BlockPos pos2() {
+        return pos2;
+    }
 
     public boolean isPlayerInArea(Player player) {
         return isInArea(new Vec3(player.getX(), player.getY(), player.getZ()));
@@ -36,28 +55,22 @@ public record AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2) {
     }
 
     public boolean isInArea(Vec3 pos) {
-        return getAABB().contains(pos);
+        return aabb.contains(pos);
     }
 
-    public AABB getAABB(){
-        return new AABB(
-                Math.min(pos1.getX() - 1, pos2.getX() - 1),
-                Math.min(pos1.getY() - 1, pos2.getY() - 1),
-                Math.min(pos1.getZ() - 1, pos2.getZ() - 1),
-                Math.max(pos1.getX() + 1, pos2.getX() + 1),
-                Math.max(pos1.getY() + 1, pos2.getY() + 1),
-                Math.max(pos1.getZ() + 1, pos2.getZ() + 1)
-        );
+    public AABB aabb(){
+        return aabb;
     }
 
-    //TODO
-    public void renderArea(MultiBufferSource multiBufferSource, PoseStack poseStack) {
-        VertexConsumer vertexconsumer = multiBufferSource.getBuffer(RenderType.lines());
-        AABB aabb = getAABB();
+    public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource) {
+        VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.lines());
+        AABB aabb = aabb();
+
         LevelRenderer.renderLineBox(poseStack, vertexconsumer,
                 aabb.minX, aabb.minY, aabb.minZ,
                 aabb.maxX, aabb.maxY, aabb.maxZ,
-                1.0F, 1.0F, 0.0F, 1.0F, 1.0F, 1.0F, 0.0F
+                1F, 1F, 0, 1.0F,
+                0.5F, 0.5F, 0.5F
         );
     }
 }
