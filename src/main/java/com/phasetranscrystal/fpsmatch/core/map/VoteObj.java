@@ -84,14 +84,9 @@ public class VoteObj {
             return true; // 投票已结束或已执行回调
         }
 
-        // 检查是否超时
-        if (System.currentTimeMillis() >= endVoteTimer) {
-            status = VoteStatus.FAILED;
-            executeCallback();
-            return true;
-        }
-
         int totalEligiblePlayers = getEligiblePlayerCount();
+
+        // 检查是否有资格投票的玩家
         if (totalEligiblePlayers == 0) {
             status = VoteStatus.FAILED;
             executeCallback();
@@ -115,7 +110,14 @@ public class VoteObj {
             return true;
         }
 
-        return false; // 投票仍在进行中
+        // 检查是否超时
+        if (System.currentTimeMillis() >= endVoteTimer) {
+            status = VoteStatus.FAILED;
+            executeCallback();
+            return true;
+        }
+
+        return false;
     }
 
     /**
