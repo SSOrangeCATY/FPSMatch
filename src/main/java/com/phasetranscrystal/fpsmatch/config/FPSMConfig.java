@@ -63,6 +63,9 @@ public class FPSMConfig {
         // normal
         public final ForgeConfigSpec.BooleanValue autoAdventureMode;
 
+        public final ForgeConfigSpec.DoubleValue baseArmorPenetration;
+        public final ForgeConfigSpec.DoubleValue headshotMultiplier;
+
         // drops
         public final ForgeConfigSpec.IntValue mainWeaponCount;
         public final ForgeConfigSpec.IntValue secondaryWeaponCount;
@@ -88,6 +91,21 @@ public class FPSMConfig {
             autoAdventureMode = builder.comment(
                     "进入世界自动切换到冒险模式"
             ).define("AutoAdventureMode", true);
+            builder.pop();
+
+            builder.push("armor");
+            {
+                baseArmorPenetration = builder.comment(
+                        "防弹衣的基础穿透系数",
+                        "Base armor penetration multiplier",
+                        "当玩家有防弹衣时，受到的伤害 = 原伤害 * (baseArmorPenetration / 2.0)"
+                ).defineInRange("BaseArmorPenetration", 1.4, 0.1, 5.0);
+
+                headshotMultiplier = builder.comment(
+                        "爆头伤害倍率",
+                        "Headshot damage multiplier"
+                ).defineInRange("HeadshotMultiplier", 4.0, 1.0, 10.0);
+            }
             builder.pop();
 
             builder.push("drops");

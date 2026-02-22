@@ -250,5 +250,11 @@
   "commands.fpsm.help.capability.shop.areas.add": "添加商店区域，需要指定两个对角坐标点",
   "commands.fpsm.help.capability.shop.areas.add.hover": "如果没有商店区域，则默认可以在全图范围内开启商店",
   "commands.fpsm.help.capability.shop.areas.display": "显示当前商店的所有已配置区域",
-  "commands.fpsm.help.capability.shop.areas.clear": "清除所有商店区域的渲染显示"
+  "commands.fpsm.help.capability.shop.areas.clear": "清除所有商店区域的渲染显示",
+
+  "config.fpsmatch.common.armor": "Armor Configuration",
+  "config.fpsmatch.common.armor.base_armor_penetration": "Base Armor Penetration",
+  "config.fpsmatch.common.armor.base_armor_penetration.tooltip": "When player has bulletproof armor, damage received = original damage × (base armor penetration ÷ 2)",
+  "config.fpsmatch.common.armor.headshot_multiplier": "Headshot Multiplier",
+  "config.fpsmatch.common.armor.headshot_multiplier.tooltip": "Damage multiplier for headshots"
 }

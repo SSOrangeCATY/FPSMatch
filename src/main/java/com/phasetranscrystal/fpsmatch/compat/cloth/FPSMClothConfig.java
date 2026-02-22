@@ -135,6 +135,28 @@ public class FPSMClothConfig {
                 .setTooltip(Component.translatable("config.fpsmatch.common.throwable.smoke_shell_living_time.tooltip"))
                 .setSaveConsumer(FPSMConfig.common.smokeShellLivingTime::set)
                 .build());
+
+        // 防弹衣配置
+        ConfigCategory armorCategory = root.getOrCreateCategory(Component.translatable("config.fpsmatch.common.armor"));
+
+        armorCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.fpsmatch.common.armor.base_armor_penetration"),
+                        FPSMConfig.common.baseArmorPenetration.get())
+                .setMin(0.1).setMax(5.0)
+                .setDefaultValue(1.4)
+                .setTooltip(Component.translatable("config.fpsmatch.common.armor.base_armor_penetration.tooltip"))
+                .setSaveConsumer(FPSMConfig.common.baseArmorPenetration::set)
+                .build());
+
+        armorCategory.addEntry(entryBuilder.startDoubleField(
+                        Component.translatable("config.fpsmatch.common.armor.headshot_multiplier"),
+                        FPSMConfig.common.headshotMultiplier.get())
+                .setMin(1.0).setMax(10.0)
+                .setDefaultValue(4.0)
+                .setTooltip(Component.translatable("config.fpsmatch.common.armor.headshot_multiplier.tooltip"))
+                .setSaveConsumer(FPSMConfig.common.headshotMultiplier::set)
+                .build());
+
     }
 
     // 主入口方法

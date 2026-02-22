@@ -261,5 +261,11 @@
   "commands.fpsm.help.capability.shop.areas.add": "Add a shop area, requires two diagonal corner coordinates",
   "commands.fpsm.help.capability.shop.areas.add.hover": "If no shop area is defined, shops can be opened anywhere in the world by default",
   "commands.fpsm.help.capability.shop.areas.display": "Display all configured areas of the current shop",
-  "commands.fpsm.help.capability.shop.areas.clear": "Clear the rendering display of all shop areas"
+  "commands.fpsm.help.capability.shop.areas.clear": "Clear the rendering display of all shop areas",
+
+  "config.fpsmatch.common.armor": "Armor Configuration",
+  "config.fpsmatch.common.armor.base_armor_penetration": "Base Armor Penetration",
+  "config.fpsmatch.common.armor.base_armor_penetration.tooltip": "When player has bulletproof armor, damage received = original damage × (base armor penetration ÷ 2)",
+  "config.fpsmatch.common.armor.headshot_multiplier": "Headshot Multiplier",
+  "config.fpsmatch.common.armor.headshot_multiplier.tooltip": "Damage multiplier for headshots"
 }
