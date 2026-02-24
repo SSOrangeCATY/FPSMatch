@@ -28,7 +28,7 @@ public class ConfigManager {
             try {
                 saveConfig();
             } catch (Exception ex) {
-                throw new DataPersistenceException("Failed to save default config", ex);
+                FPSMatch.LOGGER.error("Failed to save config, using default: {}", ex.getMessage());
             }
         }
     }
