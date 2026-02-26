@@ -128,6 +128,11 @@ public class Setting<T> {
         });
     }
 
+    @Override
+    public String toString(){
+        return String.valueOf(this.value);
+    }
+
     /**
      * 从 JSON 元素中解码配置值。
      *
