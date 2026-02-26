@@ -223,7 +223,6 @@ public abstract class BaseMap {
 
     public void leave(ServerPlayer player) {
         if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.LeaveEvent(this, player))) return;
-
         this.sendPacketToJoinedPlayer(player,new FPSMatchStatsResetS2CPacket(),true);
         player.setGameMode(GameType.ADVENTURE);
         this.getMapTeams().leaveTeam(player);

@@ -36,7 +36,10 @@ public final class ServerTeam extends BaseTeam {
     public boolean join(Player player) {
         if(!super.join(player)) return false;
         if(player.level().isClientSide()) return false;
-        player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), getPlayerTeam());
+        String name = player.getScoreboardName();
+        if(!getPlayerTeam().getPlayers().contains(name)){
+            player.getScoreboard().addPlayerToTeam(name, getPlayerTeam());
+        }
         players.put(player.getUUID(), new PlayerData(player,this.enableRounds));
         sync((ServerPlayer) player);
         return true;
@@ -48,9 +51,6 @@ public final class ServerTeam extends BaseTeam {
         if(player.level().isClientSide()) return false;
         if (hasPlayer(player.getUUID())) {
             delPlayer(player.getUUID());
-            if(getPlayerTeam().getPlayers().contains(player.getScoreboardName())){
-                player.getScoreboard().removePlayerFromTeam(player.getScoreboardName(), getPlayerTeam());
-            }
         }
         return true;
     }

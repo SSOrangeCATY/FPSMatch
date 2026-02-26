@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -618,6 +619,8 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void leaveTeam(ServerPlayer player) {
+        player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+
         for (ServerTeam team : teams.values()) {
             if(team.hasPlayer(player.getUUID())) {
                 team.leave(player);
@@ -885,6 +888,14 @@ public class MapTeams {
 
     public Component getPlayerName(UUID uuid){
         return playerName.getOrDefault(uuid, Component.literal(String.valueOf(uuid)));
+    }
+
+    // 只有在服务器关闭时调用 否则会出现空指针异常！
+    // 删除队伍使用
+    public void shutdown(Scoreboard scoreboard) {
+        for (ServerTeam team : teams.values()) {
+            scoreboard.removePlayerTeam(team.getPlayerTeam());
+        }
     }
 
     /**

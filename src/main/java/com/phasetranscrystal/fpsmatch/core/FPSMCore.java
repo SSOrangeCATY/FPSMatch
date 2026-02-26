@@ -200,9 +200,20 @@ public class FPSMCore {
         Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
         map.ifPresent(baseMap -> baseMap.leave(player));
     }
+
+    public void shutdown(){
+        FPSMCore.getInstance().fpsmDataManager.saveAllData();
+
+        for (List<BaseMap> list : GAMES.values()) {
+            for (BaseMap map : list) {
+                map.getMapTeams().shutdown(getServer().getScoreboard());
+            }
+        }
+    }
+
     @SubscribeEvent
     public static void onServerStoppingEvent(ServerStoppingEvent event){
-        FPSMCore.getInstance().fpsmDataManager.saveAllData();
+        FPSMCore.getInstance().shutdown();
     }
 
     @SubscribeEvent
