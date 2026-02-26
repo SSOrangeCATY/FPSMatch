@@ -197,9 +197,13 @@ public class MapTeams {
         String teamName = data.name();
         int limit = data.limit();
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
-        PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayerTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        ServerTeam team = new ServerTeam(map,teamName,limit,playerteam);
 
+        Scoreboard scoreboard = this.level.getScoreboard();
+        PlayerTeam invalid = scoreboard.getPlayerTeam(fixedName);
+        if(invalid != null) scoreboard.removePlayerTeam(invalid);
+
+        PlayerTeam playerteam = scoreboard.addPlayerTeam(fixedName);
+        ServerTeam team = new ServerTeam(map,teamName,limit,playerteam);
         for (Class<? extends TeamCapability> capClazz : data.getCapabilities()){
             if(!team.getCapabilityMap().add(capClazz)){
                 FPSMatch.LOGGER.error("{} Team Capability is not registered : {}",fixedName,capClazz.getName());
