@@ -481,7 +481,7 @@ public class FPSMUtil {
         if (itemStack.getItem() instanceof ArmorItem armorItem) {
             player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
         } else {
-            player.getInventory().add(itemStack);
+            player.getInventory().add(fixGunItem(itemStack));
             FPSMUtil.sortPlayerInventory(player);
         }
     }

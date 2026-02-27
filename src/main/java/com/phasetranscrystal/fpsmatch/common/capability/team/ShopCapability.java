@@ -7,8 +7,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommandSuggests;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
