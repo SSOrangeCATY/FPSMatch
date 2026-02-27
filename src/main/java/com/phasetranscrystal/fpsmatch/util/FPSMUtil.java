@@ -328,9 +328,10 @@ public class FPSMUtil {
         }
         return itemStack;
     }
-        /**
-         * use dummy ammo
-         * */
+
+    /**
+     * use dummy ammo
+     * */
     public static void fixGunItem(@NotNull ItemStack itemStack, @NotNull IGun iGun) {
         Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
         if(gunIndexOptional.isPresent()){
@@ -360,8 +361,8 @@ public class FPSMUtil {
 
 
     /**
-    *  use dummy ammo
-    * */
+     *  use dummy ammo
+     * */
     public static void resetAllGunAmmo(@NotNull ServerPlayer serverPlayer){
         Inventory inventory = serverPlayer.getInventory();
         List<NonNullList<ItemStack>> compartments = ImmutableList.of(inventory.items, inventory.armor, inventory.offhand);
