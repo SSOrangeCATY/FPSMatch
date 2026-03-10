@@ -4,8 +4,11 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
+import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
@@ -20,6 +23,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,6 +63,8 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
      */
     public void addBombArea(AreaData area) {
         this.data.getBombAreaData().add(area);
+        // 同步到所有客户端
+        syncBombAreasToAllClients();
     }
 
     /**
@@ -127,6 +133,35 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
 
     public String getDemolitionTeam() {
         return data.getDemolitionTeam();
+    }
+
+    /**
+     * 将炸弹区域同步到客户端
+     * <p>
+     * 用于在玩家加入地图或地图开始时，将炸弹安放区域显示给客户端
+     *
+     * @param player 目标玩家
+     */
+    public void syncBombAreasToClient(ServerPlayer player) {
+        for (AreaData area : data.getBombAreaData()) {
+            FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
+                Component.translatable("blockoffensive.bomb.area"), 
+                area
+            ));
+        }
+    }
+
+    /**
+     * 将炸弹区域同步到所有在线玩家
+     * <p>
+     * 用于炸弹区域变更时，更新所有客户端的显示
+     */
+    public void syncBombAreasToAllClients() {
+        map.getMapTeams().getTeamsWithSpectator().forEach(team -> {
+            team.getOnlinePlayers().forEach(uuid -> {
+                FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(this::syncBombAreasToClient);
+            });
+        });
     }
 
     /**
@@ -215,7 +250,9 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
                             .then(Commands.literal("add")
                                     .then(Commands.argument("from", BlockPosArgument.blockPos())
                                             .then(Commands.argument("to", BlockPosArgument.blockPos())
-                                                    .executes(DemolitionCommand::handleBombAreaAction)))));
+                                                    .executes(DemolitionCommand::handleBombAreaAction))))
+                            .then(Commands.literal("display")
+                                    .executes(DemolitionCommand::handleBombAreaDisplay)));
         }
 
         @Override
@@ -223,6 +260,7 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
             helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition"));
             helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition bomb_area"));
             helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition bomb_area add"), Component.translatable("commands.fpsm.help.capability.demolition.bomb_area.add"));
+            helper.registerCommandHelp(FPSMHelpManager.withMapCapability("demolition bomb_area display"), Component.translatable("commands.fpsm.help.capability.demolition.bomb_area.display"));
             helper.registerCommandParameters(FPSMHelpManager.withMapCapability("demolition bomb_area add"), "*from", "*to");
         }
 
@@ -234,6 +272,27 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
                     .map(cap -> {
                         cap.addBombArea(new AreaData(pos1, pos2));
                         FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.bombarea.success"));
+                        return 1;
+                    })
+                    .orElseGet(() -> {
+                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing", DemolitionModeCapability.class.getSimpleName()));
+                        return 0;
+                    });
+        }
+
+        private static int handleBombAreaDisplay(CommandContext<CommandSourceStack> context) {
+            ServerPlayer player = context.getSource().getPlayer();
+            if (player == null) {
+                context.getSource().sendSuccess(() ->
+                        Component.translatable("commands.fpsm.only.player"), true);
+                return 0;
+            }
+
+            return FPSMCommand.getMapCapability(context, DemolitionModeCapability.class)
+                    .map(cap -> {
+                        cap.syncBombAreasToClient(player);
+                        context.getSource().sendSuccess(() ->
+                                Component.translatable("commands.fpsm.modify.bombarea.display.success"), true);
                         return 1;
                     })
                     .orElseGet(() -> {

@@ -3,6 +3,7 @@
   "minVersion": "0.8",
   "package": "com.phasetranscrystal.fpsmatch.mixin",
   "compatibilityLevel": "JAVA_8",
+  "plugin": "com.phasetranscrystal.fpsmatch.mixin.FPSMatchMixinPlugin",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "ItemDropSoundMixin",
@@ -30,6 +31,7 @@
     "ban3prs.Ban3rdPerson",
     "collisiobox.MixinEntityRenderDispatcher",
     "compat.spectate.lrt.MixinLrtAttackKeys",
+    "compat.spectate.lrt.MixinMinecraftLrtSpectator",
     "compat.spectate.tacz.MixinClientPacketListenerSpectatorItemMirror",
     "compat.spectate.tacz.MixinGameRendererSpectatorHands",
     "compat.spectate.tacz.MixinLocalPlayerSpectatorReload",

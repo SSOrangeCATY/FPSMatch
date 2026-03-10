@@ -186,7 +186,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         return this;
     }
 
-
     /**
      * 检查队伍是否拥有指定能力
      *
@@ -254,7 +253,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             );
         });
     }
-
 
     /**
      * 获取所有能力的流(Stream)，便于进行过滤、映射等操作。
@@ -348,7 +346,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         public static Codec<Wrapper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.unboundedMap(Codec.STRING, ExtraCodecs.JSON).fieldOf("capabilities").forGetter(Wrapper::data)
         ).apply(instance, Wrapper::new));
-
 
         public JsonElement encode(){
             return CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});

@@ -1,7 +1,6 @@
-package com.phasetranscrystal.fpsmatch.compat.spectate.lrtactical;
+package com.phasetranscrystal.fpsmatch.mixin.compat.spectate.lrt;
 
 import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorMotion;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import me.xjqsh.lrtactical.client.renderer.item.FlashShieldItemRenderer;
@@ -11,27 +10,24 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.Unique;
 
 /**
  * Mirrors spectated player movement into LRTactical item animations.
+ * Only loaded when LRTactical is present.
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = FPSMatch.MODID)
-public final class SpectatorLrtMovementMirror {
-    private SpectatorLrtMovementMirror() {
-    }
-
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+@Mixin(Minecraft.class)
+public class MixinMinecraftLrtSpectator {
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void fpsmatch$onClientTickStart(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer self = mc.player;
+        if (self == null) return;
+
         Player target = SpectatorView.getSpectatedPlayer(self);
         if (target == null) {
             return;
@@ -40,23 +36,24 @@ public final class SpectatorLrtMovementMirror {
         if (stack.isEmpty()) {
             return;
         }
-        BlockEntityWithoutLevelRenderer renderer = IClientItemExtensions.of(stack).getCustomRenderer();
+        BlockEntityWithoutLevelRenderer renderer = net.minecraftforge.client.extensions.common.IClientItemExtensions.of(stack).getCustomRenderer();
         if (renderer instanceof MeleeItemRenderer meleeRenderer) {
             LuaAnimationStateMachine<?> asm = meleeRenderer.getStateMachine(stack);
             if (asm != null) {
-                tickMove(target, asm);
+                fpsmatch$tickMove(target, asm);
             }
             return;
         }
         if (renderer instanceof FlashShieldItemRenderer shieldRenderer) {
             LuaAnimationStateMachine<?> asm = shieldRenderer.getStateMachine(stack);
             if (asm != null) {
-                tickMove(target, asm);
+                fpsmatch$tickMove(target, asm);
             }
         }
     }
 
-    private static void tickMove(Player target, LuaAnimationStateMachine<?> asm) {
+    @Unique
+    private void fpsmatch$tickMove(Player target, LuaAnimationStateMachine<?> asm) {
         if (target.isCrouching()) {
             asm.trigger("idle");
             return;
