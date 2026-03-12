@@ -18,7 +18,6 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
     @Override
     public void onLoad(String mixinPackage) {
         this.lrtacticalLoaded = ModList.get().isLoaded("lrtactical");
-        System.out.println("[FPSMatch] LRTactical loaded: " + lrtacticalLoaded);
     }
 
     @Override
