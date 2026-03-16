@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import net.minecraftforge.fml.ModList;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -13,11 +14,9 @@ import java.util.Set;
  * Only loads compatibility mixins when target mods are present.
  */
 public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
-    private boolean lrtacticalLoaded;
 
     @Override
     public void onLoad(String mixinPackage) {
-        this.lrtacticalLoaded = ModList.get().isLoaded("lrtactical");
     }
 
     @Override
@@ -29,7 +28,7 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         // Only apply LRTactical-specific mixins when LRTactical is loaded
         if (mixinClassName.contains("compat.spectate.lrt")) {
-            return lrtacticalLoaded;
+            return FPSMImpl.findLrtacticalMod();
         }
         return true;
     }
