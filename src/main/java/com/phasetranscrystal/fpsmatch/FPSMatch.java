@@ -135,6 +135,8 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMInventorySelectedS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamChatMessageC2SPacket.class);
         PACKET_REGISTER.registerPacket(AddAreaDataS2CPacket.class);
+        PACKET_REGISTER.registerPacket(AddPointDataS2CPacket.class);
+        PACKET_REGISTER.registerPacket(RemoveDebugDataByPrefixS2CPacket.class);
 
         event.enqueueWork(()->{
             ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);

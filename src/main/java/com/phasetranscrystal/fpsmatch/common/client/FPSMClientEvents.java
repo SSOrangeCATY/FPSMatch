@@ -1,18 +1,14 @@
 package com.phasetranscrystal.fpsmatch.common.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderableArea;
+import com.phasetranscrystal.fpsmatch.common.client.data.RenderablePoint;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -20,7 +16,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.List;
+import java.util.Collection;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class FPSMClientEvents
@@ -38,8 +34,9 @@ public class FPSMClientEvents
     public static void onLevelRender(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) return;
 
-        List<RenderableArea> areas = FPSMClient.getGlobalData().getDebugData().getAreas();
-        if (areas.isEmpty()) return;
+        Collection<RenderableArea> areas = FPSMClient.getGlobalData().getDebugData().getAreas();
+        Collection<RenderablePoint> points = FPSMClient.getGlobalData().getDebugData().getPoints();
+        if (areas.isEmpty() && points.isEmpty()) return;
 
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -53,7 +50,11 @@ public class FPSMClientEvents
             poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
             for (RenderableArea renderable : areas) {
-                renderable.area().renderArea(poseStack, bufferSource);
+                renderable.render(poseStack, bufferSource);
+            }
+
+            for (RenderablePoint renderable : points) {
+                renderable.render(poseStack, bufferSource);
             }
 
             bufferSource.endBatch();

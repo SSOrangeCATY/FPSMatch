@@ -18,13 +18,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.coordinates.Vec2Argument;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec2;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
@@ -67,35 +62,7 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
     }
 
     public boolean randomSpawnPoints() {
-        if(team.isSpectator()) return true;
-
-        Random random = new Random();
-
-        if (this.spawnPointsData.isEmpty()) {
-            FPSMCore.getInstance().getServer().sendSystemMessage(Component.translatable("message.fpsmatch.error.no_spawn_points")
-                    .append(Component.literal("error from -> " + team.name)).withStyle(ChatFormatting.RED));
-            return false;
-        }
-
-        Map<UUID, PlayerData> players = this.team.getPlayers();
-        if (this.spawnPointsData.size() < players.size()) {
-            FPSMCore.getInstance().getServer().sendSystemMessage(Component.translatable("message.fpsmatch.error.not_enough_spawn_points")
-                    .append(Component.literal("error from -> " + team.name)).withStyle(ChatFormatting.RED));
-            return false;
-        }
-
-        List<UUID> playerUUIDs = new ArrayList<>(players.keySet());
-        List<SpawnPointData> list = new ArrayList<>(this.spawnPointsData);
-        for (UUID playerUUID : playerUUIDs) {
-            if (list.isEmpty()) {
-                list.addAll(this.spawnPointsData);
-            }
-            int randomIndex = random.nextInt(list.size());
-            SpawnPointData spawnPoint = list.get(randomIndex);
-            list.remove(randomIndex);
-            players.get(playerUUID).setSpawnPointsData(spawnPoint);
-        }
-        return true;
+        return assignNextSpawnPoints();
     }
 
     public void addSpawnPointData(@Nonnull SpawnPointData data) {
@@ -110,8 +77,95 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
         return spawnPointsData;
     }
 
+    public boolean removeSpawnPointData(@Nonnull SpawnPointData data) {
+        return this.spawnPointsData.remove(data);
+    }
+
+    public Optional<SpawnPointData> removeSpawnPointData(int index) {
+        if (index < 0 || index >= this.spawnPointsData.size()) {
+            return Optional.empty();
+        }
+        return Optional.of(this.spawnPointsData.remove(index));
+    }
+
+    public Optional<SpawnPointData> assignNextSpawnPoint(UUID playerId) {
+        PlayerData playerData = this.team.getPlayerData(playerId).orElse(null);
+        if (playerData == null) {
+            return Optional.empty();
+        }
+
+        List<SpawnPointData> allPoints = this.getUniqueSpawnPoints();
+        if (allPoints.isEmpty()) {
+            return Optional.empty();
+        }
+
+        SpawnPointData previousPoint = playerData.getSpawnPointsData();
+        Set<SpawnPointData> reservedByTeammates = this.team.getPlayersData().stream()
+                .filter(data -> !playerId.equals(data.getOwner()))
+                .map(PlayerData::getSpawnPointsData)
+                .filter(Objects::nonNull)
+                .collect(HashSet::new, HashSet::add, HashSet::addAll);
+
+        List<SpawnPointData> exclusivePoints = allPoints.stream()
+                .filter(point -> !reservedByTeammates.contains(point))
+                .toList();
+
+        SpawnPointData nextPoint = this.pickSpawnPoint(exclusivePoints, previousPoint)
+                .or(() -> this.pickSpawnPoint(allPoints, previousPoint))
+                .orElse(null);
+        if (nextPoint == null) {
+            return Optional.empty();
+        }
+
+        playerData.setSpawnPointsData(nextPoint);
+        return Optional.of(nextPoint);
+    }
+
+    public boolean assignNextSpawnPoints() {
+        if (team.isSpectator()) {
+            return true;
+        }
+        if (this.spawnPointsData.isEmpty()) {
+            this.sendNoSpawnPointsMessage();
+            return false;
+        }
+
+        boolean success = true;
+        for (UUID playerUUID : new ArrayList<>(this.team.getPlayers().keySet())) {
+            success &= this.assignNextSpawnPoint(playerUUID).isPresent();
+        }
+        return success;
+    }
+
     public void clearSpawnPointsData() {
         spawnPointsData.clear();
+    }
+
+    private void sendNoSpawnPointsMessage() {
+        FPSMCore.getInstance().getServer().sendSystemMessage(Component.translatable("message.fpsmatch.error.no_spawn_points")
+                .append(Component.literal("error from -> " + team.name)).withStyle(ChatFormatting.RED));
+    }
+
+    private List<SpawnPointData> getUniqueSpawnPoints() {
+        return new ArrayList<>(new LinkedHashSet<>(this.spawnPointsData));
+    }
+
+    private Optional<SpawnPointData> pickSpawnPoint(List<SpawnPointData> points, @Nullable SpawnPointData previousPoint) {
+        if (points.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<SpawnPointData> candidatePoints = points;
+        if (previousPoint != null && points.size() > 1) {
+            List<SpawnPointData> withoutPrevious = points.stream()
+                    .filter(point -> !point.equals(previousPoint))
+                    .toList();
+            if (!withoutPrevious.isEmpty()) {
+                candidatePoints = withoutPrevious;
+            }
+        }
+
+        return Optional.of(candidatePoints.get(new Random().nextInt(candidatePoints.size())));
     }
 
     @Override
@@ -154,13 +208,7 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
                     .then(Commands.literal("add")
                             .executes(SpawnPointCommand::handleSpawnAdd))
                     .then(Commands.literal("clear")
-                            .executes(SpawnPointCommand::handleSpawnClear))
-                    .then(Commands.literal("clear_all")
-                            .executes(SpawnPointCommand::handleSpawnClearAll))
-                    .then(Commands.literal("set")
-                            .then(Commands.argument("from", Vec2Argument.vec2())
-                                    .then(Commands.argument("to", Vec2Argument.vec2())
-                                            .executes(SpawnPointCommand::handleSpawnSet))));
+                            .executes(SpawnPointCommand::handleSpawnClear));
         }
 
         @Override
@@ -168,11 +216,6 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints"));
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints add"), Component.translatable("commands.fpsm.help.capability.spawnpoints.add"));
             helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints clear"), Component.translatable("commands.fpsm.help.capability.spawnpoints.clear"));
-            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints clear_all"), Component.translatable("commands.fpsm.help.capability.spawnpoints.clear_all"));
-            helper.registerCommandHelp(FPSMHelpManager.withTeamCapability("spawnpoints set"), Component.translatable("commands.fpsm.help.capability.spawnpoints.set"));
-            
-            // 注册命令参数
-            helper.registerCommandParameters(FPSMHelpManager.withTeamCapability("spawnpoints set"), "*from", "*to");
         }
 
         private static int handleSpawnAdd(CommandContext<CommandSourceStack> context) {
@@ -201,118 +244,13 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
                     });
         }
 
-        private static int handleSpawnClearAll(CommandContext<CommandSourceStack> context) {
-            return FPSMCommand.getTeamCapability(context, SpawnPointCapability.class).map(spawnCap -> {
-                        spawnCap.clearSpawnPointsData();
-                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.clearall.success"));
-                        return 1;
-                    })
-                    .orElseGet(() -> {
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.notFound"));
-                        return 0;
-                    });
-        }
-
-        private static int handleSpawnSet(CommandContext<CommandSourceStack> context) {
-            String teamName = StringArgumentType.getString(context, FPSMCommandSuggests.TEAM_NAME_ARG);
-            
-            return  FPSMCommand.getTeamCapability(context, SpawnPointCapability.class).map(spawnCap -> {
-                        try {
-                            Vec2 from = Vec2Argument.getVec2(context, "from");
-                            Vec2 to = Vec2Argument.getVec2(context, "to");
-
-                            int minX = (int) Math.floor(Math.min(from.x, to.x));
-                            int maxX = (int) Math.floor(Math.max(from.x, to.x));
-                            int minZ = (int) Math.floor(Math.min(from.y, to.y));
-                            int maxZ = (int) Math.floor(Math.max(from.y, to.y));
-                            int y = BlockPos.containing(context.getSource().getPosition()).getY();
-
-                            double border = from.distanceToSqr(to);
-                            if (border >= 130) {
-                                FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.over_flow"));
-                                return 0;
-                            }
-
-                            List<SpawnPointData> newSpawnPoints = new ArrayList<>();
-                            SpawnPointData defaultData = getSpawnPointData(context);
-
-                            for (int x = minX; x <= maxX; x++) {
-                                for (int z = minZ; z <= maxZ; z++) {
-                                    BlockPos pos = new BlockPos(x, y, z);
-                                    BlockState block = context.getSource().getLevel().getBlockState(pos);
-                                    if (block.isAir()) {
-                                        newSpawnPoints.add(new SpawnPointData(
-                                                defaultData.getDimension(), pos.getCenter().add(0,0.5,0),
-                                                defaultData.getYaw(), defaultData.getPitch()
-                                        ));
-                                    }
-                                }
-                            }
-
-                            spawnCap.setAllSpawnPointData(newSpawnPoints);
-                            generateCubeEdgesParticles(context.getSource(), minX, y, minZ, maxX + 1, y + 1, maxZ + 1);
-                            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.success", newSpawnPoints.size(), teamName));
-                            return 1;
-
-                        } catch (IllegalArgumentException e) {
-                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.modify.spawn.set.missing_args"));
-                            return 0;
-                        }
-                    })
-                    .orElseGet(() -> {
-                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.capability.missing","SpawnPointCapability"));
-                        return 0;
-                    });
-        }
-
-
-        private static void generateCubeEdgesParticles(CommandSourceStack source, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-            BlockPos[][] edges = {
-                    {new BlockPos(minX, minY, minZ), new BlockPos(maxX, minY, minZ)},
-                    {new BlockPos(minX, minY, minZ), new BlockPos(minX, maxY, minZ)},
-                    {new BlockPos(maxX, minY, minZ), new BlockPos(maxX, maxY, minZ)},
-                    {new BlockPos(minX, maxY, minZ), new BlockPos(maxX, maxY, minZ)},
-                    {new BlockPos(minX, minY, maxZ), new BlockPos(maxX, minY, maxZ)},
-                    {new BlockPos(minX, minY, maxZ), new BlockPos(minX, maxY, maxZ)},
-                    {new BlockPos(maxX, minY, maxZ), new BlockPos(maxX, maxY, maxZ)},
-                    {new BlockPos(minX, maxY, maxZ), new BlockPos(maxX, maxY, maxZ)},
-                    {new BlockPos(minX, minY, minZ), new BlockPos(minX, minY, maxZ)},
-                    {new BlockPos(maxX, minY, minZ), new BlockPos(maxX, minY, maxZ)},
-                    {new BlockPos(minX, maxY, minZ), new BlockPos(minX, maxY, maxZ)},
-                    {new BlockPos(maxX, maxY, minZ), new BlockPos(maxX, maxY, maxZ)}
-            };
-
-            Arrays.stream(edges).forEach(edge ->
-                    spawnParticlesAlongEdge(source, edge[0], edge[1])
-            );
-        }
-
-        private static void spawnParticlesAlongEdge(CommandSourceStack source, BlockPos start, BlockPos end) {
-            double x1 = start.getX(), y1 = start.getY(), z1 = start.getZ();
-            double x2 = end.getX(), y2 = end.getY(), z2 = end.getZ();
-
-            double dx = x2 - x1;
-            double dy = y2 - y1;
-            double dz = z2 - z1;
-
-            for (double t = 0; t <= 1; t += 0.1) {
-                double x = x1 + dx * t;
-                double y = y1 + dy * t;
-                double z = z1 + dz * t;
-                if (source.getPlayer() != null) {
-                    source.getLevel().sendParticles(source.getPlayer(), ParticleTypes.FLAME, false,
-                            x, y, z, 0, dx, dy, dz, 0.0001);
-                }
-            }
-        }
-
         private static SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context) {
             Entity entity = context.getSource().getEntity();
 
             if (entity != null) {
                 return new SpawnPointData(
                         context.getSource().getLevel().dimension(),
-                        context.getSource().getPosition(), entity.getXRot(), entity.getYRot()
+                        context.getSource().getPosition(), entity.getYRot(), entity.getXRot()
                 );
             } else {
                 return new SpawnPointData(

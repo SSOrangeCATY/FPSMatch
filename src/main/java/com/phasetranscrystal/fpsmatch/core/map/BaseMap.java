@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
@@ -21,6 +22,8 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerLevel;
@@ -251,20 +254,36 @@ public abstract class BaseMap {
 
     public void teleportPlayerToReSpawnPoint(ServerPlayer player){
         this.getMapTeams().getTeamByPlayer(player)
-                .flatMap(t -> t.getPlayerData(player.getUUID()))
-                .ifPresent(playerData -> {
-                    SpawnPointData data = playerData.getSpawnPointsData();
-                    player.setRespawnPosition(data.getDimension(),data.getBlockPos(),0,true,false);
-                    teleportToPoint(player, data);
-        });
+                .ifPresent(team -> team.getPlayerData(player.getUUID()).ifPresent(playerData -> {
+                    SpawnPointData currentPoint = playerData.getSpawnPointsData();
+                    if (currentPoint == null) {
+                        currentPoint = team.getCapabilityMap().get(SpawnPointCapability.class)
+                                .flatMap(cap -> cap.assignNextSpawnPoint(player.getUUID()))
+                                .orElse(null);
+                    }
+                    if (currentPoint == null) {
+                        player.displayClientMessage(Component.translatable("message.fpsmatch.error.no_spawn_points")
+                                .withStyle(ChatFormatting.RED), false);
+                        return;
+                    }
+
+                    player.setRespawnPosition(currentPoint.getDimension(), currentPoint.getBlockPos(), currentPoint.getYaw(), true, false);
+                    if (teleportToPoint(player, currentPoint)) {
+                        team.getCapabilityMap().get(SpawnPointCapability.class)
+                                .ifPresent(cap -> cap.assignNextSpawnPoint(player.getUUID()));
+                    }
+                }));
     }
 
-    public void teleportToPoint(ServerPlayer player, SpawnPointData data) {
-        if(!Level.isInSpawnableBounds(data.getBlockPos())) return;
+    public boolean teleportToPoint(ServerPlayer player, SpawnPointData data) {
+        if(!Level.isInSpawnableBounds(data.getBlockPos())) return false;
+        ServerLevel targetLevel = this.getServerLevel().getServer().getLevel(data.getDimension());
+        if (targetLevel == null) {
+            return false;
+        }
+
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
-        set.add(RelativeMovement.X_ROT);
-        set.add(RelativeMovement.Y_ROT);
-        if (player.teleportTo(Objects.requireNonNull(this.getServerLevel().getServer().getLevel(data.getDimension())), data.getX(),data.getY(),data.getZ(), set, 0, 0)) {
+        if (player.teleportTo(targetLevel, data.getX(),data.getY(),data.getZ(), set, data.getYaw(), data.getPitch())) {
             label23: {
                 if (player.isFallFlying()) {
                     break label23;
@@ -273,7 +292,9 @@ public abstract class BaseMap {
                 player.setDeltaMovement(player.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
                 player.setOnGround(true);
             }
+            return true;
         }
+        return false;
     }
 
     public void clearInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
@@ -672,6 +693,11 @@ public abstract class BaseMap {
     }
 
     public void displayAreas(ServerPlayer player) {
-        FPSMatch.sendToPlayer(player,new AddAreaDataS2CPacket(Component.literal("MAP_AREA"),this.mapArea));
+        FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
+                "map_preview:" + this.getGameType() + ":" + this.getMapName(),
+                Component.literal(this.getMapName()),
+                PreviewColorUtil.getMapPreviewColor(this.getGameType()),
+                this.mapArea
+        ));
     }
 }
