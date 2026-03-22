@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.compat.impl;
 
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.LoadingModList;
 import net.minecraftforge.forgespi.language.IModFileInfo;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
@@ -14,31 +15,48 @@ public class FPSMImpl {
     public static final String TACZ_TWEAKS = "tacztweaks";
 
     public static boolean findLrtacticalMod(){
-       return ModList.get().isLoaded(LRTACTICAL);
+       return isLoaded(LRTACTICAL);
     }
 
     public static boolean findCounterStrikeGrenadesMod(){
-        return ModList.get().isLoaded(COUNTER_STRIKE_GRENADES);
+        return isLoaded(COUNTER_STRIKE_GRENADES);
     }
 
     public static boolean findMohist(){
-        return ModList.get().isLoaded(MOHIST);
+        return isLoaded(MOHIST);
     }
 
     public static boolean findClothConfig(){
-        return ModList.get().isLoaded(CLOTH_CONFIG);
+        return isLoaded(CLOTH_CONFIG);
     }
 
     public static boolean findTaczTweaks(){
-        return ModList.get().isLoaded(TACZ_TWEAKS);
+        return isLoaded(TACZ_TWEAKS);
     }
 
     public static boolean withVersion(String modId, String version) {
-        IModFileInfo info = ModList.get().getModFileById(modId);
+        IModFileInfo info = getModFileInfo(modId);
         try{
             return info != null && VersionRange.createFromVersionSpec(version).containsVersion(info.getMods().get(0).getVersion());
         }catch (InvalidVersionSpecificationException exception){
             return false;
         }
+    }
+
+    private static boolean isLoaded(String modId) {
+        return getModFileInfo(modId) != null;
+    }
+
+    private static IModFileInfo getModFileInfo(String modId) {
+        ModList modList = ModList.get();
+        if (modList != null) {
+            return modList.getModFileById(modId);
+        }
+
+        LoadingModList loadingModList = LoadingModList.get();
+        if (loadingModList != null) {
+            return loadingModList.getModFileById(modId);
+        }
+        return null;
     }
 }
