@@ -6,7 +6,6 @@ import com.phasetranscrystal.fpsmatch.common.item.MapCreatorTool;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -28,7 +27,6 @@ public record MapCreatorToolActionC2SPacket(
 ) {
     public enum Action {
         SAVE_DRAFT,
-        PREVIEW,
         CREATE
     }
 
@@ -64,7 +62,6 @@ public record MapCreatorToolActionC2SPacket(
 
             switch (action()) {
                 case SAVE_DRAFT -> saveDraft(stack);
-                case PREVIEW -> preview(player);
                 case CREATE -> createMap(player, stack);
             }
         });
@@ -76,30 +73,6 @@ public record MapCreatorToolActionC2SPacket(
         MapCreatorTool.setDraftMapName(stack, draftMapName());
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1, pos1());
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2, pos2());
-    }
-
-    private void preview(ServerPlayer player) {
-        String type = selectedType().trim();
-        if (!FPSMCore.getInstance().checkGameType(type)) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_type")
-                    .append(Component.literal(" " + type)), false);
-            return;
-        }
-
-        Optional<AreaData> areaData = createArea();
-        if (areaData.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_area"), false);
-            return;
-        }
-
-        String prefix = "map_preview:draft:" + player.getUUID() + ":";
-        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(prefix));
-        FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
-                prefix + type,
-                Component.literal(draftMapName().trim().isEmpty() ? "Draft Map" : draftMapName().trim()),
-                PreviewColorUtil.getMapPreviewColor(type),
-                areaData.get()
-        ));
     }
 
     private void createMap(ServerPlayer player, ItemStack stack) {

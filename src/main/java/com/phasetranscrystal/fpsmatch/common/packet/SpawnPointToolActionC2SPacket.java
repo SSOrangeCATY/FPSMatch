@@ -7,7 +7,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
-import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,8 +27,6 @@ public record SpawnPointToolActionC2SPacket(
     public enum Action {
         REFRESH,
         SAVE_SELECTIONS,
-        PREVIEW_MAP,
-        PREVIEW_POINTS,
         DELETE_SELECTED,
         CLEAR_TEAM
     }
@@ -81,8 +78,6 @@ public record SpawnPointToolActionC2SPacket(
             switch (action()) {
                 case REFRESH -> sendScreen(player, stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
                 case SAVE_SELECTIONS -> resolveSelection(stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
-                case PREVIEW_MAP -> previewMap(player, stack);
-                case PREVIEW_POINTS -> previewSpawnPoints(player, stack);
                 case DELETE_SELECTED -> deleteSelected(player, stack);
                 case CLEAR_TEAM -> clearTeam(player, stack);
             }
@@ -90,39 +85,14 @@ public record SpawnPointToolActionC2SPacket(
         ctx.get().setPacketHandled(true);
     }
 
-    private void previewMap(ServerPlayer player, ItemStack stack) {
-        SelectionSnapshot snapshot = resolveSelection(stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
-        if (snapshot.map().isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.map_not_found", snapshot.selectedMap()), false);
-            return;
-        }
-        snapshot.map().get().displayAreas(player);
-    }
-
-    private void previewSpawnPoints(ServerPlayer player, ItemStack stack) {
-        SelectionSnapshot snapshot = resolveSelection(stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
-        if (snapshot.capability().isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()), false);
-            return;
-        }
-
-        String prefix = "spawn_preview:" + snapshot.selectedType() + ":" + snapshot.selectedMap() + ":" + snapshot.selectedTeam() + ":";
-        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(prefix));
-        for (int i = 0; i < snapshot.spawnPoints().size(); i++) {
-            SpawnPointData data = snapshot.spawnPoints().get(i);
-            FPSMatch.sendToPlayer(player, new AddPointDataS2CPacket(
-                    prefix + i,
-                    Component.literal(snapshot.selectedTeam() + " #" + (i + 1)),
-                    PreviewColorUtil.getPointPreviewColor(snapshot.selectedType()),
-                    data.getPosition()
-            ));
-        }
-    }
-
     private void deleteSelected(ServerPlayer player, ItemStack stack) {
         SelectionSnapshot snapshot = resolveSelection(stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
         if (snapshot.capability().isEmpty()) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()), false);
+            return;
+        }
+        if (snapshot.selectedIndex() < 0 || snapshot.selectedIndex() >= snapshot.spawnPoints().size()) {
+            sendScreen(player, stack, snapshot.selectedType(), snapshot.selectedMap(), snapshot.selectedTeam(), -1);
             return;
         }
 

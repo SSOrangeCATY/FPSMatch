@@ -2,7 +2,8 @@ package com.phasetranscrystal.fpsmatch.common.item.tool;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.ToolInteractionC2SPacket;
-import net.minecraft.client.gui.screens.Screen;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -12,9 +13,17 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ToolInteractionClientHandler {
+    private static boolean isControlDown() {
+        Minecraft minecraft = Minecraft.getInstance();
+        long window = minecraft.getWindow().getWindow();
+        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
+                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+    }
+
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         Player player = event.getEntity();
@@ -45,7 +54,7 @@ public class ToolInteractionClientHandler {
             return;
         }
 
-        ToolInteractionAction action = Screen.hasControlDown()
+        ToolInteractionAction action = isControlDown()
                 ? ToolInteractionAction.CTRL_RIGHT_CLICK
                 : ToolInteractionAction.RIGHT_CLICK_BLOCK;
         FPSMatch.sendToServer(new ToolInteractionC2SPacket(action, event.getPos()));
@@ -54,8 +63,26 @@ public class ToolInteractionClientHandler {
     }
 
     @SubscribeEvent
+    public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+        Player player = event.getEntity();
+        Level level = player.level();
+        if (!level.isClientSide || event.getHand() != InteractionHand.MAIN_HAND || !isControlDown()) {
+            return;
+        }
+
+        ItemStack stack = event.getItemStack();
+        if (!(stack.getItem() instanceof WorldToolItem)) {
+            return;
+        }
+
+        FPSMatch.sendToServer(new ToolInteractionC2SPacket(ToolInteractionAction.CTRL_RIGHT_CLICK, null));
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
+    @SubscribeEvent
     public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
-        if (!Screen.hasControlDown()) {
+        if (!isControlDown()) {
             return;
         }
 

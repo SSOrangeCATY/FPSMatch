@@ -14,8 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SpawnPointToolScreen extends Screen {
-    private static final int PANEL_WIDTH = 286;
-    private static final int PANEL_HEIGHT = 212;
+    private static final int PANEL_WIDTH = 326;
+    private static final int PANEL_HEIGHT = 220;
+    private static final int SCREEN_OVERLAY = 0x5A000000;
     private static final int PANEL_BACKGROUND = 0xD0191D22;
     private static final int PANEL_BORDER = 0xFFB58A42;
 
@@ -33,6 +34,8 @@ public class SpawnPointToolScreen extends Screen {
     private Button teamButton;
     private Button prevButton;
     private Button nextButton;
+    private Button deleteButton;
+    private Button clearButton;
 
     public SpawnPointToolScreen(OpenSpawnPointToolScreenS2CPacket data) {
         super(Component.translatable("gui.fpsm.spawn_point_tool.title"));
@@ -52,46 +55,38 @@ public class SpawnPointToolScreen extends Screen {
         int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
 
         this.typeButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleType())
-                .pos(left + 112, top + 20)
-                .size(156, 20)
+                .pos(left + 124, top + 24)
+                .size(184, 20)
                 .build());
         this.mapButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleMap())
-                .pos(left + 112, top + 46)
-                .size(156, 20)
+                .pos(left + 124, top + 54)
+                .size(184, 20)
                 .build());
         this.teamButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleTeam())
-                .pos(left + 112, top + 72)
-                .size(156, 20)
+                .pos(left + 124, top + 84)
+                .size(184, 20)
                 .build());
 
         this.prevButton = this.addRenderableWidget(new Button.Builder(Component.literal("<"), button -> stepIndex(-1))
-                .pos(left + 112, top + 98)
+                .pos(left + 124, top + 114)
                 .size(24, 20)
                 .build());
         this.nextButton = this.addRenderableWidget(new Button.Builder(Component.literal(">"), button -> stepIndex(1))
-                .pos(left + 244, top + 98)
+                .pos(left + 284, top + 114)
                 .size(24, 20)
                 .build());
 
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.preview_map"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.PREVIEW_MAP))
-                .pos(left + 18, top + 144)
-                .size(120, 20)
+        this.deleteButton = this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.delete"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.DELETE_SELECTED))
+                .pos(left + 18, top + 170)
+                .size(140, 20)
                 .build());
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.preview_points"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.PREVIEW_POINTS))
-                .pos(left + 148, top + 144)
-                .size(120, 20)
-                .build());
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.delete"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.DELETE_SELECTED))
-                .pos(left + 18, top + 168)
-                .size(120, 20)
-                .build());
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.clear"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.CLEAR_TEAM))
-                .pos(left + 148, top + 168)
-                .size(120, 20)
+        this.clearButton = this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.clear"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.CLEAR_TEAM))
+                .pos(left + 168, top + 170)
+                .size(140, 20)
                 .build());
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
-                .pos(left + 18, top + 192)
-                .size(250, 20)
+                .pos(left + 18, top + 194)
+                .size(290, 20)
                 .build());
 
         updateButtonLabels();
@@ -124,19 +119,20 @@ public class SpawnPointToolScreen extends Screen {
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         int left = 18;
         int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
+        guiGraphics.fill(0, 0, this.width, this.height, SCREEN_OVERLAY);
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BACKGROUND);
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + 1, PANEL_BORDER);
         guiGraphics.fill(left, top + PANEL_HEIGHT - 1, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
         guiGraphics.fill(left, top, left + 1, top + PANEL_HEIGHT, PANEL_BORDER);
         guiGraphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
 
-        guiGraphics.drawString(this.font, this.title, left + 10, top + 6, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.type"), left + 12, top + 26, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.map"), left + 12, top + 52, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.team"), left + 12, top + 78, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.count", this.spawnPoints.size()), left + 12, top + 104, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, currentPointLabel(), left + 142, top + 104, 0xD7E3EA, false);
-        guiGraphics.drawString(this.font, currentPointDetail(), left + 12, top + 124, 0xA4C4D3, false);
+        guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.type"), left + 12, top + 30, 0xF1D9B0, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.map"), left + 12, top + 60, 0xF1D9B0, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.team"), left + 12, top + 90, 0xF1D9B0, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.count", this.spawnPoints.size()), left + 12, top + 120, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, currentPointLabel(), left + 160, top + 120, 0xD7E3EA, false);
+        guiGraphics.drawString(this.font, currentPointDetail(), left + 12, top + 144, 0xA4C4D3, false);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
@@ -194,6 +190,8 @@ public class SpawnPointToolScreen extends Screen {
         boolean hasPoints = !spawnPoints.isEmpty();
         this.prevButton.active = hasPoints;
         this.nextButton.active = hasPoints;
+        this.deleteButton.active = hasPoints;
+        this.clearButton.active = hasPoints;
     }
 
     private Component currentPointLabel() {

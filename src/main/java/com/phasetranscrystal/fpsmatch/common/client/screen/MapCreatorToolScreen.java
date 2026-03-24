@@ -28,8 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MapCreatorToolScreen extends Screen {
-    private static final int PANEL_WIDTH = 260;
-    private static final int PANEL_HEIGHT = 172;
+    private static final int PANEL_WIDTH = 300;
+    private static final int PANEL_HEIGHT = 188;
+    private static final int SCREEN_OVERLAY = 0x5A000000;
     private static final int PANEL_BACKGROUND = 0xD0191D22;
     private static final int PANEL_BORDER = 0xFF7DA3B8;
 
@@ -57,33 +58,25 @@ public class MapCreatorToolScreen extends Screen {
         int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
 
         this.typeButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleType())
-                .pos(left + 96, top + 18)
-                .size(146, 20)
+                .pos(left + 110, top + 20)
+                .size(172, 20)
                 .build());
 
-        this.mapNameField = addTextField(left + 96, top + 44, 146, 18, 64, s -> true);
-        this.pos1XField = addIntField(left + 96, top + 70);
-        this.pos1YField = addIntField(left + 146, top + 70);
-        this.pos1ZField = addIntField(left + 196, top + 70);
-        this.pos2XField = addIntField(left + 96, top + 94);
-        this.pos2YField = addIntField(left + 146, top + 94);
-        this.pos2ZField = addIntField(left + 196, top + 94);
+        this.mapNameField = addTextField(left + 110, top + 52, 172, 18, 64, s -> true);
+        this.pos1XField = addIntField(left + 110, top + 90);
+        this.pos1YField = addIntField(left + 166, top + 90);
+        this.pos1ZField = addIntField(left + 222, top + 90);
+        this.pos2XField = addIntField(left + 110, top + 120);
+        this.pos2YField = addIntField(left + 166, top + 120);
+        this.pos2ZField = addIntField(left + 222, top + 120);
 
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.map_creator.preview"), button -> previewArea())
-                .pos(left + 18, top + 126)
-                .size(108, 20)
-                .build());
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.map_creator.reload"), button -> loadFromHeldTool())
-                .pos(left + 134, top + 126)
-                .size(108, 20)
-                .build());
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.map_creator.create"), button -> createMap())
-                .pos(left + 18, top + 150)
-                .size(108, 20)
+                .pos(left + 18, top + 154)
+                .size(122, 20)
                 .build());
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
-                .pos(left + 134, top + 150)
-                .size(108, 20)
+                .pos(left + 160, top + 154)
+                .size(122, 20)
                 .build());
 
         updateTypeButton();
@@ -118,20 +111,21 @@ public class MapCreatorToolScreen extends Screen {
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         int left = 18;
         int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
+        guiGraphics.fill(0, 0, this.width, this.height, SCREEN_OVERLAY);
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BACKGROUND);
         guiGraphics.fill(left, top, left + PANEL_WIDTH, top + 1, PANEL_BORDER);
         guiGraphics.fill(left, top + PANEL_HEIGHT - 1, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
         guiGraphics.fill(left, top, left + 1, top + PANEL_HEIGHT, PANEL_BORDER);
         guiGraphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
 
-        guiGraphics.drawString(this.font, this.title, left + 10, top + 6, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.type"), left + 10, top + 24, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 50, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 76, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 100, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.literal("X"), left + 98, top + 60, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Y"), left + 148, top + 60, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Z"), left + 198, top + 60, 0x8FA7B3, false);
+        guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.type"), left + 10, top + 26, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 58, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 96, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 126, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.literal("X"), left + 112, top + 80, 0x8FA7B3, false);
+        guiGraphics.drawString(this.font, Component.literal("Y"), left + 168, top + 80, 0x8FA7B3, false);
+        guiGraphics.drawString(this.font, Component.literal("Z"), left + 224, top + 80, 0x8FA7B3, false);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
@@ -208,7 +202,7 @@ public class MapCreatorToolScreen extends Screen {
     }
 
     private EditBox addIntField(int x, int y) {
-        return addTextField(x, y, 44, 18, 10, value -> value.matches("-?\\d*"));
+        return addTextField(x, y, 48, 18, 10, value -> value.matches("-?\\d*"));
     }
 
     private List<EditBox> getPosFields() {
@@ -280,16 +274,6 @@ public class MapCreatorToolScreen extends Screen {
         } catch (NumberFormatException ignored) {
             return null;
         }
-    }
-
-    private void previewArea() {
-        FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
-                MapCreatorToolActionC2SPacket.Action.PREVIEW,
-                this.selectedType,
-                this.mapNameField.getValue(),
-                parseBlockPos(true),
-                parseBlockPos(false)
-        ));
     }
 
     private void createMap() {

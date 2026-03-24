@@ -5,8 +5,12 @@ import com.phasetranscrystal.fpsmatch.common.item.tool.CreatorToolItem;
 import com.phasetranscrystal.fpsmatch.common.item.tool.ToolInteractionAction;
 import com.phasetranscrystal.fpsmatch.common.item.tool.WorldToolItem;
 import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickActionContext;
+import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -24,6 +28,8 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
     public static final String BLOCK_POS_TAG_1 = "BlockPos1";
     public static final String BLOCK_POS_TAG_2 = "BlockPos2";
     public static final String DRAFT_MAP_NAME_TAG = "DraftMapName";
+    private static final String HELD_PREVIEW_STATE_TAG = "HeldMapCreatorPreviewState";
+    private static final int HELD_PREVIEW_REFRESH_INTERVAL = 10;
 
     public MapCreatorTool(Properties pProperties) {
         super(pProperties.stacksTo(1));
@@ -59,6 +65,51 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
             case CTRL_RIGHT_CLICK -> FPSMatch.sendToPlayer(player,
                     OpenMapCreatorToolScreenS2CPacket.fromStack(stack, FPSMCore.getInstance().getGameTypes()));
         }
+    }
+
+    public void syncHeldPreview(ServerPlayer player, ItemStack stack) {
+        BlockPos pos1 = getBlockPos(stack, BLOCK_POS_TAG_1);
+        BlockPos pos2 = getBlockPos(stack, BLOCK_POS_TAG_2);
+        if (pos1 == null || pos2 == null) {
+            clearHeldPreview(player);
+            return;
+        }
+
+        String selectedType = getSelectedType(stack).trim();
+        String draftMapName = getDraftMapName(stack).trim();
+        String signature = (selectedType.isBlank() ? "draft" : selectedType)
+                + "|" + draftMapName
+                + "|" + pos1.asLong()
+                + "|" + pos2.asLong();
+        String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG);
+        if (signature.equals(previousSignature) && player.tickCount % HELD_PREVIEW_REFRESH_INTERVAL != 0) {
+            return;
+        }
+
+        FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
+                getHeldPreviewKey(player),
+                Component.literal(draftMapName.isEmpty() ? "Draft Map" : draftMapName),
+                PreviewColorUtil.getMapPreviewColor(selectedType.isBlank() ? "draft" : selectedType),
+                new AreaData(pos1, pos2)
+        ));
+        player.getPersistentData().putString(HELD_PREVIEW_STATE_TAG, signature);
+    }
+
+    public static void clearHeldPreview(ServerPlayer player) {
+        if (!player.getPersistentData().contains(HELD_PREVIEW_STATE_TAG)) {
+            return;
+        }
+
+        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(getHeldPreviewPrefix(player)));
+        player.getPersistentData().remove(HELD_PREVIEW_STATE_TAG);
+    }
+
+    private static String getHeldPreviewPrefix(ServerPlayer player) {
+        return "held_tool_preview:map_creator:" + player.getUUID() + ":";
+    }
+
+    private static String getHeldPreviewKey(ServerPlayer player) {
+        return getHeldPreviewPrefix(player) + "area";
     }
 
     public static void setSelectedType(ItemStack stack, String selectedType) {

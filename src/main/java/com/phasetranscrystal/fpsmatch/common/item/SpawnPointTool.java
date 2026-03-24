@@ -6,11 +6,15 @@ import com.phasetranscrystal.fpsmatch.common.item.tool.CreatorToolItem;
 import com.phasetranscrystal.fpsmatch.common.item.tool.ToolInteractionAction;
 import com.phasetranscrystal.fpsmatch.common.item.tool.WorldToolItem;
 import com.phasetranscrystal.fpsmatch.common.item.tool.handler.ClickActionContext;
+import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.AddPointDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -24,6 +28,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
+    private static final String HELD_PREVIEW_STATE_TAG = "HeldSpawnPointPreviewState";
+    private static final int HELD_PREVIEW_REFRESH_INTERVAL = 10;
+
     public SpawnPointTool(Properties pProperties) {
         super(pProperties.stacksTo(1));
     }
@@ -49,6 +56,99 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
             case RIGHT_CLICK_BLOCK -> {
             }
         }
+    }
+
+    public void syncHeldPreview(ServerPlayer player, ItemStack stack) {
+        String selectedType = getSelectedType(stack).trim();
+        String selectedMap = getSelectedMap(stack).trim();
+        if (selectedType.isBlank() || selectedMap.isBlank()) {
+            clearHeldPreview(player);
+            return;
+        }
+
+        Optional<BaseMap> mapOptional = FPSMCore.getInstance().getMapByTypeWithName(selectedType, selectedMap)
+                .filter(map -> map.getServerLevel().dimension().equals(player.serverLevel().dimension()));
+        if (mapOptional.isEmpty()) {
+            clearHeldPreview(player);
+            return;
+        }
+
+        String signature = selectedType + "|" + selectedMap;
+        BaseMap map = mapOptional.get();
+        String signatureWithPoints = buildHeldPreviewSignature(signature, map);
+        String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG);
+        if (signatureWithPoints.equals(previousSignature) && player.tickCount % HELD_PREVIEW_REFRESH_INTERVAL != 0) {
+            return;
+        }
+
+        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(getHeldPreviewPrefix(player)));
+        FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
+                getHeldPreviewKey(player),
+                Component.literal(map.getMapName()),
+                PreviewColorUtil.getMapPreviewColor(selectedType),
+                map.getMapArea()
+        ));
+
+        int pointColor = PreviewColorUtil.getPointPreviewColor(selectedType);
+        for (ServerTeam team : map.getMapTeams().getNormalTeams()) {
+            SpawnPointCapability capability = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
+            if (capability == null) {
+                continue;
+            }
+            List<SpawnPointData> spawnPoints = capability.getSpawnPointsData();
+            for (int i = 0; i < spawnPoints.size(); i++) {
+                SpawnPointData data = spawnPoints.get(i);
+                FPSMatch.sendToPlayer(player, new AddPointDataS2CPacket(
+                        getHeldPreviewPointKey(player, team.getName(), i),
+                        Component.literal(team.getName() + " #" + (i + 1)),
+                        pointColor,
+                        data.getPosition()
+                ));
+            }
+        }
+
+        player.getPersistentData().putString(HELD_PREVIEW_STATE_TAG, signatureWithPoints);
+    }
+
+    public static void clearHeldPreview(ServerPlayer player) {
+        if (!player.getPersistentData().contains(HELD_PREVIEW_STATE_TAG)) {
+            return;
+        }
+
+        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(getHeldPreviewPrefix(player)));
+        player.getPersistentData().remove(HELD_PREVIEW_STATE_TAG);
+    }
+
+    private static String getHeldPreviewPrefix(ServerPlayer player) {
+        return "held_tool_preview:spawn_point:" + player.getUUID() + ":";
+    }
+
+    private static String getHeldPreviewKey(ServerPlayer player) {
+        return getHeldPreviewPrefix(player) + "area";
+    }
+
+    private static String getHeldPreviewPointKey(ServerPlayer player, String teamName, int index) {
+        return getHeldPreviewPrefix(player) + teamName + ":" + index;
+    }
+
+    private static String buildHeldPreviewSignature(String baseSignature, BaseMap map) {
+        StringBuilder builder = new StringBuilder(baseSignature);
+        for (ServerTeam team : map.getMapTeams().getNormalTeams()) {
+            builder.append('|').append(team.getName());
+            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(capability -> {
+                for (SpawnPointData point : capability.getSpawnPointsData()) {
+                    builder.append('|')
+                            .append(point.getDimension().location())
+                            .append('@')
+                            .append(point.getX()).append(',')
+                            .append(point.getY()).append(',')
+                            .append(point.getZ()).append(',')
+                            .append(point.getYaw()).append(',')
+                            .append(point.getPitch());
+                }
+            });
+        }
+        return builder.toString();
     }
 
     private void addSpawnPoint(ServerPlayer player, ItemStack stack, BlockPos clickedPos) {
