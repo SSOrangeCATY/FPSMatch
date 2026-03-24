@@ -9,19 +9,30 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public record AddAreaDataS2CPacket(Component name, AreaData areaData) {
+public record AddAreaDataS2CPacket(String key, Component name, int color, AreaData areaData) {
+    public AddAreaDataS2CPacket(Component name, AreaData areaData) {
+        this(name.getString(), name, 0xFFFFFF00, areaData);
+    }
+
     public static void encode(AddAreaDataS2CPacket packet, FriendlyByteBuf buf) {
+        buf.writeUtf(packet.key());
         buf.writeComponent(packet.name());
+        buf.writeInt(packet.color());
         buf.writeJsonWithCodec(AreaData.CODEC, packet.areaData());
     }
 
     public static AddAreaDataS2CPacket decode(FriendlyByteBuf buf) {
-        return new AddAreaDataS2CPacket(buf.readComponent(),buf.readJsonWithCodec(AreaData.CODEC));
+        return new AddAreaDataS2CPacket(
+                buf.readUtf(),
+                buf.readComponent(),
+                buf.readInt(),
+                buf.readJsonWithCodec(AreaData.CODEC)
+        );
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            FPSMClient.getGlobalData().getDebugData().addRenderableArea(new RenderableArea(name,areaData));
+            FPSMClient.getGlobalData().getDebugData().upsertRenderableArea(key, new RenderableArea(key, name, color, areaData));
         });
         ctx.get().setPacketHandled(true);
     }

@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
@@ -17,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -143,11 +145,18 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
      * @param player 目标玩家
      */
     public void syncBombAreasToClient(ServerPlayer player) {
+        String prefix = "bomb_preview:" + map.getGameType() + ":" + map.getMapName() + ":";
+        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(prefix));
+
+        int index = 0;
         for (AreaData area : data.getBombAreaData()) {
             FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
-                Component.translatable("blockoffensive.bomb.area"), 
-                area
+                    prefix + index,
+                    Component.translatable("blockoffensive.bomb.area"),
+                    PreviewColorUtil.getMapPreviewColor(map.getGameType()),
+                    area
             ));
+            index++;
         }
     }
 

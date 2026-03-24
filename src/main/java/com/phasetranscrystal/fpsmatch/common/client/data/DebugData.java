@@ -1,20 +1,44 @@
 package com.phasetranscrystal.fpsmatch.common.client.data;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class DebugData {
-    private final List<RenderableArea> areas = new LinkedList<>();
+    private final Map<String, RenderableArea> areas = new LinkedHashMap<>();
+    private final Map<String, RenderablePoint> points = new LinkedHashMap<>();
 
     public void addRenderableArea(RenderableArea area) {
-        areas.add(area);
+        upsertRenderableArea(area.key(), area);
     }
 
-    public List<RenderableArea> getAreas() {
-        return areas;
+    public void upsertRenderableArea(String key, RenderableArea area) {
+        areas.put(key, area);
+    }
+
+    public void upsertRenderablePoint(String key, RenderablePoint point) {
+        points.put(key, point);
+    }
+
+    public Collection<RenderableArea> getAreas() {
+        return areas.values();
+    }
+
+    public Collection<RenderablePoint> getPoints() {
+        return points.values();
+    }
+
+    public void removeByPrefix(String prefix) {
+        areas.keySet().removeIf(key -> key.startsWith(prefix));
+        points.keySet().removeIf(key -> key.startsWith(prefix));
+    }
+
+    public void clearAll() {
+        areas.clear();
+        points.clear();
     }
 
     public void clearAreas() {
-        areas.clear();
+        clearAll();
     }
 }

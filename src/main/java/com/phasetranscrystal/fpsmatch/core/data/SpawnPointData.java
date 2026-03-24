@@ -9,6 +9,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Objects;
+
 public class SpawnPointData {
     public static final Codec<SpawnPointData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("Dimension").forGetter(spawnPointData -> spawnPointData.getDimension().location().toString()),
@@ -20,10 +22,10 @@ public class SpawnPointData {
         return new SpawnPointData(dimension, position, yaw, pitch);
     }));
 
-    ResourceKey<Level> dimension;
-    Vec3 position;
-    float pYaw;
-    float pPitch;
+    private final ResourceKey<Level> dimension;
+    private final Vec3 position;
+    private final float pYaw;
+    private final float pPitch;
 
     public SpawnPointData(ResourceKey<Level> pDimension, Vec3 position, float pYaw, float pPitch) {
         this.dimension = pDimension;
@@ -60,6 +62,24 @@ public class SpawnPointData {
     }
     public double getZ(){
         return position.z();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SpawnPointData other)) {
+            return false;
+        }
+        return Objects.equals(this.dimension, other.dimension)
+                && Double.compare(this.getX(), other.getX()) == 0
+                && Double.compare(this.getY(), other.getY()) == 0
+                && Double.compare(this.getZ(), other.getZ()) == 0
+                && Float.compare(this.getYaw(), other.getYaw()) == 0
+                && Float.compare(this.getPitch(), other.getPitch()) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dimension, getX(), getY(), getZ(), pYaw, pPitch);
     }
 
     @Override

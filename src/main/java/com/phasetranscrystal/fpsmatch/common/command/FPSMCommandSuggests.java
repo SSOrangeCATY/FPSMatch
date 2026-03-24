@@ -36,7 +36,7 @@ public class FPSMCommandSuggests {
     public static final FPSMSuggestionProvider MAP_NAMES_WITH_GAME_TYPE_SUGGESTION = new FPSMSuggestionProvider((c, b)-> FPSMCommandSuggests.getSuggestions(b, FPSMCore.getInstance().getMapNames(StringArgumentType.getString(c, GAME_TYPE_ARG))));
 
     public static final FPSMSuggestionProvider TEAM_NAMES_SUGGESTION = new FPSMSuggestionProvider((c,b)-> {
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(StringArgumentType.getString(c, MAP_NAME_ARG));
+        Optional<BaseMap> map = FPSMCommand.getMap(c);
         Suggestions suggestions = FPSMCommandSuggests.getSuggestions(b, new ArrayList<>());
         if (map.isPresent()){
             suggestions = FPSMCommandSuggests.getSuggestions(b, map.get().getMapTeams().getNormalTeamsName());
@@ -48,9 +48,8 @@ public class FPSMCommandSuggests {
     public static final FPSMSuggestionProvider TEAM_ACTION_SUGGESTION = new FPSMSuggestionProvider((c,b)-> FPSMCommandSuggests.getSuggestions(b, List.of("join","leave")));
 
     public static final FPSMSuggestionProvider TEAM_CAPABILITIES_ARGS = new FPSMSuggestionProvider((c,b)-> {
-        String mapName = StringArgumentType.getString(c, MAP_NAME_ARG);
         String teamName = StringArgumentType.getString(c, TEAM_NAME_ARG);
-        Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(mapName);
+        Optional<BaseMap> map = FPSMCommand.getMap(c);
         List<String> capabilities = new ArrayList<>();
         map.flatMap(baseMap -> baseMap.getMapTeams().getTeamByName(teamName)).ifPresent(team -> {
             team.getCapabilityMap().values().forEach(

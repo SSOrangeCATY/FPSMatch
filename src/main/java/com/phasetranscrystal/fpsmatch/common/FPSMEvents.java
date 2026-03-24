@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.item.MapCreatorTool;
+import com.phasetranscrystal.fpsmatch.common.item.SpawnPointTool;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.BulletproofArmorWithHelmetListenerModule;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.BulletproofArmorWithoutHelmetListenerModule;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.ChangeShopItemModule;
@@ -24,6 +26,28 @@ public class FPSMEvents {
         if(event.phase == TickEvent.Phase.END){
             FPSMCore.getInstance().onServerTick();
         }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTickEvent(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) {
+            return;
+        }
+
+        ItemStack stack = player.getMainHandItem();
+        if (stack.getItem() instanceof MapCreatorTool mapCreatorTool) {
+            mapCreatorTool.syncHeldPreview(player, stack);
+            SpawnPointTool.clearHeldPreview(player);
+            return;
+        }
+        if (stack.getItem() instanceof SpawnPointTool spawnPointTool) {
+            spawnPointTool.syncHeldPreview(player, stack);
+            MapCreatorTool.clearHeldPreview(player);
+            return;
+        }
+
+        MapCreatorTool.clearHeldPreview(player);
+        SpawnPointTool.clearHeldPreview(player);
     }
 
     @SubscribeEvent

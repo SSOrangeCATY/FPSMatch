@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -183,6 +184,8 @@ public class FPSMEventHook {
                     FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map,killer,player,event.getSource());
                     MinecraftForge.EVENT_BUS.post(killEvent);
                 }
+
+                FPSMatch.sendToPlayer(player, new FPSMatchRespawnS2CPacket());
             }
         }
     }
@@ -211,6 +214,21 @@ public class FPSMEventHook {
                     playerData.setLiving(false);
                     player.setGameMode(GameType.SPECTATOR);
                 });
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        FPSMCore.getInstance().getMapByPlayer(player).ifPresent(map -> {
+            if (!map.isStart()) {
+                return;
+            }
+            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
+            map.teleportPlayerToReSpawnPoint(player);
+        });
     }
 
 }

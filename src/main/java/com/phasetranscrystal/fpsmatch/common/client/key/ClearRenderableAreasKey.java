@@ -28,7 +28,7 @@ public class ClearRenderableAreasKey {
     public static void onInspectPress(InputEvent.Key event) {
         boolean isInGame = isInGame();
         if (isInGame && KEY.isDown()) {
-            FPSMClient.getGlobalData().getDebugData().clearAreas();
+            FPSMClient.getGlobalData().getDebugData().clearAll();
         }
     }
 }
