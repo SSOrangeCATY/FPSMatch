@@ -97,7 +97,7 @@ public record SpawnPointToolActionC2SPacket(
         }
 
         snapshot.capability().get().removeSpawnPointData(snapshot.selectedIndex());
-        snapshot.team().ifPresent(team -> team.getPlayersData().forEach(data -> data.setSpawnPointsData(null)));
+        snapshot.capability().get().clearPlayerSpawnPointAssignments();
         if (!snapshot.capability().get().getSpawnPointsData().isEmpty()) {
             snapshot.capability().get().assignNextSpawnPoints();
         }
@@ -112,7 +112,7 @@ public record SpawnPointToolActionC2SPacket(
         }
 
         snapshot.capability().get().clearSpawnPointsData();
-        snapshot.team().ifPresent(team -> team.getPlayersData().forEach(data -> data.setSpawnPointsData(null)));
+        snapshot.capability().get().clearPlayerSpawnPointAssignments();
         sendScreen(player, stack, snapshot.selectedType(), snapshot.selectedMap(), snapshot.selectedTeam(), -1);
     }
 

@@ -22,8 +22,17 @@ public final class PreviewColorUtil {
         return mix(getBaseColor(gameType), 0xFFFFFFFF, 0.12F);
     }
 
+    public static int getPointPreviewColor(String gameType, int variantIndex) {
+        return mix(getIndexedBaseColor(gameType, variantIndex), 0xFFFFFFFF, 0.12F);
+    }
+
     public static int getBaseColor(String key) {
         return PALETTE[Math.floorMod(key == null ? 0 : key.hashCode(), PALETTE.length)];
+    }
+
+    private static int getIndexedBaseColor(String key, int variantIndex) {
+        int baseIndex = Math.floorMod(key == null ? 0 : key.hashCode(), PALETTE.length);
+        return PALETTE[Math.floorMod(baseIndex + variantIndex, PALETTE.length)];
     }
 
     private static int mix(int source, int target, float ratio) {

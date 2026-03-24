@@ -24,6 +24,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,12 +90,14 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
                 map.getMapArea()
         ));
 
-        int pointColor = PreviewColorUtil.getPointPreviewColor(selectedType);
-        for (ServerTeam team : map.getMapTeams().getNormalTeams()) {
+        List<ServerTeam> orderedTeams = getOrderedNormalTeams(map);
+        for (int teamIndex = 0; teamIndex < orderedTeams.size(); teamIndex++) {
+            ServerTeam team = orderedTeams.get(teamIndex);
             SpawnPointCapability capability = team.getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
             if (capability == null) {
                 continue;
             }
+            int pointColor = PreviewColorUtil.getPointPreviewColor(selectedType, teamIndex);
             List<SpawnPointData> spawnPoints = capability.getSpawnPointsData();
             for (int i = 0; i < spawnPoints.size(); i++) {
                 SpawnPointData data = spawnPoints.get(i);
@@ -133,7 +136,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
 
     private static String buildHeldPreviewSignature(String baseSignature, BaseMap map) {
         StringBuilder builder = new StringBuilder(baseSignature);
-        for (ServerTeam team : map.getMapTeams().getNormalTeams()) {
+        for (ServerTeam team : getOrderedNormalTeams(map)) {
             builder.append('|').append(team.getName());
             team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(capability -> {
                 for (SpawnPointData point : capability.getSpawnPointsData()) {
@@ -149,6 +152,12 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
             });
         }
         return builder.toString();
+    }
+
+    private static List<ServerTeam> getOrderedNormalTeams(BaseMap map) {
+        return map.getMapTeams().getNormalTeams().stream()
+                .sorted(Comparator.comparing(ServerTeam::getFixedName))
+                .toList();
     }
 
     private void addSpawnPoint(ServerPlayer player, ItemStack stack, BlockPos clickedPos) {
@@ -194,12 +203,10 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
                 player.getYRot(),
                 player.getXRot()
         );
-        if (capability.getSpawnPointsData().contains(spawnPointData)) {
+        if (!capability.addSpawnPointDataIfAbsent(spawnPointData)) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.duplicate"), false);
             return;
         }
-
-        capability.addSpawnPointData(spawnPointData);
         if (map.isStart()) {
             capability.assignNextSpawnPoints();
         }

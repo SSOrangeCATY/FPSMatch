@@ -223,6 +223,9 @@ public class FPSMEventHook {
         }
 
         FPSMCore.getInstance().getMapByPlayer(player).ifPresent(map -> {
+            if (!map.isStart()) {
+                return;
+            }
             map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
             map.teleportPlayerToReSpawnPoint(player);
         });
