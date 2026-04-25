@@ -7,12 +7,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMShopEvent;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
+import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -596,9 +598,18 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
     }
 
     public void displayAreas(ServerPlayer player){
+        String prefix = "shop_area:" + this.name + ":";
+        FPSMatch.sendToPlayer(player, new RemoveDebugDataByPrefixS2CPacket(prefix));
+
         int i = 1;
         for (AreaData data : this.areas) {
-            FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(Component.literal("SHOP_AREA_"+ i), data));
+            FPSMatch.sendToPlayer(player, new AddAreaDataS2CPacket(
+                    prefix + i,
+                    Component.literal("SHOP_AREA_" + i),
+                    PreviewColorUtil.getMapPreviewColor(this.name),
+                    data
+            ));
+            i++;
         }
     }
 

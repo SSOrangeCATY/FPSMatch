@@ -135,6 +135,13 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMInventorySelectedS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamChatMessageC2SPacket.class);
         PACKET_REGISTER.registerPacket(AddAreaDataS2CPacket.class);
+        PACKET_REGISTER.registerPacket(AddPointDataS2CPacket.class);
+        PACKET_REGISTER.registerPacket(RemoveDebugDataByPrefixS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ToolInteractionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(OpenMapCreatorToolScreenS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MapCreatorToolActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(OpenSpawnPointToolScreenS2CPacket.class);
+        PACKET_REGISTER.registerPacket(SpawnPointToolActionC2SPacket.class);
 
         event.enqueueWork(()->{
             ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);

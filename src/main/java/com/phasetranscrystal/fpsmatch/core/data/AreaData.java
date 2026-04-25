@@ -4,8 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -63,14 +61,23 @@ public class AreaData {
     }
 
     public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource) {
+        this.renderArea(poseStack, bufferSource, 0xFFFFFF00);
+    }
+
+    public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource, int color) {
         VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.lines());
         AABB aabb = aabb();
+        float red = ((color >> 16) & 0xFF) / 255.0F;
+        float green = ((color >> 8) & 0xFF) / 255.0F;
+        float blue = (color & 0xFF) / 255.0F;
 
         LevelRenderer.renderLineBox(poseStack, vertexconsumer,
                 aabb.minX, aabb.minY, aabb.minZ,
                 aabb.maxX, aabb.maxY, aabb.maxZ,
-                1F, 1F, 0, 1.0F,
-                0.5F, 0.5F, 0.5F
+                red, green, blue, 1.0F,
+                Math.max(red * 0.55F, 0.1F),
+                Math.max(green * 0.55F, 0.1F),
+                Math.max(blue * 0.55F, 0.1F)
         );
     }
 }

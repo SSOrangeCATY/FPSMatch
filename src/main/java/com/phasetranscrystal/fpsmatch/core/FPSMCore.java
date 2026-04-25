@@ -11,6 +11,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -145,9 +146,25 @@ public class FPSMCore {
     public List<String> getMapNamesWithType(String type){
         List<String> names = new ArrayList<>();
         if (GAMES.containsKey(type)) {
-            GAMES.values().forEach(list -> list.forEach((map) -> names.add(map.getMapName())));
+            GAMES.get(type).forEach(map -> names.add(map.getMapName()));
         }
         return names;
+    }
+
+    public Optional<BaseMap> getMapByPosition(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) {
+            return Optional.empty();
+        }
+
+        for (List<BaseMap> maps : GAMES.values()) {
+            for (BaseMap map : maps) {
+                if (map.getServerLevel().dimension().equals(level.dimension())
+                        && map.getMapArea().isBlockPosInArea(pos)) {
+                    return Optional.of(map);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public List<String> getMapNames(String type){

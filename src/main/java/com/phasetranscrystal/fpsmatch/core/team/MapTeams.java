@@ -152,7 +152,7 @@ public class MapTeams {
     public boolean randomSpawnPoints(){
         AtomicBoolean flag = new AtomicBoolean(true);
         this.teams.forEach(((s, t) -> {
-            if(t.isNormal() && flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::randomSpawnPoints).orElse(false));
+            if(t.isNormal() && flag.get()) flag.set(t.getCapabilityMap().get(SpawnPointCapability.class).map(SpawnPointCapability::assignNextSpawnPoints).orElse(false));
         }));
         return flag.get();
     }
@@ -401,6 +401,9 @@ public class MapTeams {
         // 获取队伍
         ServerTeam team = this.teams.get(teamName);
         team.join(player);
+        if (team.isNormal()) {
+            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.assignNextSpawnPoint(player.getUUID()));
+        }
 
         team.getPlayerData(player.getUUID()).ifPresent(playerData ->
                 this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData))
@@ -767,6 +770,7 @@ public class MapTeams {
      */
     public void startNewRound() {
         this.resetLivingPlayers();
+        this.randomSpawnPoints();
         this.syncCapabilities();
     }
 
