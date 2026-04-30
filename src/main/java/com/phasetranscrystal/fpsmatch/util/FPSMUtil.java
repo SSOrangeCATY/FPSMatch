@@ -599,6 +599,9 @@ public class FPSMUtil {
 
         float minAssistDamage = deadPlayer.getMaxHealth() * minAssistDamageRatio;
         return hurtDataMap.entrySet().stream()
+                .filter(entry -> FPSMCore.getInstance().getPlayerByUUID(entry.getKey())
+                        .filter(attacker -> !mapTeams.isSameTeam(deadPlayer, attacker))
+                        .isPresent())
                 .filter(entry -> entry.getValue() > minAssistDamage)
                 .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
                 .limit(1)

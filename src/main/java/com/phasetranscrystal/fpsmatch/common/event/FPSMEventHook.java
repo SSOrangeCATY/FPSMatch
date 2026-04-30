@@ -144,7 +144,9 @@ public class FPSMEventHook {
 
                 map.getAttackerFromDamageSource(event.getSource()).ifPresent(attacker->{
                     if (!map.isValidAttack(attacker, hurt)) return;
-                    map.getMapTeams().addHurtData(attacker, hurt, event.getAmount());
+                    if (!map.getMapTeams().isSameTeam(attacker, hurt)) {
+                        map.getMapTeams().addHurtData(attacker, hurt, event.getAmount());
+                    }
                 });
             }
         }
@@ -173,7 +175,9 @@ public class FPSMEventHook {
                 if (optional.isPresent()) {
                     ServerPlayer killer = optional.get();
 
-                    mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
+                    if (!mapTeams.isSameTeam(player, killer)) {
+                        mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
+                    }
 
                     FPSMUtil.calculateAssistPlayer(map,player,map.getMinAssistDamageRatio()).ifPresent(assistData -> {
                         if (!killer.getUUID().equals(assistData.getOwner())) {
@@ -199,7 +203,7 @@ public class FPSMEventHook {
         if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) return;
         if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
 
-        if(event.isHeadShot()){
+        if(event.isHeadShot() && !map.getMapTeams().isSameTeam(deadPlayer, attacker)){
             map.getMapTeams().getPlayerData(attacker).ifPresent(PlayerData::addHeadshotKill);
         }
     }
