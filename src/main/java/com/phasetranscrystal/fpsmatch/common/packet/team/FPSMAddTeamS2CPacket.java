@@ -1,11 +1,9 @@
 package com.phasetranscrystal.fpsmatch.common.packet.team;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
-import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -33,14 +31,6 @@ public record FPSMAddTeamS2CPacket(String gameType, String mapName, int color, T
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            FPSMClientGlobalData data = FPSMClient.getGlobalData();
-            if(data.getTeamByName(teamData.name()).isPresent()) return;
-            ClientTeam team = new ClientTeam(gameType, mapName, teamData);
-            team.setColor(RenderUtil.color(color));
-            data.addTeam(team);
-        });
-        context.setPacketHandled(true);
+        ClientPacketExecutor.execute(supplier, this);
     }
 }

@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet.shop;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import net.minecraft.client.Minecraft;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -20,11 +19,6 @@ public record ShopMoneyS2CPacket(UUID owner, int money) {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            if (Minecraft.getInstance().player != null) {
-                FPSMClient.getGlobalData().setPlayerMoney(this.owner, money);
-            }
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }

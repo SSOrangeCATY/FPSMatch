@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.client.music.FPSClientMusicManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -17,7 +16,6 @@ public class FPSMusicStopS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(FPSClientMusicManager::stopMusic);
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }

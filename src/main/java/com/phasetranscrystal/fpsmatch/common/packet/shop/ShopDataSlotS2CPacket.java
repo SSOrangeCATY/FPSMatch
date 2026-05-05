@@ -1,8 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet.shop;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import com.phasetranscrystal.fpsmatch.core.shop.UnknownShopType;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
@@ -59,20 +57,6 @@ public class ShopDataSlotS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            // 使用改进后的方法
-            ClientShopSlot currentSlot = FPSMClient.getGlobalData().getSlotData(this.type.name(), this.index);
-
-            // 安全设置属性
-            if (currentSlot != null) {  // 假设ClientShopSlot.empty()可能返回null
-                currentSlot.setItemStack(this.itemStack);
-                currentSlot.setCost(this.cost);
-                currentSlot.setBoughtCount(this.boughtCount);
-                currentSlot.setLock(this.locked);
-            } else {
-                FPSMatch.LOGGER.error("Failed to update slot data for {} at index {}", this.type.name(), this.index);
-            }
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }

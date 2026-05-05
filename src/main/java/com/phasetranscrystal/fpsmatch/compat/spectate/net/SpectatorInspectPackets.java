@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.compat.spectate.net;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import com.phasetranscrystal.fpsmatch.compat.spectate.tacz.SpectatorGunInspectNet;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -55,12 +55,7 @@ public final class SpectatorInspectPackets {
         }
 
         public static void handle(S2CWatchedPlayerInspectPacket p, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                if (ctx.get().getDirection().getReceptionSide().isClient()) {
-                    SpectatorGunInspectNet.handleWatchedPlayerInspectPacket(p, ctx);
-                }
-            });
-            ctx.get().setPacketHandled(true);
+            ClientPacketExecutor.execute(ctx, p);
         }
     }
 

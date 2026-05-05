@@ -23,31 +23,26 @@ public final class SpectatorLrtAttackNet {
     private SpectatorLrtAttackNet() {
     }
 
-    public static void handleWatchedPlayerAttackPacket(S2CWatchedPlayerLrtAttackPacket packet,
-                                                       Supplier<NetworkEvent.Context> ctxSup) {
-        NetworkEvent.Context ctx = ctxSup.get();
-        ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            LocalPlayer localPlayer = mc.player;
-            if (localPlayer == null) {
-                return;
-            }
-            UUID targetId = packet.getPlayerId();
-            if (localPlayer.getUUID().equals(targetId)) {
-                return;
-            }
-            Player target = SpectatorView.getSpectatedPlayer(localPlayer);
-            if (target == null || !target.getUUID().equals(targetId)) {
-                return;
-            }
-            ItemStack targetStack = target.getMainHandItem();
-            if (!targetStack.isEmpty()) {
-                SpectatorGunItemMirror.equip(localPlayer, targetStack);
-                SpectatorGunItemMirror.tick(localPlayer);
-            }
-            playAttackAnimation(localPlayer, packet.action());
-        });
-        ctx.setPacketHandled(true);
+    public static void handleWatchedPlayerAttackPacket(S2CWatchedPlayerLrtAttackPacket packet) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer localPlayer = mc.player;
+        if (localPlayer == null) {
+            return;
+        }
+        UUID targetId = packet.getPlayerId();
+        if (localPlayer.getUUID().equals(targetId)) {
+            return;
+        }
+        Player target = SpectatorView.getSpectatedPlayer(localPlayer);
+        if (target == null || !target.getUUID().equals(targetId)) {
+            return;
+        }
+        ItemStack targetStack = target.getMainHandItem();
+        if (!targetStack.isEmpty()) {
+            SpectatorGunItemMirror.equip(localPlayer, targetStack);
+            SpectatorGunItemMirror.tick(localPlayer);
+        }
+        playAttackAnimation(localPlayer, packet.action());
     }
 
     private static void playAttackAnimation(LocalPlayer localPlayer, MeleeAction action) {

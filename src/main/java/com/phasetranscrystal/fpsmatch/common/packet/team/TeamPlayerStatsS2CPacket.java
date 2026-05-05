@@ -1,10 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.packet.team;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
@@ -106,28 +104,7 @@ public class TeamPlayerStatsS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player == null) return;
-            FPSMClientGlobalData global = FPSMClient.getGlobalData();
-            if (uuid.equals(mc.player.getUUID()) && !FPSMClient.getGlobalData().isCurrentTeam(teamName)) {
-                global.setCurrentTeam(teamName);
-            }
-
-            Optional<PlayerData> opt = FPSMClient.getGlobalData().getPlayerData(teamName,uuid);
-            PlayerData data = opt.orElse(new PlayerData(uuid, playerName, false));
-            data.setScores(scores);
-            data.setKills(Kills);
-            data.setDeaths(Deaths);
-            data.setAssists(Assists);
-            data.setDamage(Damage);
-            data.setMvpCount(mvpCount);
-            data.setLiving(isLiving);
-            data.setHeadshotKills(headshotKills);
-            data.setHealthPercent(healthPercent);
-            FPSMClient.getGlobalData().updatePlayerTeamData(teamName, uuid, data);
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 
     public UUID getUuid() {
@@ -136,6 +113,46 @@ public class TeamPlayerStatsS2CPacket {
 
     public String getTeamName() {
         return teamName;
+    }
+
+    public Component getPlayerName() {
+        return playerName;
+    }
+
+    public int getScores() {
+        return scores;
+    }
+
+    public int getKills() {
+        return Kills;
+    }
+
+    public int getDeaths() {
+        return Deaths;
+    }
+
+    public int getAssists() {
+        return Assists;
+    }
+
+    public float getDamage() {
+        return Damage;
+    }
+
+    public int getMvpCount() {
+        return mvpCount;
+    }
+
+    public boolean isLiving() {
+        return isLiving;
+    }
+
+    public int getHeadshotKills() {
+        return headshotKills;
+    }
+
+    public float getHealthPercent() {
+        return healthPercent;
     }
 
 }

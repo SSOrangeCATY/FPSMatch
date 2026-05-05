@@ -1,7 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -17,12 +15,6 @@ public record FPSMInventorySelectedS2CPacket(int selected) {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            LocalPlayer localPlayer = Minecraft.getInstance().player;
-            if (localPlayer != null) {
-                localPlayer.getInventory().selected = selected;
-            }
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }

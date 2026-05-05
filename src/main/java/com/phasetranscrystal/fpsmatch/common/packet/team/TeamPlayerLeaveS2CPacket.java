@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet.team;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -19,10 +19,6 @@ public record TeamPlayerLeaveS2CPacket(UUID player) {
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            FPSMClient.getGlobalData().removePlayer(player);
-        });
-        context.setPacketHandled(true);
+        ClientPacketExecutor.execute(supplier, this);
     }
 }

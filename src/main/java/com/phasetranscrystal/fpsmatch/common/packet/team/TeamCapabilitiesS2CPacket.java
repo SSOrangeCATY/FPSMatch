@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet.team;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
@@ -60,13 +60,6 @@ public record TeamCapabilitiesS2CPacket(
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            FPSMClient.getGlobalData().getTeamByName(teamName).ifPresent(team -> {
-                team.getCapabilityMap().deserializeCapability(capName,capabilityData);
-            });
-            capabilityData.release();
-        });
-        context.setPacketHandled(true);
+        ClientPacketExecutor.execute(supplier, this);
     }
 }

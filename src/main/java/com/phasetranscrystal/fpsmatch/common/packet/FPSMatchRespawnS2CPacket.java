@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -15,12 +14,6 @@ public class FPSMatchRespawnS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            if (Minecraft.getInstance().player != null) {
-                Minecraft.getInstance().setScreen(null);
-                Minecraft.getInstance().player.respawn();
-            }
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }

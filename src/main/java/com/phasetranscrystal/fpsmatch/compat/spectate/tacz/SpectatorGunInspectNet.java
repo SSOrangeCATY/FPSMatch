@@ -27,37 +27,33 @@ public final class SpectatorGunInspectNet {
         DEBUG_ENABLED = enabled;
     }
 
-    public static void handleWatchedPlayerInspectPacket(S2CWatchedPlayerInspectPacket packet, Supplier<NetworkEvent.Context> ctxSup) {
-        NetworkEvent.Context ctx = ctxSup.get();
-        ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            LocalPlayer localPlayer = mc.player;
-            if (localPlayer == null) {
-                return;
-            }
-            UUID targetId = packet.getPlayerId();
-            dbg("[SpectatorGunInspectNet] Received S2CWatchedPlayerInspectPacket: playerId={}", targetId);
-            if (localPlayer.getUUID().equals(targetId)) {
-                dbg("[SpectatorGunInspectNet] Local inspect trigger.");
+    public static void handleWatchedPlayerInspectPacket(S2CWatchedPlayerInspectPacket packet) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer localPlayer = mc.player;
+        if (localPlayer == null) {
+            return;
+        }
+        UUID targetId = packet.getPlayerId();
+        dbg("[SpectatorGunInspectNet] Received S2CWatchedPlayerInspectPacket: playerId={}", targetId);
+        if (localPlayer.getUUID().equals(targetId)) {
+            dbg("[SpectatorGunInspectNet] Local inspect trigger.");
+            SpectatorGunInspect.playInspectAnimationFor(localPlayer);
+            return;
+        }
+        if (SpectatorView.isSpectatingOther(localPlayer)) {
+            Player target = SpectatorView.getSpectatedPlayer(localPlayer);
+            if (target != null && target.getUUID().equals(targetId)) {
+                dbg("[SpectatorGunInspectNet] Spectating that player: mirror inspect.");
+                ItemStack targetStack = target.getMainHandItem();
+                if (!targetStack.isEmpty()) {
+                    SpectatorGunItemMirror.equip(localPlayer, targetStack);
+                    SpectatorGunItemMirror.tick(localPlayer);
+                }
                 SpectatorGunInspect.playInspectAnimationFor(localPlayer);
                 return;
             }
-            if (SpectatorView.isSpectatingOther(localPlayer)) {
-                Player target = SpectatorView.getSpectatedPlayer(localPlayer);
-                if (target != null && target.getUUID().equals(targetId)) {
-                    dbg("[SpectatorGunInspectNet] Spectating that player: mirror inspect.");
-                    ItemStack targetStack = target.getMainHandItem();
-                    if (!targetStack.isEmpty()) {
-                        SpectatorGunItemMirror.equip(localPlayer, targetStack);
-                        SpectatorGunItemMirror.tick(localPlayer);
-                    }
-                    SpectatorGunInspect.playInspectAnimationFor(localPlayer);
-                    return;
-                }
-            }
-            dbg("[SpectatorGunInspectNet] Packet ignored: not self nor current spectate target.");
-        });
-        ctx.setPacketHandled(true);
+        }
+        dbg("[SpectatorGunInspectNet] Packet ignored: not self nor current spectate target.");
     }
 
     private static void dbg(String msg, Object... args) {

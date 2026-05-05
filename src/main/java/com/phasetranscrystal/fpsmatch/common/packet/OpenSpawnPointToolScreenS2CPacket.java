@@ -1,8 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.client.screen.SpawnPointToolScreen;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -45,15 +43,7 @@ public record OpenSpawnPointToolScreenS2CPacket(
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            Minecraft minecraft = Minecraft.getInstance();
-            if (minecraft.screen instanceof SpawnPointToolScreen screen) {
-                screen.applyData(this);
-            } else {
-                minecraft.setScreen(new SpawnPointToolScreen(this));
-            }
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 
     private static void writeStringList(FriendlyByteBuf buf, List<String> values) {

@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -28,11 +27,14 @@ public class FPSMatchGameTypeS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            FPSMClient.getGlobalData().setCurrentGameType(this.gameType);
-            FPSMClient.getGlobalData().setCurrentMap(this.mapName);
-        });
-        context.setPacketHandled(true);
+        ClientPacketExecutor.execute(supplier, this);
+    }
+
+    public String getMapName() {
+        return mapName;
+    }
+
+    public String getGameType() {
+        return gameType;
     }
 } 

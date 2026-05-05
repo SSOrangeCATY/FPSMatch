@@ -1,6 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.client.music.FPSClientMusicManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkEvent;
@@ -21,9 +20,10 @@ public class FPSMSoundPlayS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(()-> {
-            FPSClientMusicManager.playSound(location);
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
+    }
+
+    public ResourceLocation getLocation() {
+        return location;
     }
 }

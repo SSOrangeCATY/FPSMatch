@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.compat.spectate.net;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import com.phasetranscrystal.fpsmatch.compat.spectate.lrtactical.SpectatorLrtAttackNet;
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import me.xjqsh.lrtactical.api.melee.MeleeAction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -66,12 +66,7 @@ public final class SpectatorLrtAttackPackets {
         }
 
         public static void handle(S2CWatchedPlayerLrtAttackPacket p, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                if (ctx.get().getDirection().getReceptionSide().isClient()) {
-                    SpectatorLrtAttackNet.handleWatchedPlayerAttackPacket(p, ctx);
-                }
-            });
-            ctx.get().setPacketHandled(true);
+            ClientPacketExecutor.execute(ctx, p);
         }
     }
 

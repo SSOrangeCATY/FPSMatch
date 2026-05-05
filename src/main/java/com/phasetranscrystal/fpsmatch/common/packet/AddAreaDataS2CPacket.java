@@ -1,7 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.data.RenderableArea;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -31,9 +29,6 @@ public record AddAreaDataS2CPacket(String key, Component name, int color, AreaDa
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            FPSMClient.getGlobalData().getDebugData().upsertRenderableArea(key, new RenderableArea(key, name, color, areaData));
-        });
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }

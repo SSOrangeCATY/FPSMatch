@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.common.capability.FPSMCapabilityRegister;
 import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
+import com.phasetranscrystal.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
@@ -77,6 +78,7 @@ public class FPSMatch {
     {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::onRegisterPackets);
         modEventBus.addListener(this::onEnqueue);
         MinecraftForge.EVENT_BUS.register(this);
         VanillaGuiRegister.CONTAINERS.register(modEventBus);
@@ -110,6 +112,32 @@ public class FPSMatch {
 
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(()->{
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(),ThrowableRegistry.GRENADE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(),ThrowableRegistry.SMOKE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
+
+            if(FPSMImpl.findCounterStrikeGrenadesMod()){
+                CounterStrikeGrenadesCompat.init();
+            }
+        });
+    }
+
+    /**
+     * 注册 FPSMatch 的网络包。
+     * <p>
+     * 注意：这里注册的 S2C packet 类必须保持“公共可加载”，不要在 packet 类中直接引用
+     * Minecraft、Screen、FPSMClient、客户端渲染/音频类或其它 client-only 类型。
+     * dedicated server 会在注册阶段反射扫描 packet 方法；一旦 packet 类自身带有客户端依赖，
+     * 就可能在启动期触发 DistCleaner 崩溃。
+     * <p>
+     * 所有客户端执行行为都应通过 ClientPacketExecutor 分发；新增客户端包行为时，
+     * 请在 {@link com.phasetranscrystal.fpsmatch.common.client.net.FPSMClientPacketRegistrar#registerAll()} 中
+     * 添加 packet 到客户端处理器的注册映射，而不是把客户端逻辑直接写回 packet 类。
+     */
+    private void onRegisterPackets(final FMLCommonSetupEvent event) {
         PACKET_REGISTER.registerPacket(ShopDataSlotS2CPacket.class);
         PACKET_REGISTER.registerPacket(ShopActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(ShopMoneyS2CPacket.class);
@@ -143,17 +171,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(OpenSpawnPointToolScreenS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpawnPointToolActionC2SPacket.class);
 
-        event.enqueueWork(()->{
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(),ThrowableRegistry.GRENADE);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(),ThrowableRegistry.SMOKE);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
-
-            if(FPSMImpl.findCounterStrikeGrenadesMod()){
-                CounterStrikeGrenadesCompat.init();
-            }
-        });
+        event.enqueueWork(() -> DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 
     public static <M> void sendTo(Player player,M message){

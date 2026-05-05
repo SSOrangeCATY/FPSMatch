@@ -1,7 +1,5 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.data.RenderablePoint;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
@@ -29,8 +27,6 @@ public record AddPointDataS2CPacket(String key, Component name, int color, Vec3 
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> FPSMClient.getGlobalData().getDebugData()
-                .upsertRenderablePoint(key, new RenderablePoint(key, name, color, position)));
-        ctx.get().setPacketHandled(true);
+        ClientPacketExecutor.execute(ctx, this);
     }
 }
