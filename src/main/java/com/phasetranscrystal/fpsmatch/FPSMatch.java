@@ -171,7 +171,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(OpenSpawnPointToolScreenS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpawnPointToolActionC2SPacket.class);
 
-        event.enqueueWork(() -> DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
+        event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 
     public static <M> void sendTo(Player player,M message){
