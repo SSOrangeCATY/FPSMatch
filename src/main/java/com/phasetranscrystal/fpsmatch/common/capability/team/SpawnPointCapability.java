@@ -19,6 +19,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
@@ -284,8 +285,9 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
 
         private static SpawnPointData getSpawnPointData(CommandContext<CommandSourceStack> context) {
             Entity entity = context.getSource().getEntity();
-            float yaw = entity == null ? 0f : entity.getYRot();
-            float pitch = entity == null ? 0f : entity.getXRot();
+            Vec2 sourceRotation = context.getSource().getRotation();
+            float yaw = entity == null ? sourceRotation.y : entity.getYRot();
+            float pitch = entity == null ? sourceRotation.x : entity.getXRot();
             return new SpawnPointData(
                     context.getSource().getLevel().dimension(),
                     context.getSource().getPosition(),

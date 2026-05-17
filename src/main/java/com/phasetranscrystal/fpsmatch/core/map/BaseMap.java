@@ -11,6 +11,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
@@ -36,8 +37,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileReader;
@@ -183,6 +186,18 @@ public abstract class BaseMap {
     public void startNewRound() {
     }
 
+
+    /**
+     * 当对局内玩家死亡
+     * */
+    public void handleDeath(ServerPlayer player, Optional<ServerPlayer> killer, @Nullable LivingDeathEvent event){
+        MapTeams mapTeams = this.getMapTeams();
+        mapTeams.getPlayerData(player).ifPresent(data->{
+            data.setLiving(false);
+            data.addDeath();
+        });
+    };
+
     /**
      * 胜利操作
      */
@@ -282,6 +297,7 @@ public abstract class BaseMap {
             return false;
         }
 
+        player.setCamera(player);
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
         if (player.teleportTo(targetLevel, data.getX(),data.getY(),data.getZ(), set, data.getYaw(), data.getPitch())) {
             label23: {

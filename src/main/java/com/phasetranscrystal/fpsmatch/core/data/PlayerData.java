@@ -43,6 +43,7 @@ public class PlayerData {
     private SpawnPointData spawnPointsData;
     private boolean dirty = true; // 脏数据标记
     public final boolean enableRounds; // 是否启用回合模式
+    private boolean lastDeath = false; //上次死亡标记 用于复活后判别发放物资
 
     //客户端独有字段
     @OnlyIn(Dist.CLIENT)

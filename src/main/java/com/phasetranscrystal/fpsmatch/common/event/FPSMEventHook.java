@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
@@ -137,12 +138,12 @@ public class FPSMEventHook {
 
                 event.setAmount(hurtEvent.getAmount());
 
-                if (event.getAmount() <= 0){
+                if (event.getAmount() <= 0) {
                     event.setCanceled(true);
                     return;
                 }
 
-                map.getAttackerFromDamageSource(event.getSource()).ifPresent(attacker->{
+                map.getAttackerFromDamageSource(event.getSource()).ifPresent(attacker -> {
                     if (!map.isValidAttack(attacker, hurt)) return;
                     if (!map.getMapTeams().isSameTeam(attacker, hurt)) {
                         map.getMapTeams().addHurtData(attacker, hurt, event.getAmount());
@@ -166,12 +167,10 @@ public class FPSMEventHook {
                 }
 
                 MapTeams mapTeams = map.getMapTeams();
-                mapTeams.getPlayerData(player).ifPresent(data->{
-                    data.setLiving(false);
-                    data.addDeath();
-                });
-
                 Optional<ServerPlayer> optional = deathEvent.getAttacker();
+
+                map.handleDeath(player, optional, event);
+
                 if (optional.isPresent()) {
                     ServerPlayer killer = optional.get();
 
@@ -179,13 +178,13 @@ public class FPSMEventHook {
                         mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
                     }
 
-                    FPSMUtil.calculateAssistPlayer(map,player,map.getMinAssistDamageRatio()).ifPresent(assistData -> {
+                    FPSMUtil.calculateAssistPlayer(map, player, map.getMinAssistDamageRatio()).ifPresent(assistData -> {
                         if (!killer.getUUID().equals(assistData.getOwner())) {
                             assistData.addAssist();
                         }
                     });
 
-                    FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map,killer,player,event.getSource());
+                    FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map, killer, player, event.getSource());
                     MinecraftForge.EVENT_BUS.post(killEvent);
                 }
 
@@ -196,14 +195,15 @@ public class FPSMEventHook {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerKillEvent(EntityKillByGunEvent event) {
-        if (event.getLogicalSide() != LogicalSide.SERVER || !(event.getKilledEntity() instanceof ServerPlayer deadPlayer)) return;
+        if (event.getLogicalSide() != LogicalSide.SERVER || !(event.getKilledEntity() instanceof ServerPlayer deadPlayer))
+            return;
         Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(deadPlayer);
         if (mapOpt.isEmpty()) return;
         BaseMap map = mapOpt.get();
         if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) return;
         if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
 
-        if(event.isHeadShot() && !map.getMapTeams().isSameTeam(deadPlayer, attacker)){
+        if (event.isHeadShot() && !map.getMapTeams().isSameTeam(deadPlayer, attacker)) {
             map.getMapTeams().getPlayerData(attacker).ifPresent(PlayerData::addHeadshotKill);
         }
     }
@@ -220,8 +220,8 @@ public class FPSMEventHook {
                 });
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {
+    //    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 转移到死斗模式内
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
@@ -230,7 +230,7 @@ public class FPSMEventHook {
             if (!map.isStart()) {
                 return;
             }
-            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
+//            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
             map.teleportPlayerToReSpawnPoint(player);
         });
     }
