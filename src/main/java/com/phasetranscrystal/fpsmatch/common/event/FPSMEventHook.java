@@ -1,31 +1,21 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
-import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.event.common.EntityKillByGunEvent;
-import com.tacz.guns.api.item.IGun;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class FPSMEventHook {
@@ -114,97 +104,6 @@ public class FPSMEventHook {
             if (leave) {
                 FPSMCore.checkAndLeaveTeam(player);
             }
-        }
-    }
-
-    /**
-     * 玩家受伤事件处理
-     *
-     * @param event 玩家受伤事件
-     */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerHurt(LivingHurtEvent event) {
-        if (event.getEntity() instanceof ServerPlayer hurt) {
-            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(hurt);
-            if (opt.isEmpty()) return;
-            BaseMap map = opt.get();
-            if (map.isStart()) {
-                FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map, hurt, event.getSource(), event.getAmount());
-
-                if (MinecraftForge.EVENT_BUS.post(hurtEvent)) {
-                    event.setCanceled(true);
-                    return;
-                }
-
-                event.setAmount(hurtEvent.getAmount());
-
-                if (event.getAmount() <= 0) {
-                    event.setCanceled(true);
-                    return;
-                }
-
-                map.getAttackerFromDamageSource(event.getSource()).ifPresent(attacker -> {
-                    if (!map.isValidAttack(attacker, hurt)) return;
-                    if (!map.getMapTeams().isSameTeam(attacker, hurt)) {
-                        map.getMapTeams().addHurtData(attacker, hurt, event.getAmount());
-                    }
-                });
-            }
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerDeathEvent(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
-            if (opt.isEmpty()) return;
-
-            BaseMap map = opt.get();
-            if (map.isStart()) {
-                FPSMapEvent.PlayerEvent.DeathEvent deathEvent = new FPSMapEvent.PlayerEvent.DeathEvent(map, player, event.getSource());
-                if (MinecraftForge.EVENT_BUS.post(deathEvent)) {
-                    event.setCanceled(true);
-                }
-
-                MapTeams mapTeams = map.getMapTeams();
-                Optional<ServerPlayer> optional = deathEvent.getAttacker();
-
-                map.handleDeath(player, optional, event);
-
-                if (optional.isPresent()) {
-                    ServerPlayer killer = optional.get();
-
-                    if (!mapTeams.isSameTeam(player, killer)) {
-                        mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
-                    }
-
-                    FPSMUtil.calculateAssistPlayer(map, player, map.getMinAssistDamageRatio()).ifPresent(assistData -> {
-                        if (!killer.getUUID().equals(assistData.getOwner())) {
-                            assistData.addAssist();
-                        }
-                    });
-
-                    FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map, killer, player, event.getSource());
-                    MinecraftForge.EVENT_BUS.post(killEvent);
-                }
-
-                FPSMatch.sendToPlayer(player, new FPSMatchRespawnS2CPacket());
-            }
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerKillEvent(EntityKillByGunEvent event) {
-        if (event.getLogicalSide() != LogicalSide.SERVER || !(event.getKilledEntity() instanceof ServerPlayer deadPlayer))
-            return;
-        Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(deadPlayer);
-        if (mapOpt.isEmpty()) return;
-        BaseMap map = mapOpt.get();
-        if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) return;
-        if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
-
-        if (event.isHeadShot() && !map.getMapTeams().isSameTeam(deadPlayer, attacker)) {
-            map.getMapTeams().getPlayerData(attacker).ifPresent(PlayerData::addHeadshotKill);
         }
     }
 

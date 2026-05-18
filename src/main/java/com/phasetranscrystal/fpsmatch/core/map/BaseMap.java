@@ -37,7 +37,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -190,13 +189,21 @@ public abstract class BaseMap {
     /**
      * 当对局内玩家死亡
      * */
-    public void handleDeath(ServerPlayer player, Optional<ServerPlayer> killer, @Nullable LivingDeathEvent event){
+    public void handleDeath(DeathContext context){
+        ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = this.getMapTeams();
         mapTeams.getPlayerData(player).ifPresent(data->{
             data.setLiving(false);
             data.addDeath();
         });
     };
+
+    /**
+     * 解析死亡武器（基础实现：主手物品）
+     */
+    public ItemStack resolveDeathItem(@Nullable ServerPlayer attacker, DamageSource source) {
+        return attacker == null ? ItemStack.EMPTY : attacker.getMainHandItem();
+    }
 
     /**
      * 胜利操作
@@ -497,6 +504,18 @@ public abstract class BaseMap {
         return attacker != null &&
                 !attacker.isDeadOrDying() &&
                 !attacker.getUUID().equals(hurt.getUUID());
+    }
+
+    /**
+     * 记录有效的伤害来源，用于后续助攻计算。
+     */
+    public void recordHurtData(ServerPlayer hurt, DamageSource source, float amount) {
+        getAttackerFromDamageSource(source).ifPresent(attacker -> {
+            if (!isValidAttack(attacker, hurt)) return;
+            if (!getMapTeams().isSameTeam(attacker, hurt)) {
+                getMapTeams().addHurtData(attacker, hurt, amount);
+            }
+        });
     }
 
     /**
