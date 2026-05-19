@@ -13,6 +13,7 @@ public class FPSMImpl {
     public static final String CLOTH_CONFIG = "cloth_config";
     public static final String TACZ = "tacz";
     public static final String TACZ_TWEAKS = "tacztweaks";
+    public static final String PHYSICS_MOD = "physicsmod";
 
     public static boolean findLrtacticalMod(){
        return isLoaded(LRTACTICAL);
@@ -32,6 +33,10 @@ public class FPSMImpl {
 
     public static boolean findTaczTweaks(){
         return isLoaded(TACZ_TWEAKS);
+    }
+
+    public static boolean findPhysicsMod(){
+        return isLoaded(PHYSICS_MOD);
     }
 
     public static boolean withVersion(String modId, String version) {

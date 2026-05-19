@@ -10,7 +10,10 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -95,9 +98,13 @@ public class FPSMDeathPipelineEventHook {
 
             BaseMap map = opt.get();
             if (map.isStart()) {
+                // 对局内击杀/死亡统一由管线代理结算，阻止原版死亡落地
+                event.setCanceled(true);
+                player.setHealth(player.getMaxHealth());
+
                 FPSMapEvent.PlayerEvent.DeathEvent deathEvent = new FPSMapEvent.PlayerEvent.DeathEvent(map, player, event.getSource());
-                if (MinecraftForge.EVENT_BUS.post(deathEvent)) {
-                    event.setCanceled(true);
+                MinecraftForge.EVENT_BUS.post(deathEvent);
+                if (deathEvent.isCanceled()) {
                     return;
                 }
 
@@ -107,10 +114,11 @@ public class FPSMDeathPipelineEventHook {
                 DeathContext context = new DeathContext(player, attacker, deathEvent.getSource(), deathItem, player.serverLevel().getGameTime());
 
                 readyDeaths.put(player.getUUID(), new PendingDeath(map, context));
-
-                // 对局内击杀/死亡统一由管线代理结算，阻止原版死亡落地
-                event.setCanceled(true);
             }
+        }
+        if(event.getEntity() instanceof Player player && player.level().isClientSide){
+            if (FPSMCore.getInstance().getMapByPlayer(player).isEmpty()) return;
+            event.setCanceled(true);
         }
     }
 
@@ -135,9 +143,6 @@ public class FPSMDeathPipelineEventHook {
         if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
 
         PendingDeath pending = readyDeaths.get(deadPlayer.getUUID());
-        if (pending == null) {
-            pending = readyDeaths.get(deadPlayer.getUUID());
-        }
         if (pending != null) {
             DeathContext context = pending.context();
             context.setGunKill(true);
@@ -163,6 +168,7 @@ public class FPSMDeathPipelineEventHook {
             return;
         }
 
+        if (readyDeaths.isEmpty()) return;
         readyDeaths.forEach((uuid, pending) -> finalizeDeath(pending.map(), pending.context()));
         readyDeaths.clear();
     }
@@ -177,7 +183,7 @@ public class FPSMDeathPipelineEventHook {
      *     <li>发布 {@link FPSMapEvent.PlayerEvent.KillEvent}。</li>
      *     <li>发送重生信号包。</li>
      * </ol>
-     *
+     * <p>
      * 注意：这是“代理死亡”最终落点；对局内不依赖原版死亡流程完成上述逻辑。
      */
     private static void finalizeDeath(BaseMap map, DeathContext context) {
@@ -206,14 +212,14 @@ public class FPSMDeathPipelineEventHook {
             MinecraftForge.EVENT_BUS.post(killEvent);
         }
 
-        FPSMatch.sendToPlayer(player, new FPSMatchRespawnS2CPacket());
+//        FPSMatch.sendToPlayer(player, new FPSMatchRespawnS2CPacket());
     }
 
     /**
      * 待结算死亡记录。
      *
-     * @param map         所属地图
-     * @param context     死亡上下文（可被枪械事件补全）
+     * @param map     所属地图
+     * @param context 死亡上下文（可被枪械事件补全）
      */
     private record PendingDeath(BaseMap map, DeathContext context) {
     }
