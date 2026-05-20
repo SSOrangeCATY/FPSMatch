@@ -178,6 +178,15 @@ public class PlayerData {
         markDirty();
     }
 
+    public void removeKill() {
+        if (enableRounds) {
+            _kills--;
+        } else {
+            kills--;
+        }
+        markDirty();
+    }
+
     public void setKills(int kills) {
         if (enableRounds) {
             this._kills = kills;

@@ -196,9 +196,11 @@ public class FPSMDeathPipelineEventHook {
         if (killer != null) {
             boolean enemyKill = !mapTeams.isSameTeam(player, killer);
             if (enemyKill) {
-                mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
-                if (context.isHeadShot()) {
-                    mapTeams.getPlayerData(killer).ifPresent(PlayerData::addHeadshotKill);
+                if (!MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.KillRecordEvent(map, killer, player, context.getDamageSource()))) {
+                    mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
+                    if (context.isHeadShot()) {
+                        mapTeams.getPlayerData(killer).ifPresent(PlayerData::addHeadshotKill);
+                    }
                 }
             }
 

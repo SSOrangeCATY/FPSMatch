@@ -1,14 +1,24 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.Event;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public class FPSMapEvent extends Event {
     private final BaseMap map;
@@ -22,15 +32,138 @@ public class FPSMapEvent extends Event {
     }
 
     public static class VictoryEvent extends FPSMapEvent {
+        private final Map<UUID, PlayerScoreSnapshot> scoreboard;
+        private final Map<String, TeamScoreSummary> teamSummaries;
+
         public VictoryEvent(BaseMap map) {
             super(map);
+            this.scoreboard = buildScoreboardSnapshot(map);
+            this.teamSummaries = buildTeamSummaries(map);
+        }
+
+        public Map<UUID, PlayerScoreSnapshot> getScoreboard() {
+            return scoreboard;
+        }
+
+        public Optional<PlayerScoreSnapshot> getPlayerScoreSnapshot(UUID player) {
+            return Optional.ofNullable(scoreboard.get(player));
+        }
+
+        public Optional<PlayerScoreSnapshot> getPlayerScoreSnapshot(ServerPlayer player) {
+            return getPlayerScoreSnapshot(player.getUUID());
+        }
+
+        public Optional<PlayerScoreSnapshot> getPlayerScoreSnapshot(Player player) {
+            return getPlayerScoreSnapshot(player.getUUID());
+        }
+
+        public Map<String, TeamScoreSummary> getTeamSummaries() {
+            return teamSummaries;
+        }
+
+        public Optional<TeamScoreSummary> getTeamSummary(String teamName) {
+            return Optional.ofNullable(teamSummaries.get(teamName));
+        }
+
+        public Optional<TeamScoreSummary> getTeamSummary(ServerTeam team) {
+            return getTeamSummary(team.getName());
         }
 
         @Override
         public boolean isCancelable() {
             return false;
         }
+
+        private static Map<UUID, PlayerScoreSnapshot> buildScoreboardSnapshot(BaseMap map) {
+            List<PlayerScoreSnapshot> snapshots = new ArrayList<>();
+            map.getMapTeams().getNormalTeams().forEach(team ->
+                    team.getPlayers().forEach((uuid, data) ->
+                            snapshots.add(new PlayerScoreSnapshot(
+                                    uuid,
+                                    data.name().copy(),
+                                    team.getName(),
+                                    data.getScores(),
+                                    data.getKills(),
+                                    data.getDeaths(),
+                                    data.getAssists(),
+                                    data.getDamage(),
+                                    data.getHeadshotRate()
+                            ))
+                    )
+            );
+
+            snapshots.sort(Comparator
+                    .comparingInt(PlayerScoreSnapshot::scores).reversed()
+                    .thenComparingInt(PlayerScoreSnapshot::kills).reversed()
+                    .thenComparingDouble(PlayerScoreSnapshot::damage).reversed());
+
+            LinkedHashMap<UUID, PlayerScoreSnapshot> result = new LinkedHashMap<>();
+            snapshots.forEach(snapshot -> result.put(snapshot.player(), snapshot));
+            return Map.copyOf(result);
+        }
+
+        private static Map<String, TeamScoreSummary> buildTeamSummaries(BaseMap map) {
+            LinkedHashMap<String, TeamScoreSummary> summaries = new LinkedHashMap<>();
+            map.getMapTeams().getNormalTeams().forEach(team -> {
+                int totalScores = 0;
+                int totalKills = 0;
+                int totalDeaths = 0;
+                int totalAssists = 0;
+                float totalDamage = 0;
+                float totalHeadshotRate = 0;
+                int playerCount = 0;
+
+                for (PlayerData data : team.getPlayersData()) {
+                    totalScores += data.getScores();
+                    totalKills += data.getKills();
+                    totalDeaths += data.getDeaths();
+                    totalAssists += data.getAssists();
+                    totalDamage += data.getDamage();
+                    totalHeadshotRate += data.getHeadshotRate();
+                    playerCount++;
+                }
+
+                float averageHeadshotRate = playerCount > 0 ? totalHeadshotRate / playerCount : 0.0f;
+                summaries.put(team.getName(), new TeamScoreSummary(
+                        team.getName(),
+                        team.getScores(),
+                        playerCount,
+                        totalScores,
+                        totalKills,
+                        totalDeaths,
+                        totalAssists,
+                        totalDamage,
+                        averageHeadshotRate
+                ));
+            });
+
+            return Map.copyOf(summaries);
+        }
     }
+
+    public record PlayerScoreSnapshot(
+            UUID player,
+            Component name,
+            String team,
+            int scores,
+            int kills,
+            int deaths,
+            int assists,
+            float damage,
+            float headshotRate
+    ) {}
+
+    public record TeamScoreSummary(
+            String team,
+            int roundScores,
+            int playerCount,
+            int totalPlayerScores,
+            int totalKills,
+            int totalDeaths,
+            int totalAssists,
+            float totalDamage,
+            float averageHeadshotRate
+    ) {}
 
     public static class ClearEvent extends FPSMapEvent {
         public ClearEvent(BaseMap map) {
@@ -193,6 +326,34 @@ public class FPSMapEvent extends Event {
             @Override
             public boolean isCancelable() {
                 return false;
+            }
+        }
+
+        /**
+         * 在死亡管线中、真正写入击杀统计前触发。
+         * 取消该事件将阻止本次“击杀数/爆头击杀数”写入，但不影响后续 KillEvent 广播。
+         */
+        public static class KillRecordEvent extends PlayerEvent {
+            private final DamageSource source;
+            private final ServerPlayer dead;
+
+            public KillRecordEvent(BaseMap map, ServerPlayer killer, ServerPlayer dead, DamageSource source) {
+                super(map, killer);
+                this.source = source;
+                this.dead = dead;
+            }
+
+            public DamageSource getSource() {
+                return source;
+            }
+
+            public ServerPlayer getDead() {
+                return dead;
+            }
+
+            @Override
+            public boolean isCancelable() {
+                return true;
             }
         }
 
