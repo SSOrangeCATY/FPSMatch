@@ -33,6 +33,29 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MapTeams {
+    public record JoinTeamResult(Status status, @Nullable String teamName) {
+        public enum Status {
+            JOINED,
+            TEAM_NOT_FOUND,
+            TEAM_FULL,
+            NO_AVAILABLE_TEAM,
+            MID_MATCH_JOIN_DISABLED,
+            CANCELLED
+        }
+
+        public boolean isSuccess() {
+            return status == Status.JOINED;
+        }
+
+        public static JoinTeamResult joined(String teamName) {
+            return new JoinTeamResult(Status.JOINED, teamName);
+        }
+
+        public static JoinTeamResult of(Status status) {
+            return new JoinTeamResult(status, null);
+        }
+    }
+
     protected final ServerLevel level;
     protected final BaseMap map;
     private final Map<String, ServerTeam> teams = new HashMap<>();
@@ -397,10 +420,12 @@ public class MapTeams {
      * @param player 玩家对象
      * @param teamName 队伍名称
      */
-    private void playerJoin(ServerPlayer player, String teamName) {
+    private boolean playerJoin(ServerPlayer player, String teamName) {
         // 获取队伍
         ServerTeam team = this.teams.get(teamName);
-        team.join(player);
+        if (!team.join(player)) {
+            return false;
+        }
         if (team.isNormal()) {
             team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.assignNextSpawnPoint(player.getUUID()));
         }
@@ -410,6 +435,7 @@ public class MapTeams {
         );
         // 同步其他玩家的计分板数据
         broadcast();
+        return true;
     }
 
     /**
@@ -512,15 +538,38 @@ public class MapTeams {
      * @param teamName 队伍名称
      * @param player   玩家对象
      */
-    public void joinTeam(String teamName, ServerPlayer player) {
-        FPSMCore.checkAndLeaveTeam(player);
-        if (checkTeam(teamName) && !teamIsFull(teamName)) {
-            this.playerJoin(player, teamName);
-            this.playerName.put(player.getUUID(), player.getDisplayName());
-            player.displayClientMessage(Component.translatable("commands.fpsm.team.join.success", player.getDisplayName(), teamName).withStyle(ChatFormatting.GREEN), false);
+    public JoinTeamResult joinTeam(String teamName, ServerPlayer player) {
+        if (!checkTeam(teamName)) {
+            return JoinTeamResult.of(JoinTeamResult.Status.TEAM_NOT_FOUND);
+        } else if (teamIsFull(teamName)) {
+            return JoinTeamResult.of(JoinTeamResult.Status.TEAM_FULL);
         } else {
-            player.displayClientMessage(Component.translatable("commands.fpsm.team.leave.success",player.getDisplayName()).withStyle(ChatFormatting.RED), false);
+            if (!this.playerJoin(player, teamName)) {
+                return JoinTeamResult.of(JoinTeamResult.Status.CANCELLED);
+            }
+            this.playerName.put(player.getUUID(), player.getDisplayName());
+            return JoinTeamResult.joined(teamName);
         }
+    }
+
+    public static JoinTeamResult joinTeam(MapTeams mapTeams, String teamName, ServerPlayer player){
+        return mapTeams.joinTeam(teamName,player);
+    }
+
+    /**
+     * 检查队伍能否被加入。
+     * <p>
+     * 只有队伍存在且未满员时，允许玩家加入。
+     *
+     * @param teamName 队伍名称
+     * @return 如果队伍可以被加入返回 true，否则返回 false
+     */
+    public boolean canJoinTeam(String teamName){
+        return checkTeam(teamName) && !teamIsFull(teamName);
+    }
+
+    public static boolean canJoinTeam(MapTeams mapTeams,String teamName){
+        return mapTeams.canJoinTeam(teamName);
     }
 
     /**

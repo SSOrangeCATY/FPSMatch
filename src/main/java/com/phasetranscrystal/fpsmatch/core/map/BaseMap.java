@@ -66,16 +66,18 @@ public abstract class BaseMap {
     private final List<Setting<?>> settings = new LinkedList<>();
 
     protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
+    protected final Setting<Boolean> allowJoinInProgress = this.addSetting("allowJoinInProgress", true);
 
-    private final CapabilityMap<BaseMap,MapCapability> capabilities;
+    private final CapabilityMap<BaseMap, MapCapability> capabilities;
     // 地图区域数据
     public final AreaData mapArea;
+
     /**
      * BaseMap 类的构造函数。
      *
      * @param serverLevel 地图所在世界。
-     * @param mapName 地图名称。
-     * @param areaData 地图的区域数据。
+     * @param mapName     地图名称。
+     * @param areaData    地图的区域数据。
      */
     public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
         this.serverLevel = serverLevel;
@@ -88,7 +90,7 @@ public abstract class BaseMap {
     public BaseMap(ServerLevel serverLevel, String mapName, AreaData areaData, List<Class<? extends MapCapability>> capabilities) {
         this(serverLevel, mapName, areaData);
         for (Class<? extends MapCapability> cap : capabilities) {
-            if(!this.capabilities.add(cap)){
+            if (!this.capabilities.add(cap)) {
                 FPSMatch.LOGGER.error("Failed to add capability {} to map {}", cap.getSimpleName(), this.mapName);
             }
         }
@@ -99,19 +101,22 @@ public abstract class BaseMap {
      *
      * @return 配置项集合。
      */
-    public Collection<Setting<?>> settings(){
+    public Collection<Setting<?>> settings() {
         return settings;
-    };
+    }
+
+    ;
 
     /**
      * 添加团队
+     *
      * @param data 团队数据
      */
     public ServerTeam addTeam(TeamData data) {
         return this.mapTeams.addTeam(data);
     }
 
-    public ServerTeam getSpectatorTeam(){
+    public ServerTeam getSpectatorTeam() {
         return this.mapTeams.getSpectatorTeam();
     }
 
@@ -129,8 +134,10 @@ public abstract class BaseMap {
     /**
      * 同步数据到客户端
      */
-    public void syncToClient(){
-    };
+    public void syncToClient() {
+    }
+
+    ;
 
     /**
      * 每个 tick 的操作
@@ -150,9 +157,11 @@ public abstract class BaseMap {
     /**
      * 开始游戏
      */
-    public boolean start(){
+    public boolean start() {
         return !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.StartEvent(this));
-    };
+    }
+
+    ;
 
     /**
      * 检查玩家是否在游戏中
@@ -188,15 +197,18 @@ public abstract class BaseMap {
 
     /**
      * 当对局内玩家死亡
-     * */
-    public void handleDeath(DeathContext context){
+     *
+     */
+    public void handleDeath(DeathContext context) {
         ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = this.getMapTeams();
-        mapTeams.getPlayerData(player).ifPresent(data->{
+        mapTeams.getPlayerData(player).ifPresent(data -> {
             data.setLiving(false);
             data.addDeath();
         });
-    };
+    }
+
+    ;
 
     /**
      * 解析死亡武器（基础实现：主手物品）
@@ -208,9 +220,11 @@ public abstract class BaseMap {
     /**
      * 胜利操作
      */
-    public void victory(){
+    public void victory() {
         MinecraftForge.EVENT_BUS.post(new FPSMapEvent.VictoryEvent(this));
-    };
+    }
+
+    ;
 
     /**
      * 胜利条件
@@ -222,59 +236,90 @@ public abstract class BaseMap {
     /**
      * 清理地图
      */
-    public boolean cleanupMap(){
+    public boolean cleanupMap() {
         return !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ClearEvent(this));
     }
 
     /**
      * 重置游戏
      */
-    public void reset(){
+    public void reset() {
         MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ResetEvent(this));
-    };
+    }
+
+    ;
 
     /**
      * 获取地图团队
+     *
      * @return 地图团队对象
      */
     public MapTeams getMapTeams() {
         return mapTeams;
     }
 
-    public RandomSource getRandom(){
+    public RandomSource getRandom() {
         return getServerLevel().getRandom();
     }
 
     public void leave(ServerPlayer player) {
-        if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.LeaveEvent(this, player))) return;
-        this.sendPacketToJoinedPlayer(player,new FPSMatchStatsResetS2CPacket(),true);
+        if (MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.LeaveEvent(this, player))) return;
+        this.sendPacketToJoinedPlayer(player, new FPSMatchStatsResetS2CPacket(), true);
         player.setGameMode(GameType.ADVENTURE);
         this.getMapTeams().leaveTeam(player);
     }
 
 
-    public void join(ServerPlayer player) {
+    public MapTeams.JoinTeamResult join(ServerPlayer player) {
         MapTeams mapTeams = this.getMapTeams();
         List<ServerTeam> baseTeams = mapTeams.getNormalTeams();
-        if(baseTeams.isEmpty()) return;
-        ServerTeam team = baseTeams.stream().min(Comparator.comparingInt(BaseTeam::getPlayerCount)).orElse(baseTeams.stream().toList().get(new Random().nextInt(0,baseTeams.size())));
-        this.join(team.name, player);
+        if (baseTeams.isEmpty()) return MapTeams.JoinTeamResult.of(MapTeams.JoinTeamResult.Status.NO_AVAILABLE_TEAM);
+
+        List<ServerTeam> teams = new ArrayList<>();
+        int minPlayerCount = 0;
+        boolean firstFlag = true;
+        for (ServerTeam t : baseTeams) {
+            if (firstFlag || t.getPlayerCount() < minPlayerCount) {
+                minPlayerCount = t.getPlayerCount();
+                teams.clear();
+                teams.add(t);
+                firstFlag = false;
+            } else if (t.getPlayerCount() == minPlayerCount) {
+                teams.add(t);
+            }
+        }
+        ServerTeam team = teams.size() == 1
+                ? teams.get(0)
+                : teams.get(new Random().nextInt(0, teams.size()));
+
+        return this.join(team.name, player);
     }
 
     /**
      * 加入团队
+     *
      * @param teamName 团队名称
-     * @param player 玩家对象
+     * @param player   玩家对象
      */
-    public void join(String teamName, ServerPlayer player) {
-        if(MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.JoinEvent(this, player))) return;
+    public MapTeams.JoinTeamResult join(String teamName, ServerPlayer player) {
+        if (this.isStart() && !this.checkGameHasPlayer(player) && !this.allowJoinInProgress.get()) {
+            return MapTeams.JoinTeamResult.of(MapTeams.JoinTeamResult.Status.MID_MATCH_JOIN_DISABLED);
+        }
+
+        if (MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.JoinEvent(this, player))) {
+            return MapTeams.JoinTeamResult.of(MapTeams.JoinTeamResult.Status.CANCELLED);
+        }
 
         FPSMCore.checkAndLeaveTeam(player);
         this.pullGameInfo(player);
-        this.getMapTeams().joinTeam(teamName, player);
+        return this.getMapTeams().joinTeam(teamName, player);
     }
 
-    public void teleportPlayerToReSpawnPoint(ServerPlayer player){
+    public boolean allowJoinInProgress() {
+        return this.allowJoinInProgress.get();
+    }
+
+    public void teleportPlayerToReSpawnPoint(ServerPlayer player) {
         this.getMapTeams().getTeamByPlayer(player)
                 .ifPresent(team -> team.getPlayerData(player.getUUID()).ifPresent(playerData -> {
                     SpawnPointData currentPoint = playerData.getSpawnPointsData();
@@ -298,7 +343,7 @@ public abstract class BaseMap {
     }
 
     public boolean teleportToPoint(ServerPlayer player, SpawnPointData data) {
-        if(!Level.isInSpawnableBounds(data.getBlockPos())) return false;
+        if (!Level.isInSpawnableBounds(data.getBlockPos())) return false;
         ServerLevel targetLevel = this.getServerLevel().getServer().getLevel(data.getDimension());
         if (targetLevel == null) {
             return false;
@@ -306,8 +351,9 @@ public abstract class BaseMap {
 
         player.setCamera(player);
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
-        if (player.teleportTo(targetLevel, data.getX(),data.getY(),data.getZ(), set, data.getYaw(), data.getPitch())) {
-            label23: {
+        if (player.teleportTo(targetLevel, data.getX(), data.getY(), data.getZ(), set, data.getYaw(), data.getPitch())) {
+            label23:
+            {
                 if (player.isFallFlying()) {
                     break label23;
                 }
@@ -320,20 +366,20 @@ public abstract class BaseMap {
         return false;
     }
 
-    public void clearInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate){
+    public void clearInventory(UUID uuid, Predicate<ItemStack> inventoryPredicate) {
         Player player = this.getServerLevel().getPlayerByUUID(uuid);
-        if(player instanceof ServerPlayer serverPlayer){
-            this.clearInventory(serverPlayer,inventoryPredicate);
+        if (player instanceof ServerPlayer serverPlayer) {
+            this.clearInventory(serverPlayer, inventoryPredicate);
         }
     }
 
-    public void clearInventory(ServerPlayer player, Predicate<ItemStack> predicate){
+    public void clearInventory(ServerPlayer player, Predicate<ItemStack> predicate) {
         player.getInventory().clearOrCountMatchingItems(predicate, -1, player.inventoryMenu.getCraftSlots());
         player.containerMenu.broadcastChanges();
         player.inventoryMenu.slotsChanged(player.getInventory());
     }
 
-    public void clearInventory(ServerPlayer player){
+    public void clearInventory(ServerPlayer player) {
         player.getInventory().clearOrCountMatchingItems((p_180029_) -> true, -1, player.inventoryMenu.getCraftSlots());
         player.containerMenu.broadcastChanges();
         player.inventoryMenu.slotsChanged(player.getInventory());
@@ -343,8 +389,10 @@ public abstract class BaseMap {
         player.inventoryMenu.slotsChanged(player.getInventory());
         player.inventoryMenu.broadcastChanges();
     }
+
     /**
      * 获取服务器世界
+     *
      * @return 服务器世界对象
      */
     public ServerLevel getServerLevel() {
@@ -353,6 +401,7 @@ public abstract class BaseMap {
 
     /**
      * 是否处于调试模式
+     *
      * @return 是否处于调试模式
      */
     public boolean isDebug() {
@@ -361,6 +410,7 @@ public abstract class BaseMap {
 
     /**
      * 切换调试模式
+     *
      * @return 切换后的调试模式状态
      */
     public boolean switchDebugMode() {
@@ -370,6 +420,7 @@ public abstract class BaseMap {
 
     /**
      * 获取地图名称
+     *
      * @return 地图名称
      */
     public String getMapName() {
@@ -378,26 +429,28 @@ public abstract class BaseMap {
 
     /**
      * 获取游戏类型
+     *
      * @return 游戏类型
      */
     public abstract String getGameType();
 
     /**
      * 重新加载地图逻辑
-     * */
-    public boolean reload(){
+     *
+     */
+    public boolean reload() {
         boolean flag = !MinecraftForge.EVENT_BUS.post(new FPSMapEvent.ReloadEvent(this));
-        if(flag){
+        if (flag) {
             loadConfig();
         }
         return flag;
     }
-    
-    public final void load(){
-        if(FPSMCore.getInstance().isRegistered(this)) return;
+
+    public final void load() {
+        if (FPSMCore.getInstance().isRegistered(this)) return;
 
         MinecraftForge.EVENT_BUS.post(new FPSMapEvent.LoadEvent(this));
-        FPSMCore.getInstance().registerMap(this.getGameType(),this);
+        FPSMCore.getInstance().registerMap(this.getGameType(), this);
     }
 
 
@@ -406,12 +459,13 @@ public abstract class BaseMap {
      *
      * @return 能力实例集合
      */
-    public CapabilityMap<BaseMap,MapCapability> getCapabilityMap() {
+    public CapabilityMap<BaseMap, MapCapability> getCapabilityMap() {
         return capabilities;
     }
 
     /**
      * 比较两张地图是否相等
+     *
      * @param object 比较对象
      * @return 是否相等
      */
@@ -425,6 +479,7 @@ public abstract class BaseMap {
 
     /**
      * 获取地图区域数据
+     *
      * @return 地图区域数据对象
      */
     public AreaData getMapArea() {
@@ -433,45 +488,47 @@ public abstract class BaseMap {
 
     /**
      * 发送数据包给所有玩家
+     *
      * @param packet 数据包对象
-     * @param <MSG> 数据包类型
+     * @param <MSG>  数据包类型
      */
     public <MSG> void sendPacketToAllPlayer(MSG packet) {
         this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid ->
-            this.getPlayerByUUID(uuid).ifPresent(player ->
-                this.sendPacketToJoinedPlayer(player, packet, true)
-            )
+                this.getPlayerByUUID(uuid).ifPresent(player ->
+                        this.sendPacketToJoinedPlayer(player, packet, true)
+                )
         );
     }
 
-    public <MSG> void sendPacketToSpecPlayer(MSG packet){
+    public <MSG> void sendPacketToSpecPlayer(MSG packet) {
         this.getMapTeams().getSpecPlayers().forEach(uuid ->
-            this.getPlayerByUUID(uuid).ifPresent(player ->
-                this.sendPacketToJoinedPlayer(player, packet, true)
-            )
+                this.getPlayerByUUID(uuid).ifPresent(player ->
+                        this.sendPacketToJoinedPlayer(player, packet, true)
+                )
         );
     }
 
-    public <MSG> void sendPacketToTeamPlayer(ServerTeam team ,MSG packet,boolean living){
+    public <MSG> void sendPacketToTeamPlayer(ServerTeam team, MSG packet, boolean living) {
         team.getPlayersData().forEach(data ->
-            data.getPlayer().ifPresent(player->{
-                if (data.isLiving() || !living) {
-                    this.sendPacketToJoinedPlayer(player, packet, true);
-                }
-            })
+                data.getPlayer().ifPresent(player -> {
+                    if (data.isLiving() || !living) {
+                        this.sendPacketToJoinedPlayer(player, packet, true);
+                    }
+                })
         );
     }
 
-    public <MSG> void sendPacketToTeamLivingPlayer(ServerTeam team ,MSG packet){
-        this.sendPacketToTeamPlayer(team,packet,true);
+    public <MSG> void sendPacketToTeamLivingPlayer(ServerTeam team, MSG packet) {
+        this.sendPacketToTeamPlayer(team, packet, true);
     }
 
     /**
      * 发送数据包给加入游戏的玩家
-     * @param player 玩家对象
-     * @param packet 数据包对象
+     *
+     * @param player  玩家对象
+     * @param packet  数据包对象
      * @param noCheck 是否跳过检查
-     * @param <MSG> 数据包类型
+     * @param <MSG>   数据包类型
      */
     public <MSG> void sendPacketToJoinedPlayer(@NotNull ServerPlayer player, MSG packet, boolean noCheck) {
         if (noCheck || this.checkGameHasPlayer(player)) {
@@ -485,15 +542,15 @@ public abstract class BaseMap {
         }
     }
 
-    public Optional<ServerPlayer> getPlayerByUUID(UUID uuid){
+    public Optional<ServerPlayer> getPlayerByUUID(UUID uuid) {
         return FPSMCore.getInstance().getPlayerByUUID(uuid);
     }
 
-    public void pullGameInfo(ServerPlayer player){
-        this.sendPacketToJoinedPlayer(player,new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()),true);
+    public void pullGameInfo(ServerPlayer player) {
+        this.sendPacketToJoinedPlayer(player, new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()), true);
     }
 
-    public final boolean isStart(){
+    public final boolean isStart() {
         return this.isStart;
     }
 
@@ -582,7 +639,7 @@ public abstract class BaseMap {
      */
     public File getConfigFile() {
         File file = FPSMCore.getInstance().getFPSMDataManager().getSaveFolder(this);
-        if(file == null){
+        if (file == null) {
             FPSMatch.LOGGER.error("Failed to get config file for map {} because ：Map is not implement ISavedData interface.", this.getMapName());
             return null;
         } else {
@@ -643,7 +700,7 @@ public abstract class BaseMap {
     /**
      * 添加一个整型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */
@@ -654,7 +711,7 @@ public abstract class BaseMap {
     /**
      * 添加一个长整型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */
@@ -665,7 +722,7 @@ public abstract class BaseMap {
     /**
      * 添加一个浮点型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */
@@ -676,7 +733,7 @@ public abstract class BaseMap {
     /**
      * 添加一个双精度浮点型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */
@@ -687,7 +744,7 @@ public abstract class BaseMap {
     /**
      * 添加一个字节型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */
@@ -698,7 +755,7 @@ public abstract class BaseMap {
     /**
      * 添加一个布尔型配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */
@@ -709,7 +766,7 @@ public abstract class BaseMap {
     /**
      * 添加一个字符串配置项。
      *
-     * @param configName 配置项名称。
+     * @param configName   配置项名称。
      * @param defaultValue 默认值。
      * @return 添加的配置项。
      */

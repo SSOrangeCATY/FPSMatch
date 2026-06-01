@@ -12,6 +12,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -230,10 +231,7 @@ public class FPSMapCommand {
     // ------------------------------ 团队相关处理方法 ------------------------------
     private static int handleJoinMapWithoutTarget(CommandContext<CommandSourceStack> context) {
         return FPSMCommand.getMap(context)
-                .map(map -> {
-                    map.join(context.getSource().getPlayer());
-                    return 1;
-                })
+                .map(map -> handleJoinResult(context.getSource(), context.getSource().getPlayer(), map.join(context.getSource().getPlayer()), null))
                 .orElse(0);
     }
 
@@ -241,8 +239,11 @@ public class FPSMapCommand {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, FPSMCommandSuggests.TARGETS_ARG);
         return FPSMCommand.getMap(context)
                 .map(map -> {
-                    players.forEach(map::join);
-                    return 1;
+                    int success = 0;
+                    for (ServerPlayer player : players) {
+                        success += handleJoinResult(context.getSource(), player, map.join(player), null);
+                    }
+                    return success;
                 })
                 .orElse(0);
     }
@@ -280,12 +281,11 @@ public class FPSMapCommand {
 
                     switch (action) {
                         case "join":
-                            players.forEach(player -> {
-                                map.join("spectator", player);
-                                FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.team.join.success",
-                                        player.getDisplayName(), team.getFixedName()));
-                            });
-                            break;
+                            int spectatorSuccess = 0;
+                            for (ServerPlayer player : players) {
+                                spectatorSuccess += handleJoinResult(context.getSource(), player, map.join("spectator", player), "spectator");
+                            }
+                            return spectatorSuccess;
                         case "leave":
                             players.forEach(player -> {
                                 map.leave(player);
@@ -297,7 +297,7 @@ public class FPSMapCommand {
                             FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.invalidAction"));
                             return 0;
                     }
-                    return 1;
+                    return players.size();
                 })
                 .orElseGet(() -> {
                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.map.notFound"));
@@ -311,37 +311,59 @@ public class FPSMapCommand {
         String action = StringArgumentType.getString(context, FPSMCommandSuggests.ACTION_ARG);
 
         return FPSMCommand.getMap(context)
-                .flatMap(map -> map.getMapTeams().getTeamByName(teamName)
-                        .map(team -> {
-                            switch (action) {
-                                case "join":
-                                    if (team.getRemainingLimit() - players.size() >= 0) {
-                                        players.forEach(player -> {
-                                            map.join(teamName, player);
-                                            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.team.join.success",
-                                                    player.getDisplayName(), team.getFixedName()));
-                                        });
-                                    } else {
-                                        FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.join.failure", team));
-                                    }
-                                    break;
-                                case "leave":
-                                    players.forEach(player -> {
-                                        map.leave(player);
-                                        FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.team.leave.success",
-                                                player.getDisplayName()));
-                                    });
-                                    break;
-                                default:
-                                    FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.invalidAction"));
-                                    return 0;
+                .map(map -> {
+                    switch (action) {
+                        case "join":
+                            int success = 0;
+                            for (ServerPlayer player : players) {
+                                success += handleJoinResult(context.getSource(), player, map.join(teamName, player), teamName);
                             }
-                            return 1;
-                        }))
+                            return success;
+                        case "leave":
+                            players.forEach(player -> {
+                                map.leave(player);
+                                FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.team.leave.success",
+                                        player.getDisplayName()));
+                            });
+                            return players.size();
+                        default:
+                            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.team.invalidAction"));
+                            return 0;
+                    }
+                })
                 .orElseGet(() -> {
                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.map.notFound"));
                     return 0;
                 });
+    }
+
+    private static int handleJoinResult(CommandSourceStack source, ServerPlayer player, MapTeams.JoinTeamResult result, String requestedTeamName) {
+        return switch (result.status()) {
+            case JOINED -> {
+                FPSMCommand.sendSuccess(source, Component.translatable("commands.fpsm.team.join.success",
+                        player.getDisplayName(), result.teamName()));
+                yield 1;
+            }
+            case TEAM_NOT_FOUND -> {
+                if (requestedTeamName != null) {
+                    FPSMCommand.sendFailure(source, Component.translatable("commands.fpsm.team.join.failure.null", requestedTeamName));
+                }
+                yield 0;
+            }
+            case TEAM_FULL -> {
+                if (requestedTeamName != null) {
+                    FPSMCommand.sendFailure(source, Component.translatable("commands.fpsm.team.join.failure.full", requestedTeamName));
+                } else {
+                    FPSMCommand.sendFailure(source, Component.translatable("commands.fpsm.team.join.failure.all_full"));
+                }
+                yield 0;
+            }
+            case MID_MATCH_JOIN_DISABLED -> {
+                FPSMCommand.sendFailure(source, Component.translatable("commands.fpsm.team.join.failure.in_progress"));
+                yield 0;
+            }
+            case NO_AVAILABLE_TEAM, CANCELLED -> 0;
+        };
     }
 
     /**
