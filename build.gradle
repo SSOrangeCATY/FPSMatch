@@ -118,6 +118,19 @@ repositories {
         name = "Mohist"
         url = "https://maven.mohistmc.com/"
     }
+    maven {
+        url "https://maven.latvian.dev/releases"
+        content {
+            includeGroup "dev.latvian.mods"
+            includeGroup "dev.latvian.apps"
+        }
+    }
+    maven {
+        url = "https://maven.architectury.dev"
+        content {
+            includeGroup "dev.architectury"
+        }
+    }
 
 }
 
@@ -154,6 +167,9 @@ dependencies {
     // JetBrains annotations for @NotNull and other annotations
     modCompileOnly "org.jetbrains:annotations:24.0.1"
     modCompileOnly "com.mohistmc:mohistdev:1.20.1"
+    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    modCompileOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
+    modCompileOnly("dev.architectury:architectury-forge:${architectury_version}")
     //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

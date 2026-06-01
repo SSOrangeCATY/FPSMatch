@@ -14,6 +14,7 @@ public class FPSMImpl {
     public static final String TACZ = "tacz";
     public static final String TACZ_TWEAKS = "tacztweaks";
     public static final String PHYSICS_MOD = "physicsmod";
+    public static final String KUBEJS = "kubejs";
 
     public static boolean findLrtacticalMod(){
        return isLoaded(LRTACTICAL);
@@ -37,6 +38,10 @@ public class FPSMImpl {
 
     public static boolean findPhysicsMod(){
         return isLoaded(PHYSICS_MOD);
+    }
+
+    public static boolean findKubeJS(){
+        return isLoaded(KUBEJS);
     }
 
     public static boolean withVersion(String modId, String version) {

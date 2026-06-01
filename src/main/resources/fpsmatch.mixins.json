@@ -7,6 +7,7 @@
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "ItemDropSoundMixin",
+    "LivingEntityIsDeadOrDyingMixin",
     "MixinDustParticleOptionsBase",
     "PlayerHurtSelfMixin",
     "PlayerKnockbackMixin",

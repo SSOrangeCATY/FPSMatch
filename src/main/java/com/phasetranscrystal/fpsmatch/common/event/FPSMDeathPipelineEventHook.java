@@ -24,7 +24,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,9 +47,18 @@ public class FPSMDeathPipelineEventHook {
 
 
     /**
+     * 本 tick 内被代理死亡的玩家 UUID（用于补全枪械击杀事件判定）。
+     */
+    private static final Set<UUID> RECENTLY_KILLED = new HashSet<>();
+
+    /**
      * 本 tick END 需要结算的死亡上下文
      */
     private static final ConcurrentHashMap<UUID, PendingDeath> readyDeaths = new ConcurrentHashMap<>();
+
+    public static boolean isRecentlyKilled(UUID uuid) {
+        return RECENTLY_KILLED.contains(uuid);
+    }
 
     /**
      * 伤害入口：
@@ -101,6 +112,7 @@ public class FPSMDeathPipelineEventHook {
                 // 对局内击杀/死亡统一由管线代理结算，阻止原版死亡落地
                 event.setCanceled(true);
                 player.setHealth(player.getMaxHealth());
+                RECENTLY_KILLED.add(player.getUUID());
 
                 FPSMapEvent.PlayerEvent.DeathEvent deathEvent = new FPSMapEvent.PlayerEvent.DeathEvent(map, player, event.getSource());
                 MinecraftForge.EVENT_BUS.post(deathEvent);
@@ -130,7 +142,7 @@ public class FPSMDeathPipelineEventHook {
      *     <li>不在此处直接做最终统计，统计统一在 finalize 阶段执行。</li>
      * </ul>
      */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent
     public static void onPlayerKillEvent(EntityKillByGunEvent event) {
         if (event.getLogicalSide() != LogicalSide.SERVER || !(event.getKilledEntity() instanceof ServerPlayer deadPlayer)) {
             return;
@@ -171,6 +183,7 @@ public class FPSMDeathPipelineEventHook {
         if (readyDeaths.isEmpty()) return;
         readyDeaths.forEach((uuid, pending) -> finalizeDeath(pending.map(), pending.context()));
         readyDeaths.clear();
+        RECENTLY_KILLED.clear();
     }
 
     /**
