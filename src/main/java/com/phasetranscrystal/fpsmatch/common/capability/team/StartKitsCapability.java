@@ -14,6 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.common.event.PlayerObtainItemEvent;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -23,6 +24,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -130,9 +132,12 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
         teamKits.forEach(itemStack -> {
             ItemStack copy = itemStack.copy();
             if (copy.getItem() instanceof ArmorItem armorItem) {
+                MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
                 player.setItemSlot(armorItem.getEquipmentSlot(), copy);
             } else {
-                player.getInventory().add(FPSMUtil.fixGunItem(copy));
+                FPSMUtil.fixGunItem(copy);
+                MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
+                player.getInventory().add(copy);
             }
         });
 

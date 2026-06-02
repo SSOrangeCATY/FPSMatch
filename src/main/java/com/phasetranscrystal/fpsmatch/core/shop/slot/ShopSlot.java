@@ -12,11 +12,13 @@ import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import com.phasetranscrystal.fpsmatch.common.event.PlayerObtainItemEvent;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -339,6 +341,8 @@ public class ShopSlot{
         DropType type = DropType.getItemDropType(itemStack);
 
         checkAndHandleExistingItems(player, type);
+
+        MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, itemStack));
 
         FPSMUtil.addItemToPlayerInventory(player, itemStack);
 
