@@ -10,6 +10,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.*;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
@@ -170,6 +171,14 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapCreatorToolActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(OpenSpawnPointToolScreenS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpawnPointToolActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(OpenMapSelectionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(MapSelectionAccessS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MapSelectionSnapshotS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MapRoomActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(MapRoomDetailS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MapRoomSettingsC2SPacket.class);
+        PACKET_REGISTER.registerPacket(MapRoomToastS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);
 
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }

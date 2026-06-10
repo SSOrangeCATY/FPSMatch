@@ -1,11 +1,15 @@
 package com.phasetranscrystal.fpsmatch.common.client.data;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,9 +34,17 @@ public class FPSMClientGlobalData {
     private final Map<String, ClientTeam> clientTeamData = new ConcurrentHashMap<>();
 
     private final DebugData debugData = new DebugData();
+    private volatile boolean mapSelectionButtonVisible;
+    private volatile MapSelectionSnapshotS2CPacket mapSelectionSnapshot;
+    private volatile MapRoomDetail mapRoomDetail;
+    private volatile MapRoomToastS2CPacket mapRoomToast;
+    private volatile MapRoomInvitation mapRoomInvitation;
 
     public DebugData getDebugData() {
         return debugData;
+    }
+
+    public record MapRoomInvitation(String gameType, String mapName, Component message, long receivedAtMillis) {
     }
 
     // 记录类用于简化数据传递
@@ -284,6 +296,59 @@ public class FPSMClientGlobalData {
         this.playersMoney.clear();
         this.clientShopData.clear();
         this.clientTeamData.clear();
+        clearMapSelectData();
+    }
+
+    public Optional<MapSelectionSnapshotS2CPacket> getMapSelectionSnapshot() {
+        return Optional.ofNullable(mapSelectionSnapshot);
+    }
+
+    public void setMapSelectionSnapshot(MapSelectionSnapshotS2CPacket mapSelectionSnapshot) {
+        this.mapSelectionSnapshot = mapSelectionSnapshot;
+    }
+
+    public boolean isMapSelectionButtonVisible() {
+        return mapSelectionButtonVisible;
+    }
+
+    public void setMapSelectionButtonVisible(boolean mapSelectionButtonVisible) {
+        this.mapSelectionButtonVisible = mapSelectionButtonVisible;
+    }
+
+    public Optional<MapRoomDetail> getMapRoomDetail() {
+        return Optional.ofNullable(mapRoomDetail);
+    }
+
+    public void setMapRoomDetail(MapRoomDetail mapRoomDetail) {
+        this.mapRoomDetail = mapRoomDetail;
+    }
+
+    public Optional<MapRoomToastS2CPacket> getMapRoomToast() {
+        return Optional.ofNullable(mapRoomToast);
+    }
+
+    public void setMapRoomToast(MapRoomToastS2CPacket mapRoomToast) {
+        this.mapRoomToast = mapRoomToast;
+    }
+
+    public Optional<MapRoomInvitation> getMapRoomInvitation() {
+        return Optional.ofNullable(mapRoomInvitation);
+    }
+
+    public void setMapRoomInvitation(String gameType, String mapName, Component message) {
+        this.mapRoomInvitation = new MapRoomInvitation(gameType, mapName, message, System.currentTimeMillis());
+    }
+
+    public void clearMapRoomInvitation() {
+        this.mapRoomInvitation = null;
+    }
+
+    public void clearMapSelectData() {
+        this.mapSelectionButtonVisible = false;
+        this.mapSelectionSnapshot = null;
+        this.mapRoomDetail = null;
+        this.mapRoomToast = null;
+        this.mapRoomInvitation = null;
     }
 
     // === Getter/Setter ===

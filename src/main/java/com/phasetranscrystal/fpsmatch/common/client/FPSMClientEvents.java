@@ -5,13 +5,18 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderableArea;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderablePoint;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -21,6 +26,20 @@ import java.util.Collection;
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class FPSMClientEvents
 {
+    @SubscribeEvent
+    public static void onScreenInit(ScreenEvent.Init.Post event) {
+        if (!(event.getScreen() instanceof PauseScreen)) {
+            return;
+        }
+        if (!FPSMClient.getGlobalData().isMapSelectionButtonVisible()) {
+            return;
+        }
+        event.addListener(Button.builder(Component.translatable("gui.fpsm.map_select.open"), button -> FPSMatch.sendToServer(new OpenMapSelectionC2SPacket()))
+                .pos(event.getScreen().width / 2 - 102, event.getScreen().height / 4 + 120)
+                .size(204, 20)
+                .build());
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getInstance();

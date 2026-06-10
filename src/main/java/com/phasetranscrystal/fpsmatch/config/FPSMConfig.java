@@ -15,6 +15,7 @@ public class FPSMConfig {
         public static ForgeConfigSpec.BooleanValue disableRenderNameTag;
         public static ForgeConfigSpec.BooleanValue disableRenderHitBox;
         public static ForgeConfigSpec.BooleanValue disableRenderHeadShotHitBox;
+        public static ForgeConfigSpec.BooleanValue enableMapSelectionButtonForNonOps;
 
         public static void init(ForgeConfigSpec.Builder builder) {
             lock3PersonCamera = builder.comment(
@@ -47,6 +48,11 @@ public class FPSMConfig {
             disableRenderHeadShotHitBox = builder.comment(
                     "禁止渲染爆头碰撞箱"
             ).define("disableRenderHeadShotHitBox", true);
+
+            enableMapSelectionButtonForNonOps = builder.comment(
+                    "允许非 OP 玩家在 ESC 暂停界面看到 FPSMatch 地图选择按钮",
+                    "Allow non-OP players to see the FPSMatch map selection button in the ESC pause screen"
+            ).define("EnableMapSelectionButtonForNonOps", true);
         }
 
     }

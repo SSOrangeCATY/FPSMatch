@@ -230,7 +230,15 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Boolean> of(String configName, boolean defaultValue) {
-        return new Setting<>(configName, Codec.BOOL, defaultValue, Boolean::parseBoolean);
+        return new Setting<>(configName, Codec.BOOL, defaultValue, value -> {
+            if ("true".equalsIgnoreCase(value)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            }
+            throw new IllegalArgumentException("Invalid boolean: " + value);
+        });
     }
 
     /**

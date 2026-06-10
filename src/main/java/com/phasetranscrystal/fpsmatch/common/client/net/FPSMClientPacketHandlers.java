@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.common.client.data.RenderableArea;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderablePoint;
 import com.phasetranscrystal.fpsmatch.common.client.screen.MapCreatorToolScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.SpawnPointToolScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.AddPointDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
@@ -19,6 +20,11 @@ import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.client.music.FPSClientMusicManager;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
@@ -161,5 +167,37 @@ public final class FPSMClientPacketHandlers {
         data.setHeadshotKills(packet.getHeadshotKills());
         data.setHealthPercent(packet.getHealthPercent());
         FPSMClient.getGlobalData().updatePlayerTeamData(packet.getTeamName(), packet.getUuid(), data);
+    }
+
+    public static void handleMapSelectionSnapshot(MapSelectionSnapshotS2CPacket packet) {
+        FPSMClient.getGlobalData().setMapSelectionSnapshot(packet);
+        FPSMClient.getGlobalData().setMapSelectionButtonVisible(packet.viewerOp() || packet.nonOpButtonEnabled());
+        FPSMMapSelectScreens.openSelection(packet);
+    }
+
+    public static void handleMapSelectionAccess(MapSelectionAccessS2CPacket packet) {
+        FPSMClient.getGlobalData().setMapSelectionButtonVisible(packet.visible());
+    }
+
+    public static void handleMapRoomDetail(MapRoomDetailS2CPacket packet) {
+        FPSMClient.getGlobalData().setMapRoomDetail(packet.detail());
+        FPSMMapSelectScreens.openDetail(packet);
+    }
+
+    public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        FPSMClient.getGlobalData().setMapRoomToast(packet);
+        if (minecraft.player != null) {
+            minecraft.player.displayClientMessage(packet.message(), packet.error());
+        }
+    }
+
+    public static void handleMapRoomInvitation(MapRoomInvitationS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        FPSMClient.getGlobalData().setMapRoomInvitation(packet.gameType(), packet.mapName(), packet.message());
+        if (minecraft.player != null) {
+            minecraft.player.displayClientMessage(packet.message(), false);
+        }
+        FPSMMapSelectScreens.openInvitation(packet);
     }
 }
