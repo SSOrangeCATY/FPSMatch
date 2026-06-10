@@ -84,9 +84,13 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     public static void setPlayerMoney(BaseMap map, UUID playerUUID, int money){
-        getPlayerShopData(map, playerUUID).ifPresent(shopData -> {
-            shopData.setMoney(money);
-        });
+        map.getMapTeams().getTeamByPlayer(playerUUID)
+                .flatMap(team -> team.getCapabilityMap().get(ShopCapability.class))
+                .flatMap(ShopCapability::getShopSafe)
+                .ifPresent(shop -> {
+                    shop.getPlayerShopData(playerUUID).setMoney(money);
+                    shop.syncShopMoneyData(playerUUID);
+                });
     }
 
     public static void setPlayerMoney(BaseMap map, int money){
@@ -98,6 +102,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
                         team.getPlayerList().forEach(player -> {
                             shop.getPlayerShopData(player).setMoney(money);
                         });
+                        shop.syncShopMoneyData();
                     });
         });
     }
