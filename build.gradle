@@ -22,7 +22,7 @@ base {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
 
@@ -219,6 +219,14 @@ publishing {
             artifact sourcesJar
         }
     }
+}
+
+tasks.named('createMinecraftArtifacts').configure {
+    def java21Executable = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }.map { it.executablePath.asFile.absolutePath }
+    toolsJavaExecutable.set(java21Executable)
+    javaExecutable.set(java21Executable)
 }
 
 tasks.withType(JavaCompile).configureEach {
