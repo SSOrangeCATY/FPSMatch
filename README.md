@@ -79,6 +79,7 @@ For source builds published through the project's own Maven publishing configura
 | Resource | Link |
 | --- | --- |
 | GitHub | [SSOrangeCATY/FPSMatch](https://github.com/SSOrangeCATY/FPSMatch) |
+| Wiki | [Developer Wiki](https://github.com/SSOrangeCATY/FPSMatch/wiki) |
 | BlockOffensive | [SSOrangeCATY/BlockOffensive](https://github.com/SSOrangeCATY/BlockOffensive) |
 | Command helper | [CommandHelper_en-us.md](https://github.com/SSOrangeCATY/FPSMatch/blob/master/CommandHelper_en-us.md) |
 | Bilibili | [Author page](https://space.bilibili.com/21254202) |

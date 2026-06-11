@@ -79,6 +79,7 @@ dependencies {
 | 资源 | 链接 |
 | --- | --- |
 | GitHub | [SSOrangeCATY/FPSMatch](https://github.com/SSOrangeCATY/FPSMatch) |
+| Wiki | [开发者 Wiki](https://github.com/SSOrangeCATY/FPSMatch/wiki) |
 | BlockOffensive | [SSOrangeCATY/BlockOffensive](https://github.com/SSOrangeCATY/BlockOffensive) |
 | 指令帮助 | [CommandHelper_en-us.md](https://github.com/SSOrangeCATY/FPSMatch/blob/master/CommandHelper_en-us.md) |
 | Bilibili | [作者主页](https://space.bilibili.com/21254202) |
