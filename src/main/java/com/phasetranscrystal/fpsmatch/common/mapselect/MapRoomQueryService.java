@@ -1,5 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.mapselect;
 
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
@@ -28,6 +30,29 @@ public final class MapRoomQueryService {
         return FPSMCore.getInstance().getMapByTypeWithName(gameType, mapName);
     }
 
+    public static List<EditableShopInfo> listEditableShops(String gameType, String mapName) {
+        return findMap(gameType, mapName)
+                .map(MapRoomQueryService::editableShops)
+                .orElseGet(List::of);
+    }
+
+    public static boolean supportsShopEditing(String gameType, String mapName) {
+        return !listEditableShops(gameType, mapName).isEmpty();
+    }
+
+    private static List<EditableShopInfo> editableShops(BaseMap map) {
+        return map.getMapTeams().getNormalTeams().stream()
+                .filter(team -> ShopCapability.getShop(team).isPresent())
+                .map(team -> editableShopInfo(map, team))
+                .sorted(Comparator.comparing(EditableShopInfo::displayName).thenComparing(EditableShopInfo::teamName))
+                .toList();
+    }
+
+    private static EditableShopInfo editableShopInfo(BaseMap map, ServerTeam team) {
+        String teamName = team.getName();
+        return new EditableShopInfo(map.getGameType(), map.getMapName(), teamName, teamName);
+    }
+
     public static List<MapRoomSummary> summaries(ServerPlayer viewer) {
         List<MapRoomSummary> summaries = new ArrayList<>();
         if (!FPSMCore.initialized()) {
@@ -44,6 +69,7 @@ public final class MapRoomQueryService {
                 players(map),
                 settings(viewer, map),
                 availableInviteTargets(viewer, map),
+                editableShops(map),
                 "gui.fpsm.map_select.rules." + map.getGameType(),
                 "",
                 ""

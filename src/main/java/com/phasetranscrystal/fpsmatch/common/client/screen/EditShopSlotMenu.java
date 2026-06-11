@@ -3,12 +3,13 @@ package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
+import com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
-import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.common.item.ShopEditTool;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.network.FriendlyByteBuf;
@@ -25,39 +26,50 @@ import java.util.Optional;
 
 
 public class EditShopSlotMenu extends AbstractContainerMenu {
+    private static final int ID_MAX_LENGTH = 128;
+
     private final ContainerData data;
     private final ItemStackHandler itemHandler;
     private final ShopSlot shopSlot;
-    private final ItemStack guiItemStack;
-    private final int repoIndex;
+    private final String gameType;
+    private final String mapName;
+    private final String teamName;
+    private final String shopType;
+    private final int slotNum;
 
-    public ItemStack getGuiItemStack() {
-        return guiItemStack;
-    }
-
-    public EditShopSlotMenu(int id, Inventory playerInventory, ShopSlot shopSlot, ItemStack guiItemStack, int repoIndex) {
-        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), shopSlot, guiItemStack, repoIndex);
+    public EditShopSlotMenu(int id, Inventory playerInventory, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
+        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), shopSlot, gameType, mapName, teamName, shopType, slotNum);
     }
 
     public EditShopSlotMenu(int id, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(id, playerInventory, FPSMCodec.decodeFromJson(ShopSlot.CODEC,new Gson().fromJson(buf.readUtf(), JsonElement.class)), buf.readItem(), buf.readInt());
+        this(
+                id,
+                playerInventory,
+                FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(buf.readUtf(), JsonElement.class)),
+                buf.readUtf(ID_MAX_LENGTH),
+                buf.readUtf(ID_MAX_LENGTH),
+                buf.readUtf(ID_MAX_LENGTH),
+                buf.readUtf(ID_MAX_LENGTH),
+                buf.readInt()
+        );
     }
 
-    public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot, ItemStack guiItemStack, int repoIndex) {
+    public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
         super(VanillaGuiRegister.EDIT_SHOP_SLOT_MENU.get(), id);
         this.itemHandler = handler;
         this.data = data;
         this.shopSlot = shopSlot;
-        this.guiItemStack = guiItemStack;
-        this.repoIndex = repoIndex;
+        this.gameType = gameType;
+        this.mapName = mapName;
+        this.teamName = teamName;
+        this.shopType = shopType;
+        this.slotNum = slotNum;
         this.setAmmo(shopSlot.getAmmoCount());
         this.setPrice(shopSlot.getDefaultCost());
         this.setGroupId(shopSlot.getGroupId());
         this.itemHandler.setStackInSlot(0, this.shopSlot.process());
-        // 左侧物品格子
         this.addSlot(new SlotItemHandler(itemHandler, 0, 20, 20));
 
-        // 玩家物品栏
         addPlayerInventory(playerInventory, 8, 124);
 
         addDataSlots(data);
@@ -75,7 +87,6 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         }
     }
 
-    //shift 交互忽略
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
         return ItemStack.EMPTY;
@@ -83,7 +94,6 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        //WIP 类型检验
         return true;
     }
 
@@ -93,24 +103,27 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     public void saveData(ServerPlayer serverPlayer) {
-        if (guiItemStack.getItem() instanceof ShopEditTool shopEditTool) {
-            Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(shopEditTool.getTag(guiItemStack, ShopEditTool.MAP_TAG));
-            if (map.isPresent()) {
-                FPSMShop<?> shop = ShopEditTool.getShop(guiItemStack).orElse(null);
-                if (shop == null) return;
-                //保存内容,先保存物品后设置内容
-                shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
-                ItemStack slotStack = shopSlot.process();
-                shopSlot.setDefaultCost(this.getPrice());
-                shopSlot.setGroupId(this.getGroupId());
-                if (slotStack.getItem() instanceof IGun iGun) {
-                    FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
-                }
-                shop.replaceDefaultShopData(shop.getEnums().get(this.repoIndex % 5).name(), this.repoIndex / 5, shopSlot);
-                //同步
-                shop.syncShopData();
-            }
+        Optional<FPSMShop<?>> resolvedShop = MapRoomQueryService.findMap(gameType, mapName)
+                .flatMap(this::resolveTeam)
+                .flatMap(ShopCapability::getShop);
+        if (resolvedShop.isEmpty()) {
+            return;
         }
+
+        FPSMShop<?> shop = resolvedShop.get();
+        shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
+        ItemStack slotStack = shopSlot.process();
+        shopSlot.setDefaultCost(this.getPrice());
+        shopSlot.setGroupId(this.getGroupId());
+        if (slotStack.getItem() instanceof IGun iGun) {
+            FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
+        }
+        shop.replaceDefaultShopData(shopType, slotNum, shopSlot);
+        shop.syncShopData();
+    }
+
+    private Optional<ServerTeam> resolveTeam(BaseMap map) {
+        return map.getMapTeams().getTeamByName(teamName);
     }
 
     public List<String> getListeners() {
@@ -143,6 +156,18 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     public void setGroupId(int groupId) {
         this.data.set(2, groupId);
+    }
+
+    public String getGameType() {
+        return gameType;
+    }
+
+    public String getMapName() {
+        return mapName;
+    }
+
+    public String getTeamName() {
+        return teamName;
     }
 
     public ContainerData getData() {

@@ -159,8 +159,14 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        renderShopIdentity(guiGraphics);
         renderHoveredSlotHighlight(guiGraphics, mouseX, mouseY);
         renderShopSlotTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void renderShopIdentity(GuiGraphics guiGraphics) {
+        guiGraphics.drawCenteredString(font, title, width / 2, 12, 0xFFFFFFFF);
+        guiGraphics.drawCenteredString(font, Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()), width / 2, 26, 0xFFB8D4E3);
     }
 
     private void renderHoveredSlotHighlight(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -202,16 +208,13 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     }
 
     private int getHoveredCustomSlotIndex(int mouseX, int mouseY) {
-        int relativeMouseX = mouseX - this.leftPos;
-        int relativeMouseY = mouseY - this.topPos;
-
         for (int i = 0; i < menu.slots.size(); i++) {
             Slot slot = menu.slots.get(i);
-            int slotRelX = this.leftPos + getSlotX(slot);
-            int slotRelY = this.topPos + getSlotY(slot);
+            int slotScreenX = this.leftPos + getSlotX(slot);
+            int slotScreenY = this.topPos + getSlotY(slot);
 
-            boolean isHoveredX = relativeMouseX >= slotRelX && relativeMouseX < slotRelX + SLOT_SIZE;
-            boolean isHoveredY = relativeMouseY >= slotRelY && relativeMouseY < slotRelY + SLOT_SIZE;
+            boolean isHoveredX = mouseX >= slotScreenX && mouseX < slotScreenX + SLOT_SIZE;
+            boolean isHoveredY = mouseY >= slotScreenY && mouseY < slotScreenY + SLOT_SIZE;
             if (isHoveredX && isHoveredY) {
                 return i;
             }

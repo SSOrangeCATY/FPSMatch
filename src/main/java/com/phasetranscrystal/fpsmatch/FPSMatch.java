@@ -156,7 +156,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMatchRespawnS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamPlayerStatsS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamPlayerLeaveS2CPacket.class);
-        PACKET_REGISTER.registerPacket(OpenEditorC2SPacket.class);
+        PACKET_REGISTER.registerPacket(OpenShopEditorC2SPacket.class);
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);

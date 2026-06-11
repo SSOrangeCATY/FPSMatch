@@ -308,7 +308,7 @@ public abstract class EditToolItem extends FPSMToolItem {
             case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
             case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
         };
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.selected.mode")
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.mode")
                 .append(": ")
                 .append(modeName.withStyle(ChatFormatting.BLUE)));
 
@@ -318,19 +318,19 @@ public abstract class EditToolItem extends FPSMToolItem {
         String selectedMap = getTag(pStack, MAP_TAG);
         String selectedShop = getTag(pStack, TEAM_TAG);
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.selected.type")
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.type")
                 .append(": ")
                 .append(Component.literal(selectedType.isEmpty() ?
                                 Component.translatable("tooltip.fpsm.none").getString() : selectedType)
                         .withStyle(ChatFormatting.LIGHT_PURPLE)));
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.selected.map")
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.map")
                 .append(": ")
                 .append(Component.literal(selectedMap.isEmpty() ?
                                 Component.translatable("tooltip.fpsm.none").getString() : selectedMap)
                         .withStyle(ChatFormatting.AQUA)));
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.shop_edit_tool.selected.shop")
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.team")
                 .append(": ")
                 .append(Component.literal(selectedShop.isEmpty() ?
                                 Component.translatable("tooltip.fpsm.none").getString() : selectedShop)

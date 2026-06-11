@@ -30,8 +30,6 @@ public class FPSMItemRegister {
             () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1), GrenadeEntity::new, FPSMSoundRegister.VOICE_GRENADE::get));
     public static final RegistryObject<BaseThrowAbleItem> FLASH_BOMB = ITEMS.register("flash_bomb",
             () -> new BaseThrowAbleItem(new Item.Properties().stacksTo(1), FlashBombEntity::new, FPSMSoundRegister.VOICE_FLASH::get));
-    public static final RegistryObject<Item> SHOP_EDIT_TOOL = ITEMS.register("shop_edit_tool",
-            () -> new ShopEditTool(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<Item> BULLETPROOF_ARMOR = ITEMS.register("bulletproof_armor", () -> new BulletproofArmor(new Item.Properties().stacksTo(1),false));
     public static final RegistryObject<Item> BULLETPROOF_WITH_HELMET = ITEMS.register("bulletproof_with_helmet", () -> new BulletproofArmor(new Item.Properties().stacksTo(1),true));
 

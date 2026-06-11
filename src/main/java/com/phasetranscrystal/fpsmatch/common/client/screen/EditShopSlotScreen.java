@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenEditorC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -96,7 +96,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256) {
-            FPSMatch.INSTANCE.sendToServer(new OpenEditorC2SPacket());
+            openShopEditor();
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
@@ -108,8 +108,12 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         LocalPlayer player = Minecraft.getInstance().player;
 
         if (player != null) {
-            FPSMatch.INSTANCE.sendToServer(new OpenEditorC2SPacket());
+            openShopEditor();
         }
+    }
+
+    private void openShopEditor() {
+        FPSMatch.INSTANCE.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
     }
 
     private void drawLabel(GuiGraphics guiGraphics, Component text, EditBox field) {

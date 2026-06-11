@@ -23,6 +23,7 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
     private Button leaveButton;
     private Button settingsButton;
     private Button manageButton;
+    private Button shopButton;
     private Button inviteButton;
 
     public FPSMMapDetailScreen(MapRoomDetail detail, Screen parent) {
@@ -51,10 +52,13 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
                 .bounds(centerX - 129, height - 52, 80, 20)
                 .build());
         settingsButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.settings"), button -> FPSMMapSelectScreens.openChild(new FPSMMapSettingsScreen(detail, this)))
-                .bounds(centerX - 43, height - 52, 80, 20)
+                .bounds(centerX - 80, height - 76, 76, 20)
                 .build());
         manageButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.manage"), button -> FPSMMapSelectScreens.openChild(new FPSMMapManageScreen(detail, this)))
-                .bounds(centerX + 43, height - 52, 80, 20)
+                .bounds(centerX + 4, height - 76, 76, 20)
+                .build());
+        shopButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_detail.edit_shop"), button -> FPSMMapSelectScreens.openChild(new FPSMMapShopScreen(detail, this)))
+                .bounds(centerX + 88, height - 76, 96, 20)
                 .build());
         inviteButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.invite"), button -> FPSMMapSelectScreens.openChild(new FPSMMapInviteScreen(detail, this)))
                 .bounds(centerX + 129, height - 52, 80, 20)
@@ -138,6 +142,9 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
         }
         if (manageButton != null) {
             manageButton.active = hasDetail && summary.currentPlayerOp();
+        }
+        if (shopButton != null) {
+            shopButton.active = hasDetail && summary.currentPlayerOp();
         }
         if (inviteButton != null) {
             inviteButton.active = hasDetail && joined && !detail.availableInviteTargets().isEmpty();

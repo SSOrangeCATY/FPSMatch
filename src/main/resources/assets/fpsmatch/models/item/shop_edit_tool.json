@@ -1,6 +1,0 @@
-{
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "fpsmatch:item/shop_edit_tool"
-  }
-}

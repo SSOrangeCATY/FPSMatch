@@ -10,6 +10,7 @@ public record MapRoomDetail(
         List<MapRoomPlayerInfo> players,
         List<MapRoomSettingInfo> settings,
         List<MapRoomPlayerInfo> availableInviteTargets,
+        List<EditableShopInfo> editableShops,
         String rulesKey,
         String iconTexture,
         String backgroundTexture
@@ -21,6 +22,7 @@ public record MapRoomDetail(
         buf.writeCollection(detail.players(), (buffer, info) -> MapRoomPlayerInfo.encode(info, buffer));
         buf.writeCollection(detail.settings(), (buffer, info) -> MapRoomSettingInfo.encode(info, buffer));
         buf.writeCollection(detail.availableInviteTargets(), (buffer, info) -> MapRoomPlayerInfo.encode(info, buffer));
+        buf.writeCollection(detail.editableShops(), (buffer, info) -> info.encode(buffer));
         buf.writeUtf(detail.rulesKey(), RESOURCE_MAX_LENGTH);
         buf.writeUtf(detail.iconTexture(), RESOURCE_MAX_LENGTH);
         buf.writeUtf(detail.backgroundTexture(), RESOURCE_MAX_LENGTH);
@@ -31,6 +33,7 @@ public record MapRoomDetail(
         List<MapRoomPlayerInfo> players = buf.readCollection(ArrayList::new, MapRoomPlayerInfo::decode);
         List<MapRoomSettingInfo> settings = buf.readCollection(ArrayList::new, MapRoomSettingInfo::decode);
         List<MapRoomPlayerInfo> availableInviteTargets = buf.readCollection(ArrayList::new, MapRoomPlayerInfo::decode);
-        return new MapRoomDetail(summary, players, settings, availableInviteTargets, buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH));
+        List<EditableShopInfo> editableShops = buf.readCollection(ArrayList::new, EditableShopInfo::decode);
+        return new MapRoomDetail(summary, players, settings, availableInviteTargets, editableShops, buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH));
     }
 }
