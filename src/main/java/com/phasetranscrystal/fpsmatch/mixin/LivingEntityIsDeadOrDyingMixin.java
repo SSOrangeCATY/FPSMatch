@@ -16,7 +16,8 @@ public class LivingEntityIsDeadOrDyingMixin {
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/LivingEntity;isDeadOrDying()Z"
-            )
+            ),
+            require = 0
     )
     private boolean fpsmatch$proxyDeathCheck(LivingEntity livingCore) {
         if (livingCore.isDeadOrDying()) {
