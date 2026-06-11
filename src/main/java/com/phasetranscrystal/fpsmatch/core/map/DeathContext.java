@@ -25,6 +25,7 @@ public final class DeathContext {
     private boolean headShot;
     private boolean passWall;
     private boolean passSmoke;
+    private boolean scopedKill;
     @Nullable
     private Entity gunBullet;
     private final long createdTick;
@@ -100,6 +101,14 @@ public final class DeathContext {
 
     public void setPassSmoke(boolean passSmoke) {
         this.passSmoke = passSmoke;
+    }
+
+    public boolean isScopedKill() {
+        return scopedKill;
+    }
+
+    public void setScopedKill(boolean scopedKill) {
+        this.scopedKill = scopedKill;
     }
 
     @Nullable

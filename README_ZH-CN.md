@@ -21,10 +21,10 @@ FPSMatch 是面向 Minecraft 1.20.1 Forge 的库模组，为团队制竞技 FPS 
 
 带 `*` 的列为必须依赖，未标注的模组列为兼容集成项。
 
-| FPSMatch | 分发来源 | Minecraft* | Forge* | Modern UI | TaCZ* | LR Tactical | CounterStrikeGrenade | KubeJS |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.3.0 | GitHub snapshot | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
-| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
+| FPSMatch | 分发来源 | Minecraft* | Forge* | Modern UI | TaCZ* | TaCZ Tweaks | LR Tactical | CounterStrikeGrenade | KubeJS |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.3.0 | GitHub snapshot | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 2.11.2 | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
+| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | - | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
 
 ## 下载
 

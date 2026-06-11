@@ -21,10 +21,10 @@ FPSMatch is a Forge library mod for Minecraft 1.20.1 that provides the foundatio
 
 Columns marked with `*` are required dependencies. Unmarked mod columns are compatibility integrations.
 
-| FPSMatch | Distribution | Minecraft* | Forge* | Modern UI | TaCZ* | LR Tactical | CounterStrikeGrenade | KubeJS |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.3.0 | GitHub snapshot | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
-| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
+| FPSMatch | Distribution | Minecraft* | Forge* | Modern UI | TaCZ* | TaCZ Tweaks | LR Tactical | CounterStrikeGrenade | KubeJS |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.3.0 | GitHub snapshot | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 2.11.2 | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
+| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | - | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
 
 ## Download
 

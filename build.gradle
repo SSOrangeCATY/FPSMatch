@@ -21,6 +21,8 @@ base {
     archivesName = mod_id
 }
 
+def taczTweaksVersion = findProperty('tacztweak_version') ?: rootProject.findProperty('tacztweak_version') ?: '2.11.2'
+
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
@@ -156,7 +158,10 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
     modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.3"))
     modImplementation "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
+    modImplementation "maven.modrinth:tacz-tweaks:${taczTweaksVersion}"
     modImplementation "curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599"
     modImplementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
     modRuntimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"

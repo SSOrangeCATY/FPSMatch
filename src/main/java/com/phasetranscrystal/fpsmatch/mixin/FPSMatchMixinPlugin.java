@@ -25,7 +25,13 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        // Only apply LRTactical-specific mixins when LRTactical is loaded
+        boolean taczTweaksLoaded = FPSMImpl.findTaczTweaks();
+        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.DefaultAmmoMixin")) {
+            return !taczTweaksLoaded;
+        }
+        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.TweakAmmoMixin")) {
+            return taczTweaksLoaded;
+        }
         if (mixinClassName.contains("compat.spectate.lrt")) {
             return FPSMImpl.findLrtacticalMod();
         }

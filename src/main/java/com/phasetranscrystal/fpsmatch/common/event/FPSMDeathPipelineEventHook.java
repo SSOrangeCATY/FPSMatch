@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.IGun;
@@ -160,6 +161,11 @@ public class FPSMDeathPipelineEventHook {
             context.setGunKill(true);
             context.setHeadShot(event.isHeadShot());
             context.setGunBullet(event.getBullet());
+            if (event.getBullet() instanceof IPassThroughEntity passThroughEntity) {
+                context.setPassWall(passThroughEntity.fpsmatch$isWall());
+                context.setPassSmoke(passThroughEntity.fpsmatch$isSmoke());
+                context.setScopedKill(passThroughEntity.fpsmatch$isScoped());
+            }
 
             ServerPlayer contextAttacker = context.getAttacker();
             if (contextAttacker == null) {
