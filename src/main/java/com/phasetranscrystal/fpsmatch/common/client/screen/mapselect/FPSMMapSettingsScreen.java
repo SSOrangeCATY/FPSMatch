@@ -9,18 +9,27 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildScreen {
-    private static final int PANEL_WIDTH = 420;
+    private static final int GUI_SHADOW_COLOR = 0x80000000;
+    private static final int GUI_MAIN_BACKGROUND = 0xFF444444;
+    private static final int GUI_INNER_BORDER = 0xFF666666;
+    private static final int GUI_OUTER_BORDER = 0xFF222222;
+    private static final int GUI_PADDING = 4;
+
     private static final int ROW_HEIGHT = 28;
-    private static final int LIST_TOP = 72;
+    private static final int LIST_TOP = 62;
 
     private MapRoomDetail detail;
     private final Screen parent;
     private final List<EditBox> valueFields = new ArrayList<>();
+    private final List<Button> applyButtons = new ArrayList<>();
+    private final List<Integer> rowBaseY = new ArrayList<>();
+    private int scrollOffset;
 
     public FPSMMapSettingsScreen(MapRoomDetail detail, Screen parent) {
         super(Component.translatable("gui.fpsm.map_select.settings.title"));
@@ -42,23 +51,31 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     protected void rebuildWidgets() {
         clearWidgets();
         valueFields.clear();
-        int left = width / 2 - PANEL_WIDTH / 2;
-        int y = LIST_TOP;
-        for (int i = 0; i < Math.min(detail.settings().size(), visibleRows()); i++) {
+        applyButtons.clear();
+        rowBaseY.clear();
+
+        int left = width / 2 - 210;
+
+        for (int i = 0; i < detail.settings().size(); i++) {
             MapRoomSettingInfo setting = detail.settings().get(i);
-            EditBox field = new EditBox(font, left + 176, y + 5, 150, 18, Component.literal(setting.name()));
+            int baseY = LIST_TOP + i * ROW_HEIGHT;
+            rowBaseY.add(baseY);
+
+            EditBox field = new EditBox(font, left + 176, baseY + 5, 150, 18, Component.literal(setting.name()));
             field.setMaxLength(128);
             field.setValue(setting.value());
             field.setEditable(setting.editable());
             addRenderableWidget(field);
             valueFields.add(field);
+
             Button applyButton = Button.builder(Component.translatable("gui.fpsm.map_select.apply"), button -> applySetting(setting, field))
-                    .bounds(left + 334, y + 4, 70, 20)
+                    .bounds(left + 334, baseY + 4, 70, 20)
                     .build();
             applyButton.active = setting.editable();
             addRenderableWidget(applyButton);
-            y += ROW_HEIGHT;
+            applyButtons.add(applyButton);
         }
+
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
                 .bounds(width / 2 - 50, height - 52, 100, 20)
                 .build());
@@ -73,22 +90,88 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, 0xFFB8D4E3);
-        int left = width / 2 - PANEL_WIDTH / 2;
-        int bottom = Math.min(height - 84, LIST_TOP + visibleRows() * ROW_HEIGHT);
-        graphics.fill(left - 6, LIST_TOP - 6, left + PANEL_WIDTH + 6, bottom + 6, 0x77000000);
+        renderMultiLayerBackground(graphics);
+
+        // 标题
+        graphics.drawCenteredString(font, title, width / 2, 12, 0xFFFFFFFF);
+        if (detail != null) {
+            graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 26, 0xFFB8D4E3);
+        }
+
+        int contentHeight = height - LIST_TOP - 62;
+        int visibleRows = Math.max(1, contentHeight / ROW_HEIGHT);
+        int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+
+        // 内容区背景
+        int left = width / 2 - 210;
+        int right = width / 2 + 210;
+        int panelTop = LIST_TOP - 2;
+        int panelBottom = height - 60;
+        graphics.fill(left - 6, panelTop, right + 6, panelBottom, 0x77000000);
+        graphics.fill(left - 6, panelTop, right + 6, panelTop + 1, 0xFF666666);
+        graphics.fill(left - 6, panelBottom - 1, right + 6, panelBottom, 0xFF666666);
+
+        // 裁剪区域
+        graphics.enableScissor(left - 8, panelTop + 2, right + 8, panelBottom - 2);
+
+        // 重定位所有组件并渲染标签
+        int baseY = LIST_TOP;
+        for (int i = 0; i < Math.min(valueFields.size(), detail.settings().size()); i++) {
+            int targetY = rowBaseY.get(i) - scrollOffset * ROW_HEIGHT;
+
+            EditBox field = valueFields.get(i);
+            field.setY(targetY + 5);
+
+            Button applyButton = applyButtons.get(i);
+            applyButton.setY(targetY + 4);
+
+            MapRoomSettingInfo setting = detail.settings().get(i);
+            graphics.drawString(font, Component.literal(setting.name()), left, targetY + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 10, 0xFFB8D4E3, false);
+        }
+        graphics.disableScissor();
+
+        // 滚动条
+        renderScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
+
         if (detail.settings().isEmpty()) {
             graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
         }
-        int y = LIST_TOP;
-        for (int i = 0; i < Math.min(detail.settings().size(), visibleRows()); i++) {
-            MapRoomSettingInfo setting = detail.settings().get(i);
-            graphics.drawString(font, Component.literal(setting.name()), left, y + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, y + 10, 0xFFB8D4E3, false);
-            y += ROW_HEIGHT;
-        }
+
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderMultiLayerBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(2, 2, width + 2, height + 2, GUI_SHADOW_COLOR);
+        guiGraphics.fill(0, 0, width, 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(0, height - 1, width, height, GUI_OUTER_BORDER);
+        guiGraphics.fill(0, 1, 1, height - 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(width - 1, 1, width, height - 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(1, 1, width - 1, height - 1, GUI_MAIN_BACKGROUND);
+        guiGraphics.fill(1 + GUI_PADDING, 1 + GUI_PADDING, width - 1 - GUI_PADDING, 1 + GUI_PADDING + 1, GUI_INNER_BORDER);
+        guiGraphics.fill(1 + GUI_PADDING, height - 1 - GUI_PADDING - 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING, GUI_INNER_BORDER);
+        guiGraphics.fill(1 + GUI_PADDING, 1 + GUI_PADDING + 1, 1 + GUI_PADDING + 1, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
+        guiGraphics.fill(width - 1 - GUI_PADDING - 1, 1 + GUI_PADDING + 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
+    }
+
+    private void renderScrollBar(GuiGraphics graphics, int barX, int barY, int barHeight, int scroll, int maxScroll, int totalItems, int visibleItems) {
+        if (maxScroll <= 0) return;
+        int barWidth = 4;
+        graphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0x33000000);
+        int thumbSize = Math.max(10, barHeight * visibleItems / Math.max(1, totalItems));
+        int thumbY = barY + scroll * (barHeight - thumbSize) / Math.max(1, maxScroll);
+        graphics.fill(barX, thumbY, barX + barWidth, thumbY + thumbSize, 0x88FFFFFF);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
+        int contentHeight = height - LIST_TOP - 62;
+        int visibleRows = Math.max(1, contentHeight / ROW_HEIGHT);
+        int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
+        scrollOffset -= (int) scrollY;
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+        return true;
     }
 
     @Override
@@ -112,6 +195,13 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // 将滚动后偏移的点击位置映射回组件实际位置
+        // 由于 setY 已经更新了组件位置，super 会正确路由点击
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
     public void onClose() {
         minecraft.setScreen(parent);
     }
@@ -123,9 +213,5 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
 
     private void applySetting(MapRoomSettingInfo setting, EditBox field) {
         FPSMatch.sendToServer(new MapRoomSettingsC2SPacket(detail.summary().gameType(), detail.summary().mapName(), setting.name(), field.getValue()));
-    }
-
-    private int visibleRows() {
-        return Math.max(1, (height - LIST_TOP - 92) / ROW_HEIGHT);
     }
 }
