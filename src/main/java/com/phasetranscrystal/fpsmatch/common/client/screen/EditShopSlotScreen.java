@@ -57,18 +57,9 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.topPos -= 20;
         int centerX = this.leftPos + (this.imageWidth / 2);
         int startY = this.topPos + 10;
-        int slotX = this.leftPos + this.menu.getSlot(0).x - 10;
-        int slotY = this.topPos + this.menu.getSlot(0).y + 30;
 
         if(menu.isGun()){
-            this.ammoFiled = new EditBox(this.font, slotX, slotY, 40, 10, Component.translatable("gui.fpsm.dummy_ammo"));
-            this.ammoFiled.setValue(String.valueOf(menu.getAmmo()));
-            this.ammoFiled.setFilter(s -> s.matches("\\d*"));
-            this.ammoFiled.setResponder(
-                    s -> data.set(0, s.isEmpty() ? 0 : Integer.parseInt(s))
-            );
-            this.addRenderableWidget(this.ammoFiled);
-            this.isAmmoFiledAdded = true;
+            createAmmoField();
         }
 
         this.priceField = new EditBox(this.font, centerX, startY + 30, 40, 10, Component.translatable("gui.fpsm.price"));
@@ -117,6 +108,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     }
 
     private void drawLabel(GuiGraphics guiGraphics, Component text, EditBox field) {
+        if (field == null) return;
         guiGraphics.drawString(this.font, text, field.getX() - this.leftPos, field.getY() - this.topPos - 10, 0xFFFFFF);
     }
 
@@ -148,7 +140,9 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
                 this.isAmmoFiledAdded = false;
             }
         }else {
-            if (!this.isAmmoFiledAdded && this.ammoFiled != null) {
+            if (this.ammoFiled == null) {
+                createAmmoField();
+            } else if (!this.isAmmoFiledAdded) {
                 this.addRenderableWidget(this.ammoFiled);
                 this.isAmmoFiledAdded = true;
             }
@@ -157,6 +151,19 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderHoveredSlotHighlight(guiGraphics, mouseX, mouseY);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    private void createAmmoField() {
+        int slotX = this.leftPos + this.menu.getSlot(0).x - 10;
+        int slotY = this.topPos + this.menu.getSlot(0).y + 30;
+        this.ammoFiled = new EditBox(this.font, slotX, slotY, 40, 10, Component.translatable("gui.fpsm.dummy_ammo"));
+        this.ammoFiled.setValue(String.valueOf(menu.getAmmo()));
+        this.ammoFiled.setFilter(s -> s.matches("\\d*"));
+        this.ammoFiled.setResponder(
+                s -> data.set(0, s.isEmpty() ? 0 : Integer.parseInt(s))
+        );
+        this.addRenderableWidget(this.ammoFiled);
+        this.isAmmoFiledAdded = true;
     }
 
     @Override
