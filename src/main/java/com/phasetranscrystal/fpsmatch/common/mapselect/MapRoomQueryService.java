@@ -136,8 +136,9 @@ public final class MapRoomQueryService {
 
     public static List<MapRoomSettingInfo> settings(ServerPlayer viewer, BaseMap map) {
         boolean editable = viewer.hasPermissions(2);
+        String gameType = map.getGameType();
         return map.settings().stream()
-                .map(setting -> settingInfo(setting, editable))
+                .map(setting -> settingInfo(setting, editable, gameType))
                 .sorted(Comparator.comparing(MapRoomSettingInfo::name))
                 .toList();
     }
@@ -152,8 +153,10 @@ public final class MapRoomQueryService {
         );
     }
 
-    private static MapRoomSettingInfo settingInfo(Setting<?> setting, boolean editable) {
-        return new MapRoomSettingInfo(setting.getConfigName(), setting.toString(), String.valueOf(setting.getDefaultValue()), editable);
+    private static MapRoomSettingInfo settingInfo(Setting<?> setting, boolean editable, String gameType) {
+        String configName = setting.getConfigName();
+        String translationKey = "setting." + gameType + "." + configName;
+        return new MapRoomSettingInfo(configName, setting.toString(), String.valueOf(setting.getDefaultValue()), editable, translationKey);
     }
 
     private static String areaText(BlockPos from, BlockPos to) {

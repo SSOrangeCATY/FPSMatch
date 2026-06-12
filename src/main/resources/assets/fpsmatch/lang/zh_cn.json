@@ -358,5 +358,16 @@
   "gui.fpsm.map_select.debug.reset": "重置",
   "gui.fpsm.map_select.debug.new_round": "新回合",
   "gui.fpsm.map_select.debug.cleanup": "清理",
-  "gui.fpsm.map_select.debug.switch": "调试"
+  "gui.fpsm.map_select.debug.switch": "调试",
+
+  "setting.base.minAssistDamageRatio": "最低助攻伤害比",
+  "setting.base.minAssistDamageRatio.desc": "助攻需要造成的最低伤害占总生命的比例",
+  "setting.base.allowJoinInProgress": "允许中途加入",
+  "setting.base.allowJoinInProgress.desc": "游戏开始后是否允许新玩家加入",
+  "setting.cs.minAssistDamageRatio": "最低助攻伤害比",
+  "setting.cs.minAssistDamageRatio.desc": "助攻需要造成的最低伤害占总生命的比例",
+  "setting.cs.allowJoinInProgress": "允许中途加入",
+  "setting.cs.allowJoinInProgress.desc": "游戏开始后是否允许新玩家加入",
+  "setting.csdm.minAssistDamageRatio": "最低助攻伤害比",
+  "setting.csdm.minAssistDamageRatio.desc": "助攻需要造成的最低伤害占总生命的比例"
 }

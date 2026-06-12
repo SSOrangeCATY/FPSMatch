@@ -61,7 +61,7 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
             int baseY = LIST_TOP + i * ROW_HEIGHT;
             rowBaseY.add(baseY);
 
-            EditBox field = new EditBox(font, left + 176, baseY + 5, 150, 18, Component.literal(setting.name()));
+            EditBox field = new EditBox(font, left + 176, baseY + 5, 150, 18, Component.translatable(setting.translationKey()));
             field.setMaxLength(128);
             field.setValue(setting.value());
             field.setEditable(setting.editable());
@@ -127,8 +127,14 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
             applyButton.setY(targetY + 4);
 
             MapRoomSettingInfo setting = detail.settings().get(i);
-            graphics.drawString(font, Component.literal(setting.name()), left, targetY + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
+            Component settingName = Component.translatable(setting.translationKey());
+            graphics.drawString(font, settingName, left, targetY + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 10, 0xFFB8D4E3, false);
+
+            // 悬浮提示
+            if (mouseX >= left - 2 && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
+                graphics.renderTooltip(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
+            }
         }
         graphics.disableScissor();
 

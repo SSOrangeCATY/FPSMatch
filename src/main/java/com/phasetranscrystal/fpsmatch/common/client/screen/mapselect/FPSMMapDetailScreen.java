@@ -104,7 +104,7 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
             // 玩家列表
             renderPlayers(graphics, left, infoY + 78);
             // 设置列表
-            renderSettings(graphics, left + 224, infoY + 78);
+            renderSettings(graphics, left + 224, infoY + 78, mouseX, mouseY);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -139,7 +139,7 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
         renderScrollBar(graphics, left + 204, listTop, visibleRows * ROW_HEIGHT, playerScrollOffset, maxScroll, detail.players().size(), visibleRows);
     }
 
-    private void renderSettings(GuiGraphics graphics, int left, int top) {
+    private void renderSettings(GuiGraphics graphics, int left, int top, int mouseX, int mouseY) {
         graphics.drawString(font, Component.translatable("gui.fpsm.map_select.settings.title"), left, top, 0xFFFFFFFF, false);
 
         int listTop = top + 14;
@@ -155,10 +155,21 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
         for (int i = 0; i < Math.min(detail.settings().size(), visibleRows); i++) {
             MapRoomSettingInfo setting = detail.settings().get(i);
             int sy = listTop + i * ROW_HEIGHT;
-            graphics.drawString(font, Component.literal(setting.name()), left, sy, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
+            Component settingName = Component.translatable(setting.translationKey());
+            graphics.drawString(font, settingName, left, sy, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
             graphics.drawString(font, Component.literal(setting.value()), left + 94, sy, 0xFFB8D4E3, false);
         }
         graphics.disableScissor();
+
+        // 设置项悬浮提示
+        for (int i = 0; i < Math.min(detail.settings().size(), visibleRows); i++) {
+            int sy = listTop + i * ROW_HEIGHT;
+            if (mouseX >= left - 2 && mouseX <= left + 90 && mouseY >= sy && mouseY <= sy + ROW_HEIGHT) {
+                MapRoomSettingInfo setting = detail.settings().get(i);
+                graphics.renderTooltip(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
+                break;
+            }
+        }
     }
 
     private void renderMultiLayerBackground(GuiGraphics guiGraphics) {
