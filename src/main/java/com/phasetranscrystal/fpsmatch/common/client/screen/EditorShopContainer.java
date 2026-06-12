@@ -1,13 +1,10 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.google.gson.Gson;
-import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
-import com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomQueryService;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.google.gson.JsonElement;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -23,12 +20,7 @@ import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class EditorShopContainer extends AbstractContainerMenu {
     private static final int SLOT_SIZE = 18;
@@ -42,71 +34,51 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private final String mapName;
     private final String teamName;
     private final ItemStackHandler itemStackHandler;
-    private final int totalIndex;
-    private final Map<String, INamedType> types = new LinkedHashMap<>();
-    private final FPSMShop<?> shop;
+    private int totalIndex;
+    private final Map<String, TypeInfo> types = new LinkedHashMap<>();
+    private final List<ShopSlot> allShopSlots;
 
-    public EditorShopContainer(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(containerId, playerInventory, buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH));
+    private record TypeInfo(String name, int slotCount, int startIndex) {
     }
 
-    public EditorShopContainer(int containerId, Inventory playerInventory, String gameType, String mapName, String teamName) {
+    // Server-side constructor
+    public EditorShopContainer(int containerId, Inventory playerInventory, FPSMShop<?> shop, String gameType, String mapName, String teamName) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
         this.gameType = gameType;
         this.mapName = mapName;
         this.teamName = teamName;
-        this.shop = this.resolveShop().orElse(null);
 
+        List<?> enums = shop.getEnums();
         int total = 0;
-        if (this.shop != null) {
-            List<?> enums = shop.getEnums();
-            for (Object type : enums) {
-                if (!(type instanceof INamedType named)) {
-                    continue;
-                }
-                rows++;
-                this.types.put(named.name(), named);
-
-                int slotCount = named.slotCount();
-                total += slotCount;
-                if (cols < slotCount) {
-                    cols = slotCount;
-                }
-            }
+        for (Object type : enums) {
+            if (!(type instanceof INamedType named)) continue;
+            rows++;
+            int slotCount = named.slotCount();
+            this.types.put(named.name(), new TypeInfo(named.name(), slotCount, total));
+            total += slotCount;
+            if (cols < slotCount) cols = slotCount;
         }
-
         this.totalIndex = total;
-        this.itemStackHandler = new ItemStackHandler(this.totalIndex);
+        this.itemStackHandler = new ItemStackHandler(total);
+        this.allShopSlots = new ArrayList<>(total);
+        for (int i = 0; i < total; i++) {
+            this.allShopSlots.add(null);
+        }
 
         int slotSpan = SLOT_SIZE + 4 * d;
         int start = 5;
-
         for (int row = 0; row < rows; row++) {
-            if (shop == null || types.isEmpty()) {
-                break;
-            }
-
             List<String> typeNames = new ArrayList<>(types.keySet());
-            if (row >= typeNames.size()) {
-                break;
-            }
             String type = typeNames.get(row);
-            INamedType namedType = types.get(type);
-            if (namedType == null) {
-                continue;
-            }
-
-            List<ShopSlot> shopSlots = this.shop.getDefaultShopSlotListByType(type);
-            for (int col = 0; col < namedType.slotCount(); col++) {
-                int slotIndex = getSlotIndex(type, col);
-
-                if (slotIndex < 0 || slotIndex >= itemStackHandler.getSlots()) {
-                    continue;
-                }
-
+            List<ShopSlot> shopSlots = shop.getDefaultShopSlotListByType(type);
+            int slotCount = types.get(type).slotCount();
+            for (int col = 0; col < slotCount; col++) {
+                int slotIndex = types.get(type).startIndex() + col;
                 ShopSlot shopSlot = (shopSlots != null && col < shopSlots.size()) ? shopSlots.get(col) : null;
                 ItemStack slotItem = shopSlot == null ? ItemStack.EMPTY : shopSlot.process();
-
+                if (shopSlot != null) {
+                    this.allShopSlots.set(slotIndex, shopSlot);
+                }
                 SlotItemHandler customSlot = new SlotItemHandler(
                         itemStackHandler,
                         slotIndex,
@@ -114,17 +86,72 @@ public class EditorShopContainer extends AbstractContainerMenu {
                         start + row * (SLOT_SIZE + d)
                 );
                 this.addSlot(customSlot);
-
                 if (!slotItem.isEmpty()) {
                     itemStackHandler.setStackInSlot(slotIndex, slotItem);
-                } else {
-                    itemStackHandler.setStackInSlot(slotIndex, ItemStack.EMPTY);
                 }
             }
         }
     }
 
-    public Map<String, INamedType> getTypes() {
+    // Client-side constructor
+    public EditorShopContainer(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
+        super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
+        this.gameType = buf.readUtf(ID_MAX_LENGTH);
+        this.mapName = buf.readUtf(ID_MAX_LENGTH);
+        this.teamName = buf.readUtf(ID_MAX_LENGTH);
+
+        int typeCount = buf.readInt();
+        int total = 0;
+        for (int t = 0; t < typeCount; t++) {
+            String typeName = buf.readUtf(ID_MAX_LENGTH);
+            int slotCount = buf.readInt();
+            rows++;
+            this.types.put(typeName, new TypeInfo(typeName, slotCount, total));
+            total += slotCount;
+            if (cols < slotCount) cols = slotCount;
+        }
+        this.totalIndex = total;
+        this.itemStackHandler = new ItemStackHandler(total);
+        this.allShopSlots = new ArrayList<>(total);
+        for (int i = 0; i < total; i++) {
+            this.allShopSlots.add(null);
+        }
+
+        int slotSpan = SLOT_SIZE + 4 * d;
+        int start = 5;
+        for (int row = 0; row < rows; row++) {
+            List<String> typeNames = new ArrayList<>(types.keySet());
+            String type = typeNames.get(row);
+            int slotCount = types.get(type).slotCount();
+            for (int col = 0; col < slotCount; col++) {
+                int slotIndex = types.get(type).startIndex() + col;
+                ItemStack slotItem = buf.readItem();
+                String json = buf.readUtf();
+                ShopSlot shopSlot = null;
+                if (!json.isEmpty()) {
+                    try {
+                        shopSlot = FPSMCodec.decodeFromJson(ShopSlot.CODEC, new Gson().fromJson(json, JsonElement.class));
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (shopSlot != null) {
+                    this.allShopSlots.set(slotIndex, shopSlot);
+                }
+                SlotItemHandler customSlot = new SlotItemHandler(
+                        itemStackHandler,
+                        slotIndex,
+                        start + col * slotSpan,
+                        start + row * (SLOT_SIZE + d)
+                );
+                this.addSlot(customSlot);
+                if (!slotItem.isEmpty()) {
+                    itemStackHandler.setStackInSlot(slotIndex, slotItem);
+                }
+            }
+        }
+    }
+
+    public Map<String, TypeInfo> getTypes() {
         return types;
     }
 
@@ -166,87 +193,32 @@ public class EditorShopContainer extends AbstractContainerMenu {
         return ItemStack.EMPTY;
     }
 
-    private Optional<FPSMShop<?>> resolveShop() {
-        return MapRoomQueryService.findMap(gameType, mapName)
-                .flatMap(this::resolveTeam)
-                .flatMap(ShopCapability::getShop);
-    }
-
-    private Optional<ServerTeam> resolveTeam(BaseMap map) {
-        return map.getMapTeams().getTeamsWithSpectator().stream()
-                .filter(team -> team.getName().equals(teamName))
-                .findFirst();
-    }
-
     private int getSlotIndex(String type, int col) {
         if (type == null || types.isEmpty() || col < 0) {
             return -1;
         }
-
-        int index = 0;
-
-        for (Map.Entry<String, INamedType> entry : this.types.entrySet()) {
-            INamedType namedType = entry.getValue();
-            if (namedType == null) {
-                continue;
-            }
-            if (entry.getKey().equals(type)) {
-                if (col >= namedType.slotCount()) {
-                    return -1;
-                }
-                index += col;
-                break;
-            } else {
-                index += namedType.slotCount();
-            }
-        }
-
-        if (index >= this.totalIndex) {
+        TypeInfo info = types.get(type);
+        if (info == null || col >= info.slotCount()) {
             return -1;
         }
-        return index;
+        return info.startIndex() + col;
     }
 
     private ShopSlot getShopSlot(int index) {
-        if (shop == null || types.isEmpty() || index < 0 || index >= totalIndex) {
+        if (index < 0 || index >= allShopSlots.size()) {
             return null;
         }
-
-        int currentIndex = 0;
-        for (Map.Entry<String, INamedType> entry : types.entrySet()) {
-            String type = entry.getKey();
-            INamedType namedType = entry.getValue();
-            if (namedType == null) {
-                continue;
-            }
-            int slotCount = namedType.slotCount();
-
-            if (index >= currentIndex && index < currentIndex + slotCount) {
-                int col = index - currentIndex;
-                List<ShopSlot> shopSlots = shop.getDefaultShopSlotListByType(type);
-                if (shopSlots != null && col < shopSlots.size()) {
-                    return shopSlots.get(col);
-                } else {
-                    return null;
-                }
-            }
-            currentIndex += slotCount;
-        }
-        return null;
+        return allShopSlots.get(index);
     }
 
     private SlotRef getShopSlotRef(int index) {
         if (types.isEmpty() || index < 0 || index >= totalIndex) {
             return null;
         }
-
         int currentIndex = 0;
-        for (Map.Entry<String, INamedType> entry : types.entrySet()) {
-            INamedType namedType = entry.getValue();
-            if (namedType == null) {
-                continue;
-            }
-            int slotCount = namedType.slotCount();
+        for (Map.Entry<String, TypeInfo> entry : types.entrySet()) {
+            TypeInfo info = entry.getValue();
+            int slotCount = info.slotCount();
             if (index >= currentIndex && index < currentIndex + slotCount) {
                 return new SlotRef(entry.getKey(), index - currentIndex);
             }
@@ -275,18 +247,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     }
 
     public List<ShopSlot> getAllSlots() {
-        Optional<FPSMShop<?>> opt = this.resolveShop();
-        if (opt.isEmpty()) {
-            return new ArrayList<>();
-        }
-        FPSMShop<?> shop = opt.get();
-
-        List<ShopSlot> allShopSlots = new ArrayList<>();
-        shop.getDefaultShopDataMap().entrySet().stream()
-                .sorted(Comparator.comparingInt(entry -> entry.getKey().ordinal()))
-                .forEach(entry -> allShopSlots.addAll(entry.getValue()));
-
-        return allShopSlots;
+        return Collections.unmodifiableList(allShopSlots);
     }
 
     private void openSecondMenu(Player player, ShopSlot shopSlot, SlotRef slotRef) {

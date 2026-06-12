@@ -1,10 +1,15 @@
 package com.phasetranscrystal.fpsmatch.common.packet.shop;
 
+import com.google.gson.Gson;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.client.screen.EditorShopContainer;
 import com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
+import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +17,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -44,19 +50,45 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
             }
             Optional<BaseMap> map = MapRoomQueryService.findMap(gameType, mapName);
             Optional<ServerTeam> team = map.flatMap(this::findTeam);
-            if (team.flatMap(ShopCapability::getShop).isEmpty()) {
+            Optional<FPSMShop<?>> shopOpt = team.flatMap(ShopCapability::getShop);
+            if (shopOpt.isEmpty()) {
                 player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
                 return;
             }
+            FPSMShop<?> shop = shopOpt.get();
+            List<?> enums = shop.getEnums();
+
             NetworkHooks.openScreen(player,
                     new SimpleMenuProvider(
-                            (windowId, inv, p) -> new EditorShopContainer(windowId, inv, gameType, mapName, teamName),
+                            (windowId, inv, p) -> new EditorShopContainer(windowId, inv, shop, gameType, mapName, teamName),
                             Component.translatable("gui.fpsm.shop_editor.title")
                     ),
                     buf -> {
                         buf.writeUtf(gameType);
                         buf.writeUtf(mapName);
                         buf.writeUtf(teamName);
+
+                        // 序列化商店数据到客户端
+                        buf.writeInt(enums.size());
+                        for (Object type : enums) {
+                            if (!(type instanceof INamedType named)) continue;
+                            List<ShopSlot> slots = shop.getDefaultShopSlotListByType(named.name());
+                            buf.writeUtf(named.name());
+                            buf.writeInt(slots.size());
+                        }
+                        for (Object type : enums) {
+                            if (!(type instanceof INamedType named)) continue;
+                            List<ShopSlot> slots = shop.getDefaultShopSlotListByType(named.name());
+                            for (ShopSlot slot : slots) {
+                                buf.writeItem(slot.process());
+                                try {
+                                    String json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, slot));
+                                    buf.writeUtf(json);
+                                } catch (Exception e) {
+                                    buf.writeUtf("");
+                                }
+                            }
+                        }
                     }
             );
         });

@@ -35,7 +35,7 @@ public class FPSMClientEvents
             return;
         }
         event.addListener(Button.builder(Component.translatable("gui.fpsm.map_select.open"), button -> FPSMatch.sendToServer(new OpenMapSelectionC2SPacket()))
-                .pos(event.getScreen().width / 2 - 102, event.getScreen().height / 4 + 120)
+                .pos(event.getScreen().width / 2 - 102, event.getScreen().height - 32 - 20)
                 .size(204, 20)
                 .build());
     }
