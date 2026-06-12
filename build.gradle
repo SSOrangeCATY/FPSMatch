@@ -24,7 +24,7 @@ base {
 def taczTweaksVersion = findProperty('tacztweak_version') ?: rootProject.findProperty('tacztweak_version') ?: '2.11.2'
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
 
