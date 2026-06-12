@@ -344,7 +344,6 @@ public class FPSMClientGlobalData {
     }
 
     public void clearMapSelectData() {
-        this.mapSelectionButtonVisible = false;
         this.mapSelectionSnapshot = null;
         this.mapRoomDetail = null;
         this.mapRoomToast = null;
