@@ -44,6 +44,9 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         this.leftPos = guiX;
         this.topPos = guiY;
         calculateGuiPosition();
+        addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.translatable("gui.back"), button -> onClose())
+                .bounds(width / 2 - 50, height - 30, 100, 20)
+                .build());
     }
 
 

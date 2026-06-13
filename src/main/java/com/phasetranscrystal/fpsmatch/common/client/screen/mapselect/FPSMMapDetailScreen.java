@@ -30,6 +30,7 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
     private Button shopButton;
     private Button inviteButton;
     private int playerScrollOffset;
+    private int settingsScrollOffset;
 
     public FPSMMapDetailScreen(MapRoomDetail detail, Screen parent) {
         super(Component.translatable("gui.fpsm.map_select.detail.title"));
@@ -145,6 +146,8 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
         int listTop = top + 14;
         int availableHeight = height - PANEL_BOTTOM - listTop;
         int visibleRows = Math.max(1, availableHeight / ROW_HEIGHT);
+        int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
+        settingsScrollOffset = Mth.clamp(settingsScrollOffset, 0, maxScroll);
 
         if (detail.settings().isEmpty()) {
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), left, listTop, 0xFFAAAAAA, false);
@@ -152,18 +155,20 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
         }
 
         graphics.enableScissor(left - 2, listTop, left + 210, listTop + visibleRows * ROW_HEIGHT);
-        for (int i = 0; i < Math.min(detail.settings().size(), visibleRows); i++) {
+        for (int i = settingsScrollOffset; i < Math.min(detail.settings().size(), settingsScrollOffset + visibleRows); i++) {
             MapRoomSettingInfo setting = detail.settings().get(i);
-            int sy = listTop + i * ROW_HEIGHT;
+            int sy = listTop + (i - settingsScrollOffset) * ROW_HEIGHT;
             Component settingName = Component.translatable(setting.translationKey());
             graphics.drawString(font, settingName, left, sy, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
             graphics.drawString(font, Component.literal(setting.value()), left + 94, sy, 0xFFB8D4E3, false);
         }
         graphics.disableScissor();
 
+        renderScrollBar(graphics, left + 204, listTop, visibleRows * ROW_HEIGHT, settingsScrollOffset, maxScroll, detail.settings().size(), visibleRows);
+
         // 设置项悬浮提示
-        for (int i = 0; i < Math.min(detail.settings().size(), visibleRows); i++) {
-            int sy = listTop + i * ROW_HEIGHT;
+        for (int i = settingsScrollOffset; i < Math.min(detail.settings().size(), settingsScrollOffset + visibleRows); i++) {
+            int sy = listTop + (i - settingsScrollOffset) * ROW_HEIGHT;
             if (mouseX >= left - 2 && mouseX <= left + 90 && mouseY >= sy && mouseY <= sy + ROW_HEIGHT) {
                 MapRoomSettingInfo setting = detail.settings().get(i);
                 graphics.renderTooltip(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
@@ -196,11 +201,24 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
-        int availableHeight = height - PANEL_BOTTOM - PANEL_TOP - 78 - 14;
+        int infoY = PANEL_TOP;
+        int listTop = infoY + 78 + 14;
+        int availableHeight = height - PANEL_BOTTOM - listTop;
         int visibleRows = Math.max(1, availableHeight / ROW_HEIGHT);
-        int maxScroll = Math.max(0, detail == null ? 0 : detail.players().size() - visibleRows);
-        playerScrollOffset -= (int) scrollY;
-        playerScrollOffset = Mth.clamp(playerScrollOffset, 0, maxScroll);
+
+        int left = width / 2 - 210;
+        int settingsLeft = left + 224;
+
+        // 判断鼠标在设置区域还是玩家列表区域
+        if (mouseX >= settingsLeft && mouseX <= settingsLeft + 210) {
+            int maxScroll = Math.max(0, detail == null ? 0 : detail.settings().size() - visibleRows);
+            settingsScrollOffset -= (int) scrollY;
+            settingsScrollOffset = Mth.clamp(settingsScrollOffset, 0, maxScroll);
+        } else {
+            int maxScroll = Math.max(0, detail == null ? 0 : detail.players().size() - visibleRows);
+            playerScrollOffset -= (int) scrollY;
+            playerScrollOffset = Mth.clamp(playerScrollOffset, 0, maxScroll);
+        }
         return true;
     }
 

@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 对局内伤害/击杀/死亡代理管线。
@@ -56,6 +58,11 @@ public class FPSMDeathPipelineEventHook {
      * 本 tick END 需要结算的死亡上下文
      */
     private static final ConcurrentHashMap<UUID, PendingDeath> readyDeaths = new ConcurrentHashMap<>();
+
+    /**
+     * 暂存的枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发，需要暂存）
+     */
+    private static final ConcurrentHashMap<UUID, GunKillDetail> pendingGunKills = new ConcurrentHashMap<>();
 
     public static boolean isRecentlyKilled(UUID uuid) {
         return RECENTLY_KILLED.contains(uuid);
@@ -155,24 +162,24 @@ public class FPSMDeathPipelineEventHook {
         if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) return;
         if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
 
-        PendingDeath pending = readyDeaths.get(deadPlayer.getUUID());
-        if (pending != null) {
-            DeathContext context = pending.context();
-            context.setGunKill(true);
-            context.setHeadShot(event.isHeadShot());
-            context.setGunBullet(event.getBullet());
-            if (event.getBullet() instanceof IPassThroughEntity passThroughEntity) {
-                context.setPassWall(passThroughEntity.fpsmatch$isWall());
-                context.setPassSmoke(passThroughEntity.fpsmatch$isSmoke());
-                context.setScopedKill(passThroughEntity.fpsmatch$isScoped());
-            }
-
-            ServerPlayer contextAttacker = context.getAttacker();
-            if (contextAttacker == null) {
-                context.setAttacker(attacker);
-                context.setDeathItem(map.resolveDeathItem(attacker, context.getDamageSource()));
-            }
+        GunKillDetail detail = new GunKillDetail(
+                event.isHeadShot(),
+                event.getBullet(),
+                attacker,
+                map.resolveDeathItem(attacker, deadPlayer.getLastDamageSource() != null ? deadPlayer.getLastDamageSource() : deadPlayer.damageSources().generic())
+        );
+        if (event.getBullet() instanceof IPassThroughEntity passThroughEntity) {
+            detail = new GunKillDetail(
+                    event.isHeadShot(),
+                    event.getBullet(),
+                    attacker,
+                    detail.deathItem(),
+                    passThroughEntity.fpsmatch$isWall(),
+                    passThroughEntity.fpsmatch$isSmoke(),
+                    passThroughEntity.fpsmatch$isScoped()
+            );
         }
+        pendingGunKills.put(deadPlayer.getUUID(), detail);
     }
 
     /**
@@ -186,9 +193,10 @@ public class FPSMDeathPipelineEventHook {
             return;
         }
 
-        if (readyDeaths.isEmpty()) return;
+        if (readyDeaths.isEmpty() && pendingGunKills.isEmpty()) return;
         readyDeaths.forEach((uuid, pending) -> finalizeDeath(pending.map(), pending.context()));
         readyDeaths.clear();
+        pendingGunKills.clear();
         RECENTLY_KILLED.clear();
     }
 
@@ -209,6 +217,21 @@ public class FPSMDeathPipelineEventHook {
         ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = map.getMapTeams();
         ServerPlayer killer = context.getAttacker();
+
+        // 补全枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发）
+        GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
+        if (gunKill != null) {
+            context.setGunKill(true);
+            context.setHeadShot(gunKill.isHeadShot());
+            context.setGunBullet(gunKill.bullet());
+            context.setPassWall(gunKill.passWall());
+            context.setPassSmoke(gunKill.passSmoke());
+            context.setScopedKill(gunKill.scopedKill());
+            if (context.getAttacker() == null) {
+                context.setAttacker(gunKill.attacker());
+                context.setDeathItem(gunKill.deathItem());
+            }
+        }
 
         map.handleDeath(context);
 
@@ -243,5 +266,23 @@ public class FPSMDeathPipelineEventHook {
      * @param context 死亡上下文（可被枪械事件补全）
      */
     private record PendingDeath(BaseMap map, DeathContext context) {
+    }
+
+    /**
+     * 暂存的枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发，
+     * 暂存后在 finalizeDeath 阶段补全到 DeathContext）。
+     */
+    private record GunKillDetail(
+            boolean isHeadShot,
+            @Nullable Entity bullet,
+            @Nullable ServerPlayer attacker,
+            ItemStack deathItem,
+            boolean passWall,
+            boolean passSmoke,
+            boolean scopedKill
+    ) {
+        GunKillDetail(boolean isHeadShot, @Nullable Entity bullet, @Nullable ServerPlayer attacker, ItemStack deathItem) {
+            this(isHeadShot, bullet, attacker, deathItem, false, false, false);
+        }
     }
 }

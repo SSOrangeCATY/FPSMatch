@@ -116,14 +116,16 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         graphics.enableScissor(left - 8, panelTop + 2, right + 8, panelBottom - 2);
 
         // 重定位所有组件并渲染标签
-        int baseY = LIST_TOP;
         for (int i = 0; i < Math.min(valueFields.size(), detail.settings().size()); i++) {
             int targetY = rowBaseY.get(i) - scrollOffset * ROW_HEIGHT;
+            boolean visible = targetY + ROW_HEIGHT > panelTop && targetY < panelBottom;
 
             EditBox field = valueFields.get(i);
+            field.visible = visible;
             field.setY(targetY + 5);
 
             Button applyButton = applyButtons.get(i);
+            applyButton.visible = visible;
             applyButton.setY(targetY + 4);
 
             MapRoomSettingInfo setting = detail.settings().get(i);
