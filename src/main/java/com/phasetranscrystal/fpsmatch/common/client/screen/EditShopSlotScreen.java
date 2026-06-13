@@ -1,14 +1,15 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
+import com.lowdragmc.lowdraglib.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,34 +21,22 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu> {
-    private final ContainerData data;
+public class EditShopSlotScreen extends FPSMWidgetContainerScreen<EditShopSlotMenu> {
     private static final int SLOT_SIZE = 18;
-    private static final int GUI_SHADOW_COLOR = 0x80000000;
-    private static final int GUI_MAIN_BACKGROUND = 0xFF444444;
-    private static final int GUI_INNER_BORDER = 0xFF666666;
-    private static final int GUI_OUTER_BORDER = 0xFF222222;
-    private static final int SLOT_DEFAULT_BACKGROUND = 0xFF333333;
-    private static final int SLOT_DEFAULT_BORDER = 0xFF777777;
-    private static final int SLOT_HOVER_HIGHLIGHT = 0x80FFFFFF;
-    private static final int SLOT_HOVER_BORDER = 0xFFFFFFFF;
-    private static final int GUI_PADDING = 4;
-    private static final int FULL_BACKGROUND_HEIGHT = 220;
+    private static final int FULL_BG_HEIGHT = 220;
 
-    private EditBox ammoFiled;
-    private boolean isAmmoFiledAdded = false;
-
-    private EditBox priceField;
-    private EditBox groupField;
+    private final ContainerData data;
+    private TextFieldWidget ammoField;
+    private TextFieldWidget priceField;
+    private TextFieldWidget groupField;
 
     public EditShopSlotScreen(EditShopSlotMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 200;
         this.imageHeight = 160;
         this.data = new SimpleContainerData(3);
-        int dataCount = Math.min(this.menu.getData().getCount(), 3);
-        for (int i = 0; i < dataCount; i++) {
-            data.set(i, this.menu.getData().get(i));
+        for (int i = 0; i < Math.min(menu.getData().getCount(), 3); i++) {
+            data.set(i, menu.getData().get(i));
         }
     }
 
@@ -55,33 +44,70 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     protected void init() {
         super.init();
         this.topPos -= 20;
-        int centerX = this.leftPos + (this.imageWidth / 2);
-        int startY = this.topPos + 10;
+    }
 
-        if(menu.isGun()){
-            createAmmoField();
+    @Override
+    protected void buildUI() {
+        int guiX = leftPos - 20;
+        int guiWidth = imageWidth + 20;
+
+        // 多层背景
+        root.addWidget(new WidgetGroup(guiX + 2, topPos + 2, guiWidth, FULL_BG_HEIGHT)
+                .setBackground(new ColorRectTexture(0x80000000)));
+        root.addWidget(new WidgetGroup(guiX, topPos, guiWidth, 1).setBackground(new ColorRectTexture(0xFF222222)));
+        root.addWidget(new WidgetGroup(guiX, topPos + FULL_BG_HEIGHT - 1, guiWidth, 1).setBackground(new ColorRectTexture(0xFF222222)));
+        root.addWidget(new WidgetGroup(guiX, topPos, 1, FULL_BG_HEIGHT).setBackground(new ColorRectTexture(0xFF222222)));
+        root.addWidget(new WidgetGroup(guiX + guiWidth - 1, topPos, 1, FULL_BG_HEIGHT).setBackground(new ColorRectTexture(0xFF222222)));
+        root.addWidget(new WidgetGroup(guiX + 1, topPos + 1, guiWidth - 2, FULL_BG_HEIGHT - 2).setBackground(new ColorRectTexture(0xFF444444)));
+        root.addWidget(new WidgetGroup(guiX + 5, topPos + 5, guiWidth - 10, FULL_BG_HEIGHT - 10).setBackground(new ColorRectTexture(0xFF333333)));
+
+        // 标题
+        root.addWidget(new LabelWidget(leftPos + titleLabelX - 20, topPos + titleLabelY - 15,
+                title.getString()).setTextColor(0xFFFFFFFF));
+
+        int centerX = leftPos + imageWidth / 2;
+        int startY = topPos + 10;
+
+        // 弹药字段
+        if (menu.isGun()) {
+            int slotX = leftPos + menu.getSlot(0).x - 10;
+            int slotY = topPos + menu.getSlot(0).y + 30;
+            ammoField = new TextFieldWidget(slotX, slotY, 40, 10,
+                    () -> String.valueOf(data.get(0)),
+                    s -> data.set(0, s.isEmpty() ? 0 : Integer.parseInt(s)));
+            ammoField.setCurrentString(String.valueOf(menu.getAmmo()));
+            ammoField.setValidator(s -> s.matches("\\d*") ? s : s.replaceAll("[^\\d]", ""));
+            root.addWidget(ammoField);
+            root.addWidget(new LabelWidget(ammoField.getSelfPosition().x, ammoField.getSelfPosition().y - 10,
+                    Component.translatable("gui.fpsm.dummyAmmo").getString()).setTextColor(0xFFFFFFFF));
         }
 
-        this.priceField = new EditBox(this.font, centerX, startY + 30, 40, 10, Component.translatable("gui.fpsm.price"));
-        this.priceField.setValue(String.valueOf(menu.getPrice()));
-        this.priceField.setFilter(s -> s.matches("\\d*"));
-        this.priceField.setResponder(
-                s -> this.data.set(1, s.isEmpty() ? 0 : Integer.parseInt(s))
-        );
-        this.addRenderableWidget(this.priceField);
+        // 价格字段
+        priceField = new TextFieldWidget(centerX, startY + 30, 40, 10,
+                () -> String.valueOf(data.get(1)),
+                s -> data.set(1, s.isEmpty() ? 0 : Integer.parseInt(s)));
+        priceField.setCurrentString(String.valueOf(menu.getPrice()));
+        priceField.setValidator(s -> s.matches("\\d*") ? s : s.replaceAll("[^\\d]", ""));
+        root.addWidget(priceField);
+        root.addWidget(new LabelWidget(priceField.getSelfPosition().x, priceField.getSelfPosition().y - 10,
+                Component.translatable("gui.fpsm.price").getString()).setTextColor(0xFFFFFFFF));
 
-        this.groupField = new EditBox(this.font, centerX + 50, startY + 30, 40, 10, Component.translatable("gui.fpsm.group"));
-        this.groupField.setValue(String.valueOf(menu.getGroupId()));
-        this.groupField.setFilter(s -> s.matches("\\d*"));
-        this.groupField.setResponder(
-                s -> data.set(2, s.isEmpty() ? -1 : Integer.parseInt(s))
-        );
-        this.addRenderableWidget(this.groupField);
+        // 组字段
+        groupField = new TextFieldWidget(centerX + 50, startY + 30, 40, 10,
+                () -> String.valueOf(data.get(2)),
+                s -> data.set(2, s.isEmpty() ? -1 : Integer.parseInt(s)));
+        groupField.setCurrentString(String.valueOf(menu.getGroupId()));
+        groupField.setValidator(s -> s.matches("-?\\d*") ? s : s.replaceAll("[^\\d-]", ""));
+        root.addWidget(groupField);
+        root.addWidget(new LabelWidget(groupField.getSelfPosition().x, groupField.getSelfPosition().y - 10,
+                Component.translatable("gui.fpsm.group").getString()).setTextColor(0xFFFFFFFF));
 
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.shop_editor.save_button"), button -> onSaveButtonClick())
-                .pos(this.leftPos + this.titleLabelX, this.topPos + this.imageHeight - 94 + 25)
-                .size(100, 18)
-                .build());
+        // 保存按钮
+        root.addWidget(FPSMWidgets.button(leftPos + titleLabelX, topPos + imageHeight - 94 + 25, 100, 18,
+                Component.translatable("gui.fpsm.shop_editor.save_button"), this::onSaveButtonClick));
+
+        // 物品栏标签
+        root.addWidget(new LabelWidget(8, imageHeight - 47, playerInventoryTitle.getString()).setTextColor(0xFFFFFFFF));
     }
 
     @Override
@@ -94,247 +120,65 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     }
 
     private void onSaveButtonClick() {
-        FPSMatch.INSTANCE.sendToServer(new SaveSlotDataC2SPacket(this.data));
-
+        FPSMatch.INSTANCE.sendToServer(new SaveSlotDataC2SPacket(data));
         LocalPlayer player = Minecraft.getInstance().player;
-
-        if (player != null) {
-            openShopEditor();
-        }
+        if (player != null) openShopEditor();
     }
 
     private void openShopEditor() {
         FPSMatch.INSTANCE.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
     }
 
-    private void drawLabel(GuiGraphics guiGraphics, Component text, EditBox field) {
-        if (field == null) return;
-        guiGraphics.drawString(this.font, text, field.getX() - this.leftPos, field.getY() - this.topPos - 10, 0xFFFFFF);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX - 20, this.titleLabelY - 15, 0xFFFFFF, false);
-        if(menu.isGun()){
-            drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.dummyAmmo"), ammoFiled);
-        }
-        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.price"), priceField);
-        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.group"), groupField);
-        int inventoryLabelY = this.imageHeight - 47;
-        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, 8, inventoryLabelY, 0xFFFFFF, false);
-    }
-
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        renderGuiMultiLayerBackground(guiGraphics);
-        renderShopSlotsBackground(guiGraphics);
+        // 背景由LDLib Widget组件渲染，此处留空
     }
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-
-        if(!menu.isGun()){
-            if(this.isAmmoFiledAdded){
-                this.removeWidget(this.ammoFiled);
-                this.isAmmoFiledAdded = false;
-            }
-        }else {
-            if (this.ammoFiled == null) {
-                createAmmoField();
-            } else if (!this.isAmmoFiledAdded) {
-                this.addRenderableWidget(this.ammoFiled);
-                this.isAmmoFiledAdded = true;
-            }
-        }
-
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderHoveredSlotHighlight(guiGraphics, mouseX, mouseY);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        renderSlotOverlays(guiGraphics, mouseX, mouseY);
     }
 
-    private void createAmmoField() {
-        int slotX = this.leftPos + this.menu.getSlot(0).x - 10;
-        int slotY = this.topPos + this.menu.getSlot(0).y + 30;
-        this.ammoFiled = new EditBox(this.font, slotX, slotY, 40, 10, Component.translatable("gui.fpsm.dummy_ammo"));
-        this.ammoFiled.setValue(String.valueOf(menu.getAmmo()));
-        this.ammoFiled.setFilter(s -> s.matches("\\d*"));
-        this.ammoFiled.setResponder(
-                s -> data.set(0, s.isEmpty() ? 0 : Integer.parseInt(s))
-        );
-        this.addRenderableWidget(this.ammoFiled);
-        this.isAmmoFiledAdded = true;
+    private void renderSlotOverlays(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        for (Slot slot : menu.slots) {
+            int sx = leftPos + slot.x - 1;
+            int sy = topPos + slot.y - 1;
+
+            guiGraphics.fill(sx, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF333333);
+            guiGraphics.fill(sx, sy, sx + SLOT_SIZE, sy + 1, 0xFF777777);
+            guiGraphics.fill(sx, sy + SLOT_SIZE - 1, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF777777);
+            guiGraphics.fill(sx, sy, sx + 1, sy + SLOT_SIZE, 0xFF777777);
+            guiGraphics.fill(sx + SLOT_SIZE - 1, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFF777777);
+
+            if (mouseX >= sx && mouseX < sx + SLOT_SIZE && mouseY >= sy && mouseY < sy + SLOT_SIZE) {
+                guiGraphics.fill(sx + 1, sy + 1, sx + SLOT_SIZE - 1, sy + SLOT_SIZE - 1, 0x80FFFFFF);
+                guiGraphics.fill(sx, sy, sx + SLOT_SIZE, sy + 1, 0xFFFFFFFF);
+                guiGraphics.fill(sx, sy + SLOT_SIZE - 1, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFFFFFFFF);
+                guiGraphics.fill(sx, sy, sx + 1, sy + SLOT_SIZE, 0xFFFFFFFF);
+                guiGraphics.fill(sx + SLOT_SIZE - 1, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, 0xFFFFFFFF);
+            }
+        }
     }
 
     @Override
-    protected void renderTooltip(@NotNull GuiGraphics pGuiGraphics, int pX, int pY) {
-        if (this.menu.getCarried().isEmpty() && this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
-            ItemStack itemstack = this.hoveredSlot.getItem();
-            List<Component> components = this.getTooltipFromContainerItem(itemstack);
-            if(hoveredSlot.index == 0){
+    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int pX, int pY) {
+        if (menu.getCarried().isEmpty() && hoveredSlot != null && hoveredSlot.hasItem()) {
+            ItemStack itemstack = hoveredSlot.getItem();
+            List<Component> components = getTooltipFromContainerItem(itemstack);
+            if (hoveredSlot.index == 0) {
                 List<String> lms = menu.getListeners();
-                if(!lms.isEmpty()) {
+                if (!lms.isEmpty()) {
                     components.add(Component.literal("\n"));
-                    Component line = Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD);
-                    components.add(line);
-                    Component lmt = Component.translatable("gui.fpsm.listener").append(": ").withStyle(ChatFormatting.DARK_AQUA);
-                    components.add(lmt);
-                    for (String lm : menu.getListeners()) {
-                        components.add(Component.literal("- "+lm).withStyle(ChatFormatting.GRAY));
+                    components.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+                    components.add(Component.translatable("gui.fpsm.listener").append(": ").withStyle(ChatFormatting.DARK_AQUA));
+                    for (String lm : lms) {
+                        components.add(Component.literal("- " + lm).withStyle(ChatFormatting.GRAY));
                     }
-                    components.add(line);
+                    components.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
                 }
             }
-            pGuiGraphics.renderTooltip(this.font, components, itemstack.getTooltipImage(), itemstack, pX, pY);
+            guiGraphics.renderTooltip(font, components, itemstack.getTooltipImage(), itemstack, pX, pY);
         }
-
-    }
-
-    private int getSlotX(Slot slot){
-        return slot.x - 1;
-    }
-
-    private int getSlotY(Slot slot){
-        return slot.y - 1;
-    }
-
-    private void renderGuiMultiLayerBackground(GuiGraphics guiGraphics) {
-        int guiX = this.leftPos - 20;
-        int guiY = this.topPos;
-        int guiWidth = this.imageWidth + 20;
-        int fullGuiHeight = FULL_BACKGROUND_HEIGHT;
-
-        guiGraphics.fill(
-                guiX + 2, guiY + 2,
-                guiX + guiWidth + 2, guiY + fullGuiHeight + 2,
-                GUI_SHADOW_COLOR
-        );
-
-        guiGraphics.fill(
-                guiX, guiY,
-                guiX + guiWidth, guiY + 1,
-                GUI_OUTER_BORDER
-        );
-        guiGraphics.fill(
-                guiX, guiY + fullGuiHeight - 1,
-                guiX + guiWidth, guiY + fullGuiHeight,
-                GUI_OUTER_BORDER
-        );
-        guiGraphics.fill(
-                guiX, guiY + 1,
-                guiX + 1, guiY + fullGuiHeight - 1,
-                GUI_OUTER_BORDER
-        );
-        guiGraphics.fill(
-                guiX + guiWidth - 1, guiY + 1,
-                guiX + guiWidth, guiY + fullGuiHeight - 1,
-                GUI_OUTER_BORDER
-        );
-
-        guiGraphics.fill(
-                guiX + 1, guiY + 1,
-                guiX + guiWidth - 1, guiY + fullGuiHeight - 1,
-                GUI_MAIN_BACKGROUND
-        );
-
-        int innerBorderX1 = guiX + 1 + GUI_PADDING;
-        int innerBorderY1 = guiY + 1 + GUI_PADDING;
-        int innerBorderX2 = guiX + guiWidth - 1 - GUI_PADDING;
-        int innerBorderY2 = guiY + fullGuiHeight - 1 - GUI_PADDING;
-
-        guiGraphics.fill(innerBorderX1, innerBorderY1, innerBorderX2, innerBorderY1 + 1, GUI_INNER_BORDER);
-        guiGraphics.fill(innerBorderX1, innerBorderY2 - 1, innerBorderX2, innerBorderY2, GUI_INNER_BORDER);
-        guiGraphics.fill(innerBorderX1, innerBorderY1 + 1, innerBorderX1 + 1, innerBorderY2 - 1, GUI_INNER_BORDER);
-        guiGraphics.fill(innerBorderX2 - 1, innerBorderY1 + 1, innerBorderX2, innerBorderY2 - 1, GUI_INNER_BORDER);
-    }
-
-    private void renderShopSlotsBackground(GuiGraphics guiGraphics) {
-        for (Slot slot : menu.slots) {
-            int slotRenderX = this.leftPos + getSlotX(slot);
-            int slotRenderY = this.topPos + getSlotY(slot);
-
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY,
-                    slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE,
-                    SLOT_DEFAULT_BACKGROUND
-            );
-
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY,
-                    slotRenderX + SLOT_SIZE, slotRenderY + 1,
-                    SLOT_DEFAULT_BORDER
-            );
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY + SLOT_SIZE - 1,
-                    slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE,
-                    SLOT_DEFAULT_BORDER
-            );
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY + 1,
-                    slotRenderX + 1, slotRenderY + SLOT_SIZE - 1,
-                    SLOT_DEFAULT_BORDER
-            );
-            guiGraphics.fill(
-                    slotRenderX + SLOT_SIZE - 1, slotRenderY + 1,
-                    slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE - 1,
-                    SLOT_DEFAULT_BORDER
-            );
-        }
-    }
-
-    private int getHoveredCustomSlotIndex(int mouseX, int mouseY) {
-        int relativeMouseX = mouseX - this.leftPos;
-        int relativeMouseY = mouseY - this.topPos;
-
-        for (int i = 0; i < menu.slots.size(); i++) {
-            Slot slot = menu.slots.get(i);
-            int slotRelX = getSlotX(slot);
-            int slotRelY = getSlotY(slot);
-
-            boolean isHoveredX = relativeMouseX >= slotRelX && relativeMouseX < slotRelX + SLOT_SIZE;
-            boolean isHoveredY = relativeMouseY >= slotRelY && relativeMouseY < slotRelY + SLOT_SIZE;
-            if (isHoveredX && isHoveredY) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void renderHoveredSlotHighlight(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        int hoveredIndex = getHoveredCustomSlotIndex(mouseX, mouseY);
-        if (hoveredIndex == -1) {
-            return;
-        }
-
-        Slot slot = menu.slots.get(hoveredIndex);
-        int slotRenderX = this.leftPos + getSlotX(slot);
-        int slotRenderY = this.topPos + getSlotY(slot);
-
-        guiGraphics.fill(
-                slotRenderX + 1, slotRenderY + 1,
-                slotRenderX + SLOT_SIZE - 1, slotRenderY + SLOT_SIZE - 1,
-                SLOT_HOVER_HIGHLIGHT
-        );
-
-        guiGraphics.fill(
-                slotRenderX, slotRenderY,
-                slotRenderX + SLOT_SIZE, slotRenderY + 1,
-                SLOT_HOVER_BORDER
-        );
-        guiGraphics.fill(
-                slotRenderX, slotRenderY + SLOT_SIZE - 1,
-                slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE,
-                SLOT_HOVER_BORDER
-        );
-        guiGraphics.fill(
-                slotRenderX, slotRenderY + 1,
-                slotRenderX + 1, slotRenderY + SLOT_SIZE - 1,
-                SLOT_HOVER_BORDER
-        );
-        guiGraphics.fill(
-                slotRenderX + SLOT_SIZE - 1, slotRenderY + 1,
-                slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE - 1,
-                SLOT_HOVER_BORDER
-        );
     }
 }

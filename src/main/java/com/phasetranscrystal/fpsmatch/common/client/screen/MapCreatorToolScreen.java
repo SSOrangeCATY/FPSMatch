@@ -1,5 +1,9 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
+import com.lowdragmc.lowdraglib.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.item.MapCreatorTool;
 import com.phasetranscrystal.fpsmatch.common.item.tool.ToolInteractionAction;
@@ -9,9 +13,6 @@ import com.phasetranscrystal.fpsmatch.common.packet.ToolInteractionC2SPacket;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -27,24 +28,24 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapCreatorToolScreen extends Screen {
+public class MapCreatorToolScreen extends FPSMWidgetScreen {
     private static final int PANEL_WIDTH = 300;
     private static final int PANEL_HEIGHT = 188;
-    private static final int SCREEN_OVERLAY = 0x5A000000;
-    private static final int PANEL_BACKGROUND = 0xD0191D22;
-    private static final int PANEL_BORDER = 0xFF7DA3B8;
 
     private List<String> availableTypes;
     private String selectedType;
 
-    private EditBox mapNameField;
-    private EditBox pos1XField;
-    private EditBox pos1YField;
-    private EditBox pos1ZField;
-    private EditBox pos2XField;
-    private EditBox pos2YField;
-    private EditBox pos2ZField;
-    private Button typeButton;
+    private TextFieldWidget mapNameField;
+    private TextFieldWidget pos1XField;
+    private TextFieldWidget pos1YField;
+    private TextFieldWidget pos1ZField;
+    private TextFieldWidget pos2XField;
+    private TextFieldWidget pos2YField;
+    private TextFieldWidget pos2ZField;
+    private LabelWidget typeLabel;
+
+    private int panelLeft;
+    private int panelTop;
 
     public MapCreatorToolScreen(OpenMapCreatorToolScreenS2CPacket data) {
         super(Component.translatable("gui.fpsm.map_creator.title"));
@@ -52,226 +53,146 @@ public class MapCreatorToolScreen extends Screen {
         this.selectedType = normalizeSelectedType(data.selectedType());
     }
 
-    @Override
-    protected void init() {
-        int left = 18;
-        int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
-
-        this.typeButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleType())
-                .pos(left + 110, top + 20)
-                .size(172, 20)
-                .build());
-
-        this.mapNameField = addTextField(left + 110, top + 52, 172, 18, 64, s -> true);
-        this.pos1XField = addIntField(left + 110, top + 90);
-        this.pos1YField = addIntField(left + 166, top + 90);
-        this.pos1ZField = addIntField(left + 222, top + 90);
-        this.pos2XField = addIntField(left + 110, top + 120);
-        this.pos2YField = addIntField(left + 166, top + 120);
-        this.pos2ZField = addIntField(left + 222, top + 120);
-
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.map_creator.create"), button -> createMap())
-                .pos(left + 18, top + 154)
-                .size(122, 20)
-                .build());
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
-                .pos(left + 160, top + 154)
-                .size(122, 20)
-                .build());
-
-        updateTypeButton();
-        loadFromHeldTool();
-    }
-
     public void applyData(OpenMapCreatorToolScreenS2CPacket data) {
         this.availableTypes = new ArrayList<>(data.availableTypes());
         this.selectedType = normalizeSelectedType(data.selectedType());
-        if (this.typeButton != null) {
-            updateTypeButton();
-        }
         if (this.mapNameField != null) {
-            this.mapNameField.setValue(data.draftMapName());
+            this.mapNameField.setCurrentString(data.draftMapName());
             setBlockPosFields(data.pos1(), true);
             setBlockPosFields(data.pos2(), false);
         }
+        updateTypeLabel();
     }
 
     @Override
-    public void tick() {
-        super.tick();
-        if (this.mapNameField != null) {
-            this.mapNameField.tick();
-        }
-        for (EditBox field : getPosFields()) {
-            field.tick();
-        }
+    protected void buildUI() {
+        panelLeft = 18;
+        panelTop = Math.max(18, (height - PANEL_HEIGHT) / 2);
+
+        // 半透明背景
+        root.addWidget(new WidgetGroup(0, 0, width, height)
+                .setBackground(new ColorRectTexture(0x5A000000)));
+
+        // 面板
+        root.addWidget(new WidgetGroup(panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT)
+                .setBackground(new ColorRectTexture(0xD0191D22)));
+        root.addWidget(new WidgetGroup(panelLeft, panelTop, PANEL_WIDTH, 1).setBackground(new ColorRectTexture(0xFF7DA3B8)));
+        root.addWidget(new WidgetGroup(panelLeft, panelTop + PANEL_HEIGHT - 1, PANEL_WIDTH, 1).setBackground(new ColorRectTexture(0xFF7DA3B8)));
+        root.addWidget(new WidgetGroup(panelLeft, panelTop, 1, PANEL_HEIGHT).setBackground(new ColorRectTexture(0xFF7DA3B8)));
+        root.addWidget(new WidgetGroup(panelLeft + PANEL_WIDTH - 1, panelTop, 1, PANEL_HEIGHT).setBackground(new ColorRectTexture(0xFF7DA3B8)));
+
+        // 标题
+        root.addWidget(new LabelWidget(panelLeft + 10, panelTop + 8, title.getString()).setTextColor(0xFFFFFFFF));
+        root.addWidget(new LabelWidget(panelLeft + 10, panelTop + 26,
+                Component.translatable("gui.fpsm.map_creator.type").getString()).setTextColor(0xFFD0E3EA));
+        root.addWidget(new LabelWidget(panelLeft + 10, panelTop + 58,
+                Component.translatable("gui.fpsm.map_creator.name").getString()).setTextColor(0xFFD0E3EA));
+        root.addWidget(new LabelWidget(panelLeft + 10, panelTop + 96,
+                Component.translatable("gui.fpsm.map_creator.pos1").getString()).setTextColor(0xFFD0E3EA));
+        root.addWidget(new LabelWidget(panelLeft + 10, panelTop + 126,
+                Component.translatable("gui.fpsm.map_creator.pos2").getString()).setTextColor(0xFFD0E3EA));
+        root.addWidget(new LabelWidget(panelLeft + 112, panelTop + 80, "X").setTextColor(0xFF8FA7B3));
+        root.addWidget(new LabelWidget(panelLeft + 168, panelTop + 80, "Y").setTextColor(0xFF8FA7B3));
+        root.addWidget(new LabelWidget(panelLeft + 224, panelTop + 80, "Z").setTextColor(0xFF8FA7B3));
+
+        // 类型按钮
+        typeLabel = new LabelWidget(panelLeft + 110, panelTop + 20,
+                (selectedType.isBlank() ? "-" : selectedType)).setTextColor(0xFFFFFFFF);
+        root.addWidget(typeLabel);
+
+        root.addWidget(FPSMWidgets.button(panelLeft + 110, panelTop + 20, 172, 20,
+                Component.literal(selectedType.isBlank() ? "-" : selectedType), this::cycleType));
+
+        // 地图名字段
+        mapNameField = createTextField(panelLeft + 110, panelTop + 52, 172, 18, s -> s);
+        root.addWidget(mapNameField);
+
+        // 坐标字段
+        pos1XField = createIntField(panelLeft + 110, panelTop + 90);
+        pos1YField = createIntField(panelLeft + 166, panelTop + 90);
+        pos1ZField = createIntField(panelLeft + 222, panelTop + 90);
+        pos2XField = createIntField(panelLeft + 110, panelTop + 120);
+        pos2YField = createIntField(panelLeft + 166, panelTop + 120);
+        pos2ZField = createIntField(panelLeft + 222, panelTop + 120);
+        root.addWidget(pos1XField); root.addWidget(pos1YField); root.addWidget(pos1ZField);
+        root.addWidget(pos2XField); root.addWidget(pos2YField); root.addWidget(pos2ZField);
+
+        // 按钮
+        root.addWidget(FPSMWidgets.button(panelLeft + 18, panelTop + 154, 122, 20,
+                Component.translatable("gui.fpsm.map_creator.create"), this::createMap));
+        root.addWidget(FPSMWidgets.button(panelLeft + 160, panelTop + 154, 122, 20,
+                Component.translatable("gui.fpsm.close"), this::onClose));
+
+        loadFromHeldTool();
     }
 
-    @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        int left = 18;
-        int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
-        guiGraphics.fill(0, 0, this.width, this.height, SCREEN_OVERLAY);
-        guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BACKGROUND);
-        guiGraphics.fill(left, top, left + PANEL_WIDTH, top + 1, PANEL_BORDER);
-        guiGraphics.fill(left, top + PANEL_HEIGHT - 1, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
-        guiGraphics.fill(left, top, left + 1, top + PANEL_HEIGHT, PANEL_BORDER);
-        guiGraphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
-
-        guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.type"), left + 10, top + 26, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 58, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 96, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 126, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.literal("X"), left + 112, top + 80, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Y"), left + 168, top + 80, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Z"), left + 224, top + 80, 0x8FA7B3, false);
-
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    private TextFieldWidget createTextField(int x, int y, int w, int h, java.util.function.Function<String, String> validator) {
+        TextFieldWidget field = new TextFieldWidget(x, y, w, h, () -> "", s -> {});
+        field.setValidator(validator);
+        field.setMaxStringLength(64);
+        return field;
     }
 
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.mapNameField.keyPressed(keyCode, scanCode, modifiers)) return true;
-        for (EditBox field : getPosFields()) {
-            if (field.keyPressed(keyCode, scanCode, modifiers)) {
-                return true;
-            }
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    private TextFieldWidget createIntField(int x, int y) {
+        return createTextField(x, y, 48, 18, s -> s.matches("-?\\d*") ? s : s.replaceAll("[^\\d-]", ""));
     }
 
-    @Override
-    public boolean charTyped(char codePoint, int modifiers) {
-        if (this.mapNameField.charTyped(codePoint, modifiers)) return true;
-        for (EditBox field : getPosFields()) {
-            if (field.charTyped(codePoint, modifiers)) {
-                return true;
-            }
-        }
-        return super.charTyped(codePoint, modifiers);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isInsidePanel(mouseX, mouseY)) {
-            return super.mouseClicked(mouseX, mouseY, button);
-        }
-
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT && button != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-            return super.mouseClicked(mouseX, mouseY, button);
-        }
-
-        BlockPos clickedPos = pickBlockPos(mouseX, mouseY);
-        if (clickedPos == null) {
-            return super.mouseClicked(mouseX, mouseY, button);
-        }
-
-        boolean isPos1 = button == GLFW.GLFW_MOUSE_BUTTON_LEFT;
-        FPSMatch.sendToServer(new ToolInteractionC2SPacket(
-                isPos1 ? ToolInteractionAction.LEFT_CLICK_BLOCK : ToolInteractionAction.RIGHT_CLICK_BLOCK,
-                clickedPos
-        ));
-        setBlockPosFields(clickedPos, isPos1);
-        return true;
-    }
-
-    @Override
-    public void onClose() {
-        FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
-                MapCreatorToolActionC2SPacket.Action.SAVE_DRAFT,
-                this.selectedType,
-                this.mapNameField.getValue(),
-                parseBlockPos(true),
-                parseBlockPos(false)
-        ));
-        super.onClose();
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    private EditBox addTextField(int x, int y, int width, int height, int maxLength, java.util.function.Predicate<String> filter) {
-        EditBox editBox = new EditBox(this.font, x, y, width, height, Component.empty());
-        editBox.setMaxLength(maxLength);
-        editBox.setFilter(filter);
-        this.addRenderableWidget(editBox);
-        return editBox;
-    }
-
-    private EditBox addIntField(int x, int y) {
-        return addTextField(x, y, 48, 18, 10, value -> value.matches("-?\\d*"));
-    }
-
-    private List<EditBox> getPosFields() {
+    private List<TextFieldWidget> getPosFields() {
         return List.of(pos1XField, pos1YField, pos1ZField, pos2XField, pos2YField, pos2ZField);
     }
 
     private void cycleType() {
-        if (this.availableTypes.isEmpty()) {
-            this.selectedType = "";
+        if (availableTypes.isEmpty()) {
+            selectedType = "";
         } else {
-            int currentIndex = this.availableTypes.indexOf(this.selectedType);
-            int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % this.availableTypes.size();
-            this.selectedType = this.availableTypes.get(nextIndex);
+            int idx = availableTypes.indexOf(selectedType);
+            selectedType = availableTypes.get(idx < 0 ? 0 : (idx + 1) % availableTypes.size());
         }
-        updateTypeButton();
+        updateTypeLabel();
     }
 
-    private void updateTypeButton() {
-        this.typeButton.setMessage(Component.literal(this.selectedType.isBlank() ? "-" : this.selectedType));
+    private void updateTypeLabel() {
+        if (typeLabel != null) {
+            typeLabel.setText(selectedType.isBlank() ? "-" : selectedType);
+        }
     }
 
     private String normalizeSelectedType(String type) {
-        if (type != null && !type.isBlank() && this.availableTypes.contains(type)) {
-            return type;
-        }
-        return this.availableTypes.isEmpty() ? "" : this.availableTypes.get(0);
+        if (type != null && !type.isBlank() && availableTypes.contains(type)) return type;
+        return availableTypes.isEmpty() ? "" : availableTypes.get(0);
     }
 
     private void loadFromHeldTool() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null) {
-            return;
-        }
-
-        ItemStack stack = minecraft.player.getMainHandItem();
-        if (!(stack.getItem() instanceof MapCreatorTool)) {
-            return;
-        }
-
-        this.selectedType = normalizeSelectedType(MapCreatorTool.getSelectedType(stack));
-        this.mapNameField.setValue(MapCreatorTool.getDraftMapName(stack));
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        ItemStack stack = mc.player.getMainHandItem();
+        if (!(stack.getItem() instanceof MapCreatorTool)) return;
+        selectedType = normalizeSelectedType(MapCreatorTool.getSelectedType(stack));
+        mapNameField.setCurrentString(MapCreatorTool.getDraftMapName(stack));
         setBlockPosFields(MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1), true);
         setBlockPosFields(MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2), false);
-        updateTypeButton();
+        updateTypeLabel();
     }
 
     private void setBlockPosFields(@Nullable BlockPos pos, boolean first) {
-        EditBox xField = first ? pos1XField : pos2XField;
-        EditBox yField = first ? pos1YField : pos2YField;
-        EditBox zField = first ? pos1ZField : pos2ZField;
-        xField.setValue(pos == null ? "" : Integer.toString(pos.getX()));
-        yField.setValue(pos == null ? "" : Integer.toString(pos.getY()));
-        zField.setValue(pos == null ? "" : Integer.toString(pos.getZ()));
+        TextFieldWidget xf = first ? pos1XField : pos2XField;
+        TextFieldWidget yf = first ? pos1YField : pos2YField;
+        TextFieldWidget zf = first ? pos1ZField : pos2ZField;
+        xf.setCurrentString(pos == null ? "" : Integer.toString(pos.getX()));
+        yf.setCurrentString(pos == null ? "" : Integer.toString(pos.getY()));
+        zf.setCurrentString(pos == null ? "" : Integer.toString(pos.getZ()));
     }
 
     private @Nullable BlockPos parseBlockPos(boolean first) {
-        EditBox xField = first ? pos1XField : pos2XField;
-        EditBox yField = first ? pos1YField : pos2YField;
-        EditBox zField = first ? pos1ZField : pos2ZField;
-        if (xField.getValue().isBlank() || yField.getValue().isBlank() || zField.getValue().isBlank()) {
-            return null;
-        }
+        TextFieldWidget xf = first ? pos1XField : pos2XField;
+        TextFieldWidget yf = first ? pos1YField : pos2YField;
+        TextFieldWidget zf = first ? pos1ZField : pos2ZField;
         try {
             return new BlockPos(
-                    Integer.parseInt(xField.getValue()),
-                    Integer.parseInt(yField.getValue()),
-                    Integer.parseInt(zField.getValue())
-            );
-        } catch (NumberFormatException ignored) {
+                    Integer.parseInt(xf.getCurrentString()),
+                    Integer.parseInt(yf.getCurrentString()),
+                    Integer.parseInt(zf.getCurrentString()));
+        } catch (NumberFormatException e) {
             return null;
         }
     }
@@ -279,57 +200,56 @@ public class MapCreatorToolScreen extends Screen {
     private void createMap() {
         FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
                 MapCreatorToolActionC2SPacket.Action.CREATE,
-                this.selectedType,
-                this.mapNameField.getValue(),
-                parseBlockPos(true),
-                parseBlockPos(false)
-        ));
+                selectedType, mapNameField.getCurrentString(), parseBlockPos(true), parseBlockPos(false)));
     }
 
-    private boolean isInsidePanel(double mouseX, double mouseY) {
-        int left = 18;
-        int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
-        return mouseX >= left && mouseX < left + PANEL_WIDTH && mouseY >= top && mouseY < top + PANEL_HEIGHT;
+    private boolean isInsidePanel(double mx, double my) {
+        return mx >= panelLeft && mx < panelLeft + PANEL_WIDTH && my >= panelTop && my < panelTop + PANEL_HEIGHT;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (isInsidePanel(mouseX, mouseY)) return super.mouseClicked(mouseX, mouseY, button);
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT && button != GLFW.GLFW_MOUSE_BUTTON_RIGHT)
+            return super.mouseClicked(mouseX, mouseY, button);
+        BlockPos pos = pickBlockPos(mouseX, mouseY);
+        if (pos == null) return super.mouseClicked(mouseX, mouseY, button);
+        boolean isPos1 = button == GLFW.GLFW_MOUSE_BUTTON_LEFT;
+        FPSMatch.sendToServer(new ToolInteractionC2SPacket(
+                isPos1 ? ToolInteractionAction.LEFT_CLICK_BLOCK : ToolInteractionAction.RIGHT_CLICK_BLOCK, pos));
+        setBlockPosFields(pos, isPos1);
+        return true;
+    }
+
+    @Override
+    public void onClose() {
+        FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
+                MapCreatorToolActionC2SPacket.Action.SAVE_DRAFT,
+                selectedType, mapNameField.getCurrentString(), parseBlockPos(true), parseBlockPos(false)));
+        super.onClose();
     }
 
     private @Nullable BlockPos pickBlockPos(double mouseX, double mouseY) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) {
-            return null;
-        }
-
-        Camera camera = minecraft.gameRenderer.getMainCamera();
-        Vec3 eyePosition = camera.getPosition();
-        Vec3 direction = getRayDirection(camera, mouseX, mouseY);
-        double reach = minecraft.player.getBlockReach();
-        BlockHitResult hitResult = minecraft.level.clip(new ClipContext(
-                eyePosition,
-                eyePosition.add(direction.scale(reach)),
-                ClipContext.Block.OUTLINE,
-                ClipContext.Fluid.NONE,
-                minecraft.player
-        ));
-        if (hitResult.getType() != HitResult.Type.BLOCK) {
-            return null;
-        }
-        return hitResult.getBlockPos();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return null;
+        Camera cam = mc.gameRenderer.getMainCamera();
+        Vec3 eye = cam.getPosition();
+        Vec3 dir = getRayDirection(cam, mouseX, mouseY);
+        BlockHitResult hit = mc.level.clip(new ClipContext(eye, eye.add(dir.scale(mc.player.getBlockReach())),
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, mc.player));
+        return hit.getType() == HitResult.Type.BLOCK ? hit.getBlockPos() : null;
     }
 
     private Vec3 getRayDirection(Camera camera, double mouseX, double mouseY) {
-        double normalizedX = mouseX / (double) this.width * 2.0D - 1.0D;
-        double normalizedY = 1.0D - mouseY / (double) this.height * 2.0D;
-        double aspect = (double) this.width / (double) this.height;
-        double tanHalfFov = Math.tan(Math.toRadians(Minecraft.getInstance().options.fov().get()) / 2.0D);
-        double horizontalScale = normalizedX * aspect * tanHalfFov;
-        double verticalScale = normalizedY * tanHalfFov;
-
+        double nx = mouseX / (double) width * 2.0 - 1.0;
+        double ny = 1.0 - mouseY / (double) height * 2.0;
+        double aspect = (double) width / (double) height;
+        double tanFov = Math.tan(Math.toRadians(Minecraft.getInstance().options.fov().get()) / 2.0);
         Vec3 look = toVec3(camera.getLookVector());
         Vec3 up = toVec3(camera.getUpVector());
         Vec3 left = toVec3(camera.getLeftVector());
-        return look.add(left.scale(-horizontalScale)).add(up.scale(verticalScale)).normalize();
+        return look.add(left.scale(-nx * aspect * tanFov)).add(up.scale(ny * tanFov)).normalize();
     }
 
-    private static Vec3 toVec3(Vector3f vector) {
-        return new Vec3(vector.x(), vector.y(), vector.z());
-    }
+    private static Vec3 toVec3(Vector3f v) { return new Vec3(v.x(), v.y(), v.z()); }
 }

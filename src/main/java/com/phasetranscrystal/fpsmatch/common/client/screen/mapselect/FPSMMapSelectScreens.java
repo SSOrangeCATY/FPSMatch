@@ -6,40 +6,38 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapsh
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
-public final class FPSMMapSelectScreens {
-    private FPSMMapSelectScreens() {
-    }
-
+/**
+ * 屏幕导航跳转工具类
+ */
+public class FPSMMapSelectScreens {
     public static void openSelection(MapSelectionSnapshotS2CPacket packet) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapSelectionScreen screen) {
-            screen.applySnapshot(packet);
+        Screen current = Minecraft.getInstance().screen;
+        if (current instanceof FPSMMapSelectionScreen sel) {
+            sel.applySnapshot(packet);
         } else {
-            minecraft.setScreen(new FPSMMapSelectionScreen(packet, minecraft.screen));
+            Minecraft.getInstance().setScreen(new FPSMMapSelectionScreen(packet, current));
         }
     }
 
     public static void openDetail(MapRoomDetailS2CPacket packet) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapDetailScreen screen) {
-            screen.applyDetail(packet.detail());
-        } else if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
-            screen.applyDetail(packet.detail());
+        Screen current = Minecraft.getInstance().screen;
+        if (current instanceof FPSMMapDetailChildScreen child) {
+            child.applyDetail(packet.detail());
         } else {
-            minecraft.setScreen(new FPSMMapDetailScreen(packet.detail(), minecraft.screen));
+            Minecraft.getInstance().setScreen(new FPSMMapDetailScreen(packet.detail(),
+                    current instanceof FPSMMapSelectionScreen ? current : null));
         }
-    }
-
-    public static void openChild(Screen child) {
-        Minecraft.getInstance().setScreen(child);
     }
 
     public static void openInvitation(MapRoomInvitationS2CPacket packet) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapInvitationScreen screen) {
-            minecraft.setScreen(new FPSMMapInvitationScreen(packet, screen.parentScreen()));
-        } else {
-            minecraft.setScreen(new FPSMMapInvitationScreen(packet, minecraft.screen));
-        }
+        Minecraft.getInstance().setScreen(new FPSMMapInvitationScreen(packet));
+    }
+
+    public static void open(Screen screen) {
+        Minecraft.getInstance().setScreen(screen);
+    }
+
+    public static void openChild(FPSMMapDetailChildScreen child) {
+        Minecraft.getInstance().setScreen((Screen) child);
     }
 }

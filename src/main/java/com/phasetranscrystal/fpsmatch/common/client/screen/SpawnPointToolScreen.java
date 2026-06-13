@@ -1,24 +1,20 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
+import com.lowdragmc.lowdraglib.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SpawnPointToolScreen extends Screen {
+public class SpawnPointToolScreen extends FPSMWidgetScreen {
     private static final int PANEL_WIDTH = 326;
     private static final int PANEL_HEIGHT = 220;
-    private static final int SCREEN_OVERLAY = 0x5A000000;
-    private static final int PANEL_BACKGROUND = 0xD0191D22;
-    private static final int PANEL_BORDER = 0xFFB58A42;
 
     private List<String> availableTypes;
     private List<String> availableMaps;
@@ -29,13 +25,15 @@ public class SpawnPointToolScreen extends Screen {
     private String selectedTeam;
     private int selectedIndex;
 
-    private Button typeButton;
-    private Button mapButton;
-    private Button teamButton;
-    private Button prevButton;
-    private Button nextButton;
-    private Button deleteButton;
-    private Button clearButton;
+    private LabelWidget typeLabel;
+    private LabelWidget mapLabel;
+    private LabelWidget teamLabel;
+    private LabelWidget countLabel;
+    private LabelWidget currentLabel;
+    private LabelWidget detailLabel;
+
+    private int panelLeft;
+    private int panelTop;
 
     public SpawnPointToolScreen(OpenSpawnPointToolScreenS2CPacket data) {
         super(Component.translatable("gui.fpsm.spawn_point_tool.title"));
@@ -49,49 +47,6 @@ public class SpawnPointToolScreen extends Screen {
         this.selectedIndex = data.selectedIndex();
     }
 
-    @Override
-    protected void init() {
-        int left = 18;
-        int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
-
-        this.typeButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleType())
-                .pos(left + 124, top + 24)
-                .size(184, 20)
-                .build());
-        this.mapButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleMap())
-                .pos(left + 124, top + 54)
-                .size(184, 20)
-                .build());
-        this.teamButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleTeam())
-                .pos(left + 124, top + 84)
-                .size(184, 20)
-                .build());
-
-        this.prevButton = this.addRenderableWidget(new Button.Builder(Component.literal("<"), button -> stepIndex(-1))
-                .pos(left + 124, top + 114)
-                .size(24, 20)
-                .build());
-        this.nextButton = this.addRenderableWidget(new Button.Builder(Component.literal(">"), button -> stepIndex(1))
-                .pos(left + 284, top + 114)
-                .size(24, 20)
-                .build());
-
-        this.deleteButton = this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.delete"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.DELETE_SELECTED))
-                .pos(left + 18, top + 170)
-                .size(140, 20)
-                .build());
-        this.clearButton = this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.spawn_point_tool.clear"), button -> sendAction(SpawnPointToolActionC2SPacket.Action.CLEAR_TEAM))
-                .pos(left + 168, top + 170)
-                .size(140, 20)
-                .build());
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
-                .pos(left + 18, top + 194)
-                .size(290, 20)
-                .build());
-
-        updateButtonLabels();
-    }
-
     public void applyData(OpenSpawnPointToolScreenS2CPacket data) {
         this.availableTypes = new ArrayList<>(data.availableTypes());
         this.availableMaps = new ArrayList<>(data.availableMaps());
@@ -101,122 +56,137 @@ public class SpawnPointToolScreen extends Screen {
         this.selectedMap = data.selectedMap();
         this.selectedTeam = data.selectedTeam();
         this.selectedIndex = data.selectedIndex();
-        updateButtonLabels();
+        updateLabels();
+    }
+
+    @Override
+    protected void buildUI() {
+        panelLeft = 18;
+        panelTop = Math.max(18, (height - PANEL_HEIGHT) / 2);
+
+        // 半透明背景
+        root.addWidget(new WidgetGroup(0, 0, width, height)
+                .setBackground(new ColorRectTexture(0x5A000000)));
+
+        // 面板
+        root.addWidget(new WidgetGroup(panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT)
+                .setBackground(new ColorRectTexture(0xD0191D22)));
+        root.addWidget(new WidgetGroup(panelLeft, panelTop, PANEL_WIDTH, 1).setBackground(new ColorRectTexture(0xFFB58A42)));
+        root.addWidget(new WidgetGroup(panelLeft, panelTop + PANEL_HEIGHT - 1, PANEL_WIDTH, 1).setBackground(new ColorRectTexture(0xFFB58A42)));
+        root.addWidget(new WidgetGroup(panelLeft, panelTop, 1, PANEL_HEIGHT).setBackground(new ColorRectTexture(0xFFB58A42)));
+        root.addWidget(new WidgetGroup(panelLeft + PANEL_WIDTH - 1, panelTop, 1, PANEL_HEIGHT).setBackground(new ColorRectTexture(0xFFB58A42)));
+
+        // 标题
+        root.addWidget(new LabelWidget(panelLeft + 10, panelTop + 8, title.getString()).setTextColor(0xFFFFFFFF));
+        root.addWidget(new LabelWidget(panelLeft + 12, panelTop + 30,
+                Component.translatable("gui.fpsm.spawn_point_tool.type").getString()).setTextColor(0xFFF1D9B0));
+        root.addWidget(new LabelWidget(panelLeft + 12, panelTop + 60,
+                Component.translatable("gui.fpsm.spawn_point_tool.map").getString()).setTextColor(0xFFF1D9B0));
+        root.addWidget(new LabelWidget(panelLeft + 12, panelTop + 90,
+                Component.translatable("gui.fpsm.spawn_point_tool.team").getString()).setTextColor(0xFFF1D9B0));
+
+        // 动态标签
+        typeLabel = new LabelWidget(panelLeft + 124, panelTop + 24,
+                (selectedType.isBlank() ? "-" : selectedType)).setTextColor(0xFFFFFFFF);
+        mapLabel = new LabelWidget(panelLeft + 124, panelTop + 54,
+                (selectedMap.isBlank() ? "-" : selectedMap)).setTextColor(0xFFFFFFFF);
+        teamLabel = new LabelWidget(panelLeft + 124, panelTop + 84,
+                (selectedTeam.isBlank() ? "-" : selectedTeam)).setTextColor(0xFFFFFFFF);
+        countLabel = new LabelWidget(panelLeft + 12, panelTop + 120,
+                Component.translatable("gui.fpsm.spawn_point_tool.count", spawnPoints.size()).getString()).setTextColor(0xFFFFFFFF);
+        currentLabel = new LabelWidget(panelLeft + 160, panelTop + 120, currentPointLabel().getString()).setTextColor(0xFFD7E3EA);
+        detailLabel = new LabelWidget(panelLeft + 12, panelTop + 144, currentPointDetail().getString()).setTextColor(0xFFA4C4D3);
+
+        root.addWidget(typeLabel);
+        root.addWidget(mapLabel);
+        root.addWidget(teamLabel);
+        root.addWidget(countLabel);
+        root.addWidget(currentLabel);
+        root.addWidget(detailLabel);
+
+        // 按钮
+        root.addWidget(FPSMWidgets.button(panelLeft + 124, panelTop + 24, 184, 20,
+                Component.literal(selectedType.isBlank() ? "-" : selectedType), this::cycleType));
+        root.addWidget(FPSMWidgets.button(panelLeft + 124, panelTop + 54, 184, 20,
+                Component.literal(selectedMap.isBlank() ? "-" : selectedMap), this::cycleMap));
+        root.addWidget(FPSMWidgets.button(panelLeft + 124, panelTop + 84, 184, 20,
+                Component.literal(selectedTeam.isBlank() ? "-" : selectedTeam), this::cycleTeam));
+
+        root.addWidget(FPSMWidgets.button(panelLeft + 124, panelTop + 114, 24, 20,
+                Component.literal("<"), () -> stepIndex(-1)));
+        root.addWidget(FPSMWidgets.button(panelLeft + 284, panelTop + 114, 24, 20,
+                Component.literal(">"), () -> stepIndex(1)));
+
+        root.addWidget(FPSMWidgets.button(panelLeft + 18, panelTop + 170, 140, 20,
+                Component.translatable("gui.fpsm.spawn_point_tool.delete"),
+                () -> sendAction(SpawnPointToolActionC2SPacket.Action.DELETE_SELECTED)));
+        root.addWidget(FPSMWidgets.button(panelLeft + 168, panelTop + 170, 140, 20,
+                Component.translatable("gui.fpsm.spawn_point_tool.clear"),
+                () -> sendAction(SpawnPointToolActionC2SPacket.Action.CLEAR_TEAM)));
+        root.addWidget(FPSMWidgets.button(panelLeft + 18, panelTop + 194, 290, 20,
+                Component.translatable("gui.fpsm.close"), this::onClose));
+    }
+
+    private void cycleType() {
+        if (availableTypes.isEmpty()) return;
+        int idx = availableTypes.indexOf(selectedType);
+        selectedType = availableTypes.get(idx < 0 ? 0 : (idx + 1) % availableTypes.size());
+        selectedMap = ""; selectedTeam = "";
+        sendAction(SpawnPointToolActionC2SPacket.Action.REFRESH);
+    }
+
+    private void cycleMap() {
+        if (availableMaps.isEmpty()) return;
+        int idx = availableMaps.indexOf(selectedMap);
+        selectedMap = availableMaps.get(idx < 0 ? 0 : (idx + 1) % availableMaps.size());
+        selectedTeam = "";
+        sendAction(SpawnPointToolActionC2SPacket.Action.REFRESH);
+    }
+
+    private void cycleTeam() {
+        if (availableTeams.isEmpty()) return;
+        int idx = availableTeams.indexOf(selectedTeam);
+        selectedTeam = availableTeams.get(idx < 0 ? 0 : (idx + 1) % availableTeams.size());
+        sendAction(SpawnPointToolActionC2SPacket.Action.REFRESH);
+    }
+
+    private void stepIndex(int offset) {
+        if (spawnPoints.isEmpty()) { selectedIndex = -1; }
+        else { selectedIndex = Math.max(0, Math.min((selectedIndex < 0 ? 0 : selectedIndex) + offset, spawnPoints.size() - 1)); }
+        updateLabels();
+    }
+
+    private void updateLabels() {
+        if (typeLabel == null) return;
+        typeLabel.setText(selectedType.isBlank() ? "-" : selectedType);
+        mapLabel.setText(selectedMap.isBlank() ? "-" : selectedMap);
+        teamLabel.setText(selectedTeam.isBlank() ? "-" : selectedTeam);
+        countLabel.setText(Component.translatable("gui.fpsm.spawn_point_tool.count", spawnPoints.size()).getString());
+        currentLabel.setText(currentPointLabel().getString());
+        detailLabel.setText(currentPointDetail().getString());
+    }
+
+    private Component currentPointLabel() {
+        if (spawnPoints.isEmpty() || selectedIndex < 0 || selectedIndex >= spawnPoints.size())
+            return Component.translatable("gui.fpsm.spawn_point_tool.current", "-");
+        return Component.translatable("gui.fpsm.spawn_point_tool.current", (selectedIndex + 1) + "/" + spawnPoints.size());
+    }
+
+    private Component currentPointDetail() {
+        if (spawnPoints.isEmpty() || selectedIndex < 0 || selectedIndex >= spawnPoints.size())
+            return Component.translatable("gui.fpsm.spawn_point_tool.no_point");
+        SpawnPointData d = spawnPoints.get(selectedIndex);
+        return Component.literal(String.format("X %.1f Y %.1f Z %.1f  Yaw %.1f Pitch %.1f",
+                d.getX(), d.getY(), d.getZ(), d.getYaw(), d.getPitch()));
+    }
+
+    private void sendAction(SpawnPointToolActionC2SPacket.Action action) {
+        FPSMatch.sendToServer(new SpawnPointToolActionC2SPacket(action, selectedType, selectedMap, selectedTeam, selectedIndex));
     }
 
     @Override
     public void onClose() {
         sendAction(SpawnPointToolActionC2SPacket.Action.SAVE_SELECTIONS);
         super.onClose();
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        int left = 18;
-        int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
-        guiGraphics.fill(0, 0, this.width, this.height, SCREEN_OVERLAY);
-        guiGraphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BACKGROUND);
-        guiGraphics.fill(left, top, left + PANEL_WIDTH, top + 1, PANEL_BORDER);
-        guiGraphics.fill(left, top + PANEL_HEIGHT - 1, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
-        guiGraphics.fill(left, top, left + 1, top + PANEL_HEIGHT, PANEL_BORDER);
-        guiGraphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
-
-        guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.type"), left + 12, top + 30, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.map"), left + 12, top + 60, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.team"), left + 12, top + 90, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.count", this.spawnPoints.size()), left + 12, top + 120, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, currentPointLabel(), left + 160, top + 120, 0xD7E3EA, false);
-        guiGraphics.drawString(this.font, currentPointDetail(), left + 12, top + 144, 0xA4C4D3, false);
-
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-    }
-
-    private void cycleType() {
-        if (availableTypes.isEmpty()) {
-            return;
-        }
-        int currentIndex = availableTypes.indexOf(selectedType);
-        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % availableTypes.size();
-        this.selectedType = availableTypes.get(nextIndex);
-        this.selectedMap = "";
-        this.selectedTeam = "";
-        sendAction(SpawnPointToolActionC2SPacket.Action.REFRESH);
-    }
-
-    private void cycleMap() {
-        if (availableMaps.isEmpty()) {
-            return;
-        }
-        int currentIndex = availableMaps.indexOf(selectedMap);
-        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % availableMaps.size();
-        this.selectedMap = availableMaps.get(nextIndex);
-        this.selectedTeam = "";
-        sendAction(SpawnPointToolActionC2SPacket.Action.REFRESH);
-    }
-
-    private void cycleTeam() {
-        if (availableTeams.isEmpty()) {
-            return;
-        }
-        int currentIndex = availableTeams.indexOf(selectedTeam);
-        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % availableTeams.size();
-        this.selectedTeam = availableTeams.get(nextIndex);
-        sendAction(SpawnPointToolActionC2SPacket.Action.REFRESH);
-    }
-
-    private void stepIndex(int offset) {
-        if (spawnPoints.isEmpty()) {
-            selectedIndex = -1;
-        } else {
-            int base = selectedIndex < 0 ? 0 : selectedIndex;
-            selectedIndex = Math.max(0, Math.min(base + offset, spawnPoints.size() - 1));
-        }
-        updateButtonLabels();
-    }
-
-    private void updateButtonLabels() {
-        if (this.typeButton == null) {
-            return;
-        }
-        this.typeButton.setMessage(Component.literal(selectedType.isBlank() ? "-" : selectedType));
-        this.mapButton.setMessage(Component.literal(selectedMap.isBlank() ? "-" : selectedMap));
-        this.teamButton.setMessage(Component.literal(selectedTeam.isBlank() ? "-" : selectedTeam));
-        boolean hasPoints = !spawnPoints.isEmpty();
-        this.prevButton.active = hasPoints;
-        this.nextButton.active = hasPoints;
-        this.deleteButton.active = hasPoints;
-        this.clearButton.active = hasPoints;
-    }
-
-    private Component currentPointLabel() {
-        if (spawnPoints.isEmpty() || selectedIndex < 0 || selectedIndex >= spawnPoints.size()) {
-            return Component.translatable("gui.fpsm.spawn_point_tool.current", "-");
-        }
-        return Component.translatable("gui.fpsm.spawn_point_tool.current", (selectedIndex + 1) + "/" + spawnPoints.size());
-    }
-
-    private Component currentPointDetail() {
-        if (spawnPoints.isEmpty() || selectedIndex < 0 || selectedIndex >= spawnPoints.size()) {
-            return Component.translatable("gui.fpsm.spawn_point_tool.no_point");
-        }
-        SpawnPointData data = spawnPoints.get(selectedIndex);
-        return Component.literal(String.format("X %.1f Y %.1f Z %.1f  Yaw %.1f Pitch %.1f",
-                data.getX(), data.getY(), data.getZ(), data.getYaw(), data.getPitch()));
-    }
-
-    private void sendAction(SpawnPointToolActionC2SPacket.Action action) {
-        FPSMatch.sendToServer(new SpawnPointToolActionC2SPacket(
-                action,
-                this.selectedType,
-                this.selectedMap,
-                this.selectedTeam,
-                this.selectedIndex
-        ));
     }
 }

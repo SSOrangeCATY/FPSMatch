@@ -1,17 +1,19 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
+import com.lowdragmc.lowdraglib.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib.gui.widget.*;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMWidgetScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMWidgets;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.UUID;
 
-public class FPSMMapManageScreen extends Screen implements FPSMMapDetailChildScreen {
+public class FPSMMapManageScreen extends FPSMWidgetScreen implements FPSMMapDetailChildScreen {
     private static final int PANEL_WIDTH = 440;
     private static final int ROW_HEIGHT = 24;
     private static final int LIST_TOP = 118;
@@ -28,91 +30,88 @@ public class FPSMMapManageScreen extends Screen implements FPSMMapDetailChildScr
     @Override
     public void applyDetail(MapRoomDetail detail) {
         this.detail = detail;
-        rebuildWidgets();
+        rebuildUI();
     }
 
     @Override
-    protected void init() {
-        rebuildWidgets();
-    }
-
-    protected void rebuildWidgets() {
-        clearWidgets();
+    protected void buildUI() {
         int centerX = width / 2;
-        Button startButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.debug.start"), button -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_START, new UUID(0L, 0L)))
-                .bounds(centerX - 218, 74, 84, 20)
-                .build());
-        Button resetButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.debug.reset"), button -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_RESET, new UUID(0L, 0L)))
-                .bounds(centerX - 128, 74, 84, 20)
-                .build());
-        Button newRoundButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.debug.new_round"), button -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_NEW_ROUND, new UUID(0L, 0L)))
-                .bounds(centerX - 38, 74, 84, 20)
-                .build());
-        Button cleanupButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.debug.cleanup"), button -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_CLEANUP, new UUID(0L, 0L)))
-                .bounds(centerX + 52, 74, 84, 20)
-                .build());
-        Button switchButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.debug.switch"), button -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_SWITCH, new UUID(0L, 0L)))
-                .bounds(centerX + 142, 74, 84, 20)
-                .build());
-        startButton.active = detail.summary().currentPlayerOp();
-        resetButton.active = detail.summary().currentPlayerOp();
-        newRoundButton.active = detail.summary().currentPlayerOp();
-        cleanupButton.active = detail.summary().currentPlayerOp();
-        switchButton.active = detail.summary().currentPlayerOp();
         int left = centerX - PANEL_WIDTH / 2;
-        int y = LIST_TOP;
-        for (int i = 0; i < Math.min(detail.players().size(), visibleRows()); i++) {
+        int visibleRows = visibleRows();
+        int bottom = Math.min(height - 84, LIST_TOP + visibleRows * ROW_HEIGHT);
+
+        root.addWidget(new LabelWidget(centerX - font.width(title) / 2, 24, title.getString()).setTextColor(0xFFFFFFFF));
+        Component sub = Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName());
+        root.addWidget(new LabelWidget(centerX - font.width(sub) / 2, 48, sub.getString()).setTextColor(0xFFB8D4E3));
+
+        // 调试按钮行
+        WidgetGroup debugBar = new WidgetGroup(centerX - 220, 74, 440, 20);
+        debugBar.setClientSideWidget();
+        debugBar.addWidget(FPSMWidgets.button(2, 0, 84, 20,
+                Component.translatable("gui.fpsm.map_select.debug.start"),
+                () -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_START, new UUID(0L, 0L))).setActive(detail.summary().currentPlayerOp()));
+        debugBar.addWidget(FPSMWidgets.button(90, 0, 84, 20,
+                Component.translatable("gui.fpsm.map_select.debug.reset"),
+                () -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_RESET, new UUID(0L, 0L))).setActive(detail.summary().currentPlayerOp()));
+        debugBar.addWidget(FPSMWidgets.button(178, 0, 84, 20,
+                Component.translatable("gui.fpsm.map_select.debug.new_round"),
+                () -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_NEW_ROUND, new UUID(0L, 0L))).setActive(detail.summary().currentPlayerOp()));
+        debugBar.addWidget(FPSMWidgets.button(266, 0, 84, 20,
+                Component.translatable("gui.fpsm.map_select.debug.cleanup"),
+                () -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_CLEANUP, new UUID(0L, 0L))).setActive(detail.summary().currentPlayerOp()));
+        debugBar.addWidget(FPSMWidgets.button(354, 0, 84, 20,
+                Component.translatable("gui.fpsm.map_select.debug.switch"),
+                () -> sendAction(MapRoomActionC2SPacket.Action.DEBUG_SWITCH, new UUID(0L, 0L))).setActive(detail.summary().currentPlayerOp()));
+        root.addWidget(debugBar);
+
+        // 背景
+        root.addWidget(new WidgetGroup(left - 6, LIST_TOP - 6, PANEL_WIDTH + 12, bottom - LIST_TOP + 12)
+                .setBackground(new ColorRectTexture(0x77000000)));
+
+        root.addWidget(new LabelWidget(left, LIST_TOP - 22,
+                Component.translatable("gui.fpsm.map_select.players.title").getString()).setTextColor(0xFFFFFFFF));
+
+        // 玩家列表
+        int contentHeight = Math.max(visibleRows * ROW_HEIGHT, detail.players().size() * ROW_HEIGHT);
+        DraggableScrollableWidgetGroup scroll = new DraggableScrollableWidgetGroup(left, LIST_TOP, PANEL_WIDTH, bottom - LIST_TOP);
+        scroll.setScrollable(true);
+        scroll.setYScrollBarWidth(4).setYBarStyle(new ColorRectTexture(0x33000000), new ColorRectTexture(0x88FFFFFF));
+
+        WidgetGroup content = new WidgetGroup(0, 0, PANEL_WIDTH, contentHeight);
+        content.setClientSideWidget();
+
+        for (int i = 0; i < detail.players().size(); i++) {
             MapRoomPlayerInfo player = detail.players().get(i);
-            Button kickButton = Button.builder(Component.translatable("gui.fpsm.map_select.kick"), button -> sendAction(MapRoomActionC2SPacket.Action.KICK, player.uuid()))
-                    .bounds(left + 356, y + 2, 68, 20)
-                    .build();
-            kickButton.active = detail.summary().currentPlayerOp();
-            addRenderableWidget(kickButton);
-            y += ROW_HEIGHT;
-        }
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
-                .bounds(centerX - 50, height - 52, 100, 20)
-                .build());
-    }
+            int y = i * ROW_HEIGHT;
 
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, 0xFFB8D4E3);
-        int left = width / 2 - PANEL_WIDTH / 2;
-        int bottom = Math.min(height - 84, LIST_TOP + visibleRows() * ROW_HEIGHT);
-        graphics.fill(left - 6, LIST_TOP - 6, left + PANEL_WIDTH + 6, bottom + 6, 0x77000000);
-        graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players.title"), left, LIST_TOP - 22, 0xFFFFFFFF, false);
-        if (detail.players().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.players.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
-        }
-        int y = LIST_TOP;
-        for (int i = 0; i < Math.min(detail.players().size(), visibleRows()); i++) {
-            MapRoomPlayerInfo player = detail.players().get(i);
-            graphics.drawString(font, Component.literal(player.name()), left, y + 8, player.online() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
-            graphics.drawString(font, Component.literal(player.teamName()), left + 132, y + 8, player.spectator() ? 0xFFBBA7FF : 0xFF74E084, false);
-            graphics.drawString(font, Component.translatable(player.online() ? "gui.fpsm.map_select.online" : "gui.fpsm.map_select.offline"), left + 252, y + 8, player.online() ? 0xFF74E084 : 0xFF8F9AA3, false);
-            y += ROW_HEIGHT;
-        }
-        super.render(graphics, mouseX, mouseY, partialTick);
-    }
+            content.addWidget(new LabelWidget(0, y + 8, player.name())
+                    .setTextColor(player.online() ? 0xFFE6F2FF : 0xFF8F9AA3));
+            content.addWidget(new LabelWidget(132, y + 8, player.teamName())
+                    .setTextColor(player.spectator() ? 0xFFBBA7FF : 0xFF74E084));
+            content.addWidget(new LabelWidget(252, y + 8,
+                    Component.translatable(player.online() ? "gui.fpsm.map_select.online" : "gui.fpsm.map_select.offline").getString())
+                    .setTextColor(player.online() ? 0xFF74E084 : 0xFF8F9AA3));
 
-    @Override
-    public void onClose() {
-        minecraft.setScreen(parent);
-    }
+            MapRoomPlayerInfo p = player;
+            content.addWidget(FPSMWidgets.button(356, y + 2, 68, 20,
+                    Component.translatable("gui.fpsm.map_select.kick"),
+                    () -> sendAction(MapRoomActionC2SPacket.Action.KICK, p.uuid()))
+                    .setActive(detail.summary().currentPlayerOp()));
+        }
 
-    @Override
-    public boolean isPauseScreen() {
-        return false;
+        scroll.addWidget(content);
+        root.addWidget(scroll);
+
+        root.addWidget(FPSMWidgets.button(centerX - 50, height - 52, 100, 20,
+                Component.translatable("gui.back"), this::onClose));
     }
 
     private void sendAction(MapRoomActionC2SPacket.Action action, UUID target) {
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(action, detail.summary().gameType(), detail.summary().mapName(), target));
     }
 
-    private int visibleRows() {
-        return Math.max(1, (height - LIST_TOP - 92) / ROW_HEIGHT);
-    }
+    private int visibleRows() { return Math.max(1, (height - LIST_TOP - 92) / ROW_HEIGHT); }
+
+    @Override
+    public void onClose() { minecraft.setScreen(parent); }
 }

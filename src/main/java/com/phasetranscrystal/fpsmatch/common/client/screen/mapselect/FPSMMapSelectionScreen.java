@@ -1,20 +1,23 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
+import com.lowdragmc.lowdraglib.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib.gui.widget.*;
+import com.lowdragmc.lowdraglib.utils.Position;
+import com.lowdragmc.lowdraglib.utils.Size;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMWidgetScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMWidgets;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 
 import java.util.List;
 import java.util.UUID;
 
-public class FPSMMapSelectionScreen extends Screen {
+public class FPSMMapSelectionScreen extends FPSMWidgetScreen {
     private static final int PANEL_WIDTH = 360;
     private static final int ROW_HEIGHT = 46;
     private static final int ROW_GAP = 4;
@@ -26,10 +29,12 @@ public class FPSMMapSelectionScreen extends Screen {
     private int selectedIndex = -1;
     private String selectedGameType;
     private String selectedMapName;
-    private int scrollOffset;
-    private Button detailButton;
-    private Button joinButton;
-    private Button leaveButton;
+
+    private DraggableScrollableWidgetGroup scrollGroup;
+    private WidgetGroup listContent;
+    private ButtonWidget detailButton;
+    private ButtonWidget joinButton;
+    private ButtonWidget leaveButton;
 
     public FPSMMapSelectionScreen(MapSelectionSnapshotS2CPacket snapshot, Screen parent) {
         super(Component.translatable("gui.fpsm.map_select.title"));
@@ -40,121 +45,128 @@ public class FPSMMapSelectionScreen extends Screen {
     public void applySnapshot(MapSelectionSnapshotS2CPacket snapshot) {
         this.snapshot = snapshot;
         restoreSelectedIndex();
-        scrollOffset = Mth.clamp(scrollOffset, 0, maxScrollOffset());
-        rebuildWidgets();
+        rebuildUI();
     }
 
     @Override
-    protected void init() {
-        rebuildWidgets();
-    }
-
-    protected void rebuildWidgets() {
-        clearWidgets();
+    protected void buildUI() {
+        List<MapRoomSummary> maps = maps();
         int centerX = width / 2;
-        detailButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.detail"), button -> sendSelectedAction(MapRoomActionC2SPacket.Action.REQUEST_DETAIL))
-                .bounds(centerX - 183, height - 52, 82, 20)
-                .build());
-        joinButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.join"), button -> sendSelectedAction(MapRoomActionC2SPacket.Action.JOIN))
-                .bounds(centerX - 93, height - 52, 82, 20)
-                .build());
-        leaveButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.leave"), button -> sendSelectedAction(MapRoomActionC2SPacket.Action.LEAVE))
-                .bounds(centerX - 3, height - 52, 82, 20)
-                .build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.refresh"), button -> FPSMatch.sendToServer(new OpenMapSelectionC2SPacket()))
-                .bounds(centerX + 87, height - 52, 82, 20)
-                .build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-                .bounds(centerX + 177, height - 52, 82, 20)
-                .build());
+
+        // 标题
+        root.addWidget(new LabelWidget(centerX - font.width(title) / 2, 24, title.getString()).setTextColor(0xFFFFFFFF));
+        // 计数
+        Component countText = Component.translatable("gui.fpsm.map_select.snapshot_count", maps.size());
+        root.addWidget(new LabelWidget(centerX - font.width(countText) / 2, 48, countText.getString()).setTextColor(0xFFB8D4E3));
+
+        // 可滚动列表
+        int listLeft = width / 2 - PANEL_WIDTH / 2;
+        int listRight = width / 2 + PANEL_WIDTH / 2;
+        int listBottom = Math.max(LIST_TOP + ROW_HEIGHT, height - LIST_BOTTOM_PADDING);
+        int listWidth = listRight - listLeft;
+        int listHeight = listBottom - LIST_TOP;
+
+        scrollGroup = new DraggableScrollableWidgetGroup(listLeft - 6, LIST_TOP - 6, listWidth + 12, listHeight + 12);
+        scrollGroup.setBackground(new ColorRectTexture(0x77000000));
+        scrollGroup.setYScrollBarWidth(4).setYBarStyle(new ColorRectTexture(0x33000000), new ColorRectTexture(0x88FFFFFF));
+
+        listContent = new WidgetGroup(6, 6, listWidth, maps.size() * (ROW_HEIGHT + ROW_GAP));
+        listContent.setClientSideWidget();
+
+        for (int i = 0; i < maps.size(); i++) {
+            MapRoomSummary summary = maps.get(i);
+            boolean isSelected = i == selectedIndex;
+            int rowColor = isSelected ? 0xAA2D5F7D : (i % 2 == 0 ? 0x88212A33 : 0x8834485A);
+            int statusColor = statusColor(summary);
+
+            // 行背景
+            WidgetGroup row = new WidgetGroup(0, i * (ROW_HEIGHT + ROW_GAP), listWidth, ROW_HEIGHT);
+            row.setBackground(new ColorRectTexture(rowColor));
+
+            // 左侧色条
+            row.addWidget(new WidgetGroup(0, 0, 3, ROW_HEIGHT)
+                    .setBackground(new ColorRectTexture(statusColor)));
+
+            // 地图名称
+            row.addWidget(new LabelWidget(10, 7, summary.gameType() + " / " + summary.mapName())
+                    .setTextColor(0xFFFFFFFF));
+
+            // 玩家数
+            String playersText = summary.joinedPlayers() + "/" + (summary.maxPlayers() < 0 ? "∞" : summary.maxPlayers());
+            Component playersLabel = Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary));
+            row.addWidget(new LabelWidget(listWidth - 86, 7, playersLabel.getString()).setTextColor(0xFFE6F2FF));
+
+            // 状态
+            row.addWidget(new LabelWidget(10, 22, statusText(summary).getString()).setTextColor(statusColor));
+
+            // 维度/区域
+            Component areaLabel = Component.translatable("gui.fpsm.map_select.summary", summary.dimension(), summary.areaText());
+            row.addWidget(new LabelWidget(118, 22, areaLabel.getString()).setTextColor(0xFFB8D4E3));
+
+            // 已加入标记
+            if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
+                row.addWidget(new LabelWidget(listWidth - 58, 22,
+                        Component.translatable("gui.fpsm.map_select.joined").getString()).setTextColor(0xFF74E084));
+            }
+
+            // 行点击
+            final int idx = i;
+            row.addWidget(makeRowClicker(listWidth, ROW_HEIGHT, idx));
+
+            listContent.addWidget(row);
+        }
+
+        scrollGroup.addWidget(listContent);
+        root.addWidget(scrollGroup);
+
+        // 底部按钮
+        int btnY = height - 52;
+        detailButton = FPSMWidgets.button(centerX - 183, btnY, 82, 20,
+                Component.translatable("gui.fpsm.map_select.detail"), () -> sendSelectedAction(MapRoomActionC2SPacket.Action.REQUEST_DETAIL));
+        joinButton = FPSMWidgets.button(centerX - 93, btnY, 82, 20,
+                Component.translatable("gui.fpsm.map_select.join"), () -> sendSelectedAction(MapRoomActionC2SPacket.Action.JOIN));
+        leaveButton = FPSMWidgets.button(centerX - 3, btnY, 82, 20,
+                Component.translatable("gui.fpsm.map_select.leave"), () -> sendSelectedAction(MapRoomActionC2SPacket.Action.LEAVE));
+
+        root.addWidget(detailButton);
+        root.addWidget(joinButton);
+        root.addWidget(leaveButton);
+
+        root.addWidget(FPSMWidgets.button(centerX + 87, btnY, 82, 20,
+                Component.translatable("gui.fpsm.map_select.refresh"),
+                () -> FPSMatch.sendToServer(new OpenMapSelectionC2SPacket())));
+
+        root.addWidget(FPSMWidgets.button(centerX + 177, btnY, 82, 20,
+                Component.translatable("gui.done"), this::onClose));
+
         updateActionButtons();
     }
 
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, 0xFFFFFFFF);
-        List<MapRoomSummary> maps = maps();
-        int count = maps.size();
-        graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.snapshot_count", count), width / 2, 48, 0xFFB8D4E3);
-        renderList(graphics, maps, mouseX, mouseY);
-        super.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            int clickedIndex = indexAt(mouseX, mouseY);
-            if (clickedIndex >= 0) {
-                selectedIndex = clickedIndex;
-                rememberSelection(selectedSummary());
-                updateActionButtons();
-                return true;
+    /** 创建透明点击区域用于行选择 */
+    private Widget makeRowClicker(int w, int h, int index) {
+        Widget clicker = new Widget(0, 0, w, h) {
+            @Override
+            public boolean mouseClicked(double mx, double my, int button) {
+                if (button == 0) {
+                    selectedIndex = index;
+                    rememberSelection(selectedSummary());
+                    updateActionButtons();
+                    rebuildUI();
+                    return true;
+                }
+                return false;
             }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
+        };
+        clicker.setClientSideWidget();
+        return clicker;
     }
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (mouseY >= LIST_TOP && mouseY <= listBottom()) {
-            scrollOffset = Mth.clamp(scrollOffset - (int) Math.signum(delta), 0, maxScrollOffset());
-            return true;
-        }
-        return super.mouseScrolled(mouseX, mouseY, delta);
-    }
-
-    @Override
-    public void onClose() {
-        minecraft.setScreen(parent);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    private void renderList(GuiGraphics graphics, List<MapRoomSummary> maps, int mouseX, int mouseY) {
-        int left = listLeft();
-        int right = listRight();
-        int bottom = listBottom();
-        graphics.fill(left - 6, LIST_TOP - 6, right + 6, bottom + 6, 0x77000000);
-        if (maps.isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
-            return;
-        }
-        int visibleRows = visibleRows();
-        int end = Math.min(maps.size(), scrollOffset + visibleRows);
-        for (int i = scrollOffset; i < end; i++) {
-            MapRoomSummary summary = maps.get(i);
-            int rowTop = LIST_TOP + (i - scrollOffset) * (ROW_HEIGHT + ROW_GAP);
-            boolean selected = i == selectedIndex;
-            boolean hovered = mouseX >= left && mouseX <= right && mouseY >= rowTop && mouseY <= rowTop + ROW_HEIGHT;
-            int color = selected ? 0xAA2D5F7D : hovered ? 0x8834485A : 0x88212A33;
-            graphics.fill(left, rowTop, right, rowTop + ROW_HEIGHT, color);
-            graphics.fill(left, rowTop, left + 3, rowTop + ROW_HEIGHT, statusColor(summary));
-
-            graphics.drawString(font, Component.literal(summary.gameType() + " / " + summary.mapName()), left + 10, rowTop + 7, 0xFFFFFFFF, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - 76, rowTop + 7, 0xFFE6F2FF, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.status", statusText(summary)), left + 10, rowTop + 22, statusColor(summary), false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.summary", summary.dimension(), summary.areaText()), left + 118, rowTop + 22, 0xFFB8D4E3, false);
-            if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
-                graphics.drawString(font, Component.translatable("gui.fpsm.map_select.joined"), right - 48, rowTop + 22, 0xFF74E084, false);
-            }
-        }
-    }
-
-    private int indexAt(double mouseX, double mouseY) {
-        if (mouseX < listLeft() || mouseX > listRight() || mouseY < LIST_TOP || mouseY > listBottom()) {
-            return -1;
-        }
-        int relativeY = (int) mouseY - LIST_TOP;
-        int row = relativeY / (ROW_HEIGHT + ROW_GAP);
-        if (relativeY % (ROW_HEIGHT + ROW_GAP) > ROW_HEIGHT) {
-            return -1;
-        }
-        int index = scrollOffset + row;
-        return index < maps().size() ? index : -1;
+    private void updateActionButtons() {
+        MapRoomSummary summary = selectedSummary();
+        boolean joined = summary != null && (summary.currentPlayerJoined() || summary.currentPlayerSpectating());
+        detailButton.setActive(summary != null);
+        joinButton.setActive(summary != null && !joined && !summary.full() && (!summary.started() || summary.allowJoinInProgress()));
+        leaveButton.setActive(joined);
     }
 
     private void sendSelectedAction(MapRoomActionC2SPacket.Action action) {
@@ -164,55 +176,30 @@ public class FPSMMapSelectionScreen extends Screen {
         }
     }
 
-    private void updateActionButtons() {
-        MapRoomSummary summary = selectedSummary();
-        boolean joined = summary != null && (summary.currentPlayerJoined() || summary.currentPlayerSpectating());
-        if (detailButton != null) {
-            detailButton.active = summary != null;
-        }
-        if (joinButton != null) {
-            joinButton.active = summary != null && !joined && !summary.full() && (!summary.started() || summary.allowJoinInProgress());
-        }
-        if (leaveButton != null) {
-            leaveButton.active = joined;
-        }
-    }
-
     private MapRoomSummary selectedSummary() {
         List<MapRoomSummary> maps = maps();
         if (selectedGameType != null && selectedMapName != null) {
-            for (MapRoomSummary summary : maps) {
-                if (selectedGameType.equals(summary.gameType()) && selectedMapName.equals(summary.mapName())) {
-                    return summary;
-                }
+            for (MapRoomSummary s : maps) {
+                if (selectedGameType.equals(s.gameType()) && selectedMapName.equals(s.mapName())) return s;
             }
         }
-        if (selectedIndex < 0 || selectedIndex >= maps.size()) {
-            return null;
-        }
-        MapRoomSummary summary = maps.get(selectedIndex);
-        rememberSelection(summary);
-        return summary;
+        if (selectedIndex < 0 || selectedIndex >= maps.size()) return null;
+        MapRoomSummary s = maps.get(selectedIndex);
+        rememberSelection(s);
+        return s;
     }
 
     private void rememberSelection(MapRoomSummary summary) {
-        if (summary == null) {
-            selectedGameType = null;
-            selectedMapName = null;
-            return;
-        }
-        selectedGameType = summary.gameType();
-        selectedMapName = summary.mapName();
+        if (summary == null) { selectedGameType = null; selectedMapName = null; }
+        else { selectedGameType = summary.gameType(); selectedMapName = summary.mapName(); }
     }
 
     private void restoreSelectedIndex() {
         List<MapRoomSummary> maps = maps();
         if (selectedGameType != null && selectedMapName != null) {
             for (int i = 0; i < maps.size(); i++) {
-                MapRoomSummary summary = maps.get(i);
-                if (selectedGameType.equals(summary.gameType()) && selectedMapName.equals(summary.mapName())) {
-                    selectedIndex = i;
-                    return;
+                if (selectedGameType.equals(maps.get(i).gameType()) && selectedMapName.equals(maps.get(i).mapName())) {
+                    selectedIndex = i; return;
                 }
             }
         }
@@ -220,51 +207,22 @@ public class FPSMMapSelectionScreen extends Screen {
         rememberSelection(selectedIndex >= 0 ? maps.get(selectedIndex) : null);
     }
 
-    private List<MapRoomSummary> maps() {
-        return snapshot == null ? List.of() : snapshot.maps();
-    }
+    private List<MapRoomSummary> maps() { return snapshot == null ? List.of() : snapshot.maps(); }
 
-    private Component statusText(MapRoomSummary summary) {
-        if (summary.debug()) {
-            return Component.translatable("gui.fpsm.map_select.status.debug");
-        }
-        if (summary.started()) {
-            return Component.translatable(summary.allowJoinInProgress() ? "gui.fpsm.map_select.status.started_joinable" : "gui.fpsm.map_select.status.started");
-        }
+    private Component statusText(MapRoomSummary s) {
+        if (s.debug()) return Component.translatable("gui.fpsm.map_select.status.debug");
+        if (s.started()) return Component.translatable(s.allowJoinInProgress() ? "gui.fpsm.map_select.status.started_joinable" : "gui.fpsm.map_select.status.started");
         return Component.translatable("gui.fpsm.map_select.status.waiting");
     }
 
-    private int statusColor(MapRoomSummary summary) {
-        if (summary.debug()) {
-            return 0xFFFFC857;
-        }
-        if (summary.started()) {
-            return summary.allowJoinInProgress() ? 0xFF66D9E8 : 0xFFFF6B6B;
-        }
+    private int statusColor(MapRoomSummary s) {
+        if (s.debug()) return 0xFFFFC857;
+        if (s.started()) return s.allowJoinInProgress() ? 0xFF66D9E8 : 0xFFFF6B6B;
         return 0xFF74E084;
     }
 
-    private String maxPlayersText(MapRoomSummary summary) {
-        return summary.maxPlayers() < 0 ? "∞" : Integer.toString(summary.maxPlayers());
-    }
+    private String maxPlayersText(MapRoomSummary s) { return s.maxPlayers() < 0 ? "∞" : Integer.toString(s.maxPlayers()); }
 
-    private int listLeft() {
-        return width / 2 - PANEL_WIDTH / 2;
-    }
-
-    private int listRight() {
-        return width / 2 + PANEL_WIDTH / 2;
-    }
-
-    private int listBottom() {
-        return Math.max(LIST_TOP + ROW_HEIGHT, height - LIST_BOTTOM_PADDING);
-    }
-
-    private int visibleRows() {
-        return Math.max(1, (listBottom() - LIST_TOP + ROW_GAP) / (ROW_HEIGHT + ROW_GAP));
-    }
-
-    private int maxScrollOffset() {
-        return Math.max(0, maps().size() - visibleRows());
-    }
+    @Override
+    public void onClose() { minecraft.setScreen(parent); }
 }
