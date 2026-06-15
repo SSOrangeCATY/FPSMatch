@@ -9,7 +9,8 @@ import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveData
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -80,8 +81,9 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     @Override
     public String getName() {
         String name;
-        if(this.changedItem.getItem() instanceof IGun iGun){
-            name = iGun.getGunId(this.changedItem).toString().replace(":","_");
+        IGunProvider provider = GunCompatManager.findProvider(this.changedItem);
+        if(provider.isGun(this.changedItem)){
+            name = provider.getGunId(this.changedItem).toString().replace(":","_");
         }else{
             name = BuiltInRegistries.ITEM.getKey(this.defaultItem.getItem()).toString().replace(":","_");
         }

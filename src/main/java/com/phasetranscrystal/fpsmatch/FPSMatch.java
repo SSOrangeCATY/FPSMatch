@@ -23,8 +23,8 @@ import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
-import com.tacz.guns.client.gui.compat.ClothConfigScreen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -36,6 +36,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
@@ -105,7 +106,13 @@ public class FPSMatch {
                 DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> FPSMenuIntegration::registerModsPage);
             }else{
                 if (FMLEnvironment.dist == Dist.CLIENT) {
-                    ClothConfigScreen.registerNoClothConfigPage();
+                    try {
+                        // 尝试通过 TACZ 兼容层注册无 Cloth Config 页面
+                        Class<?> clothScreenClass = Class.forName("com.tacz.guns.client.gui.compat.ClothConfigScreen");
+                        clothScreenClass.getMethod("registerNoClothConfigPage").invoke(null);
+                    } catch (Exception ignored) {
+                        // TACZ 未加载，无需注册
+                    }
                 }
             }
         });
@@ -120,10 +127,24 @@ public class FPSMatch {
             ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
             ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
 
-            if(FPSMImpl.findCounterStrikeGrenadesMod()){
-                CounterStrikeGrenadesCompat.init();
-            }
+            // 兼容层注册（各模组兼容层在此统一注册）
+            registerCompat();
         });
+    }
+
+    /**
+     * 统一注册所有模组兼容层。
+     * 由 {@code commonSetup} 在 enqueueWork 中调用，确保在主线程执行。
+     */
+    private static void registerCompat() {
+        // TACZ 兼容层 —— 必须在外部判断模组加载，避免 JVM 解析 TACZBootstrap 时引入 TACZ 依赖类导致 CNF
+        if (ModList.get().isLoaded("tacz")) {
+            TACZBootstrap.registerCompat();
+        }
+        // CS Grenade 兼容层
+        if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+            CounterStrikeGrenadesCompat.init();
+        }
     }
 
     /**

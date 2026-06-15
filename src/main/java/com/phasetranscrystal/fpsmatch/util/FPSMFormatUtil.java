@@ -1,8 +1,9 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
-import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -38,9 +39,9 @@ public class FPSMFormatUtil {
     public static String i18n(ItemStack st) {
         String unknown = I18n.exists("fpsm.unknown_weapon") ? I18n.get("fpsm.unknown_weapon") : "未知武器";
         if (st == null || st.isEmpty()) return unknown;
-        IGun iGun = IGun.getIGunOrNull(st);
-        if (iGun != null) {
-            ResourceLocation gid = iGun.getGunId(st);
+        IGunProvider provider = GunCompatManager.findProvider(st);
+        if (provider.isGun(st)) {
+            ResourceLocation gid = provider.getGunId(st);
             String[] keys = new String[]{
                     "item." + gid.getNamespace() + "." + gid.getPath(),
                     "gun." + gid.getNamespace() + "." + gid.getPath(),

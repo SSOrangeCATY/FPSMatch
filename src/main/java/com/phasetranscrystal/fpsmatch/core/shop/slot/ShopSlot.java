@@ -13,7 +13,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.common.event.PlayerObtainItemEvent;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -204,8 +204,8 @@ public class ShopSlot{
      * @param defaultCost 默认价格
      */
     public ShopSlot(ItemStack itemStack, int defaultCost) {
-        if(itemStack.getItem() instanceof IGun iGun){
-            FPSMUtil.fixGunItem(itemStack, iGun);
+        if(GunCompatManager.isGun(itemStack)){
+            FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
         this.itemSupplier = itemStack::copy;
         this.defaultCost = defaultCost;
@@ -277,9 +277,9 @@ public class ShopSlot{
     public Predicate<ItemStack> getDefaultChecker(){
         return (itemStack)->{
             ItemStack shopItem = this.process();
-            if(itemStack.getItem() instanceof IGun iGun){
-                ResourceLocation gunId = iGun.getGunId(itemStack);
-                return shopItem.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(shopItem));
+            if(GunCompatManager.isGun(itemStack)){
+            ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
+            return GunCompatManager.isGun(shopItem) && gunId.equals(GunCompatManager.findProvider(shopItem).getGunId(shopItem));
             }else {
                 return itemStack.getDisplayName().getString().equals(shopItem.getDisplayName().getString()) && shopItem.getItem() == itemStack.getItem();
             }
@@ -415,8 +415,8 @@ public class ShopSlot{
 
     public ShopSlot copy() {
         ItemStack itemStack = this.itemSupplier.get();
-        if(itemStack.getItem() instanceof IGun iGun){
-            FPSMUtil.fixGunItem(itemStack, iGun);
+        if(GunCompatManager.isGun(itemStack)){
+            FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
         ShopSlot slot = new ShopSlot(itemStack::copy,this.defaultCost,this.maxBuyCount,this.groupId,this.returningChecker);
         slot.setIndex(this.index);
@@ -426,18 +426,12 @@ public class ShopSlot{
 
     public int getAmmoCount() {
         ItemStack itemStack = this.itemSupplier.get();
-        if(itemStack.getItem() instanceof IGun iGun){
-            return iGun.getMaxDummyAmmoAmount(itemStack);
-        }
-        return 0;
+        return GunCompatManager.findProvider(itemStack).getMaxDummyAmmo(itemStack);
     }
 
     public int getDummyAmmoCount() {
         ItemStack itemStack = this.itemSupplier.get();
-        if(itemStack.getItem() instanceof IGun iGun){
-            return iGun.getMaxDummyAmmoAmount(itemStack);
-        }
-        return 0;
+        return GunCompatManager.findProvider(itemStack).getMaxDummyAmmo(itemStack);
     }
 
     public String toString(){

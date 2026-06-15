@@ -27,7 +27,8 @@ import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -381,8 +382,8 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      * 设置商店物品
      */
     public void setShopItem(ItemStack itemStack, String shopType, int slotNum) {
-        if (itemStack.getItem() instanceof IGun iGun) {
-            FPSMUtil.fixGunItem(itemStack, iGun);
+        if (GunCompatManager.isGun(itemStack)) {
+            FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
         }
         getShop().setDefaultShopDataItemStack(shopType, slotNum, itemStack);
     }
@@ -400,8 +401,8 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      */
     public void setGunAmmoAmount(int amount, String shopType, int slotNum) {
         ItemStack itemStack = getShop().getDefaultShopDataItemStack(shopType, slotNum);
-        if (itemStack.getItem() instanceof IGun iGun) {
-            FPSMUtil.setDummyAmmo(itemStack, iGun, amount);
+        if (GunCompatManager.isGun(itemStack)) {
+            FPSMUtil.setDummyAmmo(itemStack, GunCompatManager.findProvider(itemStack), amount);
         }
         getShop().setDefaultShopDataItemStack(shopType, slotNum, itemStack);
     }

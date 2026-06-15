@@ -16,10 +16,10 @@ import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.index.CommonGunIndex;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunDataDTO;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
@@ -45,7 +45,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class FPSMUtil {
-    public static final List<GunTabType> MAIN_WEAPON = ImmutableList.of(GunTabType.RIFLE,GunTabType.SNIPER,GunTabType.SHOTGUN,GunTabType.SMG,GunTabType.MG);
+    public static final List<GunTabTypeEnum> MAIN_WEAPON = ImmutableList.of(GunTabTypeEnum.RIFLE, GunTabTypeEnum.SNIPER, GunTabTypeEnum.SHOTGUN, GunTabTypeEnum.SMG, GunTabTypeEnum.MG);
     public static final List<Predicate<ItemStack>> MAIN_WEAPON_PREDICATE = new ArrayList<>();
     public static final List<Predicate<ItemStack>> SECONDARY_WEAPON_PREDICATE = new ArrayList<>();
     public static final List<Predicate<ItemStack>> THIRD_WEAPON_PREDICATE = new ArrayList<>();
@@ -55,17 +55,19 @@ public class FPSMUtil {
 
     static{
         addMainWeaponPredicate((itemStack -> {
-            if(itemStack.getItem() instanceof IGun gun){
-                return isMainWeapon(gun.getGunId(itemStack));
-            }else{
+            IGunProvider provider = GunCompatManager.findProvider(itemStack);
+            if (provider.isGun(itemStack)) {
+                return isMainWeapon(provider.getGunId(itemStack));
+            } else {
                 return false;
             }
         }));
 
         addSecondaryWeaponPredicate((itemStack -> {
-            if(itemStack.getItem() instanceof IGun gun){
-                return getGunTypeByGunId(gun.getGunId(itemStack)).filter(gunTabType -> gunTabType == GunTabType.PISTOL).isPresent();
-            }else{
+            IGunProvider provider = GunCompatManager.findProvider(itemStack);
+            if (provider.isGun(itemStack)) {
+                return provider.getGunTabType(itemStack) == GunTabTypeEnum.PISTOL;
+            } else {
                 return false;
             }
         }));
@@ -95,9 +97,10 @@ public class FPSMUtil {
         }));
 
         addThirdWeaponPredicate((itemStack -> {
-            if(itemStack.getItem() instanceof IGun gun){
-                return getGunTypeByGunId(gun.getGunId(itemStack)).filter(gunTabType -> gunTabType == GunTabType.RPG).isPresent();
-            }else{
+            IGunProvider provider = GunCompatManager.findProvider(itemStack);
+            if (provider.isGun(itemStack)) {
+                return provider.getGunTabType(itemStack) == GunTabTypeEnum.RPG;
+            } else {
                 if (FPSMImpl.findLrtacticalMod()){
                     try{
                         return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IMeleeWeapon;
@@ -115,12 +118,12 @@ public class FPSMUtil {
         MISC_PREDICATE.add((itemStack -> true));
     }
 
-    public static Optional<GunTabType> getGunTypeByGunId(ResourceLocation gunId){
-        return TimelessAPI.getCommonGunIndex(gunId)
-                .map(commonGunIndex -> GunTabType.valueOf(commonGunIndex.getType().toUpperCase(Locale.US)));
+    public static Optional<GunTabTypeEnum> getGunTypeByGunId(ResourceLocation gunId) {
+        return GunCompatManager.getGunData(gunId)
+                .map(GunDataDTO::getGunTabType);
     }
 
-    public static boolean isMainWeapon(ResourceLocation gunId){
+    public static boolean isMainWeapon(ResourceLocation gunId) {
         return getGunTypeByGunId(gunId).filter(MAIN_WEAPON::contains).isPresent();
     }
 
@@ -282,41 +285,33 @@ public class FPSMUtil {
         return false;
     }
 
-    public static void setTotalDummyAmmo(ItemStack itemStack, IGun iGun, int dummyAmmo){
-        Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
-        if(commonGunIndexOptional.isPresent()){
-            CommonGunIndex gunIndex = commonGunIndexOptional.get();
-            int maxAmmon = gunIndex.getGunData().getAmmoAmount();
-            iGun.useDummyAmmo(itemStack);
-            iGun.setCurrentAmmoCount(itemStack, maxAmmon);
-            iGun.setMaxDummyAmmoAmount(itemStack, dummyAmmo);
-            iGun.setDummyAmmoAmount(itemStack, dummyAmmo);
-        }
-    }
-
-    public static void setDummyAmmo(ItemStack itemStack, IGun iGun, int amount){
-        TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack)).ifPresent(index -> {
-            iGun.useDummyAmmo(itemStack);
-            iGun.setMaxDummyAmmoAmount(itemStack, amount);
-            iGun.setDummyAmmoAmount(itemStack, amount);
-            iGun.setCurrentAmmoCount(itemStack, index.getGunData().getAmmoAmount());
+    public static void setTotalDummyAmmo(ItemStack itemStack, IGunProvider provider, int dummyAmmo) {
+        provider.getGunData(itemStack).ifPresent(gunData -> {
+            provider.useDummyAmmo(itemStack);
+            provider.setCurrentAmmo(itemStack, gunData.getAmmoAmount());
+            provider.setMaxDummyAmmo(itemStack, dummyAmmo);
+            provider.setDummyAmmo(itemStack, dummyAmmo);
         });
     }
 
-    public static int getTotalDummyAmmo(ItemStack itemStack, IGun iGun){
-        Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
-        if(commonGunIndexOptional.isPresent()){
-            CommonGunIndex gunIndex = commonGunIndexOptional.get();
-            int maxAmmon = gunIndex.getGunData().getAmmoAmount();
-            int dummy = iGun.getMaxDummyAmmoAmount(itemStack);
-            return maxAmmon + dummy;
-        }
-        return 0;
+    public static void setDummyAmmo(ItemStack itemStack, IGunProvider provider, int amount) {
+        provider.getGunData(itemStack).ifPresent(data -> {
+            provider.useDummyAmmo(itemStack);
+            provider.setMaxDummyAmmo(itemStack, amount);
+            provider.setDummyAmmo(itemStack, amount);
+            provider.setCurrentAmmo(itemStack, data.getAmmoAmount());
+        });
+    }
+
+    public static int getTotalDummyAmmo(ItemStack itemStack, IGunProvider provider) {
+        return provider.getGunData(itemStack)
+                .map(data -> data.getAmmoAmount() + provider.getDummyAmmo(itemStack))
+                .orElse(0);
     }
 
     public static ItemStack fixGunItem(@NotNull ItemStack itemStack) {
-        if(itemStack.getItem() instanceof IGun iGun){
-            fixGunItem(itemStack,iGun);
+        if (GunCompatManager.isGun(itemStack)) {
+            fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
             return itemStack;
         }
         return itemStack;
@@ -324,44 +319,38 @@ public class FPSMUtil {
 
     /**
      * use dummy ammo
-     * */
-    public static void fixGunItem(@NotNull ItemStack itemStack, @NotNull IGun iGun) {
-        Optional<CommonGunIndex> gunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
-        if(gunIndexOptional.isPresent()){
-            int maxAmmon = gunIndexOptional.get().getGunData().getAmmoAmount();
-            iGun.setCurrentAmmoCount(itemStack,maxAmmon);
-        }
-        int maxAmmo = iGun.getMaxDummyAmmoAmount(itemStack);
-        if(maxAmmo > 0) {
-            iGun.useDummyAmmo(itemStack);
-            iGun.setDummyAmmoAmount(itemStack,maxAmmo);
+     */
+    public static void fixGunItem(@NotNull ItemStack itemStack, @NotNull IGunProvider provider) {
+        provider.getGunData(itemStack).ifPresent(gunData -> {
+            provider.setCurrentAmmo(itemStack, gunData.getAmmoAmount());
+        });
+        int maxAmmo = provider.getMaxDummyAmmo(itemStack);
+        if (maxAmmo > 0) {
+            provider.useDummyAmmo(itemStack);
+            provider.setDummyAmmo(itemStack, maxAmmo);
         }
     }
 
     /**
      * use dummy ammo
-     * */
-    public static void resetGunAmmo(ItemStack itemStack, IGun iGun){
-        Optional<CommonGunIndex> commonGunIndexOptional = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
-        if(commonGunIndexOptional.isPresent()){
-            CommonGunIndex gunIndex = commonGunIndexOptional.get();
-            int maxAmmon = gunIndex.getGunData().getAmmoAmount();
-            iGun.setCurrentAmmoCount(itemStack,maxAmmon);
-            iGun.useDummyAmmo(itemStack);
-            iGun.setDummyAmmoAmount(itemStack,iGun.getMaxDummyAmmoAmount(itemStack));
-        }
+     */
+    public static void resetGunAmmo(ItemStack itemStack, IGunProvider provider) {
+        provider.getGunData(itemStack).ifPresent(gunData -> {
+            provider.setCurrentAmmo(itemStack, gunData.getAmmoAmount());
+            provider.useDummyAmmo(itemStack);
+            provider.setDummyAmmo(itemStack, provider.getMaxDummyAmmo(itemStack));
+        });
     }
 
-
     /**
-     *  use dummy ammo
-     * */
-    public static void resetAllGunAmmo(@NotNull ServerPlayer serverPlayer){
+     * use dummy ammo
+     */
+    public static void resetAllGunAmmo(@NotNull ServerPlayer serverPlayer) {
         Inventory inventory = serverPlayer.getInventory();
         List<NonNullList<ItemStack>> compartments = ImmutableList.of(inventory.items, inventory.armor, inventory.offhand);
-        compartments.forEach((itemList)-> itemList.forEach(itemStack -> {
-            if(itemStack.getItem() instanceof IGun iGun){
-                resetGunAmmo(itemStack,iGun);
+        compartments.forEach((itemList) -> itemList.forEach(itemStack -> {
+            if (GunCompatManager.isGun(itemStack)) {
+                resetGunAmmo(itemStack, GunCompatManager.findProvider(itemStack));
             }
         }));
     }

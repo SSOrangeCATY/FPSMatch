@@ -1,9 +1,9 @@
 package com.phasetranscrystal.fpsmatch.mixin.ammo;
 
 import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.entity.IGunOperator;
-import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.entity.shooter.ShooterDataHolder;
 import com.tacz.guns.item.ModernKineticGunItem;
@@ -23,7 +23,7 @@ public class ModernKineticGunItemMixin {
         if (!(itemStack.getItem() instanceof IGun gun)) return;
 
         boolean scoped = FPSMUtil.getGunTypeByGunId(gun.getGunId(itemStack))
-                .filter(gunTabType -> gunTabType == GunTabType.SNIPER)
+                .filter(gunTabType -> gunTabType == GunTabTypeEnum.SNIPER)
                 .map(gunTabType -> IGunOperator.fromLivingEntity(shooter).getSynAimingProgress() > 0.5f)
                 .orElse(false);
         passThroughEntity.fpsmatch$setScoped(scoped);

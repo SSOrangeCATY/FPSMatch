@@ -10,7 +10,6 @@ import com.tacz.guns.config.common.GunConfig;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import com.tacz.guns.sound.SoundManager;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -18,14 +17,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Plays TACZ reload sounds for other players on the client.
+ * Registered by {@link com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = FPSMatch.MODID)
 public final class OtherPlayerReloadSound {
     private OtherPlayerReloadSound() {
     }

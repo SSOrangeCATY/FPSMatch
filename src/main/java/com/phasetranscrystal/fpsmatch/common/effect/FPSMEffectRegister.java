@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.effect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.tacz.guns.config.sync.SyncConfig;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraftforge.registries.DeferredRegister;

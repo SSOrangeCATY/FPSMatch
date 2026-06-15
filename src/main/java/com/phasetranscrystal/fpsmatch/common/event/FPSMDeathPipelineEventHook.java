@@ -8,9 +8,8 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.event.common.EntityKillByGunEvent;
-import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -151,15 +150,15 @@ public class FPSMDeathPipelineEventHook {
      * </ul>
      */
     @SubscribeEvent
-    public static void onPlayerKillEvent(EntityKillByGunEvent event) {
-        if (event.getLogicalSide() != LogicalSide.SERVER || !(event.getKilledEntity() instanceof ServerPlayer deadPlayer)) {
+    public static void onPlayerKillEvent(FPSMGunKillEvent event) {
+        if (!(event.getKilledEntity() instanceof ServerPlayer deadPlayer)) {
             return;
         }
 
         Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(deadPlayer);
         if (mapOpt.isEmpty()) return;
         BaseMap map = mapOpt.get();
-        if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) return;
+        if (!(event.getAttacker() instanceof ServerPlayer attacker) || !GunCompatManager.isGun(attacker.getMainHandItem())) return;
         if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
 
         GunKillDetail detail = new GunKillDetail(

@@ -1,8 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.sound;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -23,8 +22,8 @@ public class FPSMSoundRegister {
     public static final RegistryObject<SoundEvent> FLASH = SOUNDS.register("flash", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "flash")));
     public static final RegistryObject<SoundEvent> BOOM = SOUNDS.register("boom", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "boom")));
 
-    private static final Map<GunTabType, SoundEvent> GUN_PICKUP_REGISTRY = new ConcurrentHashMap<>();
-    private static final Map<GunTabType, SoundEvent> GUN_DROP_REGISTRY = new ConcurrentHashMap<>();
+    private static final Map<GunTabTypeEnum, SoundEvent> GUN_PICKUP_REGISTRY = new ConcurrentHashMap<>();
+    private static final Map<GunTabTypeEnum, SoundEvent> GUN_DROP_REGISTRY = new ConcurrentHashMap<>();
 
     private static final Map<Item, SoundEvent> ITEM_PICKUP_REGISTRY = new ConcurrentHashMap<>();
     private static final Map<Item, SoundEvent> ITEM_DROP_REGISTRY = new ConcurrentHashMap<>();
@@ -79,23 +78,23 @@ public class FPSMSoundRegister {
         return ITEM_DROP_REGISTRY.getOrDefault(item, SoundEvents.STONE_HIT);
     }
 
-    public static SoundEvent getGunPickupSound(GunTabType gunType) {
+    public static SoundEvent getGunPickupSound(GunTabTypeEnum gunType) {
         return GUN_PICKUP_REGISTRY.getOrDefault(gunType, SoundEvents.ITEM_PICKUP);
     }
 
-    public static void registerGunPickupSound(GunTabType gunType, SoundEvent sound) {
+    public static void registerGunPickupSound(GunTabTypeEnum gunType, SoundEvent sound) {
         GUN_PICKUP_REGISTRY.put(gunType, sound);
     }
 
-    public static SoundEvent getGunDropSound(GunTabType gunType) {
+    public static SoundEvent getGunDropSound(GunTabTypeEnum gunType) {
         return GUN_DROP_REGISTRY.getOrDefault(gunType, SoundEvents.STONE_BUTTON_CLICK_ON);
     }
 
-    public static void registerGunDropSound(GunTabType gunType, SoundEvent sound) {
+    public static void registerGunDropSound(GunTabTypeEnum gunType, SoundEvent sound) {
         GUN_DROP_REGISTRY.put(gunType, sound);
     }
 
-    public static void registerGunSounds(GunTabType gunType, SoundEvent pickupSound, SoundEvent dropSound) {
+    public static void registerGunSounds(GunTabTypeEnum gunType, SoundEvent pickupSound, SoundEvent dropSound) {
         registerGunPickupSound(gunType, pickupSound);
         registerGunDropSound(gunType, dropSound);
     }

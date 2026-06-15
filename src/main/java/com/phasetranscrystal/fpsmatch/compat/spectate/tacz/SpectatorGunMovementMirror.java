@@ -3,22 +3,19 @@ package com.phasetranscrystal.fpsmatch.compat.spectate.tacz;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
 import com.tacz.guns.client.animation.statemachine.GunAnimationStateContext;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorMotion;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Mirrors spectated player movement into TACZ gun animation states.
+ * Registered by {@link com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = FPSMatch.MODID)
 public final class SpectatorGunMovementMirror {
     private SpectatorGunMovementMirror() {
     }

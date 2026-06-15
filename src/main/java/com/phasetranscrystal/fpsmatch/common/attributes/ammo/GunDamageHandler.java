@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.attributes.ammo;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
-import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMGunDamageEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -18,7 +18,7 @@ import java.util.Optional;
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID)
 public class GunDamageHandler {
     @SubscribeEvent
-    public static void onEntityHurtByGun(EntityHurtByGunEvent.Pre event) {
+    public static void onEntityHurtByGun(FPSMGunDamageEvent event) {
         if (!(event.getHurtEntity() instanceof ServerPlayer hurtEntity)) {
             return;
         }

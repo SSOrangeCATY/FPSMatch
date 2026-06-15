@@ -11,13 +11,14 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+/**
+ * TACZ 旁观者事件处理。
+ * 由 {@link com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap} 在确认 TACZ 加载后手动注册。
+ */
 public class SpectatorEventHandler {
 
     // 处理假物品tick更新

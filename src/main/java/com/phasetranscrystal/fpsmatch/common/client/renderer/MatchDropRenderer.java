@@ -6,7 +6,7 @@ import com.mojang.math.Axis;
 import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -39,7 +39,7 @@ public class MatchDropRenderer implements EntityRendererProvider<MatchDropEntity
                 poseStack.pushPose();
                 ItemStack itemStack = entity.getItem();
                 BakedModel bakedModel = itemRenderer.getModel(itemStack, entity.level(), null, entity.getId());
-                boolean isSpecialItem = itemStack.getItem() instanceof IGun || (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack));
+                boolean isSpecialItem = GunCompatManager.isGun(itemStack) || (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack));
                 poseStack.translate(0, 0.25F, 0);
                 if (isSpecialItem) {
                     poseStack.mulPose(Axis.XP.rotationDegrees(90));

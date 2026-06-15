@@ -11,8 +11,10 @@ import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunDataDTO;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -178,8 +180,9 @@ public class MatchDropEntity extends Entity {
 
     private void playLandSound(ItemStack itemStack) {
         if (!this.level().isClientSide) {
-            if (itemStack.getItem() instanceof IGun iGun) {
-                Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+            IGunProvider provider = GunCompatManager.findProvider(itemStack);
+            if (provider.isGun(itemStack)) {
+                Optional<GunTabTypeEnum> type = provider.getGunData(itemStack).map(GunDataDTO::getGunTabType);
                 type.ifPresent(t -> {
                     this.playSound(FPSMSoundRegister.getGunDropSound(t));
                 });
@@ -243,8 +246,9 @@ public class MatchDropEntity extends Entity {
             Inventory inventory = player.getInventory();
             List<ItemStack> items = FPSMUtil.searchInventoryForType(player.getInventory(), this.getDropType());
             ItemStack replace = this.getItem().copy();
-            if(replace.getItem() instanceof IGun iGun){
-                Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(replace));
+            IGunProvider provider = GunCompatManager.findProvider(replace);
+            if(provider.isGun(replace)){
+                Optional<GunTabTypeEnum> type = provider.getGunData(replace).map(GunDataDTO::getGunTabType);
                 type.ifPresent(t->{
                     this.playSound(FPSMSoundRegister.getGunPickupSound(t));
                 });
@@ -300,8 +304,9 @@ public class MatchDropEntity extends Entity {
                         }
                     });
 
-                    if(copy.getItem() instanceof IGun iGun){
-                        Optional<GunTabType> opt = FPSMUtil.getGunTypeByGunId(iGun.getGunId(copy));
+                    IGunProvider provider = GunCompatManager.findProvider(copy);
+                    if(provider.isGun(copy)){
+                        Optional<GunTabTypeEnum> opt = provider.getGunData(copy).map(GunDataDTO::getGunTabType);
                         opt.ifPresent(t->{
                             this.playSound(FPSMSoundRegister.getGunPickupSound(t));
                         });

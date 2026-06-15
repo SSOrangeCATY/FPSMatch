@@ -8,10 +8,9 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.shop.functional.ChangeShopItemModule;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMReloadEvent;
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.resource.index.CommonGunIndex;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunDataDTO;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -94,16 +93,15 @@ public class FPSMBaseCommand {
                 return 0;
             }
 
-            if (itemStack.getItem() instanceof IGun iGun) {
-                Optional<CommonGunIndex> gunIndex = TimelessAPI.getCommonGunIndex(iGun.getGunId(itemStack));
-                if (gunIndex.isPresent()) {
-                    GunData gunData = gunIndex.get().getGunData();
-
+            IGunProvider provider = GunCompatManager.findProvider(itemStack);
+            if (provider.isGun(itemStack)) {
+                Optional<GunDataDTO> gunData = provider.getGunData(itemStack);
+                if (gunData.isPresent()) {
                     // 设置虚拟弹药
-                    iGun.useDummyAmmo(itemStack);
-                    iGun.setMaxDummyAmmoAmount(itemStack, amount);
-                    iGun.setDummyAmmoAmount(itemStack, amount);
-                    iGun.setCurrentAmmoCount(itemStack, gunData.getAmmoAmount());
+                    provider.useDummyAmmo(itemStack);
+                    provider.setMaxDummyAmmo(itemStack, amount);
+                    provider.setDummyAmmo(itemStack, amount);
+                    provider.setCurrentAmmo(itemStack, gunData.get().getAmmoAmount());
 
                     sendSuccess(context.getSource(), Component.translatable("commands.fpsm.tacz.dummy.amount.success",
                             itemStack.getDisplayName(), amount));

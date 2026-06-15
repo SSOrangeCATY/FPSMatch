@@ -11,7 +11,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -115,8 +115,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         ItemStack slotStack = shopSlot.process();
         shopSlot.setDefaultCost(this.getPrice());
         shopSlot.setGroupId(this.getGroupId());
-        if (slotStack.getItem() instanceof IGun iGun) {
-            FPSMUtil.setTotalDummyAmmo(slotStack, iGun, this.getAmmo());
+        if (GunCompatManager.isGun(slotStack)) {
+            FPSMUtil.setTotalDummyAmmo(slotStack, GunCompatManager.findProvider(slotStack), this.getAmmo());
         }
         shop.replaceDefaultShopData(shopType, slotNum, shopSlot);
         shop.syncShopData();
@@ -131,7 +131,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     public boolean isGun(){
-        return this.slots.get(0).getItem().getItem() instanceof IGun;
+        return GunCompatManager.isGun(this.slots.get(0).getItem());
     }
 
     public int getAmmo() {

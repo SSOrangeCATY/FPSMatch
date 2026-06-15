@@ -8,7 +8,7 @@ import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -326,11 +326,11 @@ public class ShopData<T extends Enum<T> & INamedType> {
     @Nullable
     public Pair<T, ShopSlot> checkItemStackIsInData(ItemStack itemStack) {
         AtomicReference<Pair<T, ShopSlot>> flag = new AtomicReference<>();
-        if (itemStack.getItem() instanceof IGun iGun) {
-            ResourceLocation gunId = iGun.getGunId(itemStack);
+        if (GunCompatManager.isGun(itemStack)) {
+            ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
             data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
                 ItemStack itemStack1 = shopSlot.process();
-                if (itemStack1.getItem() instanceof IGun shopGun && gunId.equals(shopGun.getGunId(itemStack1)) && !itemStack1.isEmpty()) {
+                if (GunCompatManager.isGun(itemStack1) && gunId.equals(GunCompatManager.findProvider(itemStack1).getGunId(itemStack1)) && !itemStack1.isEmpty()) {
                     flag.set(new Pair<>(itemType, shopSlot));
                 }
             })));

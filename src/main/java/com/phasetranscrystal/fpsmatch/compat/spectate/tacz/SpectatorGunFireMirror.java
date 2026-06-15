@@ -8,21 +8,18 @@ import com.tacz.guns.client.model.functional.MuzzleFlashRender;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import java.util.HashMap;
 import java.util.Map;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Mirrors gun firing animation and muzzle flash for the spectated player.
+ * Registered by {@link com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = FPSMatch.MODID)
 public final class SpectatorGunFireMirror {
     private static final Map<Integer, Integer> LAST_SYN_CD = new HashMap<>();
 

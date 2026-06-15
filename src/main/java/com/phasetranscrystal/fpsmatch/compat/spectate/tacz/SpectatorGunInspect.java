@@ -9,21 +9,18 @@ import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import com.tacz.guns.client.sound.SoundPlayManager;
 import java.lang.reflect.Method;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Plays and cancels TACZ inspect animations for the local player or spectated view.
+ * Registered by {@link com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = FPSMatch.MODID)
 public final class SpectatorGunInspect {
     private SpectatorGunInspect() {
     }

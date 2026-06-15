@@ -1,21 +1,18 @@
 package com.phasetranscrystal.fpsmatch.compat.spectate.tacz;
 
 import com.tacz.guns.api.entity.IGunOperator;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Applies a local camera shake that mirrors the spectated player's recoil.
+ * Registered by {@link com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = FPSMatch.MODID)
 public final class SpectatorGunRecoil {
     public static boolean ENABLE = true;
     private static final float FREQ = 8.0f;

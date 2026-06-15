@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.shop.skin;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -16,14 +16,14 @@ public class SkinHandler {
 
         switch (skinType) {
             case GUN_ID : {
-                if(itemStack.getItem() instanceof IGun iGun){
-                    iGun.setGunId(itemStack,new ResourceLocation(data.toString()));
+                if(GunCompatManager.isGun(itemStack)){
+                    GunCompatManager.findProvider(itemStack).setGunId(itemStack, new ResourceLocation(data.toString()));
                 }
                 break;
             }
             case GUN_DISPLAY_ID : {
-                if(itemStack.getItem() instanceof IGun iGun){
-                    iGun.setGunDisplayId(itemStack,new ResourceLocation(data.toString()));
+                if(GunCompatManager.isGun(itemStack)){
+                    GunCompatManager.findProvider(itemStack).setGunDisplayId(itemStack, new ResourceLocation(data.toString()));
                 }
                 break;
             }
