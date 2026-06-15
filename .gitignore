@@ -127,3 +127,7 @@ run/
 /logs/
 /.eclipse/
 /.vscode/
+
+# Wiki
+wiki-publish/
+.wiki/
