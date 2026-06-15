@@ -129,5 +129,6 @@ run/
 /.vscode/
 
 # Wiki
+wiki/
 wiki-publish/
 .wiki/
