@@ -30,6 +30,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageResultS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -199,5 +200,12 @@ public final class FPSMClientPacketHandlers {
             minecraft.player.displayClientMessage(packet.message(), false);
         }
         FPSMMapSelectScreens.openInvitation(packet);
+    }
+
+    public static void handleTeamManageResult(TeamManageResultS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) {
+            minecraft.player.displayClientMessage(packet.message(), false);
+        }
     }
 }

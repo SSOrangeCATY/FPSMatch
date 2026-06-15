@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
@@ -66,6 +67,10 @@ public class FPSMMapSelectionScreen extends Screen {
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
                 .bounds(centerX + 177, height - 52, 82, 20)
+                .build());
+        // 队伍管理按钮（OP权限，服务端验证）
+        addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.team_manage.button"), button -> openTeamManage())
+                .bounds(centerX - 183, height - 76, 82, 20)
                 .build());
         updateActionButtons();
     }
@@ -216,8 +221,10 @@ public class FPSMMapSelectionScreen extends Screen {
                 }
             }
         }
-        selectedIndex = maps.isEmpty() ? -1 : Math.min(Math.max(selectedIndex, 0), maps.size() - 1);
-        rememberSelection(selectedIndex >= 0 ? maps.get(selectedIndex) : null);
+        // 如果之前的选中地图已不在列表中，重置选择以防止跳转到错误地图
+        selectedIndex = -1;
+        selectedGameType = null;
+        selectedMapName = null;
     }
 
     private List<MapRoomSummary> maps() {
@@ -266,5 +273,12 @@ public class FPSMMapSelectionScreen extends Screen {
 
     private int maxScrollOffset() {
         return Math.max(0, maps().size() - visibleRows());
+    }
+
+    private void openTeamManage() {
+        MapRoomSummary summary = selectedSummary();
+        if (summary != null) {
+            minecraft.setScreen(new FPSMTeamManageScreen(summary.mapName()));
+        }
     }
 }

@@ -31,6 +31,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -67,6 +69,8 @@ public abstract class BaseMap {
 
     protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
     protected final Setting<Boolean> allowJoinInProgress = this.addSetting("allowJoinInProgress", true);
+    protected final Setting<Boolean> teammateGlow = this.addSetting("teammateGlow", false);
+    protected final Setting<Boolean> hideEnemyNameTag = this.addSetting("hideEnemyNameTag", true);
 
     private final CapabilityMap<BaseMap, MapCapability> capabilities;
     // 地图区域数据
@@ -126,9 +130,25 @@ public abstract class BaseMap {
     public final void mapTick() {
         checkForVictory();
         tick();
+        applyTeammateGlow();
         getMapTeams().tick();
         capabilities.tick();
         syncToClient();
+    }
+
+    /**
+     * 为队友应用透视发光效果，使玩家可透过墙壁看到队友位置
+     */
+    protected void applyTeammateGlow() {
+        if (!teammateGlow.get()) return;
+        getMapTeams().getNormalTeams().forEach(team -> {
+            team.getPlayersData().forEach(data -> {
+                data.getPlayer().ifPresent(player -> {
+                    if (player.hasEffect(MobEffects.GLOWING)) return;
+                    player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
+                });
+            });
+        });
     }
 
     /**
