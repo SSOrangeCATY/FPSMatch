@@ -32,6 +32,10 @@ public class FPSMImpl {
         return isLoaded(CLOTH_CONFIG);
     }
 
+    public static boolean findTacz(){
+        return isLoaded(TACZ);
+    }
+
     public static boolean findTaczTweaks(){
         return isLoaded(TACZ_TWEAKS);
     }

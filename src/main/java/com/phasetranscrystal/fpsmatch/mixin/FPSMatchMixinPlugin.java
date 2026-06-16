@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
-import net.minecraftforge.fml.ModList;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -27,7 +26,7 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         boolean taczTweaksLoaded = FPSMImpl.findTaczTweaks();
-        boolean taczLoaded = ModList.get().isLoaded("tacz");
+        boolean taczLoaded = FPSMImpl.findTacz();
 
         if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.DefaultAmmoMixin")) {
             return !taczTweaksLoaded;
