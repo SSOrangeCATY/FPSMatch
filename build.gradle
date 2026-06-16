@@ -1,7 +1,8 @@
 plugins {
     id 'eclipse'
     id 'idea'
-    id 'net.neoforged.moddev.legacyforge' version '2.0.140'
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.141'
     id 'maven-publish'
 }
 
@@ -11,7 +12,7 @@ version = minecraft_version + "-" + mod_version + "-" + getFileVersion()
 def getFileVersion() {
     if (project.isSnapshot) {
         def date = new Date().format('yyyyMMdd-HHmm')
-        return "forge-snapshot-${date}"
+        return "neoforge-snapshot-${date}"
     } else {
         return project.file_version
     }
@@ -23,73 +24,60 @@ base {
 
 def taczTweaksVersion = findProperty('tacztweak_version') ?: rootProject.findProperty('tacztweak_version') ?: '2.11.2'
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
+// Mojang ships Java 25 to end users in 26.2, so mods should target Java 25.
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+sourceSets.main.resources {
+    srcDir 'src/generated/resources'
+    exclude("**/*.bbmodel")
+    exclude("src/generated/**/.cache")
 }
 
-
-legacyForge {
-    version = "${minecraft_version}-${forge_version}"
-
-    parchment {
-        mappingsVersion = project.mapping_version
-        minecraftVersion = project.mapping_mc_version
-    }
-
-    validateAccessTransformers = true
+neoForge {
+    version = project.neo_version
 
     runs {
-        configureEach {
-            gameDirectory = project.file('run')
-
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.DEBUG
-
-        }
-
         client {
             client()
             systemProperty 'mixin.env.remapRefMap', 'true'
             systemProperty 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
 
         server {
             server()
             systemProperty 'mixin.env.remapRefMap', 'true'
             systemProperty 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
             programArgument '--nogui'
         }
 
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
 
         data {
-            data()
-            gameDirectory = project.file('run-data')
+            clientData()
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
-    }
 
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
 
     mods {
         "${mod_id}" {
-            sourceSet sourceSets.main
+            sourceSet(sourceSets.main)
         }
     }
-
 }
 
-mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
 }
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenLocal()
@@ -147,7 +135,6 @@ dependencies {
         exclude group: "com.ibm.icu", module: "icu4j"
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
-//    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")) {
     additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:3.12.0")) {
         exclude group: "org.apache.logging.log4j", module: "log4j-core"
         exclude group: "org.apache.logging.log4j", module: "log4j-api"
@@ -158,8 +145,6 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
     modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
-    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
-    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.3"))
     modCompileOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
     modCompileOnly "maven.modrinth:tacz-tweaks:${taczTweaksVersion}"
     modCompileOnly "curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599"
@@ -175,7 +160,6 @@ dependencies {
     modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
     modCompileOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
     modCompileOnly("dev.architectury:architectury-forge:${architectury_version}")
-    //implementation fileTree(dir: 'libs', include: '**/*.jar')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
@@ -183,9 +167,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
-            forge_version          : forge_version,
-            forge_version_range    : forge_version_range,
-            loader_version_range   : loader_version_range,
+            neo_version            : neo_version,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -199,7 +181,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     into "build/generated/sources/modMetadata"
 }
 sourceSets.main.resources.srcDir generateModMetadata
-legacyForge.ideSyncTask generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 jar {
     manifest.attributes([
@@ -226,14 +208,13 @@ publishing {
     }
 }
 
-tasks.named('createMinecraftArtifacts').configure {
-    def java21Executable = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }.map { it.executablePath.asFile.absolutePath }
-    toolsJavaExecutable.set(java21Executable)
-    javaExecutable.set(java21Executable)
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
 }
