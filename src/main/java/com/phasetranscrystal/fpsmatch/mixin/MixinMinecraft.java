@@ -6,7 +6,6 @@ import net.minecraft.client.*;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.toasts.TutorialToast;
 import net.minecraft.client.gui.screens.Overlay;
-import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
@@ -157,14 +156,6 @@ public abstract class MixinMinecraft {
 
             if (this.screen == null && this.overlay == null && this.options.keyCommand.consumeClick()) {
                 this.openChatScreen("/");
-            }
-
-            while(this.options.keyTogglePause.consumeClick()) {
-                if (this.screen == null) {
-                    this.setScreen(new PauseScreen(true));
-                } else {
-                    this.setScreen(null);
-                }
             }
 
             boolean flag2 = false;
