@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -28,6 +29,7 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
     private Button settingsButton;
     private Button manageButton;
     private Button shopButton;
+    private Button teamManageButton;
     private Button inviteButton;
     private int playerScrollOffset;
     private int settingsScrollOffset;
@@ -59,13 +61,16 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
                 .bounds(centerX - 129, height - 52, 80, 20)
                 .build());
         settingsButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.settings"), button -> FPSMMapSelectScreens.openChild(new FPSMMapSettingsScreen(detail, this)))
-                .bounds(centerX - 80, height - 76, 76, 20)
+                .bounds(centerX - 175, height - 76, 70, 20)
                 .build());
         manageButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.manage"), button -> FPSMMapSelectScreens.openChild(new FPSMMapManageScreen(detail, this)))
-                .bounds(centerX + 4, height - 76, 76, 20)
+                .bounds(centerX - 99, height - 76, 70, 20)
                 .build());
         shopButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_detail.edit_shop"), button -> FPSMMapSelectScreens.openChild(new FPSMMapShopScreen(detail, this)))
-                .bounds(centerX + 88, height - 76, 96, 20)
+                .bounds(centerX - 23, height - 76, 80, 20)
+                .build());
+        teamManageButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.team_manage.button"), button -> openTeamManage())
+                .bounds(centerX + 63, height - 76, 88, 20)
                 .build());
         inviteButton = addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.invite"), button -> FPSMMapSelectScreens.openChild(new FPSMMapInviteScreen(detail, this)))
                 .bounds(centerX + 129, height - 52, 80, 20)
@@ -247,6 +252,9 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
         if (shopButton != null) {
             shopButton.active = hasDetail && summary.currentPlayerOp();
         }
+        if (teamManageButton != null) {
+            teamManageButton.active = hasDetail && summary.currentPlayerOp();
+        }
         if (inviteButton != null) {
             inviteButton.active = hasDetail && joined && !detail.availableInviteTargets().isEmpty();
         }
@@ -279,6 +287,12 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
     @Override
     public void onClose() {
         minecraft.setScreen(parent);
+    }
+
+    private void openTeamManage() {
+        if (detail != null) {
+            minecraft.setScreen(new FPSMTeamManageScreen(detail.summary().mapName()));
+        }
     }
 
     @Override

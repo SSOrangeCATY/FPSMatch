@@ -369,5 +369,14 @@
   "setting.cs.allowJoinInProgress": "允许中途加入",
   "setting.cs.allowJoinInProgress.desc": "游戏开始后是否允许新玩家加入",
   "setting.csdm.minAssistDamageRatio": "最低助攻伤害比",
-  "setting.csdm.minAssistDamageRatio.desc": "助攻需要造成的最低伤害占总生命的比例"
+  "setting.csdm.minAssistDamageRatio.desc": "助攻需要造成的最低伤害占总生命的比例",
+
+  "gui.fpsm.team_manage.button": "队伍管理",
+  "gui.fpsm.team_manage.title": "队伍管理",
+  "gui.fpsm.team_manage.refresh": "刷新",
+  "gui.fpsm.team_manage.close": "关闭",
+  "gui.fpsm.team_manage.cancel": "取消",
+  "gui.fpsm.team_manage.selected": "选择将 %s 从队伍 %s 移动到...",
+  "gui.fpsm.team_manage.move_btn": "移到 %s",
+  "gui.fpsm.team_manage.no_other_team": "没有其他队伍可移动"
 }

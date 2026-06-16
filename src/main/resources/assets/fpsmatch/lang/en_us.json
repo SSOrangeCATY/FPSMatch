@@ -368,6 +368,16 @@
   "setting.cs.allowJoinInProgress.desc": "Allow new players to join after the game has started",
   "setting.csdm.minAssistDamageRatio": "Min Assist Damage Ratio",
   "setting.csdm.minAssistDamageRatio.desc": "Minimum damage ratio of max health required for an assist",
+
+  "gui.fpsm.team_manage.button": "Team Management",
+  "gui.fpsm.team_manage.title": "Team Management",
+  "gui.fpsm.team_manage.refresh": "Refresh",
+  "gui.fpsm.team_manage.close": "Close",
+  "gui.fpsm.team_manage.cancel": "Cancel",
+  "gui.fpsm.team_manage.selected": "Select to move %s from team %s to...",
+  "gui.fpsm.team_manage.move_btn": "Move to %s",
+  "gui.fpsm.team_manage.no_other_team": "No other team to move to",
+
   "gui.fpsm.map_select.action.invite.success": "Invitation sent to %s",
   "gui.fpsm.map_select.action.invite.invalid": "The invitation has expired or does not exist",
   "gui.fpsm.map_detail.edit_shop": "Edit Shop",

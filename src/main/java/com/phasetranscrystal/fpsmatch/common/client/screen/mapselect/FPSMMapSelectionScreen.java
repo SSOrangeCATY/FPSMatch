@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
@@ -68,10 +67,6 @@ public class FPSMMapSelectionScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
                 .bounds(centerX + 177, height - 52, 82, 20)
                 .build());
-        // 队伍管理按钮（OP权限，服务端验证）
-        addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.team_manage.button"), button -> openTeamManage())
-                .bounds(centerX - 183, height - 76, 82, 20)
-                .build());
         updateActionButtons();
     }
 
@@ -92,7 +87,8 @@ public class FPSMMapSelectionScreen extends Screen {
             int clickedIndex = indexAt(mouseX, mouseY);
             if (clickedIndex >= 0) {
                 selectedIndex = clickedIndex;
-                rememberSelection(selectedSummary());
+                MapRoomSummary summary = maps().get(selectedIndex);
+                rememberSelection(summary);
                 updateActionButtons();
                 return true;
             }
@@ -195,9 +191,7 @@ public class FPSMMapSelectionScreen extends Screen {
         if (selectedIndex < 0 || selectedIndex >= maps.size()) {
             return null;
         }
-        MapRoomSummary summary = maps.get(selectedIndex);
-        rememberSelection(summary);
-        return summary;
+        return maps.get(selectedIndex);
     }
 
     private void rememberSelection(MapRoomSummary summary) {
@@ -275,10 +269,4 @@ public class FPSMMapSelectionScreen extends Screen {
         return Math.max(0, maps().size() - visibleRows());
     }
 
-    private void openTeamManage() {
-        MapRoomSummary summary = selectedSummary();
-        if (summary != null) {
-            minecraft.setScreen(new FPSMTeamManageScreen(summary.mapName()));
-        }
     }
-}
