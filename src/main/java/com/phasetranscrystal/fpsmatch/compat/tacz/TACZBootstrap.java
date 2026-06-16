@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.compat.tacz;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.spectate.tacz.*;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
 /**
