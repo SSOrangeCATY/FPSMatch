@@ -5,15 +5,16 @@ import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
 import me.xjqsh.lrtactical.api.item.IThrowable;
 import me.xjqsh.lrtactical.client.resource.display.MeleeDisplayInstance;
 import me.xjqsh.lrtactical.entity.SmokeGrenadeEntity;
+import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,23 @@ import java.util.Locale;
 import java.util.Optional;
 
 public class LrtacticalCompat {
+    public static boolean isProjectile(DamageSource source) {
+        if (source.getDirectEntity() instanceof ThrowableItemEntity) {
+            return true;
+        }
+        return source.getEntity() instanceof ThrowableItemEntity;
+    }
+
+    public static ItemStack getProjectileItem(DamageSource source) {
+        if (source.getDirectEntity() instanceof ThrowableItemEntity projectile) {
+            return projectile.getItem();
+        }
+        if (source.getEntity() instanceof ThrowableItemEntity projectile) {
+            return projectile.getItem();
+        }
+        return ItemStack.EMPTY;
+    }
+
     public static boolean isKnife(ItemStack stack) {
         return stack.getItem() instanceof IMeleeWeapon;
     }
