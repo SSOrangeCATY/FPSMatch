@@ -183,6 +183,7 @@ public class FPSMDeathPipelineEventHook {
 
         // 兜底：如果 LivingDeathEvent 未到达 FPSM（例如被 TACZ 或其他模组提前取消），
         // 确保死者进入 readyDeaths，否则 death 结算管线不会执行 CSGameMap.handleDeath()
+        final GunKillDetail finalDetail = detail;
         readyDeaths.computeIfAbsent(deadPlayer.getUUID(), uuid -> {
             deadPlayer.setHealth(deadPlayer.getMaxHealth());
             DamageSource source = deadPlayer.getLastDamageSource() != null
@@ -192,7 +193,7 @@ public class FPSMDeathPipelineEventHook {
                     deadPlayer,
                     attacker,
                     source,
-                    detail.deathItem(),
+                    finalDetail.deathItem(),
                     deadPlayer.serverLevel().getGameTime()
             );
             return new PendingDeath(map, context);
