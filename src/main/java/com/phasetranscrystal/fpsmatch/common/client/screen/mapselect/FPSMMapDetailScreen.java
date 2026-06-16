@@ -93,7 +93,7 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
             int left = width / 2 - 210;
             int right = width / 2 + 210;
 
-            graphics.drawCenteredString(font, Component.literal(summary.gameType() + " / " + summary.mapName()), width / 2, 26, 0xFFB8D4E3);
+            graphics.drawCenteredString(font, Component.literal(summary.displayName()), width / 2, 26, 0xFFB8D4E3);
 
             // 内容区背景
             graphics.fill(left - 6, PANEL_TOP - 2, right + 6, height - PANEL_BOTTOM + 2, 0x77000000);
@@ -103,7 +103,9 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
             // 信息区
             int infoY = PANEL_TOP;
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.status", statusText(summary)), left, infoY, statusColor(summary), false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.dimension", summary.dimension()), left, infoY + 16, 0xFFB8D4E3, false);
+            Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
+            Component dimName = Component.translatable("fpsm.dimension." + summary.dimension().replace(':', '.'));
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName, dimName), left, infoY + 16, 0xFFB8D4E3, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()), left, infoY + 32, 0xFFB8D4E3, false);
             graphics.drawString(font, Component.translatable(detail.rulesKey()), left, infoY + 52, 0xFFD9E8F2, false);
 

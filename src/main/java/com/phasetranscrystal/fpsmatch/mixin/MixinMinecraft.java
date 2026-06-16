@@ -83,6 +83,8 @@ public abstract class MixinMinecraft {
 
     @Inject(method = "handleKeybinds", at = @At("HEAD"), cancellable = true)
     private void onHandleKeybinds(CallbackInfo ci) {
+        if (this.player == null || this.player.getOffhandItem().isEmpty() && this.player.getMainHandItem().isEmpty()) return;
+        if (this.screen != null) return;
         if(this.player.getOffhandItem().getItem() instanceof BaseThrowAbleItem || this.player.getMainHandItem().getItem() instanceof BaseThrowAbleItem){
             ci.cancel();
             for(; this.options.keyTogglePerspective.consumeClick(); this.levelRenderer.needsUpdate()) {

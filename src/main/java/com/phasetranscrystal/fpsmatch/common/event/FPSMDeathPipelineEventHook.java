@@ -13,6 +13,7 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.Entity;
@@ -108,7 +109,7 @@ public class FPSMDeathPipelineEventHook {
      *     <li>取消原版死亡事件，避免原版直接处理死亡。</li>
      * </ul>
      */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
@@ -179,6 +180,23 @@ public class FPSMDeathPipelineEventHook {
             );
         }
         pendingGunKills.put(deadPlayer.getUUID(), detail);
+
+        // 兜底：如果 LivingDeathEvent 未到达 FPSM（例如被 TACZ 或其他模组提前取消），
+        // 确保死者进入 readyDeaths，否则 death 结算管线不会执行 CSGameMap.handleDeath()
+        readyDeaths.computeIfAbsent(deadPlayer.getUUID(), uuid -> {
+            deadPlayer.setHealth(deadPlayer.getMaxHealth());
+            DamageSource source = deadPlayer.getLastDamageSource() != null
+                    ? deadPlayer.getLastDamageSource()
+                    : deadPlayer.damageSources().generic();
+            DeathContext context = new DeathContext(
+                    deadPlayer,
+                    attacker,
+                    source,
+                    detail.deathItem(),
+                    deadPlayer.serverLevel().getGameTime()
+            );
+            return new PendingDeath(map, context);
+        });
     }
 
     /**
@@ -215,7 +233,6 @@ public class FPSMDeathPipelineEventHook {
     private static void finalizeDeath(BaseMap map, DeathContext context) {
         ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = map.getMapTeams();
-        ServerPlayer killer = context.getAttacker();
 
         // 补全枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发）
         GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
@@ -231,6 +248,8 @@ public class FPSMDeathPipelineEventHook {
                 context.setDeathItem(gunKill.deathItem());
             }
         }
+
+        ServerPlayer killer = context.getAttacker();
 
         map.handleDeath(context);
 

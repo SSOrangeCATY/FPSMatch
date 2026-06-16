@@ -15,6 +15,12 @@ import java.util.List;
 import java.util.UUID;
 
 public class FPSMMapSelectionScreen extends Screen {
+    private static final int GUI_SHADOW_COLOR = 0x80000000;
+    private static final int GUI_MAIN_BACKGROUND = 0xFF444444;
+    private static final int GUI_INNER_BORDER = 0xFF666666;
+    private static final int GUI_OUTER_BORDER = 0xFF222222;
+    private static final int GUI_PADDING = 4;
+
     private static final int PANEL_WIDTH = 360;
     private static final int ROW_HEIGHT = 46;
     private static final int ROW_GAP = 4;
@@ -73,6 +79,7 @@ public class FPSMMapSelectionScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
+        renderMultiLayerBackground(graphics);
         graphics.drawCenteredString(font, title, width / 2, 24, 0xFFFFFFFF);
         List<MapRoomSummary> maps = maps();
         int count = maps.size();
@@ -135,10 +142,12 @@ public class FPSMMapSelectionScreen extends Screen {
             graphics.fill(left, rowTop, right, rowTop + ROW_HEIGHT, color);
             graphics.fill(left, rowTop, left + 3, rowTop + ROW_HEIGHT, statusColor(summary));
 
-            graphics.drawString(font, Component.literal(summary.gameType() + " / " + summary.mapName()), left + 10, rowTop + 7, 0xFFFFFFFF, false);
+            graphics.drawString(font, Component.literal(summary.displayName()), left + 10, rowTop + 7, 0xFFFFFFFF, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - 76, rowTop + 7, 0xFFE6F2FF, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.status", statusText(summary)), left + 10, rowTop + 22, statusColor(summary), false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.summary", summary.dimension(), summary.areaText()), left + 118, rowTop + 22, 0xFFB8D4E3, false);
+            Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
+            Component dimName = dimensionName(summary.dimension());
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName, dimName), left + 118, rowTop + 22, 0xFFB8D4E3, false);
             if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
                 graphics.drawString(font, Component.translatable("gui.fpsm.map_select.joined"), right - 48, rowTop + 22, 0xFF74E084, false);
             }
@@ -267,6 +276,24 @@ public class FPSMMapSelectionScreen extends Screen {
 
     private int maxScrollOffset() {
         return Math.max(0, maps().size() - visibleRows());
+    }
+
+    private void renderMultiLayerBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(2, 2, width + 2, height + 2, GUI_SHADOW_COLOR);
+        guiGraphics.fill(0, 0, width, 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(0, height - 1, width, height, GUI_OUTER_BORDER);
+        guiGraphics.fill(0, 1, 1, height - 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(width - 1, 1, width, height - 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(1, 1, width - 1, height - 1, GUI_MAIN_BACKGROUND);
+        guiGraphics.fill(1 + GUI_PADDING, 1 + GUI_PADDING, width - 1 - GUI_PADDING, 1 + GUI_PADDING + 1, GUI_INNER_BORDER);
+        guiGraphics.fill(1 + GUI_PADDING, height - 1 - GUI_PADDING - 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING, GUI_INNER_BORDER);
+        guiGraphics.fill(1 + GUI_PADDING, 1 + GUI_PADDING + 1, 1 + GUI_PADDING + 1, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
+        guiGraphics.fill(width - 1 - GUI_PADDING - 1, 1 + GUI_PADDING + 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
+    }
+
+    private Component dimensionName(String dim) {
+        String key = dim.replace(':', '.');
+        return Component.translatable("fpsm.dimension." + key);
     }
 
     }

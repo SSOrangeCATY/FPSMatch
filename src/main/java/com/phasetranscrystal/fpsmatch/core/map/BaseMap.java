@@ -71,6 +71,7 @@ public abstract class BaseMap {
     protected final Setting<Boolean> allowJoinInProgress = this.addSetting("allowJoinInProgress", true);
     protected final Setting<Boolean> teammateGlow = this.addSetting("teammateGlow", false);
     protected final Setting<Boolean> hideEnemyNameTag = this.addSetting("hideEnemyNameTag", true);
+    protected final Setting<String> displayName = this.addSetting("displayName", "");
 
     private final CapabilityMap<BaseMap, MapCapability> capabilities;
     // 地图区域数据
@@ -137,18 +138,14 @@ public abstract class BaseMap {
     }
 
     /**
-     * 为队友应用透视发光效果，使玩家可透过墙壁看到队友位置
+     * 为队友应用透视发光效果，使玩家可透过墙壁看到队友位置。
+     * <p>
+     * 已改为客户端按队伍判断，不再通过服务端 {@link MobEffects#GLOWING} 实现。
+     * 服务端 GLOWING 效果对所有客户端可见，会导致敌方也能看到发光。
+     * 队友透视发光逻辑见 {@code MixinEntityUnified#onIsCurrentlyGlowing}。
      */
     protected void applyTeammateGlow() {
-        if (!teammateGlow.get()) return;
-        getMapTeams().getNormalTeams().forEach(team -> {
-            team.getPlayersData().forEach(data -> {
-                data.getPlayer().ifPresent(player -> {
-                    if (player.hasEffect(MobEffects.GLOWING)) return;
-                    player.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
-                });
-            });
-        });
+        // 队友透视发光已改为客户端按队伍判断，不再通过服务端 MobEffects.GLOWING 实现
     }
 
     /**
@@ -802,6 +799,11 @@ public abstract class BaseMap {
 
     public float getMinAssistDamageRatio() {
         return minAssistDamageRatio.get();
+    }
+
+    public String getDisplayName() {
+        String name = displayName.get();
+        return name.isEmpty() ? mapName : name;
     }
 
     public void displayAreas(ServerPlayer player) {
