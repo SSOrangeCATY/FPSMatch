@@ -16,6 +16,7 @@ import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunDataDTO;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;

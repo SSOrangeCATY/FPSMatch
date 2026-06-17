@@ -42,7 +42,7 @@ public class FPSMatchCommonEvents {
             Function<E, ? extends FPSMatchKubeJSEvents.FPSMatchEventJS<E>> factory
     ) {
         Supplier<Class<? extends EventJS>> supplier = () -> jsClass;
-        EventHandler handler = FPSMatchKubeJSEvents.GROUP.add(name, ScriptTypePredicate.SERVER, supplier);
+        EventHandler handler = FPSMatchKubeJSEvents.GROUP.add(name, ScriptTypePredicate.STARTUP_OR_SERVER, supplier);
 
         eventHandlers.put(forgeClass, event -> {
             FPSMatchKubeJSEvents.FPSMatchEventJS<E> js = factory.apply((E) event);
