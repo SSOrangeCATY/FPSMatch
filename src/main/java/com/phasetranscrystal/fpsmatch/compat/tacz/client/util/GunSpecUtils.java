@@ -1,8 +1,12 @@
 package com.phasetranscrystal.fpsmatch.compat.tacz.client.util;
 
 import com.phasetranscrystal.fpsmatch.compat.tacz.client.fakeitem.ClientFakeItemManager;
+import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.animation.statemachine.AnimationStateMachine;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.client.resource.index.ClientGunIndex;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -53,5 +57,19 @@ public final class GunSpecUtils {
     public static boolean isStillSpectating(Player self, LivingEntity target) {
         if (self == null || !self.isSpectator() || target == null) return false;
         return Minecraft.getInstance().getCameraEntity() == target;
+    }
+
+    /**
+     * 获取枪械的 TACZ HUD 图标纹理。
+     * <p>
+     * 该方法复制解耦前 {@code DeathMessage#getWeaponIcon()} 的原渲染逻辑：
+     * 通过 gunId 取得 {@link ClientGunIndex}，再取其默认显示实例的 HUD 纹理。
+     * </p>
+     */
+    public static ResourceLocation getGunHUDTexture(ItemStack stack) {
+        IGun iGun = IGun.getIGunOrNull(stack);
+        if (iGun == null) return null;
+        ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(iGun.getGunId(stack)).orElse(null);
+        return gunIndex != null ? gunIndex.getDefaultDisplay().getHUDTexture() : null;
     }
 }

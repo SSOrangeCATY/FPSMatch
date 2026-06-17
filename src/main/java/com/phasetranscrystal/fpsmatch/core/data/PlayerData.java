@@ -334,6 +334,11 @@ public class PlayerData {
         return damages;
     }
 
+    public float getDamageTo(UUID target) {
+        Damage damage = damageData.get(target);
+        return damage == null ? 0.0f : damage.damage;
+    }
+
     public void addDamageData(UUID hurtPlayer, float damage) {
         this.getDamageData().computeIfAbsent(hurtPlayer,k->new Damage()).addDamage(damage);
         addDamage(damage);

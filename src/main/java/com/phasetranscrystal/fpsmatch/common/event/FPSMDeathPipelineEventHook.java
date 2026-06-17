@@ -1,7 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -10,28 +9,26 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.entity.Entity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * 对局内伤害/击杀/死亡代理管线。
@@ -41,13 +38,12 @@ import org.jetbrains.annotations.Nullable;
  *     <li>对局内所有击杀<strong>不实际触发原版死亡结算</strong>。</li>
  *     <li>原版 {@link LivingDeathEvent} 在对局中会被取消，由本管线代理后续结算。</li>
  *     <li>结算入口统一收敛到 {@link #finalizeDeath(BaseMap, DeathContext)}。</li>
- *     <li>枪械特有信息（爆头、子弹实体等）通过 {@link EntityKillByGunEvent} 进行延迟补全。</li>
+ *     <li>枪械特有信息（爆头、子弹实体等）通过 {@link FPSMGunKillEvent} 进行延迟补全。</li>
  * </ul>
  * 因此，玩家在对局内“被击杀”语义上是由管线驱动的状态迁移，而不是原版死亡流程。
  */
 @Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class FPSMDeathPipelineEventHook {
-
 
     /**
      * 本 tick 内被代理死亡的玩家 UUID（用于补全枪械击杀事件判定）。
@@ -55,14 +51,16 @@ public class FPSMDeathPipelineEventHook {
     private static final Set<UUID> RECENTLY_KILLED = new HashSet<>();
 
     /**
-     * 本 tick END 需要结算的死亡上下文
+     * 本 tick END 需要结算的死亡上下文。
+     * 所有读写均发生在服务端主线程，使用普通 HashMap 即可。
      */
-    private static final ConcurrentHashMap<UUID, PendingDeath> readyDeaths = new ConcurrentHashMap<>();
+    private static final Map<UUID, PendingDeath> readyDeaths = new HashMap<>();
 
     /**
-     * 暂存的枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发，需要暂存）
+     * 暂存的枪械击杀详情（FPSMGunKillEvent 在 LivingDeathEvent 之前触发，需要暂存）。
+     * 所有读写均发生在服务端主线程，使用普通 HashMap 即可。
      */
-    private static final ConcurrentHashMap<UUID, GunKillDetail> pendingGunKills = new ConcurrentHashMap<>();
+    private static final Map<UUID, GunKillDetail> pendingGunKills = new HashMap<>();
 
     public static boolean isRecentlyKilled(UUID uuid) {
         return RECENTLY_KILLED.contains(uuid);
@@ -77,28 +75,31 @@ public class FPSMDeathPipelineEventHook {
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerHurt(LivingHurtEvent event) {
-        if (event.getEntity() instanceof ServerPlayer hurt) {
-            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(hurt);
-            if (opt.isEmpty()) return;
-            BaseMap map = opt.get();
-            if (map.isStart()) {
-                FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map, hurt, event.getSource(), event.getAmount());
+        if (!(event.getEntity() instanceof ServerPlayer hurt)) return;
 
-                if (MinecraftForge.EVENT_BUS.post(hurtEvent)) {
-                    event.setCanceled(true);
-                    return;
-                }
+        Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(hurt);
+        if (opt.isEmpty()) return;
+        BaseMap map = opt.get();
+        if (!map.isStart()) return;
 
-                event.setAmount(hurtEvent.getAmount());
-
-                if (event.getAmount() <= 0) {
-                    event.setCanceled(true);
-                    return;
-                }
-
-                map.recordHurtData(hurt, event.getSource(), event.getAmount());
-            }
+        if (hurt.isSpectator() || isRecentlyKilled(hurt.getUUID())) {
+            event.setCanceled(true);
+            return;
         }
+
+        FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map, hurt, event.getSource(), event.getAmount());
+        if (MinecraftForge.EVENT_BUS.post(hurtEvent)) {
+            event.setCanceled(true);
+            return;
+        }
+
+        event.setAmount(hurtEvent.getAmount());
+        if (event.getAmount() <= 0) {
+            event.setCanceled(true);
+            return;
+        }
+
+        map.recordHurtData(hurt, event.getSource(), event.getAmount());
     }
 
     /**
@@ -117,6 +118,11 @@ public class FPSMDeathPipelineEventHook {
 
             BaseMap map = opt.get();
             if (map.isStart()) {
+                // 已死亡进入旁观者或本 tick 已被结算过的玩家不再重复处理
+                if (player.isSpectator() || isRecentlyKilled(player.getUUID())) {
+                    event.setCanceled(true);
+                    return;
+                }
                 // 对局内击杀/死亡统一由管线代理结算，阻止原版死亡落地
                 event.setCanceled(true);
                 player.setHealth(player.getMaxHealth());
@@ -128,16 +134,17 @@ public class FPSMDeathPipelineEventHook {
                     return;
                 }
 
-                Optional<ServerPlayer> optional = deathEvent.getAttacker();
-                ServerPlayer attacker = optional.orElse(null);
+                ServerPlayer attacker = deathEvent.getAttacker().orElse(null);
                 ItemStack deathItem = map.resolveDeathItem(attacker, deathEvent.getSource());
                 DeathContext context = new DeathContext(player, attacker, deathEvent.getSource(), deathItem, player.serverLevel().getGameTime());
 
                 readyDeaths.put(player.getUUID(), new PendingDeath(map, context));
             }
+            return;
         }
-        if(event.getEntity() instanceof Player player && player.level().isClientSide){
-            if (FPSMCore.getInstance().getMapByPlayer(player).isEmpty()) return;
+
+        if (event.getEntity() instanceof Player player && player.level().isClientSide
+                && FPSMCore.getInstance().getMapByPlayer(player).isPresent()) {
             event.setCanceled(true);
         }
     }
@@ -159,33 +166,41 @@ public class FPSMDeathPipelineEventHook {
         Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(deadPlayer);
         if (mapOpt.isEmpty()) return;
         BaseMap map = mapOpt.get();
-        if (!(event.getAttacker() instanceof ServerPlayer attacker) || !GunCompatManager.isGun(attacker.getMainHandItem())) return;
-        if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(m -> m.equals(map)).orElse(false)) return;
 
+        if (!(event.getAttacker() instanceof ServerPlayer attacker)) return;
+
+        if (FPSMCore.getInstance().getMapByPlayer(attacker).orElse(null) != map) return;
+
+        ItemStack gunStack = event.getGunItemStack();
+        // 即使 gunStack 不再是枪械（延迟击杀 / 攻击者切物品 / 枪械被丢弃），
+        // 本事件本身仍代表一次枪械击杀，必须继续走兜底，确保 CSGameMap.handleDeath() 被调用。
+        boolean recognizedGun = GunCompatManager.isGun(gunStack);
+        ItemStack deathItem = recognizedGun ? gunStack : map.resolveDeathItem(attacker, deadPlayer.getLastDamageSource());
+
+        boolean passWall = false;
+        boolean passSmoke = false;
+        boolean scopedKill = false;
+        if (event.getBullet() instanceof IPassThroughEntity passThroughEntity) {
+            passWall = passThroughEntity.fpsmatch$isWall();
+            passSmoke = passThroughEntity.fpsmatch$isSmoke();
+            scopedKill = passThroughEntity.fpsmatch$isScoped();
+        }
         GunKillDetail detail = new GunKillDetail(
                 event.isHeadShot(),
                 event.getBullet(),
                 attacker,
-                map.resolveDeathItem(attacker, deadPlayer.getLastDamageSource() != null ? deadPlayer.getLastDamageSource() : deadPlayer.damageSources().generic())
+                deathItem,
+                passWall,
+                passSmoke,
+                scopedKill
         );
-        if (event.getBullet() instanceof IPassThroughEntity passThroughEntity) {
-            detail = new GunKillDetail(
-                    event.isHeadShot(),
-                    event.getBullet(),
-                    attacker,
-                    detail.deathItem(),
-                    passThroughEntity.fpsmatch$isWall(),
-                    passThroughEntity.fpsmatch$isSmoke(),
-                    passThroughEntity.fpsmatch$isScoped()
-            );
-        }
         pendingGunKills.put(deadPlayer.getUUID(), detail);
 
         // 兜底：如果 LivingDeathEvent 未到达 FPSM（例如被 TACZ 或其他模组提前取消），
-        // 确保死者进入 readyDeaths，否则 death 结算管线不会执行 CSGameMap.handleDeath()
-        final GunKillDetail finalDetail = detail;
+        // 确保死者进入 readyDeaths，否则 death 结算管线不会执行地图的 handleDeath()
         readyDeaths.computeIfAbsent(deadPlayer.getUUID(), uuid -> {
             deadPlayer.setHealth(deadPlayer.getMaxHealth());
+            RECENTLY_KILLED.add(deadPlayer.getUUID());
             DamageSource source = deadPlayer.getLastDamageSource() != null
                     ? deadPlayer.getLastDamageSource()
                     : deadPlayer.damageSources().generic();
@@ -193,7 +208,7 @@ public class FPSMDeathPipelineEventHook {
                     deadPlayer,
                     attacker,
                     source,
-                    finalDetail.deathItem(),
+                    deathItem,
                     deadPlayer.serverLevel().getGameTime()
             );
             return new PendingDeath(map, context);
@@ -235,7 +250,7 @@ public class FPSMDeathPipelineEventHook {
         ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = map.getMapTeams();
 
-        // 补全枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发）
+        // 补全枪械击杀详情（FPSMGunKillEvent 在 LivingDeathEvent 之前触发）
         GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
         if (gunKill != null) {
             context.setGunKill(true);
@@ -288,7 +303,7 @@ public class FPSMDeathPipelineEventHook {
     }
 
     /**
-     * 暂存的枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发，
+     * 暂存的枪械击杀详情（FPSMGunKillEvent 在 LivingDeathEvent 之前触发，
      * 暂存后在 finalizeDeath 阶段补全到 DeathContext）。
      */
     private record GunKillDetail(

@@ -35,6 +35,7 @@ public class FPSMCore {
     public final String archiveName;
     private final Map<String, List<BaseMap>> GAMES = new HashMap<>();
     private final Map<String, Function3<ServerLevel,String,AreaData, BaseMap>> REGISTRY = new HashMap<>();
+    private final Map<UUID, BaseMap> playerToMapCache = new HashMap<>();
     private final FPSMDataManager fpsmDataManager;
     private final LMManager listenerModuleManager;
 
@@ -73,23 +74,38 @@ public class FPSMCore {
     public Optional<BaseMap> getMapByPlayer(Player player){
         return getMapByPlayer(player.getUUID());
     }
-    
+
     public Optional<BaseMap> getMapByPlayer(UUID player){
-        for (List<BaseMap> list : GAMES.values()) {
-            for (BaseMap map : list){
-                if(map.checkGameHasPlayer(player)) return Optional.of(map);
-            }
+        BaseMap cached = playerToMapCache.get(player);
+        if (cached != null && cached.checkGameHasPlayer(player)) {
+            return Optional.of(cached);
         }
         return Optional.empty();
     }
 
     public Optional<BaseMap> getMapByPlayerWithSpec(Player player){
+        BaseMap cached = playerToMapCache.get(player.getUUID());
+        if (cached != null) return Optional.of(cached);
         for (List<BaseMap> list : GAMES.values()) {
             for (BaseMap map : list){
-                if(map.checkGameHasPlayer(player) || map.checkSpecHasPlayer(player)) return Optional.of(map);
+                if(map.checkSpecHasPlayer(player)) return Optional.of(map);
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * 将玩家绑定到指定地图（仅应在玩家加入普通队伍时调用）。
+     */
+    public void bindPlayerToMap(UUID player, BaseMap map) {
+        playerToMapCache.put(player, map);
+    }
+
+    /**
+     * 解除玩家与指定地图的绑定（仅应在玩家离开地图时调用）。
+     */
+    public void unbindPlayerFromMap(UUID player, BaseMap map) {
+        playerToMapCache.remove(player, map);
     }
 
     public void registerMap(String type, BaseMap map){
@@ -211,6 +227,7 @@ public class FPSMCore {
     protected void clearData(){
         GAMES.clear();
         REGISTRY.clear();
+        playerToMapCache.clear();
     }
 
     public static void checkAndLeaveTeam(ServerPlayer player){

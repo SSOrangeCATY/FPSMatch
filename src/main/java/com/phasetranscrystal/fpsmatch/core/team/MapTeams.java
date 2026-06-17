@@ -311,21 +311,16 @@ public class MapTeams {
      * @return 玩家所属的队伍，如果未找到则返回 null
      */
     public Optional<ServerTeam> getTeamByPlayer(UUID player) {
-        AtomicReference<ServerTeam> reference = new AtomicReference<>();
-        this.teams.forEach(((s, team) -> {
-            if (team.hasPlayer(player)) {
-                reference.set(team);
-            }
-        }));
-
-        if(reference.get() == null){
-            ServerTeam spec = getSpectatorTeam();
-            if(spec.hasPlayer(player)){
-                reference.set(spec);
+        for (ServerTeam team : this.teams.values()) {
+            if (team.isNormal() && team.hasPlayer(player)) {
+                return Optional.of(team);
             }
         }
-
-        return Optional.of(reference.get());
+        ServerTeam spec = getSpectatorTeam();
+        if (spec != null && spec.hasPlayer(player)) {
+            return Optional.of(spec);
+        }
+        return Optional.empty();
     }
     public Optional<Pair<ServerTeam,PlayerData>> getPlayerTeamAndData(ServerPlayer player){
         return getPlayerTeamAndData(player.getUUID());
@@ -345,7 +340,11 @@ public class MapTeams {
     }
 
     public Optional<PlayerData> getPlayerData(UUID uuid){
-        return this.teams.values().stream().flatMap(t -> t.getPlayersData().stream()).filter(p -> p.getOwner().equals(uuid)).findFirst();
+        for (ServerTeam team : this.teams.values()) {
+            Optional<PlayerData> data = team.getPlayerData(uuid);
+            if (data.isPresent()) return data;
+        }
+        return Optional.empty();
     }
 
     /**
@@ -427,6 +426,7 @@ public class MapTeams {
             return false;
         }
         if (team.isNormal()) {
+            FPSMCore.getInstance().bindPlayerToMap(player.getUUID(), this.map);
             team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.assignNextSpawnPoint(player.getUUID()));
         }
 
@@ -683,6 +683,7 @@ public class MapTeams {
             }
         }
         this.playerName.remove(player.getUUID());
+        FPSMCore.getInstance().unbindPlayerFromMap(player.getUUID(), this.map);
 
         syncToAll(new TeamPlayerLeaveS2CPacket(player.getUUID()));
     }
@@ -698,6 +699,7 @@ public class MapTeams {
                 .filter(t->t.hasPlayer(player)).toList()
                 .forEach(t->t.delPlayer(player));
         this.playerName.remove(player);
+        FPSMCore.getInstance().unbindPlayerFromMap(player, this.map);
     }
 
     /**
@@ -837,7 +839,9 @@ public class MapTeams {
     }
 
     public boolean isSameTeam(Player p1, Player p2){
-        return getSameTeamPlayerUUIDs(p1).contains(p2.getUUID());
+        Optional<ServerTeam> t1 = getTeamByPlayer(p1);
+        Optional<ServerTeam> t2 = getTeamByPlayer(p2);
+        return t1.isPresent() && t1.equals(t2);
     }
 
     /**

@@ -197,8 +197,9 @@ public abstract class BaseMap {
      * @return 是否在游戏中
      */
     public boolean checkGameHasPlayer(UUID player) {
-        return this.getMapTeams()
-                .getJoinedUUID().contains(player);
+        return this.getMapTeams().getTeamByPlayer(player)
+                .map(ServerTeam::isNormal)
+                .orElse(false);
     }
 
     public boolean checkSpecHasPlayer(Player player) {

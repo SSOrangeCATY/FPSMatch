@@ -1,8 +1,11 @@
 package com.phasetranscrystal.fpsmatch.compat.tacz;
 
 import com.phasetranscrystal.fpsmatch.common.event.*;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.tacz.guns.api.event.common.*;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -51,9 +54,38 @@ public class TACZGunEventBridge {
         LivingEntity dead = event.getKilledEntity();
         LivingEntity attacker = event.getAttacker();
         if (dead == null || attacker == null) return;
-        ItemStack gunStack = attacker.getMainHandItem();
+        ItemStack gunStack = findAttackerGunStack(attacker, event.getGunId());
         MinecraftForge.EVENT_BUS.post(new FPSMGunKillEvent(
                 attacker, dead, event.isHeadShot(), event.getBullet(), gunStack));
+    }
+
+    /**
+     * 根据 TACZ 事件中的 gunId，从攻击者背包/副手找到对应枪械栈。
+     * <p>
+     * 解决延迟击杀或攻击者切物品后，{@code attacker.getMainHandItem()} 已经不是原枪械的问题。
+     * 如果未找到（例如枪械已被丢弃），则回退到主手物品作为兜底。
+     * </p>
+     */
+    private static ItemStack findAttackerGunStack(LivingEntity attacker, ResourceLocation gunId) {
+        if (gunId == null) return attacker.getMainHandItem();
+        if (attacker instanceof Player player) {
+            // 优先搜索主手、副手，再搜索背包
+            ItemStack mainHand = player.getMainHandItem();
+            if (isMatchingGun(mainHand, gunId)) return mainHand;
+            ItemStack offhand = player.getOffhandItem();
+            if (isMatchingGun(offhand, gunId)) return offhand;
+            for (ItemStack stack : player.getInventory().items) {
+                if (isMatchingGun(stack, gunId)) return stack;
+            }
+        }
+        return attacker.getMainHandItem();
+    }
+
+    private static boolean isMatchingGun(ItemStack stack, ResourceLocation gunId) {
+        if (stack == null || stack.isEmpty()) return false;
+        if (!GunCompatManager.isGun(stack)) return false;
+        ResourceLocation id = GunCompatManager.findProvider(stack).getGunId(stack);
+        return gunId.equals(id);
     }
 
     @SubscribeEvent

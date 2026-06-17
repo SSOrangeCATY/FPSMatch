@@ -572,24 +572,29 @@ public class FPSMUtil {
     public static Optional<PlayerData> calculateAssistPlayer(BaseMap map, ServerPlayer deadPlayer, float minAssistDamageRatio) {
         MapTeams mapTeams = map.getMapTeams();
 
-        if (mapTeams.getTeamByPlayer(deadPlayer).isEmpty()) return Optional.empty();
+        Optional<ServerTeam> deadTeamOpt = mapTeams.getTeamByPlayer(deadPlayer);
+        if (deadTeamOpt.isEmpty()) return Optional.empty();
 
-        Map<UUID, Float> hurtDataMap = mapTeams.getDamageMap().getOrDefault(deadPlayer.getUUID(), null);
-        if (hurtDataMap == null || hurtDataMap.isEmpty()) {
-            return Optional.empty();
+        ServerTeam deadTeam = deadTeamOpt.get();
+        UUID deadUUID = deadPlayer.getUUID();
+        float minAssistDamage = deadPlayer.getMaxHealth() * minAssistDamageRatio;
+
+        UUID bestAssistUUID = null;
+        float bestAssistDamage = minAssistDamage;
+
+        for (ServerTeam team : mapTeams.getNormalTeams()) {
+            if (team.equals(deadTeam)) continue;
+            for (PlayerData attackerData : team.getPlayersData()) {
+                float damage = attackerData.getDamageTo(deadUUID);
+                if (damage > bestAssistDamage) {
+                    bestAssistDamage = damage;
+                    bestAssistUUID = attackerData.getOwner();
+                }
+            }
         }
 
-        float minAssistDamage = deadPlayer.getMaxHealth() * minAssistDamageRatio;
-        return hurtDataMap.entrySet().stream()
-                .filter(entry -> FPSMCore.getInstance().getPlayerByUUID(entry.getKey())
-                        .filter(attacker -> !mapTeams.isSameTeam(deadPlayer, attacker))
-                        .isPresent())
-                .filter(entry -> entry.getValue() > minAssistDamage)
-                .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
-                .limit(1)
-                .findAny()
-                .flatMap(entry -> mapTeams.getTeamByPlayer(entry.getKey())
-                        .flatMap(team -> team.getPlayerData(entry.getKey())));
+        if (bestAssistUUID == null) return Optional.empty();
+        return mapTeams.getPlayerData(bestAssistUUID);
     }
 
     //服务端
