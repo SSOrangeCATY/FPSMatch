@@ -71,8 +71,8 @@ public final class MapRoomQueryService {
                 availableInviteTargets(viewer, map),
                 editableShops(map),
                 "gui.fpsm.map_select.rules." + map.getGameType(),
-                "",
-                ""
+                map.getIconTexture(),
+                map.getBackgroundTexture()
         );
     }
 

@@ -9,13 +9,18 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public class FPSMMapInviteScreen extends Screen implements FPSMMapDetailChildScreen {
-    private static final int PANEL_WIDTH = 360;
+import java.util.ArrayList;
+import java.util.List;
+
+public class FPSMMapInviteScreen extends FPSMMapScreenBase implements FPSMMapDetailChildScreen {
+    private static final int PANEL_WIDTH = 380;
     private static final int ROW_HEIGHT = 24;
     private static final int LIST_TOP = 72;
 
     private MapRoomDetail detail;
     private final Screen parent;
+    private final List<Button> inviteButtons = new ArrayList<>();
+    private ScrollableList list;
 
     public FPSMMapInviteScreen(MapRoomDetail detail, Screen parent) {
         super(Component.translatable("gui.fpsm.map_select.invite.title"));
@@ -36,39 +41,68 @@ public class FPSMMapInviteScreen extends Screen implements FPSMMapDetailChildScr
 
     protected void rebuildWidgets() {
         clearWidgets();
+        inviteButtons.clear();
         int left = width / 2 - PANEL_WIDTH / 2;
-        int y = LIST_TOP;
-        for (int i = 0; i < Math.min(detail.availableInviteTargets().size(), visibleRows()); i++) {
+        int bottom = height - 60;
+        // 为每个可邀请玩家创建邀请按钮（全部创建，超出可见范围的由 ScrollableList 控制可见性）
+        for (int i = 0; i < detail.availableInviteTargets().size(); i++) {
             MapRoomPlayerInfo player = detail.availableInviteTargets().get(i);
-            addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.invite"), button -> FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.INVITE, detail.summary().gameType(), detail.summary().mapName(), player.uuid())))
-                    .bounds(left + 260, y + 2, 78, 20)
-                    .build());
-            y += ROW_HEIGHT;
+            Button inviteButton = createSmallButton(Component.translatable("gui.fpsm.map_select.invite"), left + PANEL_WIDTH - 80, LIST_TOP + i * ROW_HEIGHT + 2,
+                    button -> FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.INVITE, detail.summary().gameType(), detail.summary().mapName(), player.uuid())));
+            addRenderableWidget(inviteButton);
+            inviteButtons.add(inviteButton);
         }
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
-                .bounds(width / 2 - 50, height - 52, 100, 20)
-                .build());
+        addRenderableWidget(createBackButton(button -> onClose()));
+
+        // 创建可滚动列表
+        list = new ScrollableList(left, LIST_TOP, PANEL_WIDTH, bottom, ROW_HEIGHT, 0) {
+            @Override
+            public int totalItems() {
+                return detail.availableInviteTargets().size();
+            }
+
+            @Override
+            protected void renderRow(GuiGraphics graphics, int index, int rowTop, int mouseX, int mouseY) {
+                MapRoomPlayerInfo player = detail.availableInviteTargets().get(index);
+                graphics.drawString(font, Component.literal(player.name()), left + 8, rowTop + 8, FPSMGuiTheme.TEXT_HIGHLIGHT, false);
+                graphics.drawString(font, Component.translatable("gui.fpsm.map_select.online"), left + 170, rowTop + 8, FPSMGuiTheme.ST_ONLINE, false);
+                // 重新定位对应按钮
+                Button btn = inviteButtons.get(index);
+                btn.setX(left + PANEL_WIDTH - 80);
+                btn.setY(rowTop + 2);
+                btn.visible = true;
+            }
+        };
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, 0xFFB8D4E3);
+        drawMultiLayerBackground(graphics);
+        graphics.drawCenteredString(font, title, width / 2, 24, FPSMGuiTheme.TEXT_TITLE);
+        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, FPSMGuiTheme.TEXT_SUB);
+
         int left = width / 2 - PANEL_WIDTH / 2;
-        int bottom = Math.min(height - 84, LIST_TOP + visibleRows() * ROW_HEIGHT);
-        graphics.fill(left - 6, LIST_TOP - 6, left + PANEL_WIDTH + 6, bottom + 6, 0x77000000);
+        int bottom = height - 60;
+        // 列表面板背景（统一）
+        drawListBackground(graphics, left - 6, LIST_TOP - 6, left + PANEL_WIDTH + 6, bottom + 6);
+
         if (detail.availableInviteTargets().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.invite.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
-        }
-        int y = LIST_TOP;
-        for (int i = 0; i < Math.min(detail.availableInviteTargets().size(), visibleRows()); i++) {
-            MapRoomPlayerInfo player = detail.availableInviteTargets().get(i);
-            graphics.drawString(font, Component.literal(player.name()), left, y + 8, 0xFFE6F2FF, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.online"), left + 160, y + 8, 0xFF74E084, false);
-            y += ROW_HEIGHT;
+            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.invite.empty"), width / 2, LIST_TOP + 32, FPSMGuiTheme.TEXT_MUTED);
+        } else {
+            // 先隐藏所有按钮，由 list.render 重新设置可见性
+            inviteButtons.forEach(b -> b.visible = false);
+            list.render(graphics, mouseX, mouseY);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
+        if (list != null && list.handleMouseScrolled(mouseX, mouseY, scrollY)) {
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollY);
     }
 
     @Override
@@ -79,9 +113,5 @@ public class FPSMMapInviteScreen extends Screen implements FPSMMapDetailChildScr
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    private int visibleRows() {
-        return Math.max(1, (height - LIST_TOP - 92) / ROW_HEIGHT);
     }
 }

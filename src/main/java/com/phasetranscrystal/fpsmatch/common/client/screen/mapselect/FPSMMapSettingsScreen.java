@@ -14,15 +14,10 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildScreen {
-    private static final int GUI_SHADOW_COLOR = 0x80000000;
-    private static final int GUI_MAIN_BACKGROUND = 0xFF444444;
-    private static final int GUI_INNER_BORDER = 0xFF666666;
-    private static final int GUI_OUTER_BORDER = 0xFF222222;
-    private static final int GUI_PADDING = 4;
-
-    private static final int ROW_HEIGHT = 28;
+public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapDetailChildScreen {
+    private static final int ROW_HEIGHT = 24;
     private static final int LIST_TOP = 62;
+    private static final int EDIT_BOX_WIDTH = 180;
 
     private MapRoomDetail detail;
     private final Screen parent;
@@ -61,24 +56,21 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
             int baseY = LIST_TOP + i * ROW_HEIGHT;
             rowBaseY.add(baseY);
 
-            EditBox field = new EditBox(font, left + 176, baseY + 5, 150, 18, Component.translatable(setting.translationKey()));
+            EditBox field = new EditBox(font, left + 176, baseY + 3, EDIT_BOX_WIDTH, 18, Component.translatable(setting.translationKey()));
             field.setMaxLength(128);
             field.setValue(setting.value());
             field.setEditable(setting.editable());
             addRenderableWidget(field);
             valueFields.add(field);
 
-            Button applyButton = Button.builder(Component.translatable("gui.fpsm.map_select.apply"), button -> applySetting(setting, field))
-                    .bounds(left + 334, baseY + 4, 70, 20)
-                    .build();
+            Button applyButton = createSmallButton(Component.translatable("gui.fpsm.map_select.apply"), left + 176 + EDIT_BOX_WIDTH + 6, baseY + 2,
+                    button -> applySetting(setting, field));
             applyButton.active = setting.editable();
             addRenderableWidget(applyButton);
             applyButtons.add(applyButton);
         }
 
-        addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
-                .bounds(width / 2 - 50, height - 52, 100, 20)
-                .build());
+        addRenderableWidget(createBackButton(button -> onClose()));
     }
 
     @Override
@@ -90,12 +82,12 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        renderMultiLayerBackground(graphics);
+        drawMultiLayerBackground(graphics);
 
         // 标题
-        graphics.drawCenteredString(font, title, width / 2, 12, 0xFFFFFFFF);
+        graphics.drawCenteredString(font, title, width / 2, 12, FPSMGuiTheme.TEXT_TITLE);
         if (detail != null) {
-            graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 26, 0xFFB8D4E3);
+            graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 26, FPSMGuiTheme.TEXT_SUB);
         }
 
         int contentHeight = height - LIST_TOP - 62;
@@ -103,14 +95,12 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
 
-        // 内容区背景
+        // 内容区背景（统一）
         int left = width / 2 - 210;
         int right = width / 2 + 210;
         int panelTop = LIST_TOP - 2;
         int panelBottom = height - 60;
-        graphics.fill(left - 6, panelTop, right + 6, panelBottom, 0x77000000);
-        graphics.fill(left - 6, panelTop, right + 6, panelTop + 1, 0xFF666666);
-        graphics.fill(left - 6, panelBottom - 1, right + 6, panelBottom, 0xFF666666);
+        drawListBackground(graphics, left - 6, panelTop, right + 6, panelBottom);
 
         // 裁剪区域
         graphics.enableScissor(left - 8, panelTop + 2, right + 8, panelBottom - 2);
@@ -122,16 +112,16 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
 
             EditBox field = valueFields.get(i);
             field.visible = visible;
-            field.setY(targetY + 5);
+            field.setY(targetY + 3);
 
             Button applyButton = applyButtons.get(i);
             applyButton.visible = visible;
-            applyButton.setY(targetY + 4);
+            applyButton.setY(targetY + 2);
 
             MapRoomSettingInfo setting = detail.settings().get(i);
             Component settingName = Component.translatable(setting.translationKey());
-            graphics.drawString(font, settingName, left, targetY + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 10, 0xFFB8D4E3, false);
+            graphics.drawString(font, settingName, left, targetY + 8, setting.editable() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED, false);
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 8, FPSMGuiTheme.TEXT_SUB, false);
 
             // 悬浮提示
             if (mouseX >= left - 2 && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
@@ -141,35 +131,13 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         graphics.disableScissor();
 
         // 滚动条
-        renderScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
+        drawScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
 
         if (detail.settings().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
+            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, FPSMGuiTheme.TEXT_MUTED);
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    private void renderMultiLayerBackground(GuiGraphics guiGraphics) {
-        guiGraphics.fill(2, 2, width + 2, height + 2, GUI_SHADOW_COLOR);
-        guiGraphics.fill(0, 0, width, 1, GUI_OUTER_BORDER);
-        guiGraphics.fill(0, height - 1, width, height, GUI_OUTER_BORDER);
-        guiGraphics.fill(0, 1, 1, height - 1, GUI_OUTER_BORDER);
-        guiGraphics.fill(width - 1, 1, width, height - 1, GUI_OUTER_BORDER);
-        guiGraphics.fill(1, 1, width - 1, height - 1, GUI_MAIN_BACKGROUND);
-        guiGraphics.fill(1 + GUI_PADDING, 1 + GUI_PADDING, width - 1 - GUI_PADDING, 1 + GUI_PADDING + 1, GUI_INNER_BORDER);
-        guiGraphics.fill(1 + GUI_PADDING, height - 1 - GUI_PADDING - 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING, GUI_INNER_BORDER);
-        guiGraphics.fill(1 + GUI_PADDING, 1 + GUI_PADDING + 1, 1 + GUI_PADDING + 1, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
-        guiGraphics.fill(width - 1 - GUI_PADDING - 1, 1 + GUI_PADDING + 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
-    }
-
-    private void renderScrollBar(GuiGraphics graphics, int barX, int barY, int barHeight, int scroll, int maxScroll, int totalItems, int visibleItems) {
-        if (maxScroll <= 0) return;
-        int barWidth = 4;
-        graphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0x33000000);
-        int thumbSize = Math.max(10, barHeight * visibleItems / Math.max(1, totalItems));
-        int thumbY = barY + scroll * (barHeight - thumbSize) / Math.max(1, maxScroll);
-        graphics.fill(barX, thumbY, barX + barWidth, thumbY + thumbSize, 0x88FFFFFF);
     }
 
     @Override
@@ -204,8 +172,6 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 将滚动后偏移的点击位置映射回组件实际位置
-        // 由于 setY 已经更新了组件位置，super 会正确路由点击
         return super.mouseClicked(mouseX, mouseY, button);
     }
 

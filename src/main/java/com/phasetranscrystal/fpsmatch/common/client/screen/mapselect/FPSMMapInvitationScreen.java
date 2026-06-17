@@ -5,13 +5,12 @@ import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.UUID;
 
-public class FPSMMapInvitationScreen extends Screen {
+public class FPSMMapInvitationScreen extends FPSMMapScreenBase {
     private static final int PANEL_WIDTH = 320;
     private static final int PANEL_HEIGHT = 116;
 
@@ -32,12 +31,18 @@ public class FPSMMapInvitationScreen extends Screen {
     protected void init() {
         int centerX = width / 2;
         int top = height / 2 - PANEL_HEIGHT / 2;
-        addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.invitation.accept"), button -> accept())
-                .bounds(centerX - 104, top + 78, 96, 20)
-                .build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.fpsm.map_select.invitation.reject"), button -> reject())
-                .bounds(centerX + 8, top + 78, 96, 20)
-                .build());
+        // 接受/拒绝按钮，统一大按钮 110，间距 8
+        int total = 2;
+        int bw = FPSMGuiTheme.BUTTON_LARGE_WIDTH;
+        int gap = FPSMGuiTheme.BUTTON_GAP;
+        int[] xs = new int[total];
+        for (int i = 0; i < total; i++) {
+            xs[i] = buttonX(centerX, bw, gap, i, total);
+        }
+        addRenderableWidget(createLargeButton(Component.translatable("gui.fpsm.map_select.invitation.accept"), xs[0], top + 78,
+                button -> accept()));
+        addRenderableWidget(createLargeButton(Component.translatable("gui.fpsm.map_select.invitation.reject"), xs[1], top + 78,
+                button -> reject()));
     }
 
     @Override
@@ -45,10 +50,11 @@ public class FPSMMapInvitationScreen extends Screen {
         renderBackground(graphics);
         int left = width / 2 - PANEL_WIDTH / 2;
         int top = height / 2 - PANEL_HEIGHT / 2;
-        graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xDD101820);
-        graphics.drawCenteredString(font, title, width / 2, top + 14, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, invitation.message(), width / 2, top + 42, 0xFFE6F2FF);
-        graphics.drawCenteredString(font, Component.literal(invitation.gameType() + " / " + invitation.mapName()), width / 2, top + 58, 0xFFB8D4E3);
+        // 弹窗面板背景（统一）
+        drawPanel(graphics, left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, FPSMGuiTheme.BG_PANEL);
+        graphics.drawCenteredString(font, title, width / 2, top + 14, FPSMGuiTheme.TEXT_TITLE);
+        graphics.drawCenteredString(font, invitation.message(), width / 2, top + 42, FPSMGuiTheme.TEXT_HIGHLIGHT);
+        graphics.drawCenteredString(font, Component.literal(invitation.gameType() + " / " + invitation.mapName()), width / 2, top + 58, FPSMGuiTheme.TEXT_SUB);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

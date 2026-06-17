@@ -72,6 +72,22 @@ public abstract class BaseMap {
     protected final Setting<Boolean> teammateGlow = this.addSetting("teammateGlow", false);
     protected final Setting<Boolean> hideEnemyNameTag = this.addSetting("hideEnemyNameTag", true);
     protected final Setting<String> displayName = this.addSetting("displayName", "");
+    /**
+     * 地图图标贴图资源路径。
+     * <p>
+     * OP 可在地图设置界面填写，留空则客户端使用色块兜底渲染。
+     * 例：{@code fpsmatch:textures/gui/maps/dust2_icon.png}
+     * <p>
+     * 该值通过 MapRoomDetail.iconTexture() 专用字段下发到客户端，
+     * 不混入 settings 列表展示（避免重复），但存储走 Setting 通道以获得持久化与编辑能力。
+     */
+    protected final Setting<String> iconTexture = this.addSetting("iconTexture", "");
+    /**
+     * 地图背景贴图资源路径（详情页大图）。
+     * <p>
+     * 用法同 {@link #iconTexture}，留空则客户端使用色块兜底渲染。
+     */
+    protected final Setting<String> backgroundTexture = this.addSetting("backgroundTexture", "");
 
     private final CapabilityMap<BaseMap, MapCapability> capabilities;
     // 地图区域数据
@@ -805,6 +821,20 @@ public abstract class BaseMap {
     public String getDisplayName() {
         String name = displayName.get();
         return name.isEmpty() ? mapName : name;
+    }
+
+    /**
+     * 获取地图图标贴图资源路径。留空表示未配置，客户端应使用色块兜底。
+     */
+    public String getIconTexture() {
+        return iconTexture.get();
+    }
+
+    /**
+     * 获取地图背景贴图资源路径。留空表示未配置，客户端应使用色块兜底。
+     */
+    public String getBackgroundTexture() {
+        return backgroundTexture.get();
     }
 
     public void displayAreas(ServerPlayer player) {
