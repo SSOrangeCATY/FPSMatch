@@ -1,10 +1,13 @@
 package com.phasetranscrystal.fpsmatch.common.packet.mapselect;
 
+import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * 地图准备状态同步包。
@@ -33,5 +36,9 @@ public record MapRoomReadyStateS2CPacket(
         int countdownSeconds = buf.readInt();
         Set<UUID> readyPlayers = buf.readCollection(HashSet::new, FriendlyByteBuf::readUUID);
         return new MapRoomReadyStateS2CPacket(gameType, mapName, countdownSeconds, readyPlayers);
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> ctx) {
+        ClientPacketExecutor.execute(ctx, this);
     }
 }
