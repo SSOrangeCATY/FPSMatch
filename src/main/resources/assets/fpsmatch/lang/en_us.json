@@ -316,7 +316,7 @@
   "gui.fpsm.map_select.status.started_joinable": "In progress, joinable",
   "gui.fpsm.map_select.status.debug": "Debug mode",
   "gui.fpsm.map_select.summary": "%s · %s",
-  "gui.fpsm.map_select.game_info": "%s · %s",
+  "gui.fpsm.map_select.game_info": "%s",
   "gui.fpsm.map_select.joined": "Joined",
   "gui.fpsm.map_select.settings": "Settings",
   "gui.fpsm.map_select.manage": "Manage",

@@ -153,8 +153,7 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - 76, rowTop + 6, FPSMGuiTheme.TEXT_HIGHLIGHT, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.status", statusText(summary)), infoX, rowTop + 24, statusColor(summary), false);
             Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
-            Component dimName = dimensionName(summary.dimension());
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName, dimName), infoX + 118, rowTop + 24, FPSMGuiTheme.TEXT_SUB, false);
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName), infoX + 118, rowTop + 24, FPSMGuiTheme.TEXT_SUB, false);
             if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
                 graphics.drawString(font, Component.translatable("gui.fpsm.map_select.joined"), right - 48, rowTop + 24, FPSMGuiTheme.ST_ONLINE, false);
             }
@@ -285,8 +284,4 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
         return Math.max(0, maps().size() - visibleRows());
     }
 
-    private Component dimensionName(String dim) {
-        String key = dim.replace(':', '.');
-        return Component.translatable("fpsm.dimension." + key);
-    }
 }

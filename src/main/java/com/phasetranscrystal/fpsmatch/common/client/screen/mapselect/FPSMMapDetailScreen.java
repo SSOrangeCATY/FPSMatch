@@ -110,8 +110,7 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
             int infoY = PANEL_TOP;
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.status", statusText(summary)), infoX, infoY, statusColor(summary), false);
             Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
-            Component dimName = Component.translatable("fpsm.dimension." + summary.dimension().replace(':', '.'));
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName, dimName), infoX, infoY + 16, FPSMGuiTheme.TEXT_SUB, false);
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName), infoX, infoY + 16, FPSMGuiTheme.TEXT_SUB, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()), infoX, infoY + 32, FPSMGuiTheme.TEXT_SUB, false);
             graphics.drawString(font, Component.translatable(detail.rulesKey()), infoX, infoY + 52, FPSMGuiTheme.TEXT_BODY, false);
 
