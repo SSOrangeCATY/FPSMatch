@@ -32,12 +32,7 @@ public abstract class MixinEntityUnified {
         if (self instanceof LivingEntity living) {
             // 旁观者发光：由 SpectatorGlowManager 管理
             if (localPlayer.isSpectator()) {
-                if (SpectatorGlowManager.shouldGlow(living)) {
-                    cir.setReturnValue(true);
-                } else {
-                    // 旁观者可以看到所有实体发光
-                    cir.setReturnValue(localPlayer.isSpectator());
-                }
+                cir.setReturnValue(SpectatorGlowManager.shouldGlow(living));
                 cir.cancel();
                 return;
             }
@@ -70,10 +65,7 @@ public abstract class MixinEntityUnified {
             }
             cir.cancel();
         } else {
-            // 允许带有发光标签的物品实体（如掉落的C4）保持发光
             if (self instanceof ItemEntity itemEntity && itemEntity.hasGlowingTag()) {
-                cir.setReturnValue(true);
-            } else if (localPlayer.isSpectator()) {
                 cir.setReturnValue(true);
             } else {
                 cir.setReturnValue(false);

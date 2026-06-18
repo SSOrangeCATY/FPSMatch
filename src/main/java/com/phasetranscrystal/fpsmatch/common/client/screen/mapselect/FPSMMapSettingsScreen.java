@@ -24,6 +24,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
     private final List<EditBox> valueFields = new ArrayList<>();
     private final List<Button> applyButtons = new ArrayList<>();
     private final List<Integer> rowBaseY = new ArrayList<>();
+    private Button backButton;
     private int scrollOffset;
 
     public FPSMMapSettingsScreen(MapRoomDetail detail, Screen parent) {
@@ -70,7 +71,8 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
             applyButtons.add(applyButton);
         }
 
-        addRenderableWidget(createBackButton(button -> onClose()));
+        backButton = createBackButton(button -> onClose());
+        addRenderableWidget(backButton);
     }
 
     @Override
@@ -108,7 +110,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
         // 重定位所有组件并渲染标签
         for (int i = 0; i < Math.min(valueFields.size(), detail.settings().size()); i++) {
             int targetY = rowBaseY.get(i) - scrollOffset * ROW_HEIGHT;
-            boolean visible = targetY + ROW_HEIGHT > panelTop && targetY < panelBottom;
+            boolean visible = targetY + ROW_HEIGHT > panelTop + 2 && targetY < panelBottom - 2;
 
             EditBox field = valueFields.get(i);
             field.visible = visible;
@@ -118,10 +120,14 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
             applyButton.visible = visible;
             applyButton.setY(targetY + 2);
 
+            if (!visible) continue;
+
             MapRoomSettingInfo setting = detail.settings().get(i);
             Component settingName = Component.translatable(setting.translationKey());
             graphics.drawString(font, settingName, left, targetY + 8, setting.editable() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED, false);
             graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 8, FPSMGuiTheme.TEXT_SUB, false);
+            field.render(graphics, mouseX, mouseY, partialTick);
+            applyButton.render(graphics, mouseX, mouseY, partialTick);
 
             // 悬浮提示
             if (mouseX >= left - 2 && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
@@ -137,7 +143,9 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
             graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, FPSMGuiTheme.TEXT_MUTED);
         }
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        if (backButton != null) {
+            backButton.render(graphics, mouseX, mouseY, partialTick);
+        }
     }
 
     @Override
