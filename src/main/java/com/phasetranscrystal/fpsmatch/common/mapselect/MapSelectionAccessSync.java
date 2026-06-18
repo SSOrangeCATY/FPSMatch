@@ -14,7 +14,7 @@ public final class MapSelectionAccessSync {
     }
 
     public static boolean canUseMapSelection(ServerPlayer player) {
-        return player.hasPermissions(2) || FPSMConfig.Server.enableMapSelectionButtonForNonOps.get();
+        return MapRoomQueryService.isMapOperator(player) || FPSMConfig.Server.enableMapSelectionButtonForNonOps.get();
     }
 
     public static void sync(ServerPlayer player) {

@@ -306,7 +306,7 @@
   "gui.fpsm.map_select.snapshot_count": "Available maps: %s",
   "gui.fpsm.map_select.empty": "No maps are currently available",
   "gui.fpsm.map_select.detail": "Details",
-  "gui.fpsm.map_select.join": "Join",
+  "gui.fpsm.map_select.join": "Enter Lobby",
   "gui.fpsm.map_select.leave": "Leave",
   "gui.fpsm.map_select.refresh": "Refresh",
   "gui.fpsm.map_select.players": "%s/%s players",
@@ -391,7 +391,7 @@
   "setting.csdm.backgroundTexture.desc": "Background texture path for the detail page. Leave empty to use a fallback color block. Example: fpsmatch:textures/gui/maps/dust2_bg.png",
 
   "gui.fpsm.team_manage.button": "Team Management",
-  "gui.fpsm.team_manage.title": "Team Management",
+  "gui.fpsm.team_manage.title": "Lobby",
   "gui.fpsm.team_manage.refresh": "Refresh",
   "gui.fpsm.team_manage.close": "Close",
   "gui.fpsm.team_manage.cancel": "Cancel",

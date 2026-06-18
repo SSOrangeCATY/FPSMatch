@@ -50,7 +50,11 @@ public final class MapRoomActionService {
     }
 
     public static Result join(ServerPlayer player, BaseMap map) {
-        MapTeams.JoinTeamResult result = map.join(player);
+        return join(player, map, null);
+    }
+
+    private static Result join(ServerPlayer player, BaseMap map, String teamName) {
+        MapTeams.JoinTeamResult result = teamName == null ? map.join(player) : map.join(teamName, player);
         Component message = switch (result.status()) {
             case JOINED -> Component.translatable("gui.fpsm.map_select.action.join.success", map.getMapName());
             case TEAM_FULL -> Component.translatable("commands.fpsm.team.join.failure.full", safeTeamName(result));
@@ -86,7 +90,7 @@ public final class MapRoomActionService {
     }
 
     public static Result debug(ServerPlayer player, BaseMap map, DebugAction action) {
-        if (!player.hasPermissions(2)) {
+        if (!MapRoomQueryService.isMapOperator(player)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         switch (action) {
@@ -106,7 +110,7 @@ public final class MapRoomActionService {
     }
 
     public static Result kick(ServerPlayer player, BaseMap map, UUID target) {
-        if (!player.hasPermissions(2)) {
+        if (!MapRoomQueryService.isMapOperator(player)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         Optional<ServerPlayer> targetPlayer = map.getPlayerByUUID(target);
@@ -153,11 +157,14 @@ public final class MapRoomActionService {
 
     public static Result switchTeam(ServerPlayer player, BaseMap map, UUID target, String teamName) {
         boolean self = player.getUUID().equals(target);
-        if (!self && !player.hasPermissions(2)) {
+        if (!self && !MapRoomQueryService.isMapOperator(player)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         Optional<ServerPlayer> targetPlayer = self ? Optional.of(player) : map.getPlayerByUUID(target);
         if (targetPlayer.isEmpty() || (!map.checkGameHasPlayer(targetPlayer.get()) && !map.checkSpecHasPlayer(targetPlayer.get()))) {
+            if (self && !map.checkGameHasPlayer(player) && !map.checkSpecHasPlayer(player)) {
+                return join(player, map, teamName);
+            }
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.player_not_found"));
         }
         ServerPlayer targetServerPlayer = targetPlayer.get();
@@ -187,7 +194,7 @@ public final class MapRoomActionService {
     }
 
     public static Result setSetting(ServerPlayer player, BaseMap map, String settingName, String value) {
-        if (!player.hasPermissions(2)) {
+        if (!MapRoomQueryService.isMapOperator(player)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         for (Setting<?> setting : map.settings()) {

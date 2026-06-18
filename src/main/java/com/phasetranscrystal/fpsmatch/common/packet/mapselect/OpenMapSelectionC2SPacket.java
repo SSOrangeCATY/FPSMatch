@@ -24,7 +24,7 @@ public record OpenMapSelectionC2SPacket() {
             if (player == null) {
                 return;
             }
-            boolean viewerOp = player.hasPermissions(2);
+            boolean viewerOp = MapRoomQueryService.isMapOperator(player);
             boolean nonOpButtonEnabled = FPSMConfig.Server.enableMapSelectionButtonForNonOps.get();
             if (!viewerOp && !nonOpButtonEnabled) {
                 FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable("gui.fpsm.map_select.action.no_permission"), true));

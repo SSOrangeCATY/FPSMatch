@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.*;
 import net.minecraft.client.gui.GuiGraphics;
@@ -24,6 +25,7 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
     private Button joinButton;
     private Button leaveButton;
     private Button inviteButton;
+    private Button manageButton;
     private int playerScrollOffset;
 
     public FPSMMapDetailScreen(MapRoomDetail detail, Screen parent) {
@@ -46,21 +48,24 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
     protected void rebuildWidgets() {
         clearWidgets();
         int centerX = width / 2;
-        // 底部主操作行：加入（已加入则进入队伍管理）/离开/邀请/返回，统一中按钮 90，间距 8
-        int mainTotal = 4;
         int bw = FPSMGuiTheme.BUTTON_MEDIUM_WIDTH;
         int gap = FPSMGuiTheme.BUTTON_GAP;
-        int[] mainXs = new int[mainTotal];
-        for (int i = 0; i < mainTotal; i++) {
-            mainXs[i] = buttonX(centerX, bw, gap, i, mainTotal);
-        }
-        joinButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.join"), mainXs[0], height - 52,
+        boolean op = detail != null && detail.summary().currentPlayerOp();
+        int mainTotal = op ? 5 : 4;
+        int buttonY = height - 52;
+        joinButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.join"), buttonX(centerX, bw, gap, 0, mainTotal), buttonY,
                 button -> onJoinOrTeamManage()));
-        leaveButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.leave"), mainXs[1], height - 52,
+        leaveButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.leave"), buttonX(centerX, bw, gap, 1, mainTotal), buttonY,
                 button -> sendRoomAction(MapRoomActionC2SPacket.Action.LEAVE, new UUID(0L, 0L))));
-        inviteButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.invite"), mainXs[2], height - 52,
+        inviteButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.invite"), buttonX(centerX, bw, gap, 2, mainTotal), buttonY,
                 button -> FPSMMapSelectScreens.openChild(new FPSMMapInviteScreen(detail, this))));
-        addRenderableWidget(createMediumButton(Component.translatable("gui.back"), mainXs[3], height - 52,
+        int backIndex = 3;
+        if (op) {
+            manageButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.manage"), buttonX(centerX, bw, gap, 3, mainTotal), buttonY,
+                    button -> FPSMMapSelectScreens.openChild(new FPSMMapManageScreen(detail, this))));
+            backIndex = 4;
+        }
+        addRenderableWidget(createMediumButton(Component.translatable("gui.back"), buttonX(centerX, bw, gap, backIndex, mainTotal), buttonY,
                 button -> onClose()));
         updateButtons();
     }
@@ -79,11 +84,10 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
 
             graphics.drawCenteredString(font, Component.literal(summary.displayName()), width / 2, 26, FPSMGuiTheme.TEXT_SUB);
 
-            // 内容区背景（统一）
-            drawListBackground(graphics, left - 6, PANEL_TOP - 2, right + 6, height - PANEL_BOTTOM + 2);
+            int contentBottom = Math.min(height - PANEL_BOTTOM + 2, PANEL_TOP + 178);
+            drawListBackground(graphics, left - 6, PANEL_TOP - 2, right + 6, contentBottom);
 
-            // 左侧预览区：贴图优先，色块兜底
-            int previewH = height - PANEL_BOTTOM - PANEL_TOP - 4;
+            int previewH = Math.max(72, contentBottom - PANEL_TOP - 4);
             MapThumbnailRenderer.render(graphics, left, PANEL_TOP, PREVIEW_WIDTH, previewH,
                     detail.backgroundTexture(), summary.mapName(), summary.gameType(), summary.displayName(), true);
 
@@ -147,6 +151,11 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
     private void sendRoomAction(MapRoomActionC2SPacket.Action action, UUID target) {
         if (detail != null) {
             FPSMatch.sendToServer(new MapRoomActionC2SPacket(action, detail.summary().gameType(), detail.summary().mapName(), target));
+            if (action == MapRoomActionC2SPacket.Action.LEAVE) {
+                FPSMClient.getGlobalData().setMapRoomDetail(null);
+                FPSMatch.sendToServer(new OpenMapSelectionC2SPacket());
+                onClose();
+            }
         }
     }
 
@@ -163,17 +172,13 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
         if (inviteButton != null) {
             inviteButton.active = hasDetail && joined && !detail.availableInviteTargets().isEmpty();
         }
+        if (manageButton != null) {
+            manageButton.active = hasDetail && summary.currentPlayerOp();
+        }
     }
 
     private void onJoinOrTeamManage() {
-        if (detail == null) return;
-        MapRoomSummary summary = detail.summary();
-        boolean joined = summary.currentPlayerJoined() || summary.currentPlayerSpectating();
-        if (joined) {
-            openTeamManage();
-        } else {
-            sendRoomAction(MapRoomActionC2SPacket.Action.JOIN, new UUID(0L, 0L));
-        }
+        openTeamManage();
     }
 
     private Component statusText(MapRoomSummary summary) {

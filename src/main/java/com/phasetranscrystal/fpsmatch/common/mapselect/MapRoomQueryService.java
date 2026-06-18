@@ -41,6 +41,10 @@ public final class MapRoomQueryService {
         return !listEditableShops(gameType, mapName).isEmpty();
     }
 
+    public static boolean isMapOperator(ServerPlayer player) {
+        return player.hasPermissions(2);
+    }
+
     private static List<EditableShopInfo> editableShops(BaseMap map) {
         return map.getMapTeams().getNormalTeams().stream()
                 .filter(team -> ShopCapability.getShop(team).isPresent())

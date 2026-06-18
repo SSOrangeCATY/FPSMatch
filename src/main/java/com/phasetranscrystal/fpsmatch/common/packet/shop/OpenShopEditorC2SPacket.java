@@ -44,7 +44,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                 player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
                 return;
             }
-            if (!player.hasPermissions(2)) {
+            if (!MapRoomQueryService.isMapOperator(player)) {
                 player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
                 return;
             }

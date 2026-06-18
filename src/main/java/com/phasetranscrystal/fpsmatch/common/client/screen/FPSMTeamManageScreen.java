@@ -3,9 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.client.screen;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
-import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapManageScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapScreenBase;
-import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ScrollableList;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
@@ -51,7 +49,6 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     private int syncedCountdownSeconds = -1;
 
     private Button readyButton;
-    private Button manageButton;
     private final List<Button> teamButtons = new ArrayList<>();
     private final List<Button> kickButtons = new ArrayList<>();
     private final List<Button> adminMoveButtons = new ArrayList<>();
@@ -225,18 +222,13 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
             }
         }
 
-        int total = op ? 3 : 2;
+        int total = 2;
         int totalWidth = total * bw + (total - 1) * gap;
         int startX = centerX - totalWidth / 2;
 
         readyButton = addRenderableWidget(createMediumButton(Component.empty(), startX, bottomY, b -> toggleReady()));
         updateReadyButton();
-        if (op) {
-            manageButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.manage"), startX + bw + gap, bottomY,
-                    b -> FPSMMapSelectScreens.openChild(new FPSMMapManageScreen(detail, this))));
-            manageButton.active = op;
-        }
-        addRenderableWidget(createMediumButton(Component.translatable("gui.back"), startX + (total - 1) * (bw + gap), bottomY, b -> onClose()));
+        addRenderableWidget(createMediumButton(Component.translatable("gui.back"), startX + bw + gap, bottomY, b -> onClose()));
     }
 
     @Override
@@ -434,6 +426,8 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     private void updateReadyButton() {
         if (readyButton == null || minecraft.player == null) return;
+        boolean joined = detail.summary().currentPlayerJoined() || detail.summary().currentPlayerSpectating();
+        readyButton.active = joined;
         boolean ready = isReady(minecraft.player.getUUID());
         readyButton.setMessage(ready
                 ? Component.translatable("gui.fpsm.team_manage.ready.off")
@@ -463,7 +457,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     private boolean canSwitchTeam() {
         if (detail.summary().started() && !detail.summary().allowJoinInProgress()) return false;
-        return detail.summary().currentPlayerJoined() || detail.summary().currentPlayerSpectating();
+        return true;
     }
 
     private int playerCountInTeam(String teamName) {
