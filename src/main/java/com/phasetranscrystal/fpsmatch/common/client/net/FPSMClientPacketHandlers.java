@@ -22,6 +22,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CP
 import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
@@ -183,6 +184,13 @@ public final class FPSMClientPacketHandlers {
     public static void handleMapRoomDetail(MapRoomDetailS2CPacket packet) {
         FPSMClient.getGlobalData().setMapRoomDetail(packet.detail());
         FPSMMapSelectScreens.openDetail(packet);
+    }
+
+    public static void handleMapRoomReadyState(MapRoomReadyStateS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen screen) {
+            screen.applyReadyState(packet.gameType(), packet.mapName(), packet.countdownSeconds(), packet.readyPlayers());
+        }
     }
 
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {

@@ -13,11 +13,17 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public record MapRoomActionC2SPacket(Action action, String gameType, String mapName, UUID targetPlayer) {
+public record MapRoomActionC2SPacket(Action action, String gameType, String mapName, UUID targetPlayer, String data) {
     private static final int ID_MAX_LENGTH = 128;
+    private static final int DATA_MAX_LENGTH = 128;
 
     public MapRoomActionC2SPacket {
         targetPlayer = Objects.requireNonNullElse(targetPlayer, new UUID(0L, 0L));
+        data = Objects.requireNonNullElse(data, "");
+    }
+
+    public MapRoomActionC2SPacket(Action action, String gameType, String mapName, UUID targetPlayer) {
+        this(action, gameType, mapName, targetPlayer, "");
     }
 
     public enum Action {
@@ -27,6 +33,8 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
         INVITE,
         ACCEPT_INVITE,
         KICK,
+        READY,
+        SWITCH_TEAM,
         DEBUG_START,
         DEBUG_RESET,
         DEBUG_NEW_ROUND,
@@ -39,10 +47,11 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
         buf.writeUtf(packet.gameType(), ID_MAX_LENGTH);
         buf.writeUtf(packet.mapName(), ID_MAX_LENGTH);
         buf.writeUUID(packet.targetPlayer());
+        buf.writeUtf(packet.data(), DATA_MAX_LENGTH);
     }
 
     public static MapRoomActionC2SPacket decode(FriendlyByteBuf buf) {
-        return new MapRoomActionC2SPacket(buf.readEnum(Action.class), buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH), buf.readUUID());
+        return new MapRoomActionC2SPacket(buf.readEnum(Action.class), buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH), buf.readUUID(), buf.readUtf(DATA_MAX_LENGTH));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
@@ -66,6 +75,8 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
                 case INVITE -> MapRoomActionService.invite(player, gameType, mapName, targetPlayer);
                 case ACCEPT_INVITE -> MapRoomActionService.acceptInvite(player, gameType, mapName);
                 case KICK -> MapRoomActionService.kick(player, gameType, mapName, targetPlayer);
+                case READY -> MapRoomActionService.ready(player, gameType, mapName);
+                case SWITCH_TEAM -> MapRoomActionService.switchTeam(player, gameType, mapName, targetPlayer, data);
                 case DEBUG_START -> MapRoomActionService.debug(player, gameType, mapName, MapRoomActionService.DebugAction.START);
                 case DEBUG_RESET -> MapRoomActionService.debug(player, gameType, mapName, MapRoomActionService.DebugAction.RESET);
                 case DEBUG_NEW_ROUND -> MapRoomActionService.debug(player, gameType, mapName, MapRoomActionService.DebugAction.NEW_ROUND);

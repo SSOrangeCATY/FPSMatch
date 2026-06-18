@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSummary;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomTeamInfo;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
@@ -70,6 +71,8 @@ public final class MapRoomQueryService {
                 settings(viewer, map),
                 availableInviteTargets(viewer, map),
                 editableShops(map),
+                teams(map),
+                map.getReadyPlayers(),
                 "gui.fpsm.map_select.rules." + map.getGameType(),
                 map.getIconTexture(),
                 map.getBackgroundTexture()
@@ -99,13 +102,14 @@ public final class MapRoomQueryService {
                 max,
                 joinedMap,
                 spectating,
-                viewer.hasPermissions(2)
+                viewer.hasPermissions(2),
+                map.getReadyCountdownSeconds()
         );
     }
 
     public static List<MapRoomPlayerInfo> players(BaseMap map) {
         List<MapRoomPlayerInfo> players = new ArrayList<>();
-        map.getMapTeams().getTeamsWithSpectator().forEach(team -> team.getPlayersData().forEach(data -> players.add(playerInfo(team, data))));
+        map.getMapTeams().getTeamsWithSpectator().forEach(team -> team.getPlayersData().forEach(data -> players.add(playerInfo(team, data, map))));
         players.sort(Comparator.comparing(MapRoomPlayerInfo::teamName).thenComparing(MapRoomPlayerInfo::name));
         return players;
     }
@@ -121,7 +125,7 @@ public final class MapRoomQueryService {
         FPSMCore.getInstance().getServer().getPlayerList().getPlayers().stream()
                 .filter(player -> !player.getUUID().equals(viewer.getUUID()))
                 .filter(MapRoomQueryService::isAvailableInviteTarget)
-                .map(player -> new MapRoomPlayerInfo(player.getUUID(), player.getGameProfile().getName(), "", false, true))
+                .map(player -> new MapRoomPlayerInfo(player.getUUID(), player.getGameProfile().getName(), "", false, true, false))
                 .sorted(Comparator.comparing(MapRoomPlayerInfo::name))
                 .forEach(targets::add);
         return targets;
@@ -144,14 +148,27 @@ public final class MapRoomQueryService {
                 .toList();
     }
 
-    private static MapRoomPlayerInfo playerInfo(ServerTeam team, PlayerData data) {
+    private static MapRoomPlayerInfo playerInfo(ServerTeam team, PlayerData data, BaseMap map) {
         return new MapRoomPlayerInfo(
                 data.getOwner(),
                 data.getPlayer().map(player -> player.getGameProfile().getName()).orElse(data.getOwner().toString()),
                 team.getName(),
                 team.isSpectator(),
-                data.getPlayer().isPresent()
+                data.getPlayer().isPresent(),
+                map.isReady(data.getOwner())
         );
+    }
+
+    public static List<MapRoomTeamInfo> teams(BaseMap map) {
+        return map.getMapTeams().getTeamsWithSpectator().stream()
+                .map(team -> new MapRoomTeamInfo(
+                        team.getName(),
+                        team.getPlayerCount(),
+                        team.getPlayerLimit(),
+                        team.isSpectator()
+                ))
+                .sorted(Comparator.comparing(MapRoomTeamInfo::spectator).thenComparing(MapRoomTeamInfo::name))
+                .toList();
     }
 
     private static MapRoomSettingInfo settingInfo(Setting<?> setting, boolean editable, String gameType) {

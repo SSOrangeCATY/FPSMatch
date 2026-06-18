@@ -3,7 +3,10 @@ package com.phasetranscrystal.fpsmatch.common.packet.mapselect;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public record MapRoomDetail(
         MapRoomSummary summary,
@@ -11,6 +14,8 @@ public record MapRoomDetail(
         List<MapRoomSettingInfo> settings,
         List<MapRoomPlayerInfo> availableInviteTargets,
         List<EditableShopInfo> editableShops,
+        List<MapRoomTeamInfo> teams,
+        Set<UUID> readyPlayers,
         String rulesKey,
         String iconTexture,
         String backgroundTexture
@@ -23,6 +28,8 @@ public record MapRoomDetail(
         buf.writeCollection(detail.settings(), (buffer, info) -> MapRoomSettingInfo.encode(info, buffer));
         buf.writeCollection(detail.availableInviteTargets(), (buffer, info) -> MapRoomPlayerInfo.encode(info, buffer));
         buf.writeCollection(detail.editableShops(), (buffer, info) -> info.encode(buffer));
+        buf.writeCollection(detail.teams(), (buffer, info) -> MapRoomTeamInfo.encode(info, buffer));
+        buf.writeCollection(detail.readyPlayers(), FriendlyByteBuf::writeUUID);
         buf.writeUtf(detail.rulesKey(), RESOURCE_MAX_LENGTH);
         buf.writeUtf(detail.iconTexture(), RESOURCE_MAX_LENGTH);
         buf.writeUtf(detail.backgroundTexture(), RESOURCE_MAX_LENGTH);
@@ -34,6 +41,8 @@ public record MapRoomDetail(
         List<MapRoomSettingInfo> settings = buf.readCollection(ArrayList::new, MapRoomSettingInfo::decode);
         List<MapRoomPlayerInfo> availableInviteTargets = buf.readCollection(ArrayList::new, MapRoomPlayerInfo::decode);
         List<EditableShopInfo> editableShops = buf.readCollection(ArrayList::new, EditableShopInfo::decode);
-        return new MapRoomDetail(summary, players, settings, availableInviteTargets, editableShops, buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH));
+        List<MapRoomTeamInfo> teams = buf.readCollection(ArrayList::new, MapRoomTeamInfo::decode);
+        Set<UUID> readyPlayers = buf.readCollection(HashSet::new, FriendlyByteBuf::readUUID);
+        return new MapRoomDetail(summary, players, settings, availableInviteTargets, editableShops, teams, readyPlayers, buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH), buf.readUtf(RESOURCE_MAX_LENGTH));
     }
 }

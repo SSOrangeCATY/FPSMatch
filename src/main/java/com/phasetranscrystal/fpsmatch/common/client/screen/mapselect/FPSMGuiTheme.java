@@ -119,4 +119,21 @@ public final class FPSMGuiTheme {
     public static final int ROW_GAP = 4;
     /** 状态色条宽度（左侧） */
     public static final int STATUS_BAR_WIDTH = 4;
+
+    /**
+     * 将 ARGB 颜色按系数提亮（factor > 0）或压暗（factor < 0）。
+     *
+     * @param color  原始 ARGB 颜色
+     * @param factor 调整系数，0.2f 表示提亮 20%
+     */
+    public static int lighten(int color, float factor) {
+        int a = (color >>> 24) & 0xFF;
+        int r = (color >>> 16) & 0xFF;
+        int g = (color >>> 8) & 0xFF;
+        int b = color & 0xFF;
+        r = Math.min(255, (int) (r + (255 - r) * factor));
+        g = Math.min(255, (int) (g + (255 - g) * factor));
+        b = Math.min(255, (int) (b + (255 - b) * factor));
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
 }

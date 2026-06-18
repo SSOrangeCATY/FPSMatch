@@ -394,5 +394,18 @@
   "gui.fpsm.team_manage.cancel": "取消",
   "gui.fpsm.team_manage.selected": "选择将 %s 从队伍 %s 移动到...",
   "gui.fpsm.team_manage.move_btn": "移到 %s",
-  "gui.fpsm.team_manage.no_other_team": "没有其他队伍可移动"
+  "gui.fpsm.team_manage.no_other_team": "没有其他队伍可移动",
+  "gui.fpsm.team_manage.move": "换队",
+  "gui.fpsm.team_manage.ready_summary": "已准备：%s/%s",
+  "gui.fpsm.team_manage.countdown": "%s 秒后开始",
+  "gui.fpsm.team_manage.ready_mark": "已准备",
+  "gui.fpsm.team_manage.ready.on": "准备",
+  "gui.fpsm.team_manage.ready.off": "取消准备",
+  "gui.fpsm.map_select.manage.no_permission": "你没有权限管理此地图",
+  "gui.fpsm.map_select.action.ready.on": "已准备",
+  "gui.fpsm.map_select.action.ready.off": "已取消准备",
+  "gui.fpsm.map_select.action.ready.spectator": "旁观者无法准备",
+  "gui.fpsm.map_select.action.switch_team.success.self": "已切换至队伍 %s",
+  "gui.fpsm.map_select.action.switch_team.success.other": "已将 %s 移动至队伍 %s",
+  "gui.fpsm.map_select.action.switch_team.failed": "更换队伍失败"
 }

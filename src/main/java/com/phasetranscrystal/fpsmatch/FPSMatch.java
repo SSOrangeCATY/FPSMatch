@@ -197,6 +197,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapSelectionSnapshotS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomDetailS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MapRoomReadyStateS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomSettingsC2SPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomToastS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);

@@ -26,7 +26,6 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
     private String selectedMapName;
     private int scrollOffset;
     private Button detailButton;
-    private Button joinButton;
     private Button leaveButton;
 
     public FPSMMapSelectionScreen(MapSelectionSnapshotS2CPacket snapshot, Screen parent) {
@@ -50,8 +49,8 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
     protected void rebuildWidgets() {
         clearWidgets();
         int centerX = width / 2;
-        // 底部 5 按钮：详情/加入/离开/刷新/完成，统一中按钮宽度 90，间距 8
-        int total = 5;
+        // 底部 4 按钮：详情/离开/刷新/完成，统一中按钮宽度 90，间距 8
+        int total = 4;
         int bw = FPSMGuiTheme.BUTTON_MEDIUM_WIDTH;
         int gap = FPSMGuiTheme.BUTTON_GAP;
         int[] xs = new int[total];
@@ -60,13 +59,11 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
         }
         detailButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.detail"), xs[0], height - 52,
                 button -> sendSelectedAction(MapRoomActionC2SPacket.Action.REQUEST_DETAIL)));
-        joinButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.join"), xs[1], height - 52,
-                button -> sendSelectedAction(MapRoomActionC2SPacket.Action.JOIN)));
-        leaveButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.leave"), xs[2], height - 52,
+        leaveButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.leave"), xs[1], height - 52,
                 button -> sendSelectedAction(MapRoomActionC2SPacket.Action.LEAVE)));
-        addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.refresh"), xs[3], height - 52,
+        addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_select.refresh"), xs[2], height - 52,
                 button -> FPSMatch.sendToServer(new OpenMapSelectionC2SPacket())));
-        addRenderableWidget(createMediumButton(Component.translatable("gui.done"), xs[4], height - 52,
+        addRenderableWidget(createMediumButton(Component.translatable("gui.done"), xs[3], height - 52,
                 button -> onClose()));
         updateActionButtons();
     }
@@ -185,9 +182,6 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
         boolean joined = summary != null && (summary.currentPlayerJoined() || summary.currentPlayerSpectating());
         if (detailButton != null) {
             detailButton.active = summary != null;
-        }
-        if (joinButton != null) {
-            joinButton.active = summary != null && !joined && !summary.full() && (!summary.started() || summary.allowJoinInProgress());
         }
         if (leaveButton != null) {
             leaveButton.active = joined;

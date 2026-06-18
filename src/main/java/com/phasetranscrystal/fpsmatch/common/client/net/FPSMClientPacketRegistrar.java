@@ -15,6 +15,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CP
 import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
@@ -61,6 +62,7 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(MapSelectionAccessS2CPacket.class, FPSMClientPacketHandlers::handleMapSelectionAccess);
         ClientPacketRegistry.register(MapSelectionSnapshotS2CPacket.class, FPSMClientPacketHandlers::handleMapSelectionSnapshot);
         ClientPacketRegistry.register(MapRoomDetailS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomDetail);
+        ClientPacketRegistry.register(MapRoomReadyStateS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomReadyState);
         ClientPacketRegistry.register(MapRoomToastS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomToast);
         ClientPacketRegistry.register(MapRoomInvitationS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomInvitation);
         ClientPacketRegistry.register(TeamManageResultS2CPacket.class, FPSMClientPacketHandlers::handleTeamManageResult);

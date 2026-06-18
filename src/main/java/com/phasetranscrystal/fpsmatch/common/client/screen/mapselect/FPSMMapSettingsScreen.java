@@ -17,7 +17,7 @@ import java.util.List;
 public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapDetailChildScreen {
     private static final int ROW_HEIGHT = 24;
     private static final int LIST_TOP = 62;
-    private static final int EDIT_BOX_WIDTH = 180;
+    private static final int EDIT_BOX_WIDTH = 110;
 
     private MapRoomDetail detail;
     private final Screen parent;
@@ -49,7 +49,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
         applyButtons.clear();
         rowBaseY.clear();
 
-        int left = width / 2 - 210;
+        int left = width / 2 - 180;
 
         for (int i = 0; i < detail.settings().size(); i++) {
             MapRoomSettingInfo setting = detail.settings().get(i);
@@ -63,7 +63,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
             addRenderableWidget(field);
             valueFields.add(field);
 
-            Button applyButton = createSmallButton(Component.translatable("gui.fpsm.map_select.apply"), left + 176 + EDIT_BOX_WIDTH + 6, baseY + 2,
+            Button applyButton = createSmallButton(Component.translatable("gui.fpsm.map_select.apply"), left + 176 + EDIT_BOX_WIDTH + 4, baseY + 2,
                     button -> applySetting(setting, field));
             applyButton.active = setting.editable();
             addRenderableWidget(applyButton);
@@ -96,8 +96,8 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
 
         // 内容区背景（统一）
-        int left = width / 2 - 210;
-        int right = width / 2 + 210;
+        int left = width / 2 - 180;
+        int right = width / 2 + 180;
         int panelTop = LIST_TOP - 2;
         int panelBottom = height - 60;
         drawListBackground(graphics, left - 6, panelTop, right + 6, panelBottom);

@@ -117,6 +117,69 @@ public final class MapRoomActionService {
         return Result.success(Component.translatable("gui.fpsm.map_select.action.kick.success", targetPlayer.get().getGameProfile().getName()), map, player);
     }
 
+    public static Result ready(ServerPlayer player, String gameType, String mapName) {
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .map(map -> ready(player, map))
+                .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
+    }
+
+    public static Result ready(ServerPlayer player, BaseMap map) {
+        if (!map.checkGameHasPlayer(player) && !map.checkSpecHasPlayer(player)) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.leave.not_in_map"));
+        }
+        if (map.checkSpecHasPlayer(player)) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.ready.spectator"));
+        }
+        boolean ready = map.toggleReady(player);
+        Component message = ready
+                ? Component.translatable("gui.fpsm.map_select.action.ready.on")
+                : Component.translatable("gui.fpsm.map_select.action.ready.off");
+        return Result.success(message, map, player);
+    }
+
+    public static Result switchTeam(ServerPlayer player, String gameType, String mapName, String teamName) {
+        return switchTeam(player, gameType, mapName, player.getUUID(), teamName);
+    }
+
+    public static Result switchTeam(ServerPlayer player, String gameType, String mapName, UUID target, String teamName) {
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .map(map -> switchTeam(player, map, target, teamName))
+                .orElseGet(() -> Result.failure(Component.translatable("gui.fpsm.map_select.action.map_not_found")));
+    }
+
+    public static Result switchTeam(ServerPlayer player, BaseMap map, String teamName) {
+        return switchTeam(player, map, player.getUUID(), teamName);
+    }
+
+    public static Result switchTeam(ServerPlayer player, BaseMap map, UUID target, String teamName) {
+        boolean self = player.getUUID().equals(target);
+        if (!self && !player.hasPermissions(2)) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
+        }
+        Optional<ServerPlayer> targetPlayer = self ? Optional.of(player) : map.getPlayerByUUID(target);
+        if (targetPlayer.isEmpty() || (!map.checkGameHasPlayer(targetPlayer.get()) && !map.checkSpecHasPlayer(targetPlayer.get()))) {
+            return Result.failure(Component.translatable("gui.fpsm.map_select.action.player_not_found"));
+        }
+        ServerPlayer targetServerPlayer = targetPlayer.get();
+        MapTeams.JoinTeamResult result = map.join(teamName, targetServerPlayer);
+        if (!result.isSuccess()) {
+            Component message = switch (result.status()) {
+                case TEAM_FULL -> Component.translatable("commands.fpsm.team.join.failure.full", safeTeamName(result));
+                case NO_AVAILABLE_TEAM -> Component.translatable("commands.fpsm.team.join.failure.all_full");
+                case MID_MATCH_JOIN_DISABLED -> Component.translatable("commands.fpsm.team.join.failure.in_progress");
+                case TEAM_NOT_FOUND -> Component.translatable("commands.fpsm.team.join.failure.null", safeTeamName(result));
+                case CANCELLED -> Component.translatable("gui.fpsm.map_select.action.cancelled");
+                default -> Component.translatable("gui.fpsm.map_select.action.switch_team.failed");
+            };
+            return Result.failure(message);
+        }
+        map.setReady(targetServerPlayer.getUUID(), false);
+        Component message = self
+                ? Component.translatable("gui.fpsm.map_select.action.switch_team.success.self", teamName)
+                : Component.translatable("gui.fpsm.map_select.action.switch_team.success.other", targetServerPlayer.getGameProfile().getName(), teamName);
+        return Result.success(message, map, player);
+    }
+
     public static Result setSetting(ServerPlayer player, String gameType, String mapName, String settingName, String value) {
         return MapRoomQueryService.findMap(gameType, mapName)
                 .map(map -> setSetting(player, map, settingName, value))
