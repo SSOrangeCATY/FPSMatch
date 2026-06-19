@@ -178,7 +178,8 @@ public final class MapRoomQueryService {
     private static MapRoomSettingInfo settingInfo(Setting<?> setting, boolean editable, String gameType) {
         String configName = setting.getConfigName();
         String translationKey = "setting." + gameType + "." + configName;
-        return new MapRoomSettingInfo(configName, setting.toString(), String.valueOf(setting.getDefaultValue()), editable, translationKey);
+        MapRoomSettingInfo.SettingType type = setting.get() instanceof Boolean ? MapRoomSettingInfo.SettingType.BOOLEAN : MapRoomSettingInfo.SettingType.OTHER;
+        return new MapRoomSettingInfo(configName, setting.toString(), String.valueOf(setting.getDefaultValue()), editable, translationKey, type);
     }
 
     private static String areaText(BlockPos from, BlockPos to) {

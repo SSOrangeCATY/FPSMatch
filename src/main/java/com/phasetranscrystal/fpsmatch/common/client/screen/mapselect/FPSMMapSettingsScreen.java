@@ -13,16 +13,19 @@ import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapDetailChildScreen {
     private static final int ROW_HEIGHT = 24;
     private static final int LIST_TOP = 62;
     private static final int EDIT_BOX_WIDTH = 110;
+    private static final int TOGGLE_BUTTON_WIDTH = EDIT_BOX_WIDTH + 4 + FPSMGuiTheme.BUTTON_SMALL_WIDTH;
 
     private MapRoomDetail detail;
     private final Screen parent;
     private final List<EditBox> valueFields = new ArrayList<>();
     private final List<Button> applyButtons = new ArrayList<>();
+    private final List<Button> toggleButtons = new ArrayList<>();
     private final List<Integer> rowBaseY = new ArrayList<>();
     private Button backButton;
     private int scrollOffset;
@@ -48,6 +51,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
         clearWidgets();
         valueFields.clear();
         applyButtons.clear();
+        toggleButtons.clear();
         rowBaseY.clear();
 
         int left = width / 2 - 180;
@@ -57,18 +61,31 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
             int baseY = LIST_TOP + i * ROW_HEIGHT;
             rowBaseY.add(baseY);
 
-            EditBox field = new EditBox(font, left + 176, baseY + 3, EDIT_BOX_WIDTH, 18, Component.translatable(setting.translationKey()));
-            field.setMaxLength(128);
-            field.setValue(setting.value());
-            field.setEditable(setting.editable());
-            addRenderableWidget(field);
-            valueFields.add(field);
+            if (setting.type() == MapRoomSettingInfo.SettingType.BOOLEAN) {
+                valueFields.add(null);
+                applyButtons.add(null);
 
-            Button applyButton = createSmallButton(Component.translatable("gui.fpsm.map_select.apply"), left + 176 + EDIT_BOX_WIDTH + 4, baseY + 2,
-                    button -> applySetting(setting, field));
-            applyButton.active = setting.editable();
-            addRenderableWidget(applyButton);
-            applyButtons.add(applyButton);
+                Button toggleButton = createToggleButton(Boolean.parseBoolean(setting.value()), left + 176, baseY + 2,
+                        button -> toggleSetting(setting, button));
+                toggleButton.active = setting.editable();
+                addRenderableWidget(toggleButton);
+                toggleButtons.add(toggleButton);
+            } else {
+                EditBox field = new EditBox(font, left + 176, baseY + 3, EDIT_BOX_WIDTH, 18, Component.translatable(setting.translationKey()));
+                field.setMaxLength(128);
+                field.setValue(setting.value());
+                field.setEditable(setting.editable());
+                addRenderableWidget(field);
+                valueFields.add(field);
+
+                Button applyButton = createSmallButton(Component.translatable("gui.fpsm.map_select.apply"), left + 176 + EDIT_BOX_WIDTH + 4, baseY + 2,
+                        button -> applySetting(setting, field));
+                applyButton.active = setting.editable();
+                addRenderableWidget(applyButton);
+                applyButtons.add(applyButton);
+
+                toggleButtons.add(null);
+            }
         }
 
         backButton = createBackButton(button -> onClose());
@@ -78,7 +95,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
     @Override
     public void tick() {
         super.tick();
-        valueFields.forEach(EditBox::tick);
+        valueFields.stream().filter(Objects::nonNull).forEach(EditBox::tick);
     }
 
     @Override
@@ -86,11 +103,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
 
-        // 标题
-        graphics.drawCenteredString(font, title, width / 2, 12, FPSMGuiTheme.TEXT_TITLE);
-        if (detail != null) {
-            graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 26, FPSMGuiTheme.TEXT_SUB);
-        }
+        drawScreenTitle(graphics, title, detail != null ? Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()) : null, 12);
 
         int contentHeight = height - LIST_TOP - 62;
         int visibleRows = Math.max(1, contentHeight / ROW_HEIGHT);
@@ -113,34 +126,44 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
             boolean visible = targetY + ROW_HEIGHT > panelTop + 2 && targetY < panelBottom - 2;
 
             EditBox field = valueFields.get(i);
-            field.visible = visible;
-            field.setY(targetY + 3);
-
             Button applyButton = applyButtons.get(i);
-            applyButton.visible = visible;
-            applyButton.setY(targetY + 2);
+            Button toggleButton = toggleButtons.get(i);
+
+            if (field != null) {
+                field.visible = visible;
+                field.setY(targetY + 3);
+            }
+            if (applyButton != null) {
+                applyButton.visible = visible;
+                applyButton.setY(targetY + 2);
+            }
+            if (toggleButton != null) {
+                toggleButton.visible = visible;
+                toggleButton.setY(targetY + 2);
+            }
 
             if (!visible) continue;
 
             MapRoomSettingInfo setting = detail.settings().get(i);
             Component settingName = Component.translatable(setting.translationKey());
-            graphics.drawString(font, settingName, left, targetY + 8, setting.editable() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 8, FPSMGuiTheme.TEXT_SUB, false);
-            field.render(graphics, mouseX, mouseY, partialTick);
-            applyButton.render(graphics, mouseX, mouseY, partialTick);
+            boolean hovered = mouseX >= left && mouseX <= right && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT;
+            drawRowBackground(graphics, left, targetY, right, targetY + ROW_HEIGHT, false, hovered, !setting.editable());
+            drawClippedString(graphics, settingName, left + 8, targetY + 8, setting.editable() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED, 72);
+            drawClippedString(graphics, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 86, targetY + 8, FPSMGuiTheme.TEXT_SUB, 84);
+            if (field != null) field.render(graphics, mouseX, mouseY, partialTick);
+            if (applyButton != null) applyButton.render(graphics, mouseX, mouseY, partialTick);
+            if (toggleButton != null) toggleButton.render(graphics, mouseX, mouseY, partialTick);
 
-            // 悬浮提示
-            if (mouseX >= left - 2 && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
+            if (mouseX >= left && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
                 graphics.renderTooltip(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
             }
         }
         graphics.disableScissor();
 
-        // 滚动条
-        drawScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
-
         if (detail.settings().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, FPSMGuiTheme.TEXT_MUTED);
+            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 42);
+        } else {
+            drawScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
         }
 
         if (backButton != null) {
@@ -161,7 +184,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         for (EditBox field : valueFields) {
-            if (field.keyPressed(keyCode, scanCode, modifiers)) {
+            if (field != null && field.keyPressed(keyCode, scanCode, modifiers)) {
                 return true;
             }
         }
@@ -171,7 +194,7 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
         for (EditBox field : valueFields) {
-            if (field.charTyped(codePoint, modifiers)) {
+            if (field != null && field.charTyped(codePoint, modifiers)) {
                 return true;
             }
         }
@@ -195,5 +218,21 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
 
     private void applySetting(MapRoomSettingInfo setting, EditBox field) {
         FPSMatch.sendToServer(new MapRoomSettingsC2SPacket(detail.summary().gameType(), detail.summary().mapName(), setting.name(), field.getValue()));
+    }
+
+    private void toggleSetting(MapRoomSettingInfo setting, Button button) {
+        boolean newValue = !Boolean.parseBoolean(setting.value());
+        button.setMessage(toggleLabel(newValue));
+        FPSMatch.sendToServer(new MapRoomSettingsC2SPacket(detail.summary().gameType(), detail.summary().mapName(), setting.name(), String.valueOf(newValue)));
+    }
+
+    private Button createToggleButton(boolean value, int x, int y, Button.OnPress onPress) {
+        return Button.builder(toggleLabel(value), onPress)
+                .bounds(x, y, TOGGLE_BUTTON_WIDTH, FPSMGuiTheme.BUTTON_HEIGHT)
+                .build();
+    }
+
+    private Component toggleLabel(boolean value) {
+        return Component.translatable(value ? "options.on" : "options.off");
     }
 }
