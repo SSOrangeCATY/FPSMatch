@@ -859,21 +859,15 @@ public class MapTeams {
         UUID damageMvpId = this.getDamageMvp();
         if (!teams.containsValue(winnerTeam)) return null;
 
-        if (isFirstRound()) {
-            mvpId = this.getGameMvp(winnerTeam);
-        } else {
-            for (PlayerData data : winnerTeam.getPlayersData()) {
-                int kills = data.getKills() * 2;
-                int assists = data.getAssists();
-                int score = kills + assists;
-                if (data.getOwner().equals(damageMvpId)) {
-                    score += 2;
-                }
+        for (PlayerData data : winnerTeam.getPlayersData()) {
+            int kills = data.getKills() * 3;
+            int assists = data.getAssists();
+            int damageBonus = data.getOwner().equals(damageMvpId) && data.getDamage() > 0 ? 2 : 0;
+            int score = kills + assists + damageBonus;
 
-                if (mvpId == null || score > highestScore) {
-                    mvpId = new RawMVPData(data.getOwner(), "MVP");
-                    highestScore = score;
-                }
+            if (score > highestScore) {
+                mvpId = new RawMVPData(data.getOwner(), "MVP");
+                highestScore = score;
             }
         }
 

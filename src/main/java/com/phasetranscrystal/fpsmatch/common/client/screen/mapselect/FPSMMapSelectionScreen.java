@@ -72,10 +72,9 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, FPSMGuiTheme.TEXT_TITLE);
         List<MapRoomSummary> maps = maps();
         int count = maps.size();
-        graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.snapshot_count", count), width / 2, 48, FPSMGuiTheme.TEXT_SUB);
+        drawScreenTitle(graphics, title, Component.translatable("gui.fpsm.map_select.snapshot_count", count), 24);
         renderList(graphics, maps, mouseX, mouseY);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -130,29 +129,29 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
             MapRoomSummary summary = maps.get(i);
             int rowTop = FPSMGuiTheme.LIST_TOP + (i - scrollOffset) * (FPSMGuiTheme.ROW_HEIGHT_CARD + FPSMGuiTheme.ROW_GAP);
             boolean selected = i == selectedIndex;
+            boolean unavailable = summary.full() || (summary.started() && !summary.allowJoinInProgress());
             boolean hovered = mouseX >= left && mouseX <= right && mouseY >= rowTop && mouseY <= rowTop + FPSMGuiTheme.ROW_HEIGHT_CARD;
-            int color = selected ? FPSMGuiTheme.ROW_SELECTED : hovered ? FPSMGuiTheme.ROW_HOVER : FPSMGuiTheme.ROW_NORMAL;
-            graphics.fill(left, rowTop, right, rowTop + FPSMGuiTheme.ROW_HEIGHT_CARD, color);
-            // 状态色条加粗到 4px
+            drawRowBackground(graphics, left, rowTop, right, rowTop + FPSMGuiTheme.ROW_HEIGHT_CARD, selected, hovered, unavailable && !selected && !hovered);
             graphics.fill(left, rowTop, left + FPSMGuiTheme.STATUS_BAR_WIDTH, rowTop + FPSMGuiTheme.ROW_HEIGHT_CARD, statusColor(summary));
 
-            // 左侧缩略图（38x38）：优先 iconTexture，无则色块兜底
             int thumbX = left + FPSMGuiTheme.STATUS_BAR_WIDTH + THUMB_MARGIN;
             int thumbY = rowTop + (FPSMGuiTheme.ROW_HEIGHT_CARD - THUMB_SIZE) / 2;
-            // 缩略图无 Setting 通道下发到 summary，这里用 gameType+mapName 生成色块即可
-            // （iconTexture 仅在详情页 detail 中下发，列表项用色块兜底保证一致性）
             MapThumbnailRenderer.render(graphics, thumbX, thumbY, THUMB_SIZE, THUMB_SIZE,
                     "", summary.mapName(), summary.gameType(), "", false);
 
-            // 右侧信息区
             int infoX = thumbX + THUMB_SIZE + THUMB_MARGIN;
-            graphics.drawString(font, Component.literal(summary.displayName()), infoX, rowTop + 6, FPSMGuiTheme.TEXT_TITLE, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - 76, rowTop + 6, FPSMGuiTheme.TEXT_HIGHLIGHT, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.status", statusText(summary)), infoX, rowTop + 24, statusColor(summary), false);
+            int playerWidth = font.width(Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)));
+            int titleMaxWidth = Math.max(60, right - infoX - playerWidth - 16);
+            drawClippedString(graphics, Component.literal(summary.displayName()), infoX, rowTop + 6, FPSMGuiTheme.TEXT_TITLE, titleMaxWidth);
+            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - playerWidth - 8, rowTop + 6, playerColor(summary), false);
+            drawStatusChip(graphics, statusText(summary), infoX, rowTop + 25, statusColor(summary));
             Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName), infoX + 118, rowTop + 24, FPSMGuiTheme.TEXT_SUB, false);
-            if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
-                graphics.drawString(font, Component.translatable("gui.fpsm.map_select.joined"), right - 48, rowTop + 24, FPSMGuiTheme.ST_ONLINE, false);
+            int gameInfoX = infoX + Math.min(126, Math.max(92, titleMaxWidth / 2));
+            drawClippedString(graphics, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName), gameInfoX, rowTop + 28, FPSMGuiTheme.TEXT_SUB, Math.max(52, right - gameInfoX - 58));
+            Component badge = playerBadge(summary);
+            if (badge != null) {
+                int badgeWidth = font.width(badge);
+                graphics.drawString(font, badge, right - badgeWidth - 8, rowTop + 28, badgeColor(summary), false);
             }
         }
     }
@@ -252,6 +251,45 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
             return summary.allowJoinInProgress() ? FPSMGuiTheme.ST_RUNNING_JOINABLE : FPSMGuiTheme.ST_RUNNING_CLOSED;
         }
         return FPSMGuiTheme.ST_WAITING;
+    }
+
+    private int playerColor(MapRoomSummary summary) {
+        if (summary.full()) {
+            return FPSMGuiTheme.TEXT_WARNING;
+        }
+        if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
+            return FPSMGuiTheme.ST_ONLINE;
+        }
+        return FPSMGuiTheme.TEXT_HIGHLIGHT;
+    }
+
+    private Component playerBadge(MapRoomSummary summary) {
+        if (summary.currentPlayerSpectating()) {
+            return Component.translatable("gui.fpsm.map_select.spectating");
+        }
+        if (summary.currentPlayerJoined()) {
+            return Component.translatable("gui.fpsm.map_select.joined");
+        }
+        if (summary.full()) {
+            return Component.translatable("gui.fpsm.map_select.full");
+        }
+        if (summary.started() && summary.allowJoinInProgress()) {
+            return Component.translatable("gui.fpsm.map_select.status.started_joinable");
+        }
+        return null;
+    }
+
+    private int badgeColor(MapRoomSummary summary) {
+        if (summary.currentPlayerSpectating()) {
+            return FPSMGuiTheme.ST_SPECTATOR;
+        }
+        if (summary.currentPlayerJoined()) {
+            return FPSMGuiTheme.ST_ONLINE;
+        }
+        if (summary.full()) {
+            return FPSMGuiTheme.TEXT_WARNING;
+        }
+        return FPSMGuiTheme.ST_RUNNING_JOINABLE;
     }
 
     private String maxPlayersText(MapRoomSummary summary) {

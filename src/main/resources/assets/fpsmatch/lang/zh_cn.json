@@ -305,6 +305,8 @@
   "gui.fpsm.map_select.status.started": "进行中",
   "gui.fpsm.map_select.status.started_joinable": "进行中，可加入",
   "gui.fpsm.map_select.status.debug": "调试模式",
+  "gui.fpsm.map_select.full": "已满员",
+  "gui.fpsm.map_select.spectating": "观战中",
   "gui.fpsm.map_select.summary": "%s · %s",
   "gui.fpsm.map_select.game_info": "%s",
   "gui.fpsm.map_select.joined": "已加入",

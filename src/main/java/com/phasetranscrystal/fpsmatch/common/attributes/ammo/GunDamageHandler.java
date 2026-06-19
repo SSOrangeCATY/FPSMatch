@@ -2,8 +2,9 @@ package com.phasetranscrystal.fpsmatch.common.attributes.ammo;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
-import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMGunDamageEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -20,6 +21,10 @@ public class GunDamageHandler {
     @SubscribeEvent
     public static void onEntityHurtByGun(FPSMGunDamageEvent event) {
         if (!(event.getHurtEntity() instanceof ServerPlayer hurtEntity)) {
+            return;
+        }
+
+        if (isSameTeamGunDamage(event, hurtEntity)) {
             return;
         }
 
@@ -45,6 +50,18 @@ public class GunDamageHandler {
                 reduceArmorDurability(hurtEntity, durabilityReduction);
             }
         }
+    }
+
+    private static boolean isSameTeamGunDamage(FPSMGunDamageEvent event, ServerPlayer hurtEntity) {
+        if (!(event.getAttacker() instanceof ServerPlayer attacker)) {
+            return false;
+        }
+        if (attacker.equals(hurtEntity)) {
+            return false;
+        }
+        return FPSMCore.getInstance().getMapByPlayer(hurtEntity)
+                .map(map -> map.getMapTeams().isSameTeam(attacker, hurtEntity))
+                .orElse(false);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

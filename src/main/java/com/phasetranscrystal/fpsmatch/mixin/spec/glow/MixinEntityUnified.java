@@ -25,8 +25,6 @@ public abstract class MixinEntityUnified {
         if (localPlayer == null) {
             return;
         }
-        if(!FPSMConfig.Server.disableDefaultGlow.get()) return;
-
         Entity self = (Entity) (Object) this;
 
         if (self instanceof LivingEntity living) {
@@ -47,29 +45,20 @@ public abstract class MixinEntityUnified {
 
                 if (localInNormalTeam && sameTeam && !targetIsSelf) {
                     cir.setReturnValue(true);
-                } else if (living.hasEffect(MobEffects.GLOWING)) {
-                    // 允许合法的发光效果（如光谱箭等）
-                    cir.setReturnValue(true);
-                } else {
-                    cir.setReturnValue(false);
+                    cir.cancel();
+                } else if (FPSMConfig.Server.disableDefaultGlow.get()) {
+                    cir.setReturnValue(living.hasEffect(MobEffects.GLOWING));
+                    cir.cancel();
                 }
-                cir.cancel();
                 return;
             }
 
-            // 非玩家实体：保留原版 GLOWING 效果逻辑
-            if (living.hasEffect(MobEffects.GLOWING)) {
-                cir.setReturnValue(true);
-            } else {
-                cir.setReturnValue(false);
+            if (FPSMConfig.Server.disableDefaultGlow.get()) {
+                cir.setReturnValue(living.hasEffect(MobEffects.GLOWING));
+                cir.cancel();
             }
-            cir.cancel();
-        } else {
-            if (self instanceof ItemEntity itemEntity && itemEntity.hasGlowingTag()) {
-                cir.setReturnValue(true);
-            } else {
-                cir.setReturnValue(false);
-            }
+        } else if (FPSMConfig.Server.disableDefaultGlow.get()) {
+            cir.setReturnValue(self instanceof ItemEntity itemEntity && itemEntity.hasGlowingTag());
             cir.cancel();
         }
     }

@@ -65,9 +65,10 @@ public class FPSMMapShopScreen extends FPSMMapScreenBase implements FPSMMapDetai
             @Override
             protected void renderRow(GuiGraphics graphics, int index, int rowTop, int mouseX, int mouseY) {
                 EditableShopInfo shop = detail.editableShops().get(index);
-                graphics.drawString(font, Component.literal(shop.displayName()), left + 8, rowTop + 8, FPSMGuiTheme.TEXT_HIGHLIGHT, false);
-                graphics.drawString(font, Component.literal(shop.teamName()), left + 140, rowTop + 8, FPSMGuiTheme.ST_ONLINE, false);
-                // 重新定位对应按钮
+                boolean hovered = mouseX >= left && mouseX <= left + PANEL_WIDTH && mouseY >= rowTop && mouseY < rowTop + ROW_HEIGHT;
+                drawRowBackground(graphics, left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, false, hovered, false);
+                drawClippedString(graphics, Component.literal(shop.displayName()), left + 8, rowTop + 8, FPSMGuiTheme.TEXT_HIGHLIGHT, 120);
+                drawClippedString(graphics, Component.literal(shop.teamName()), left + 140, rowTop + 8, FPSMGuiTheme.ST_ONLINE, 122);
                 Button btn = editButtons.get(index);
                 btn.setX(left + PANEL_WIDTH - 80);
                 btn.setY(rowTop + 2);
@@ -80,16 +81,14 @@ public class FPSMMapShopScreen extends FPSMMapScreenBase implements FPSMMapDetai
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, FPSMGuiTheme.TEXT_TITLE);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, FPSMGuiTheme.TEXT_SUB);
+        drawScreenTitle(graphics, title, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), 24);
 
         int left = width / 2 - PANEL_WIDTH / 2;
         int bottom = height - 60;
-        // 列表面板背景（统一）
         drawListBackground(graphics, left - 6, LIST_TOP - 6, left + PANEL_WIDTH + 6, bottom + 6);
 
         if (detail.editableShops().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_shop.unsupported"), width / 2, LIST_TOP + 32, FPSMGuiTheme.TEXT_MUTED);
+            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_shop.unsupported"), width / 2, LIST_TOP + 42);
         } else {
             // 先隐藏所有按钮，由 list.render 重新设置可见性
             editButtons.forEach(b -> b.visible = false);

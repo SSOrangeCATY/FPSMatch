@@ -236,8 +236,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
 
-        graphics.drawCenteredString(font, title, width / 2, 18, FPSMGuiTheme.TEXT_TITLE);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 36, FPSMGuiTheme.TEXT_SUB);
+        drawScreenTitle(graphics, title, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), 18);
 
         int left = width / 2 - PANEL_WIDTH / 2;
         int bottom = height - LIST_BOTTOM_OFFSET - (hasAdminPanel() ? ADMIN_PANEL_HEIGHT : 0);
@@ -266,58 +265,56 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
         int total = normalPlayerCount();
         Component text = Component.translatable("gui.fpsm.team_manage.ready_summary", ready, total);
         int color = ready == total && total > 0 ? FPSMGuiTheme.ST_WAITING : FPSMGuiTheme.TEXT_SUB;
-        graphics.drawString(font, text, left, LIST_TOP - 18, color, false);
+        drawClippedString(graphics, text, left, LIST_TOP - 18, color, 160);
 
         if (syncedCountdownSeconds > 0 && ready == total && total > 0) {
             Component countdown = Component.translatable("gui.fpsm.team_manage.countdown", syncedCountdownSeconds)
                     .withStyle(net.minecraft.ChatFormatting.GREEN, net.minecraft.ChatFormatting.BOLD);
-            graphics.drawString(font, countdown, left + font.width(text) + 12, LIST_TOP - 18, FPSMGuiTheme.ST_WAITING, false);
+            drawClippedString(graphics, countdown, left + 172, LIST_TOP - 18, FPSMGuiTheme.ST_WAITING, PANEL_WIDTH - 172);
         }
     }
 
     private void renderAdminPanel(GuiGraphics graphics) {
         if (!hasAdminPanel()) return;
         int panelTop = height - 52 - ADMIN_PANEL_HEIGHT;
-        graphics.fill(width / 4, panelTop, width * 3 / 4, panelTop + ADMIN_PANEL_HEIGHT, FPSMGuiTheme.BG_PANEL);
+        int panelLeft = width / 2 - PANEL_WIDTH / 2;
+        int panelRight = width / 2 + PANEL_WIDTH / 2;
+        drawPanel(graphics, panelLeft - 6, panelTop, panelRight + 6, panelTop + ADMIN_PANEL_HEIGHT, FPSMGuiTheme.BG_PANEL);
 
         MapRoomPlayerInfo player = findPlayer(selectedPlayer);
         if (player == null) return;
         Component hint = Component.translatable("gui.fpsm.team_manage.selected", player.name(), selectedPlayerTeam.toUpperCase());
-        graphics.drawCenteredString(font, hint, width / 2, panelTop + 4, FPSMGuiTheme.TEXT_HIGHLIGHT);
+        graphics.drawCenteredString(font, clipped(hint, PANEL_WIDTH - 16), width / 2, panelTop + 4, FPSMGuiTheme.TEXT_HIGHLIGHT);
     }
 
     private void renderTeamHeader(GuiGraphics graphics, MapRoomTeamInfo team, int left, int rowTop) {
         graphics.fill(left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, FPSMGuiTheme.BG_PANEL);
+        graphics.fill(left, rowTop, left + 3, rowTop + ROW_HEIGHT, teamColor(team.name()));
         Component name = Component.literal(team.name().toUpperCase()).withStyle(net.minecraft.ChatFormatting.BOLD);
         Component count = Component.literal(team.currentPlayers() + "/" + (team.playerLimit() < 0 ? "∞" : team.playerLimit()));
-        graphics.drawString(font, name, left + 8, rowTop + 8, FPSMGuiTheme.TEXT_TITLE, false);
-        graphics.drawString(font, count, left + PANEL_WIDTH - 60, rowTop + 8, FPSMGuiTheme.TEXT_SUB, false);
+        drawClippedString(graphics, name, left + 8, rowTop + 8, FPSMGuiTheme.TEXT_TITLE, PANEL_WIDTH - 84);
+        graphics.drawString(font, count, left + PANEL_WIDTH - font.width(count) - 10, rowTop + 8, team.isFull() ? FPSMGuiTheme.TEXT_WARNING : FPSMGuiTheme.TEXT_SUB, false);
     }
 
     private void renderPlayerRow(GuiGraphics graphics, MapRoomPlayerInfo player, int left, int rowTop, int visibleIndex, int mouseX, int mouseY) {
         boolean selected = player.uuid().equals(selectedPlayer);
         boolean hovered = mouseX >= left && mouseX < left + PANEL_WIDTH
                 && mouseY >= rowTop && mouseY < rowTop + ROW_HEIGHT;
-        if (selected) {
-            graphics.fill(left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, FPSMGuiTheme.ROW_SELECTED);
-        } else if (hovered) {
-            graphics.fill(left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, FPSMGuiTheme.ROW_HOVER);
-        } else if (visibleIndex % 2 == 0) {
-            graphics.fill(left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, FPSMGuiTheme.ROW_NORMAL);
-        }
+        drawRowBackground(graphics, left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, selected, hovered, !player.online());
 
         renderPlayerHead(graphics, player.uuid(), player.name(), left + 8, rowTop + 4);
 
-        // 在线状态圆点
         int dotColor = player.online() ? FPSMGuiTheme.ST_ONLINE : FPSMGuiTheme.TEXT_DISABLED;
         graphics.fill(left + 28, rowTop + 9, left + 28 + STATUS_DOT_SIZE, rowTop + 9 + STATUS_DOT_SIZE, dotColor);
 
         int nameColor = player.online() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED;
-        graphics.drawString(font, Component.literal(player.name()), left + 38, rowTop + 7, nameColor, false);
+        int actionLeft = detail.summary().currentPlayerOp() ? left + PANEL_WIDTH - 86 : left + PANEL_WIDTH - 10;
+        int readyLeft = isReady(player.uuid()) ? Math.min(left + 170, actionLeft - 74) : actionLeft;
+        int nameMaxWidth = Math.max(48, readyLeft - (left + 38) - 8);
+        drawClippedString(graphics, Component.literal(player.name()), left + 38, rowTop + 7, nameColor, nameMaxWidth);
 
         if (isReady(player.uuid())) {
-            Component mark = Component.literal("\u2714 ").append(Component.translatable("gui.fpsm.team_manage.ready_mark"));
-            graphics.drawString(font, mark, left + 170, rowTop + 7, FPSMGuiTheme.ST_WAITING, false);
+            drawStatusChip(graphics, Component.translatable("gui.fpsm.team_manage.ready_mark"), readyLeft, rowTop + 5, FPSMGuiTheme.ST_WAITING);
         }
 
         int buttonIndex = visiblePlayerIndex(player);

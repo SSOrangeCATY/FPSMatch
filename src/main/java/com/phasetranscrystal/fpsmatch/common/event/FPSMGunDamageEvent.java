@@ -8,17 +8,20 @@ import net.minecraftforge.eventbus.api.Event;
  * 由 TACZ 兼容层（TACZGunEventBridge）桥接触发。
  */
 public class FPSMGunDamageEvent extends Event {
+    private final LivingEntity attacker;
     private final LivingEntity hurtEntity;
     private float baseAmount;
     private final boolean isHeadShot;
     private float headshotMultiplier = 1.0F;
 
-    public FPSMGunDamageEvent(LivingEntity hurtEntity, float baseAmount, boolean isHeadShot) {
+    public FPSMGunDamageEvent(LivingEntity attacker, LivingEntity hurtEntity, float baseAmount, boolean isHeadShot) {
+        this.attacker = attacker;
         this.hurtEntity = hurtEntity;
         this.baseAmount = baseAmount;
         this.isHeadShot = isHeadShot;
     }
 
+    public LivingEntity getAttacker() { return attacker; }
     public LivingEntity getHurtEntity() { return hurtEntity; }
     public float getBaseAmount() { return baseAmount; }
     public void setBaseAmount(float baseAmount) { this.baseAmount = baseAmount; }

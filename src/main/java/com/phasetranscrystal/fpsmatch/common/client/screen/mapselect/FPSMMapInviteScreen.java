@@ -64,9 +64,10 @@ public class FPSMMapInviteScreen extends FPSMMapScreenBase implements FPSMMapDet
             @Override
             protected void renderRow(GuiGraphics graphics, int index, int rowTop, int mouseX, int mouseY) {
                 MapRoomPlayerInfo player = detail.availableInviteTargets().get(index);
-                graphics.drawString(font, Component.literal(player.name()), left + 8, rowTop + 8, FPSMGuiTheme.TEXT_HIGHLIGHT, false);
-                graphics.drawString(font, Component.translatable("gui.fpsm.map_select.online"), left + 170, rowTop + 8, FPSMGuiTheme.ST_ONLINE, false);
-                // 重新定位对应按钮
+                boolean hovered = mouseX >= left && mouseX <= left + PANEL_WIDTH && mouseY >= rowTop && mouseY < rowTop + ROW_HEIGHT;
+                drawRowBackground(graphics, left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, false, hovered, false);
+                drawClippedString(graphics, Component.literal(player.name()), left + 8, rowTop + 8, FPSMGuiTheme.TEXT_HIGHLIGHT, 148);
+                drawStatusChip(graphics, Component.translatable("gui.fpsm.map_select.online"), left + 168, rowTop + 5, FPSMGuiTheme.ST_ONLINE);
                 Button btn = inviteButtons.get(index);
                 btn.setX(left + PANEL_WIDTH - 80);
                 btn.setY(rowTop + 2);
@@ -79,16 +80,14 @@ public class FPSMMapInviteScreen extends FPSMMapScreenBase implements FPSMMapDet
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, FPSMGuiTheme.TEXT_TITLE);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, FPSMGuiTheme.TEXT_SUB);
+        drawScreenTitle(graphics, title, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), 24);
 
         int left = width / 2 - PANEL_WIDTH / 2;
         int bottom = height - 60;
-        // 列表面板背景（统一）
         drawListBackground(graphics, left - 6, LIST_TOP - 6, left + PANEL_WIDTH + 6, bottom + 6);
 
         if (detail.availableInviteTargets().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.invite.empty"), width / 2, LIST_TOP + 32, FPSMGuiTheme.TEXT_MUTED);
+            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_select.invite.empty"), width / 2, LIST_TOP + 42);
         } else {
             // 先隐藏所有按钮，由 list.render 重新设置可见性
             inviteButtons.forEach(b -> b.visible = false);

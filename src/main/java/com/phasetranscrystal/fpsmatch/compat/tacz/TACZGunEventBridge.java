@@ -96,7 +96,7 @@ public class TACZGunEventBridge {
         }
         if (hurtEntity == null) return;
         FPSMGunDamageEvent fpsmEvent = new FPSMGunDamageEvent(
-                hurtEntity, event.getBaseAmount(), event.isHeadShot());
+                event.getAttacker(), hurtEntity, event.getBaseAmount(), event.isHeadShot());
         MinecraftForge.EVENT_BUS.post(fpsmEvent);
         event.setBaseAmount(fpsmEvent.getBaseAmount());
         event.setHeadshotMultiplier(fpsmEvent.getHeadshotMultiplier());

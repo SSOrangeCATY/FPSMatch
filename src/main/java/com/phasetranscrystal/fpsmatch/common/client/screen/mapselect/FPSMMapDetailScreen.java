@@ -75,72 +75,75 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
 
-        graphics.drawCenteredString(font, title, width / 2, 12, FPSMGuiTheme.TEXT_TITLE);
+        drawScreenTitle(graphics, title, null, 12);
 
         if (detail != null) {
             MapRoomSummary summary = detail.summary();
-            int left = width / 2 - 210;
-            int right = width / 2 + 210;
+            int left = Math.max(18, width / 2 - 210);
+            int right = Math.min(width - 18, width / 2 + 210);
 
-            graphics.drawCenteredString(font, Component.literal(summary.displayName()), width / 2, 26, FPSMGuiTheme.TEXT_SUB);
+            graphics.drawCenteredString(font, clipped(Component.literal(summary.displayName()), right - left - 24), width / 2, 32, FPSMGuiTheme.TEXT_SUB);
 
             int contentBottom = Math.min(height - PANEL_BOTTOM + 2, PANEL_TOP + 178);
             drawListBackground(graphics, left - 6, PANEL_TOP - 2, right + 6, contentBottom);
 
+            int previewWidth = Math.min(PREVIEW_WIDTH, Math.max(96, (right - left) / 2 - 8));
             int previewH = Math.max(72, contentBottom - PANEL_TOP - 4);
-            MapThumbnailRenderer.render(graphics, left, PANEL_TOP, PREVIEW_WIDTH, previewH,
+            MapThumbnailRenderer.render(graphics, left, PANEL_TOP, previewWidth, previewH,
                     detail.backgroundTexture(), summary.mapName(), summary.gameType(), summary.displayName(), true);
 
-            // 右侧信息区
-            int infoX = left + PREVIEW_WIDTH + 8;
+            int infoX = left + previewWidth + 10;
+            int infoRight = right - 8;
             int infoY = PANEL_TOP;
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.status", statusText(summary)), infoX, infoY, statusColor(summary), false);
+            drawStatusChip(graphics, statusText(summary), infoX, infoY, statusColor(summary));
             Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName), infoX, infoY + 16, FPSMGuiTheme.TEXT_SUB, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()), infoX, infoY + 32, FPSMGuiTheme.TEXT_SUB, false);
-            graphics.drawString(font, Component.translatable(detail.rulesKey()), infoX, infoY + 52, FPSMGuiTheme.TEXT_BODY, false);
+            drawClippedString(graphics, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName), infoX, infoY + 19, FPSMGuiTheme.TEXT_SUB, infoRight - infoX);
+            drawClippedString(graphics, Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()), infoX, infoY + 34, FPSMGuiTheme.TEXT_SUB, infoRight - infoX);
+            drawClippedString(graphics, Component.translatable(detail.rulesKey()), infoX, infoY + 52, FPSMGuiTheme.TEXT_BODY, infoRight - infoX);
 
-            // 玩家列表
-            renderPlayers(graphics, infoX, infoY + 74);
+            renderPlayers(graphics, infoX, infoY + 74, contentBottom, infoRight - infoX);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderPlayers(GuiGraphics graphics, int left, int top) {
+    private void renderPlayers(GuiGraphics graphics, int left, int top, int bottom, int width) {
         MapRoomSummary summary = detail.summary();
-        graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players.title")
-                .append(" (" + summary.joinedPlayers() + "/" + maxPlayersText(summary) + ")"),
-                left, top, FPSMGuiTheme.TEXT_TITLE, false);
+        drawSectionLabel(graphics, Component.translatable("gui.fpsm.map_select.players.title")
+                .append(" (" + summary.joinedPlayers() + "/" + maxPlayersText(summary) + ")"), left, top);
 
-        int listTop = top + 14;
-        int availableHeight = height - PANEL_BOTTOM - listTop;
+        int listTop = top + 16;
+        int availableHeight = Math.max(ROW_HEIGHT, bottom - listTop - 4);
         int visibleRows = Math.max(1, availableHeight / ROW_HEIGHT);
         int maxScroll = Math.max(0, detail.players().size() - visibleRows);
         playerScrollOffset = Mth.clamp(playerScrollOffset, 0, maxScroll);
 
         if (detail.players().isEmpty()) {
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players.empty"), left, listTop, FPSMGuiTheme.TEXT_MUTED, false);
+            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_select.players.empty"), left + width / 2, listTop + Math.min(30, availableHeight / 2));
             return;
         }
 
-        graphics.enableScissor(left - 2, listTop, left + 210, listTop + visibleRows * ROW_HEIGHT);
+        int listRight = left + width;
+        int teamX = left + Math.max(78, width / 2);
+        graphics.enableScissor(left - 2, listTop, listRight + 2, listTop + visibleRows * ROW_HEIGHT);
         for (int i = playerScrollOffset; i < Math.min(detail.players().size(), playerScrollOffset + visibleRows); i++) {
             MapRoomPlayerInfo player = detail.players().get(i);
             int py = listTop + (i - playerScrollOffset) * ROW_HEIGHT;
+            graphics.fill(left - 2, py - 1, listRight - 8, py + ROW_HEIGHT - 1, i % 2 == 0 ? FPSMGuiTheme.ROW_NORMAL : FPSMGuiTheme.BG_PANEL);
             int color = player.online() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED;
-            graphics.drawString(font, Component.literal(player.name()), left, py, color, false);
-            graphics.drawString(font, Component.literal(player.teamName()), left + 100, py, player.spectator() ? FPSMGuiTheme.ST_SPECTATOR : FPSMGuiTheme.ST_ONLINE, false);
+            drawClippedString(graphics, Component.literal(player.name()), left, py, color, Math.max(40, teamX - left - 8));
+            drawClippedString(graphics, Component.literal(player.teamName()), teamX, py, player.spectator() ? FPSMGuiTheme.ST_SPECTATOR : FPSMGuiTheme.ST_ONLINE, Math.max(32, listRight - teamX - 12));
         }
         graphics.disableScissor();
 
-        drawScrollBar(graphics, left + 204, listTop, visibleRows * ROW_HEIGHT, playerScrollOffset, maxScroll, detail.players().size(), visibleRows);
+        drawScrollBar(graphics, listRight - 6, listTop, visibleRows * ROW_HEIGHT, playerScrollOffset, maxScroll, detail.players().size(), visibleRows);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         int infoY = PANEL_TOP;
         int listTop = infoY + 74 + 14;
-        int availableHeight = height - PANEL_BOTTOM - listTop;
+        int contentBottom = Math.min(height - PANEL_BOTTOM + 2, PANEL_TOP + 178);
+        int availableHeight = Math.max(ROW_HEIGHT, contentBottom - listTop - 4);
         int visibleRows = Math.max(1, availableHeight / ROW_HEIGHT);
         int maxScroll = Math.max(0, detail == null ? 0 : detail.players().size() - visibleRows);
         playerScrollOffset -= (int) scrollY;

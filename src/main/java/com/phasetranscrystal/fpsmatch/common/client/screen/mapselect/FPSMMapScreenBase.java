@@ -66,6 +66,56 @@ public abstract class FPSMMapScreenBase extends Screen {
         graphics.fill(right - 1, top, right, bottom, FPSMGuiTheme.BORDER_INNER);
     }
 
+    protected void drawScreenTitle(GuiGraphics graphics, Component title, Component subtitle, int titleY) {
+        graphics.drawCenteredString(font, title, width / 2, titleY, FPSMGuiTheme.TEXT_TITLE);
+        if (subtitle != null) {
+            graphics.drawCenteredString(font, subtitle, width / 2, titleY + 18, FPSMGuiTheme.TEXT_SUB);
+        }
+    }
+
+    protected void drawEmptyState(GuiGraphics graphics, Component message, int centerX, int centerY) {
+        int textWidth = font.width(message);
+        int panelWidth = Math.max(160, textWidth + 36);
+        int panelHeight = 34;
+        int left = centerX - panelWidth / 2;
+        int top = centerY - panelHeight / 2;
+        drawPanel(graphics, left, top, left + panelWidth, top + panelHeight, FPSMGuiTheme.BG_PANEL);
+        graphics.drawCenteredString(font, message, centerX, top + 13, FPSMGuiTheme.TEXT_MUTED);
+    }
+
+    protected void drawRowBackground(GuiGraphics graphics, int left, int top, int right, int bottom, boolean selected, boolean hovered, boolean disabled) {
+        int color = disabled ? FPSMGuiTheme.ROW_DISABLED : selected ? FPSMGuiTheme.ROW_SELECTED : hovered ? FPSMGuiTheme.ROW_HOVER : FPSMGuiTheme.ROW_NORMAL;
+        graphics.fill(left, top, right, bottom, color);
+    }
+
+    protected void drawStatusChip(GuiGraphics graphics, Component text, int x, int y, int color) {
+        int chipWidth = font.width(text) + 12;
+        graphics.fill(x, y, x + chipWidth, y + 14, FPSMGuiTheme.CHIP_BG);
+        graphics.fill(x, y, x + chipWidth, y + 1, FPSMGuiTheme.CHIP_BORDER);
+        graphics.fill(x, y + 13, x + chipWidth, y + 14, FPSMGuiTheme.CHIP_BORDER);
+        graphics.fill(x, y, x + 1, y + 14, color);
+        graphics.drawString(font, text, x + 7, y + 3, color, false);
+    }
+
+    protected void drawClippedString(GuiGraphics graphics, Component text, int x, int y, int color, int maxWidth) {
+        graphics.drawString(font, clipped(text, maxWidth), x, y, color, false);
+    }
+
+    protected Component clipped(Component text, int maxWidth) {
+        String value = text.getString();
+        if (font.width(value) <= maxWidth) {
+            return text;
+        }
+        String ellipsis = "...";
+        int allowedWidth = Math.max(0, maxWidth - font.width(ellipsis));
+        return Component.literal(font.plainSubstrByWidth(value, allowedWidth) + ellipsis);
+    }
+
+    protected void drawSectionLabel(GuiGraphics graphics, Component text, int x, int y) {
+        graphics.drawString(font, text, x, y, FPSMGuiTheme.TEXT_TITLE, false);
+        graphics.fill(x, y + 11, x + Math.max(24, font.width(text)), y + 12, FPSMGuiTheme.ACCENT_PRIMARY);
+    }
+
     /**
      * 绘制滚动条。统一所有列表的滚动条样式。
      *

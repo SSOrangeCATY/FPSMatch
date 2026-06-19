@@ -79,6 +79,14 @@ public final class FPSMGuiTheme {
     public static final int ROW_HOVER = 0x8834485A;
     /** 列表行选中 */
     public static final int ROW_SELECTED = 0xAA2D5F7D;
+    public static final int ROW_DISABLED = 0x66323A42;
+    public static final int ROW_WARNING = 0x665B3F24;
+    public static final int ROW_DANGER = 0x665A2B31;
+    public static final int CHIP_BG = 0xAA111827;
+    public static final int CHIP_BORDER = 0x884A5568;
+    public static final int PANEL_HIGHLIGHT = 0x332D5F7D;
+    public static final int TEXT_DANGER = 0xFFFFA0A0;
+    public static final int TEXT_WARNING = 0xFFFFD580;
 
     // ===== 滚动条 =====
     /** 滚动条槽背景 */

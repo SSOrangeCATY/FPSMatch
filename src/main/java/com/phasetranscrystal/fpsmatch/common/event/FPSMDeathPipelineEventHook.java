@@ -195,6 +195,10 @@ public class FPSMDeathPipelineEventHook {
                 scopedKill
         );
         pendingGunKills.put(deadPlayer.getUUID(), detail);
+        PendingDeath pendingDeath = readyDeaths.get(deadPlayer.getUUID());
+        if (pendingDeath != null) {
+            applyGunKillDetail(pendingDeath.context(), detail);
+        }
 
         // 兜底：如果 LivingDeathEvent 未到达 FPSM（例如被 TACZ 或其他模组提前取消），
         // 确保死者进入 readyDeaths，否则 death 结算管线不会执行地图的 handleDeath()
@@ -253,16 +257,7 @@ public class FPSMDeathPipelineEventHook {
         // 补全枪械击杀详情（FPSMGunKillEvent 在 LivingDeathEvent 之前触发）
         GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
         if (gunKill != null) {
-            context.setGunKill(true);
-            context.setHeadShot(gunKill.isHeadShot());
-            context.setGunBullet(gunKill.bullet());
-            context.setPassWall(gunKill.passWall());
-            context.setPassSmoke(gunKill.passSmoke());
-            context.setScopedKill(gunKill.scopedKill());
-            if (context.getAttacker() == null) {
-                context.setAttacker(gunKill.attacker());
-                context.setDeathItem(gunKill.deathItem());
-            }
+            applyGunKillDetail(context, gunKill);
         }
 
         ServerPlayer killer = context.getAttacker();
@@ -291,6 +286,19 @@ public class FPSMDeathPipelineEventHook {
         }
 
 //        FPSMatch.sendToPlayer(player, new FPSMatchRespawnS2CPacket());
+    }
+
+    private static void applyGunKillDetail(DeathContext context, GunKillDetail gunKill) {
+        context.setGunKill(true);
+        context.setHeadShot(gunKill.isHeadShot());
+        context.setGunBullet(gunKill.bullet());
+        context.setPassWall(gunKill.passWall());
+        context.setPassSmoke(gunKill.passSmoke());
+        context.setScopedKill(gunKill.scopedKill());
+        if (context.getAttacker() == null) {
+            context.setAttacker(gunKill.attacker());
+            context.setDeathItem(gunKill.deathItem());
+        }
     }
 
     /**

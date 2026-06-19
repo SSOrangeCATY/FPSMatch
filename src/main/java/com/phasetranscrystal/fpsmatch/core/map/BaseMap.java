@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -33,6 +34,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -614,9 +616,15 @@ public abstract class BaseMap {
             return false;
         }
 
+        float yaw = Mth.wrapDegrees(data.getYaw());
+        float pitch = Mth.clamp(data.getPitch(), -90.0F, 90.0F);
+        player.setYRot(yaw);
+        player.setXRot(pitch);
         player.setCamera(player);
         Set<RelativeMovement> set = EnumSet.noneOf(RelativeMovement.class);
-        if (player.teleportTo(targetLevel, data.getX(), data.getY(), data.getZ(), set, data.getYaw(), data.getPitch())) {
+        if (player.teleportTo(targetLevel, data.getX(), data.getY(), data.getZ(), set, yaw, pitch)) {
+            player.setYRot(yaw);
+            player.setXRot(pitch);
             label23:
             {
                 if (player.isFallFlying()) {
@@ -726,6 +734,10 @@ public abstract class BaseMap {
      */
     public CapabilityMap<BaseMap, MapCapability> getCapabilityMap() {
         return capabilities;
+    }
+
+    public boolean canUseShop(ShopCapability cap, ServerPlayer player) {
+        return cap != null && player != null && cap.isInitialized();
     }
 
     /**

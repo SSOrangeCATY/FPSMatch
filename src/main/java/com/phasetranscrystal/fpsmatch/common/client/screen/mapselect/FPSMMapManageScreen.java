@@ -89,11 +89,15 @@ public class FPSMMapManageScreen extends FPSMMapScreenBase implements FPSMMapDet
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         drawMultiLayerBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, FPSMGuiTheme.TEXT_TITLE);
-        graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, FPSMGuiTheme.TEXT_SUB);
+        drawScreenTitle(graphics, title, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), 24);
+
+        int left = Math.max(20, width / 2 - 210);
+        int right = Math.min(width - 20, width / 2 + 210);
+        drawListBackground(graphics, left - 6, HEADER_Y - 12, right + 6, SECOND_ROW_Y + 42);
+        drawSectionLabel(graphics, Component.translatable("gui.fpsm.map_select.manage.title"), left, HEADER_Y - 2);
 
         if (!detail.summary().currentPlayerOp()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.manage.no_permission"), width / 2, HEADER_Y + 60, FPSMGuiTheme.TEXT_MUTED);
+            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_select.manage.no_permission"), width / 2, HEADER_Y + 76);
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
