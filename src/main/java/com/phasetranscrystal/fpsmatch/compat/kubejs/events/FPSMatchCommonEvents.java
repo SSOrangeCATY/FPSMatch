@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import dev.latvian.mods.kubejs.event.EventHandler;
 import dev.latvian.mods.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.script.ScriptType;
 import dev.latvian.mods.kubejs.script.ScriptTypePredicate;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
@@ -46,7 +47,7 @@ public class FPSMatchCommonEvents {
 
         eventHandlers.put(forgeClass, event -> {
             FPSMatchKubeJSEvents.FPSMatchEventJS<E> js = factory.apply((E) event);
-            handler.post(js);
+            handler.post(ScriptType.SERVER, js);
         });
 
         return handler;
