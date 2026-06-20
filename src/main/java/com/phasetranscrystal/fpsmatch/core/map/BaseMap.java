@@ -736,6 +736,14 @@ public abstract class BaseMap {
         return capabilities;
     }
 
+    protected MapTeams.RawMVPData getRoundMvpPlayer(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        return mapTeams.getRoundMvpPlayer(winnerTeam);
+    }
+
+    protected MapTeams.RawMVPData getGameMvp(@NotNull BaseTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        return mapTeams.getGameMvp(winnerTeam);
+    }
+
     public boolean canUseShop(ShopCapability cap, ServerPlayer player) {
         return cap != null && player != null && cap.isInitialized();
     }
@@ -753,6 +761,7 @@ public abstract class BaseMap {
             return false;
         }
     }
+
 
     /**
      * 获取地图区域数据

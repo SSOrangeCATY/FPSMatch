@@ -17,7 +17,7 @@ public abstract class MixinRenderHeadShotAABB {
             cancellable = true
     )
     private static void fpsmatch$blockHeadAABB(RenderLivingEvent.Post<?, ?> event, CallbackInfo ci) {
-        if (FPSMConfig.Server.disableRenderHitBox.get() && FPSMConfig.Server.disableRenderHeadShotHitBox.get()) {
+        if (FPSMConfig.Server.disableRenderHeadShotHitBox.get() && FPSMConfig.Server.disableRenderHitBox.get()) {
             ci.cancel();
         }
     }

@@ -854,10 +854,14 @@ public class MapTeams {
      * @return MVP 玩家数据
      */
     public RawMVPData getRoundMvpPlayer(ServerTeam winnerTeam) {
+        if (!teams.containsValue(winnerTeam)) return null;
+        if (isFirstRound()) {
+            return getGameMvp(winnerTeam);
+        }
+
         RawMVPData mvpId = null;
         int highestScore = 0;
         UUID damageMvpId = this.getDamageMvp();
-        if (!teams.containsValue(winnerTeam)) return null;
 
         for (PlayerData data : winnerTeam.getPlayersData()) {
             int kills = data.getKills() * 3;
@@ -872,7 +876,7 @@ public class MapTeams {
         }
 
         if (mvpId != null) {
-            winnerTeam.getPlayerData(mvpId.uuid()).ifPresent(data ->{
+            winnerTeam.getPlayerData(mvpId.uuid()).ifPresent(data -> {
                 data.addMvpCount(1);
             });
         }
