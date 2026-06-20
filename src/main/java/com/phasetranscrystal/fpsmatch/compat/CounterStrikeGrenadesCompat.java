@@ -7,6 +7,8 @@ import club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
 import club.pisquad.minecraft.csgrenades.registry.ModDamageType;
 import club.pisquad.minecraft.csgrenades.registry.ModItems;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
+import com.phasetranscrystal.fpsmatch.core.damage.DamageSourceCategory;
+import com.phasetranscrystal.fpsmatch.core.damage.MinecraftDamageSourceClassifier;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -35,6 +37,17 @@ public class CounterStrikeGrenadesCompat {
         ThrowableRegistry.registerItemToSubType(items.getSMOKE_GRENADE_ITEM().get(),ThrowableRegistry.SMOKE);
         ThrowableRegistry.registerItemToSubType(items.getMOLOTOV_ITEM().get(),ThrowableRegistry.MOLOTOV);
         ThrowableRegistry.registerItemToSubType(items.getINCENDIARY_ITEM().get(),ThrowableRegistry.MOLOTOV);
+        registerDamageSources();
+    }
+
+    private static void registerDamageSources() {
+        ModDamageType types = ModDamageType.INSTANCE;
+        MinecraftDamageSourceClassifier.registerType(types.getHEGRENADE_HIT(), DamageSourceCategory.EXPLOSIVE);
+        MinecraftDamageSourceClassifier.registerType(types.getHEGRENADE_EXPLOSION(), DamageSourceCategory.EXPLOSIVE);
+        MinecraftDamageSourceClassifier.registerType(types.getINCENDIARY_HIT(), DamageSourceCategory.INCENDIARY);
+        MinecraftDamageSourceClassifier.registerType(types.getINCENDIARY_FIRE(), DamageSourceCategory.INCENDIARY);
+        MinecraftDamageSourceClassifier.registerType(types.getMOLOTOV_HIT(), DamageSourceCategory.INCENDIARY);
+        MinecraftDamageSourceClassifier.registerType(types.getMOLOTOV_FIRE(), DamageSourceCategory.INCENDIARY);
     }
 
     public static ItemStack getItemFromDamageSource(DamageSource damageSource){
