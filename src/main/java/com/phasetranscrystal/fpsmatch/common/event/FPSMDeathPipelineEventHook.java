@@ -215,6 +215,7 @@ public class FPSMDeathPipelineEventHook {
                     deathItem,
                     deadPlayer.serverLevel().getGameTime()
             );
+            applyGunKillDetail(context, detail);
             return new PendingDeath(map, context);
         });
     }

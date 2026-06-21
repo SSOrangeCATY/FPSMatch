@@ -291,7 +291,7 @@ public abstract class BaseMap {
      * <p>
      * 已改为客户端按队伍判断，不再通过服务端 {@link MobEffects#GLOWING} 实现。
      * 服务端 GLOWING 效果对所有客户端可见，会导致敌方也能看到发光。
-     * 队友透视发光逻辑见 {@code MixinEntityUnified#onIsCurrentlyGlowing}。
+     * 队友透视发光逻辑见 {@code PlayerOutlineRenderer}。
      */
     protected void applyTeammateGlow() {
         // 队友透视发光已改为客户端按队伍判断，不再通过服务端 MobEffects.GLOWING 实现
