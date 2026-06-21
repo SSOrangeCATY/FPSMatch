@@ -49,7 +49,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 /**
@@ -94,21 +93,14 @@ public abstract class BaseMap {
     protected final Setting<String> backgroundTexture = this.addSetting("backgroundTexture", "");
 
     private final CapabilityMap<BaseMap, MapCapability> capabilities;
-    // 已准备玩家集合（旁观者不计入）
-    private final Set<UUID> readyPlayers = ConcurrentHashMap.newKeySet();
-    // 准备倒计时剩余秒数（仅客户端展示）
-    private int readyCountdownSeconds = 0;
 
-    // 通用倒计时配置与状态
+    // 通用倒计时配置（大厅控制器使用）
     protected final Setting<Boolean> autoStart = this.addSetting("autoStart", false);
     protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> readyStartEnabled = this.addSetting("readyStartEnabled", true);
     protected final Setting<Integer> readyStartTime = this.addSetting("readyStartTime", 200);
 
-    private int autoStartTimer = 0;
-    private boolean autoStartAnnounced = false;
-    private int readyCountdownTimer = 0;
-    private boolean readyCountdownAnnounced = false;
+    private final MapLobbyController lobby = new MapLobbyController(this);
 
     // 地图区域数据
     public AreaData mapArea;
@@ -149,65 +141,62 @@ public abstract class BaseMap {
     ;
 
     /**
+     * 获取大厅控制器。
+     */
+    public MapLobbyController getLobby() {
+        return lobby;
+    }
+
+    /**
      * 切换指定玩家的准备状态。
      *
      * @param player 玩家对象
      * @return 切换后的准备状态
      */
     public boolean toggleReady(ServerPlayer player) {
-        UUID uuid = player.getUUID();
-        if (readyPlayers.contains(uuid)) {
-            readyPlayers.remove(uuid);
-            return false;
-        }
-        readyPlayers.add(uuid);
-        return true;
+        return lobby.toggleReady(player);
     }
 
     /**
      * 设置指定玩家的准备状态。
      */
     public void setReady(UUID uuid, boolean ready) {
-        if (ready) {
-            readyPlayers.add(uuid);
-        } else {
-            readyPlayers.remove(uuid);
-        }
+        lobby.setReady(uuid, ready);
     }
 
     /**
      * 检查玩家是否已准备。
      */
     public boolean isReady(UUID uuid) {
-        return readyPlayers.contains(uuid);
+        return lobby.isReady(uuid);
     }
 
     /**
      * 获取当前已准备玩家集合。
      */
     public Set<UUID> getReadyPlayers() {
-        return new HashSet<>(readyPlayers);
+        return lobby.getReadyPlayers();
     }
 
     /**
      * 清空所有玩家的准备状态。
      */
     public void clearReadyPlayers() {
-        readyPlayers.clear();
+        lobby.clearReadyPlayers();
     }
 
     /**
      * 获取当前准备倒计时剩余秒数（用于客户端展示）。
      */
     public int getReadyCountdownSeconds() {
-        return readyCountdownSeconds;
+        return lobby.getReadyCountdownSeconds();
     }
 
     /**
      * 设置准备倒计时剩余秒数。
      */
     public void setReadyCountdownSeconds(int seconds) {
-        this.readyCountdownSeconds = seconds;
+        lobby.setReadyCountdownSeconds(seconds);
     }
 
     /**
@@ -219,108 +208,31 @@ public abstract class BaseMap {
 
     /**
      * 子类可覆盖：是否满足全员准备开始条件。
+     * 默认要求所有在线普通队伍玩家均已准备。
      */
     protected boolean canReadyStart() {
-        return !isStart && readyStartEnabled.get() && allNormalOnlinePlayersReady();
+        return lobby.allNormalOnlinePlayersReady();
     }
 
     /**
      * 检查所有在线普通队伍玩家是否都已准备。
      */
     protected boolean allNormalOnlinePlayersReady() {
-        int onlineCount = 0;
-        for (ServerTeam team : getMapTeams().getNormalTeams()) {
-            for (PlayerData data : team.getPlayersData()) {
-                if (data.getPlayer().isEmpty()) continue;
-                onlineCount++;
-                if (!readyPlayers.contains(data.getOwner())) return false;
-            }
-        }
-        return onlineCount > 0;
+        return lobby.allNormalOnlinePlayersReady();
     }
 
-    protected void handleStartCountdown() {
-        if (isStart) {
-            resetStartCountdownState();
-            return;
-        }
-
-        if (readyStartEnabled.get() && canReadyStart()) {
-            handleReadyCountdown();
-            return;
-        }
-        resetReadyCountdownState();
-
-        if (autoStart.get() && canAutoStart()) {
-            handleAutoStartCountdown();
-        } else {
-            resetAutoStartState();
-        }
-    }
-
-    private void handleReadyCountdown() {
-        readyCountdownTimer++;
-        int totalTicks = readyStartTime.get();
-        int secondsLeft = (totalTicks - readyCountdownTimer) / 20;
-        setReadyCountdownSeconds(Math.max(0, secondsLeft));
-
-        if (!readyCountdownAnnounced) {
-            readyCountdownAnnounced = true;
-        }
-
-        if (readyCountdownTimer % 20 == 0 || readyCountdownTimer == 1) {
-            broadcastReadyCountdown(secondsLeft);
-        }
-
-        if (readyCountdownTimer >= totalTicks) {
-            startGameWithAnnouncement();
-            resetStartCountdownState();
-        }
-    }
-
-    private void handleAutoStartCountdown() {
-        autoStartTimer++;
-        int totalTicks = autoStartTime.get();
-        int secondsLeft = (totalTicks - autoStartTimer) / 20;
-        setReadyCountdownSeconds(Math.max(0, secondsLeft));
-
-        if (!autoStartAnnounced) {
-            autoStartAnnounced = true;
-        }
-
-        if (autoStartTimer >= totalTicks) {
-            startGameWithAnnouncement();
-            resetStartCountdownState();
-        }
-    }
-
-    private void resetStartCountdownState() {
-        resetReadyCountdownState();
-        resetAutoStartState();
-    }
-
-    private void resetAutoStartState() {
-        if (autoStartTimer != 0 || autoStartAnnounced) {
-            autoStartTimer = 0;
-            autoStartAnnounced = false;
-            setReadyCountdownSeconds(0);
-        }
-    }
-
-    private void resetReadyCountdownState() {
-        if (readyCountdownTimer != 0 || readyCountdownAnnounced) {
-            readyCountdownTimer = 0;
-            readyCountdownAnnounced = false;
-            setReadyCountdownSeconds(0);
-        }
-    }
-
+    /**
+     * 广播准备倒计时。
+     */
     protected void broadcastReadyCountdown(int seconds) {
         var packet = new com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket(
                 getGameType(), getMapName(), seconds, getReadyPlayers());
         sendPacketToAllPlayer(packet);
     }
 
+    /**
+     * 子类可覆盖：倒计时结束时如何开始游戏。
+     */
     protected void startGameWithAnnouncement() {
         start();
     }
@@ -346,7 +258,7 @@ public abstract class BaseMap {
         tick();
         if (!isStart) {
             clearOfflinePlayersBeforeStart();
-            handleStartCountdown();
+            lobby.tick();
         }
         applyTeammateGlow();
         getMapTeams().tick();
@@ -364,7 +276,7 @@ public abstract class BaseMap {
                 }
             }
             for (UUID uuid : toRemove) {
-                readyPlayers.remove(uuid);
+                lobby.setReady(uuid, false);
                 getMapTeams().leaveTeam(uuid);
                 changed = true;
             }
@@ -526,7 +438,7 @@ public abstract class BaseMap {
         if (MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.LeaveEvent(this, player))) return;
         this.sendPacketToJoinedPlayer(player, new FPSMatchStatsResetS2CPacket(), true);
         player.setGameMode(GameType.ADVENTURE);
-        this.readyPlayers.remove(player.getUUID());
+        this.lobby.setReady(player.getUUID(), false);
         this.getMapTeams().leaveTeam(player);
         if (!isStart) {
             this.clearReadyPlayers();
