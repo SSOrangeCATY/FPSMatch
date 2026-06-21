@@ -272,8 +272,15 @@ public class MapTeams {
      * @param team 要删除的队伍
      */
     public void delTeam(PlayerTeam team){
-        if(!checkTeam(team.getName())) return;
-        this.teams.remove(team.getName());
+        String teamName = null;
+        for (Map.Entry<String, ServerTeam> entry : this.teams.entrySet()) {
+            if (entry.getValue().getPlayerTeam().equals(team)) {
+                teamName = entry.getKey();
+                break;
+            }
+        }
+        if (teamName == null) return;
+        this.teams.remove(teamName);
         this.level.getScoreboard().removePlayerTeam(team);
     }
 
@@ -839,6 +846,9 @@ public class MapTeams {
     }
 
     public boolean isSameTeam(Player p1, Player p2){
+        if ("csdm".equals(map.getGameType())) {
+            return false;
+        }
         Optional<ServerTeam> t1 = getTeamByPlayer(p1);
         Optional<ServerTeam> t2 = getTeamByPlayer(p2);
         return t1.isPresent() && t1.equals(t2);

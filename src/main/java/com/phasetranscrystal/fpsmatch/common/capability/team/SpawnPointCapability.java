@@ -19,6 +19,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
@@ -242,7 +243,9 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
                                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"));
                                     return 0;
                                 }
-                                if (!map.getMapArea().isBlockPosInArea(spawnPointData.getBlockPos())) {
+                                BlockPos spawnBlockPos = spawnPointData.getBlockPos();
+                                if (!map.getMapArea().isBlockPosInPlacementArea(spawnBlockPos)
+                                        && !map.getMapArea().isBlockPosInPlacementArea(spawnBlockPos.below())) {
                                     FPSMCommand.sendFailure(context.getSource(), Component.translatable("message.fpsm.spawn_point_tool.outside_map"));
                                     return 0;
                                 }

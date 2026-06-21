@@ -6,6 +6,8 @@ import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderableArea;
 import com.phasetranscrystal.fpsmatch.common.client.data.RenderablePoint;
 import com.phasetranscrystal.fpsmatch.common.client.screen.MapCreatorToolScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.MatchConfigToolScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.ShopConfigToolScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.SpawnPointToolScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
@@ -18,6 +20,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.FPSMusicStopS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
@@ -27,6 +30,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomToastS2CPac
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.client.music.FPSClientMusicManager;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
@@ -55,12 +59,30 @@ public final class FPSMClientPacketHandlers {
         }
     }
 
+    public static void handleOpenMatchConfigToolScreen(OpenMatchConfigToolScreenS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof MatchConfigToolScreen screen) {
+            screen.applyData(packet);
+        } else {
+            minecraft.setScreen(new MatchConfigToolScreen(packet));
+        }
+    }
+
     public static void handleOpenSpawnPointToolScreen(OpenSpawnPointToolScreenS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof SpawnPointToolScreen screen) {
             screen.applyData(packet);
         } else {
             minecraft.setScreen(new SpawnPointToolScreen(packet));
+        }
+    }
+
+    public static void handleOpenShopConfigToolScreen(OpenShopConfigToolScreenS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof ShopConfigToolScreen screen) {
+            screen.applyData(packet);
+        } else {
+            minecraft.setScreen(new ShopConfigToolScreen(packet));
         }
     }
 
@@ -89,6 +111,8 @@ public final class FPSMClientPacketHandlers {
     public static void handleGameType(FPSMatchGameTypeS2CPacket packet) {
         FPSMClient.getGlobalData().setCurrentGameType(packet.getGameType());
         FPSMClient.getGlobalData().setCurrentMap(packet.getMapName());
+        FPSMClient.getGlobalData().setTeamGlow(packet.isTeamGlow());
+        FPSMClient.getGlobalData().setEnemyGlow(packet.isEnemyGlow());
     }
 
     public static void handleStatsReset(FPSMatchStatsResetS2CPacket packet) {

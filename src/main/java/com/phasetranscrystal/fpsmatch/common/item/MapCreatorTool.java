@@ -28,6 +28,7 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
     public static final String BLOCK_POS_TAG_1 = "BlockPos1";
     public static final String BLOCK_POS_TAG_2 = "BlockPos2";
     public static final String DRAFT_MAP_NAME_TAG = "DraftMapName";
+    public static final String SELECTED_MAP_TAG = "SelectedMapName";
     private static final String HELD_PREVIEW_STATE_TAG = "HeldMapCreatorPreviewState";
     private static final int HELD_PREVIEW_REFRESH_INTERVAL = 10;
 
@@ -128,6 +129,14 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
         return stack.getOrCreateTag().getString(DRAFT_MAP_NAME_TAG);
     }
 
+    public static void setSelectedMap(ItemStack stack, String selectedMap) {
+        stack.getOrCreateTag().putString(SELECTED_MAP_TAG, selectedMap == null ? "" : selectedMap);
+    }
+
+    public static String getSelectedMap(ItemStack stack) {
+        return stack.getOrCreateTag().getString(SELECTED_MAP_TAG);
+    }
+
     public static void setBlockPos(ItemStack stack, String tag, @Nullable BlockPos pos) {
         CompoundTag compoundTag = stack.getOrCreateTag();
         if (pos == null) {
@@ -158,6 +167,11 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
                 .append(Component.literal(getSelectedType(pStack).isBlank()
                         ? Component.translatable("tooltip.fpsm.none").getString()
                         : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
+        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.map")
+                .append(": ")
+                .append(Component.literal(getSelectedMap(pStack).isBlank()
+                        ? Component.translatable("tooltip.fpsm.none").getString()
+                        : getSelectedMap(pStack)).withStyle(ChatFormatting.AQUA)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.name")
                 .append(": ")
                 .append(Component.literal(getDraftMapName(pStack).isBlank()

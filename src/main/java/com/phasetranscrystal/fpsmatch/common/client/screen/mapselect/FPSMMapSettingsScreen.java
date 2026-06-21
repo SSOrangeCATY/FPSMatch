@@ -16,10 +16,15 @@ import java.util.List;
 import java.util.Objects;
 
 public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapDetailChildScreen {
-    private static final int ROW_HEIGHT = 24;
-    private static final int LIST_TOP = 62;
-    private static final int EDIT_BOX_WIDTH = 110;
-    private static final int TOGGLE_BUTTON_WIDTH = EDIT_BOX_WIDTH + 4 + FPSMGuiTheme.BUTTON_SMALL_WIDTH;
+    private static final int PANEL_WIDTH = 560;
+    private static final int PANEL_TOP = 58;
+    private static final int PANEL_BOTTOM_PADDING = 60;
+    private static final int LIST_TOP_OFFSET = 10;
+    private static final int LIST_BOTTOM_PADDING = 10;
+    private static final int ROW_HEIGHT = 25;
+    private static final int FIELD_WIDTH = 126;
+    private static final int APPLY_BUTTON_WIDTH = 62;
+    private static final int TOGGLE_BUTTON_WIDTH = FIELD_WIDTH + APPLY_BUTTON_WIDTH + 4;
 
     private MapRoomDetail detail;
     private final Screen parent;
@@ -54,32 +59,36 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
         toggleButtons.clear();
         rowBaseY.clear();
 
-        int left = width / 2 - 180;
+        int left = panelLeft();
+        int right = left + panelWidth();
+        int valueX = right - FIELD_WIDTH - 82;
+        int buttonX = right - 74;
 
         for (int i = 0; i < detail.settings().size(); i++) {
             MapRoomSettingInfo setting = detail.settings().get(i);
-            int baseY = LIST_TOP + i * ROW_HEIGHT;
+            int baseY = listTop() + i * ROW_HEIGHT;
             rowBaseY.add(baseY);
 
             if (setting.type() == MapRoomSettingInfo.SettingType.BOOLEAN) {
                 valueFields.add(null);
                 applyButtons.add(null);
 
-                Button toggleButton = createToggleButton(Boolean.parseBoolean(setting.value()), left + 176, baseY + 2,
+                Button toggleButton = createToggleButton(Boolean.parseBoolean(setting.value()), valueX, baseY + 2,
                         button -> toggleSetting(setting, button));
                 toggleButton.active = setting.editable();
                 addRenderableWidget(toggleButton);
                 toggleButtons.add(toggleButton);
             } else {
-                EditBox field = new EditBox(font, left + 176, baseY + 3, EDIT_BOX_WIDTH, 18, Component.translatable(setting.translationKey()));
-                field.setMaxLength(128);
+                EditBox field = new EditBox(font, valueX, baseY + 3, FIELD_WIDTH, 18, Component.translatable(setting.translationKey()));
+                field.setMaxLength(1024);
                 field.setValue(setting.value());
                 field.setEditable(setting.editable());
                 addRenderableWidget(field);
                 valueFields.add(field);
 
-                Button applyButton = createSmallButton(Component.translatable("gui.fpsm.map_select.apply"), left + 176 + EDIT_BOX_WIDTH + 4, baseY + 2,
-                        button -> applySetting(setting, field));
+                Button applyButton = Button.builder(Component.translatable("gui.fpsm.map_select.apply"), button -> applySetting(setting, field))
+                        .bounds(buttonX, baseY + 2, APPLY_BUTTON_WIDTH, FPSMGuiTheme.BUTTON_HEIGHT)
+                        .build();
                 applyButton.active = setting.editable();
                 addRenderableWidget(applyButton);
                 applyButtons.add(applyButton);
@@ -105,25 +114,24 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
 
         drawScreenTitle(graphics, title, detail != null ? Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()) : null, 12);
 
-        int contentHeight = height - LIST_TOP - 62;
-        int visibleRows = Math.max(1, contentHeight / ROW_HEIGHT);
-        int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
+        int visibleRows = visibleRows();
+        int maxScroll = maxScroll();
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
 
-        // 内容区背景（统一）
-        int left = width / 2 - 180;
-        int right = width / 2 + 180;
-        int panelTop = LIST_TOP - 2;
-        int panelBottom = height - 60;
-        drawListBackground(graphics, left - 6, panelTop, right + 6, panelBottom);
+        int left = panelLeft();
+        int right = left + panelWidth();
+        int panelTop = PANEL_TOP;
+        int panelBottom = panelBottom();
+        int listTop = listTop();
+        int listBottom = listBottom();
+        drawListBackground(graphics, left, panelTop, right, panelBottom);
 
-        // 裁剪区域
-        graphics.enableScissor(left - 8, panelTop + 2, right + 8, panelBottom - 2);
+        Component tooltip = null;
+        graphics.enableScissor(left + 8, listTop, right - 8, listBottom);
 
-        // 重定位所有组件并渲染标签
         for (int i = 0; i < Math.min(valueFields.size(), detail.settings().size()); i++) {
             int targetY = rowBaseY.get(i) - scrollOffset * ROW_HEIGHT;
-            boolean visible = targetY + ROW_HEIGHT > panelTop + 2 && targetY < panelBottom - 2;
+            boolean visible = targetY + ROW_HEIGHT > listTop && targetY < listBottom;
 
             EditBox field = valueFields.get(i);
             Button applyButton = applyButtons.get(i);
@@ -146,38 +154,40 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
 
             MapRoomSettingInfo setting = detail.settings().get(i);
             Component settingName = Component.translatable(setting.translationKey());
-            boolean hovered = mouseX >= left && mouseX <= right && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT;
-            drawRowBackground(graphics, left, targetY, right, targetY + ROW_HEIGHT, false, hovered, !setting.editable());
-            drawClippedString(graphics, settingName, left + 8, targetY + 8, setting.editable() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED, 72);
-            drawClippedString(graphics, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 86, targetY + 8, FPSMGuiTheme.TEXT_SUB, 84);
+            boolean hovered = mouseX >= left + 10 && mouseX <= right - 10 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT;
+            drawRowBackground(graphics, left + 10, targetY, right - 10, targetY + ROW_HEIGHT - 1, false, hovered, !setting.editable());
+            drawClippedString(graphics, settingName, left + 18, targetY + 8,
+                    setting.editable() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED, 136);
+            drawClippedString(graphics, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()),
+                    left + 158, targetY + 8, FPSMGuiTheme.TEXT_SUB, 130);
             if (field != null) field.render(graphics, mouseX, mouseY, partialTick);
             if (applyButton != null) applyButton.render(graphics, mouseX, mouseY, partialTick);
             if (toggleButton != null) toggleButton.render(graphics, mouseX, mouseY, partialTick);
 
-            if (mouseX >= left && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
-                graphics.renderTooltip(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
+            if (hovered && mouseX >= left + 18 && mouseX <= left + 154) {
+                tooltip = Component.translatable(setting.translationKey() + ".desc");
             }
         }
         graphics.disableScissor();
 
         if (detail.settings().isEmpty()) {
-            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 42);
+            drawEmptyState(graphics, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, listTop + 42);
         } else {
-            drawScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
+            drawScrollBar(graphics, right - 8, listTop, listBottom - listTop, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
         }
 
         if (backButton != null) {
             backButton.render(graphics, mouseX, mouseY, partialTick);
         }
+        if (tooltip != null) {
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
-        int contentHeight = height - LIST_TOP - 62;
-        int visibleRows = Math.max(1, contentHeight / ROW_HEIGHT);
-        int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
         scrollOffset -= (int) scrollY;
-        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll());
         return true;
     }
 
@@ -234,5 +244,33 @@ public class FPSMMapSettingsScreen extends FPSMMapScreenBase implements FPSMMapD
 
     private Component toggleLabel(boolean value) {
         return Component.translatable(value ? "options.on" : "options.off");
+    }
+
+    private int panelWidth() {
+        return Math.min(PANEL_WIDTH, width - 24);
+    }
+
+    private int panelLeft() {
+        return (width - panelWidth()) / 2;
+    }
+
+    private int panelBottom() {
+        return height - PANEL_BOTTOM_PADDING;
+    }
+
+    private int listTop() {
+        return PANEL_TOP + LIST_TOP_OFFSET;
+    }
+
+    private int listBottom() {
+        return panelBottom() - LIST_BOTTOM_PADDING;
+    }
+
+    private int visibleRows() {
+        return Math.max(1, (listBottom() - listTop()) / ROW_HEIGHT);
+    }
+
+    private int maxScroll() {
+        return Math.max(0, detail.settings().size() - visibleRows());
     }
 }

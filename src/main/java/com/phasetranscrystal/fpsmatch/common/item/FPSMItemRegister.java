@@ -35,6 +35,8 @@ public class FPSMItemRegister {
 
     public static final RegistryObject<MapCreatorTool> MAP_CREATOR_TOOL = ITEMS.register("map_creator_tool", () -> new MapCreatorTool(new Item.Properties()));
     public static final RegistryObject<SpawnPointTool> SPAWN_POINT_TOOL = ITEMS.register("spawn_point_tool", () -> new SpawnPointTool(new Item.Properties()));
+    public static final RegistryObject<MatchConfigTool> MATCH_CONFIG_TOOL = ITEMS.register("match_config_tool", () -> new MatchConfigTool(new Item.Properties()));
+    public static final RegistryObject<ShopConfigTool> SHOP_CONFIG_TOOL = ITEMS.register("shop_config_tool", () -> new ShopConfigTool(new Item.Properties()));
 
     static {
         TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");

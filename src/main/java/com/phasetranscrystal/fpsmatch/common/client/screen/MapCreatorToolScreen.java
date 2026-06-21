@@ -29,13 +29,15 @@ import java.util.List;
 
 public class MapCreatorToolScreen extends Screen {
     private static final int PANEL_WIDTH = 300;
-    private static final int PANEL_HEIGHT = 188;
+    private static final int PANEL_HEIGHT = 226;
     private static final int SCREEN_OVERLAY = 0x5A000000;
     private static final int PANEL_BACKGROUND = 0xD0191D22;
     private static final int PANEL_BORDER = 0xFF7DA3B8;
 
     private List<String> availableTypes;
+    private List<OpenMapCreatorToolScreenS2CPacket.MapEntry> maps;
     private String selectedType;
+    private String selectedMap;
 
     private EditBox mapNameField;
     private EditBox pos1XField;
@@ -45,11 +47,14 @@ public class MapCreatorToolScreen extends Screen {
     private EditBox pos2YField;
     private EditBox pos2ZField;
     private Button typeButton;
+    private Button mapButton;
 
     public MapCreatorToolScreen(OpenMapCreatorToolScreenS2CPacket data) {
         super(Component.translatable("gui.fpsm.map_creator.title"));
         this.availableTypes = new ArrayList<>(data.availableTypes());
+        this.maps = new ArrayList<>(data.maps());
         this.selectedType = normalizeSelectedType(data.selectedType());
+        this.selectedMap = normalizeSelectedMap(data.selectedMap());
     }
 
     @Override
@@ -62,32 +67,47 @@ public class MapCreatorToolScreen extends Screen {
                 .size(172, 20)
                 .build());
 
-        this.mapNameField = addTextField(left + 110, top + 52, 172, 18, 64, s -> true);
-        this.pos1XField = addIntField(left + 110, top + 90);
-        this.pos1YField = addIntField(left + 166, top + 90);
-        this.pos1ZField = addIntField(left + 222, top + 90);
-        this.pos2XField = addIntField(left + 110, top + 120);
-        this.pos2YField = addIntField(left + 166, top + 120);
-        this.pos2ZField = addIntField(left + 222, top + 120);
+        this.mapButton = this.addRenderableWidget(new Button.Builder(Component.empty(), button -> cycleMap())
+                .pos(left + 110, top + 48)
+                .size(172, 20)
+                .build());
+
+        this.mapNameField = addTextField(left + 110, top + 80, 172, 18, 64, s -> true);
+        this.pos1XField = addIntField(left + 110, top + 118);
+        this.pos1YField = addIntField(left + 166, top + 118);
+        this.pos1ZField = addIntField(left + 222, top + 118);
+        this.pos2XField = addIntField(left + 110, top + 148);
+        this.pos2YField = addIntField(left + 166, top + 148);
+        this.pos2ZField = addIntField(left + 222, top + 148);
 
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.map_creator.create"), button -> createMap())
-                .pos(left + 18, top + 154)
-                .size(122, 20)
+                .pos(left + 18, top + 182)
+                .size(82, 20)
+                .build());
+        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.map_creator.save"), button -> updateMap())
+                .pos(left + 109, top + 182)
+                .size(82, 20)
                 .build());
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.fpsm.close"), button -> onClose())
-                .pos(left + 160, top + 154)
-                .size(122, 20)
+                .pos(left + 200, top + 182)
+                .size(82, 20)
                 .build());
 
         updateTypeButton();
+        updateMapButton();
         loadFromHeldTool();
     }
 
     public void applyData(OpenMapCreatorToolScreenS2CPacket data) {
         this.availableTypes = new ArrayList<>(data.availableTypes());
+        this.maps = new ArrayList<>(data.maps());
         this.selectedType = normalizeSelectedType(data.selectedType());
+        this.selectedMap = normalizeSelectedMap(data.selectedMap());
         if (this.typeButton != null) {
             updateTypeButton();
+        }
+        if (this.mapButton != null) {
+            updateMapButton();
         }
         if (this.mapNameField != null) {
             this.mapNameField.setValue(data.draftMapName());
@@ -120,12 +140,13 @@ public class MapCreatorToolScreen extends Screen {
 
         guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
         guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.type"), left + 10, top + 26, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 58, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 96, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 126, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.literal("X"), left + 112, top + 80, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Y"), left + 168, top + 80, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Z"), left + 224, top + 80, 0x8FA7B3, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.map"), left + 10, top + 54, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 86, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 124, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 154, 0xD0E3EA, false);
+        guiGraphics.drawString(this.font, Component.literal("X"), left + 112, top + 108, 0x8FA7B3, false);
+        guiGraphics.drawString(this.font, Component.literal("Y"), left + 168, top + 108, 0x8FA7B3, false);
+        guiGraphics.drawString(this.font, Component.literal("Z"), left + 224, top + 108, 0x8FA7B3, false);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
@@ -181,6 +202,7 @@ public class MapCreatorToolScreen extends Screen {
         FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
                 MapCreatorToolActionC2SPacket.Action.SAVE_DRAFT,
                 this.selectedType,
+                this.selectedMap,
                 this.mapNameField.getValue(),
                 parseBlockPos(true),
                 parseBlockPos(false)
@@ -217,11 +239,31 @@ public class MapCreatorToolScreen extends Screen {
             int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % this.availableTypes.size();
             this.selectedType = this.availableTypes.get(nextIndex);
         }
+        this.selectedMap = normalizeSelectedMap("");
         updateTypeButton();
+        updateMapButton();
+        loadSelectedMapArea();
+    }
+
+    private void cycleMap() {
+        List<OpenMapCreatorToolScreenS2CPacket.MapEntry> mapsForType = getMapsForSelectedType();
+        if (mapsForType.isEmpty()) {
+            this.selectedMap = "";
+        } else {
+            int currentIndex = indexOfMap(mapsForType, this.selectedMap);
+            int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % mapsForType.size();
+            this.selectedMap = mapsForType.get(nextIndex).name();
+        }
+        updateMapButton();
+        loadSelectedMapArea();
     }
 
     private void updateTypeButton() {
         this.typeButton.setMessage(Component.literal(this.selectedType.isBlank() ? "-" : this.selectedType));
+    }
+
+    private void updateMapButton() {
+        this.mapButton.setMessage(Component.literal(this.selectedMap.isBlank() ? "-" : this.selectedMap));
     }
 
     private String normalizeSelectedType(String type) {
@@ -229,6 +271,14 @@ public class MapCreatorToolScreen extends Screen {
             return type;
         }
         return this.availableTypes.isEmpty() ? "" : this.availableTypes.get(0);
+    }
+
+    private String normalizeSelectedMap(String mapName) {
+        List<OpenMapCreatorToolScreenS2CPacket.MapEntry> mapsForType = getMapsForSelectedType();
+        if (mapName != null && !mapName.isBlank() && indexOfMap(mapsForType, mapName) >= 0) {
+            return mapName;
+        }
+        return mapsForType.isEmpty() ? "" : mapsForType.get(0).name();
     }
 
     private void loadFromHeldTool() {
@@ -243,10 +293,12 @@ public class MapCreatorToolScreen extends Screen {
         }
 
         this.selectedType = normalizeSelectedType(MapCreatorTool.getSelectedType(stack));
+        this.selectedMap = normalizeSelectedMap(MapCreatorTool.getSelectedMap(stack));
         this.mapNameField.setValue(MapCreatorTool.getDraftMapName(stack));
         setBlockPosFields(MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1), true);
         setBlockPosFields(MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2), false);
         updateTypeButton();
+        updateMapButton();
     }
 
     private void setBlockPosFields(@Nullable BlockPos pos, boolean first) {
@@ -280,10 +332,47 @@ public class MapCreatorToolScreen extends Screen {
         FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
                 MapCreatorToolActionC2SPacket.Action.CREATE,
                 this.selectedType,
+                this.selectedMap,
                 this.mapNameField.getValue(),
                 parseBlockPos(true),
                 parseBlockPos(false)
         ));
+    }
+
+    private void updateMap() {
+        FPSMatch.sendToServer(new MapCreatorToolActionC2SPacket(
+                MapCreatorToolActionC2SPacket.Action.UPDATE,
+                this.selectedType,
+                this.selectedMap,
+                this.mapNameField.getValue(),
+                parseBlockPos(true),
+                parseBlockPos(false)
+        ));
+    }
+
+    private List<OpenMapCreatorToolScreenS2CPacket.MapEntry> getMapsForSelectedType() {
+        return this.maps.stream()
+                .filter(map -> map.type().equals(this.selectedType))
+                .toList();
+    }
+
+    private int indexOfMap(List<OpenMapCreatorToolScreenS2CPacket.MapEntry> mapsForType, String mapName) {
+        for (int i = 0; i < mapsForType.size(); i++) {
+            if (mapsForType.get(i).name().equals(mapName)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void loadSelectedMapArea() {
+        getMapsForSelectedType().stream()
+                .filter(map -> map.name().equals(this.selectedMap))
+                .findFirst()
+                .ifPresent(map -> {
+                    setBlockPosFields(map.pos1(), true);
+                    setBlockPosFields(map.pos2(), false);
+                });
     }
 
     private boolean isInsidePanel(double mouseX, double mouseY) {

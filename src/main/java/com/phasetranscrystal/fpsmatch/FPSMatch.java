@@ -190,6 +190,10 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(ToolInteractionC2SPacket.class);
         PACKET_REGISTER.registerPacket(OpenMapCreatorToolScreenS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapCreatorToolActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(OpenMatchConfigToolScreenS2CPacket.class);
+        PACKET_REGISTER.registerPacket(MatchConfigToolActionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(OpenShopConfigToolScreenS2CPacket.class);
+        PACKET_REGISTER.registerPacket(ShopConfigToolActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(OpenSpawnPointToolScreenS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpawnPointToolActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(OpenMapSelectionC2SPacket.class);

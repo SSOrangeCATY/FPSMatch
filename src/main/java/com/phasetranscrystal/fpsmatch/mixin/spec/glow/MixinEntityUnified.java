@@ -35,18 +35,29 @@ public abstract class MixinEntityUnified {
                 return;
             }
 
-            // 普通队伍玩家：客户端按队伍判断队友透视发光，不再依赖服务端 MobEffects.GLOWING
-            // 服务端 GLOWING 效果对所有客户端可见，会导致敌方也能看到发光
+            // 普通队伍玩家：客户端按队伍判断透视发光
             if (living instanceof Player target) {
                 FPSMClientGlobalData data = FPSMClient.getGlobalData();
                 boolean sameTeam = data.isSameTeam(localPlayer, target);
                 boolean localInNormalTeam = data.isInNormalTeam();
                 boolean targetIsSelf = target.getUUID().equals(localPlayer.getUUID());
 
-                if (localInNormalTeam && sameTeam && !targetIsSelf) {
-                    cir.setReturnValue(true);
-                    cir.cancel();
-                } else if (FPSMConfig.Server.disableDefaultGlow.get()) {
+                if (localInNormalTeam && !targetIsSelf) {
+                    // 队友发光
+                    if (sameTeam && data.isTeamGlow()) {
+                        cir.setReturnValue(true);
+                        cir.cancel();
+                        return;
+                    }
+                    // 敌方发光
+                    if (!sameTeam && data.isEnemyGlow()) {
+                        cir.setReturnValue(true);
+                        cir.cancel();
+                        return;
+                    }
+                }
+
+                if (FPSMConfig.Server.disableDefaultGlow.get()) {
                     cir.setReturnValue(living.hasEffect(MobEffects.GLOWING));
                     cir.cancel();
                 }

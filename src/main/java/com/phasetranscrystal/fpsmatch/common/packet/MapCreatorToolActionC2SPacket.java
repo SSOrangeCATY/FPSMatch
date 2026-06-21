@@ -21,18 +21,21 @@ import java.util.function.Supplier;
 public record MapCreatorToolActionC2SPacket(
         Action action,
         String selectedType,
+        String selectedMap,
         String draftMapName,
         @Nullable BlockPos pos1,
         @Nullable BlockPos pos2
 ) {
     public enum Action {
         SAVE_DRAFT,
-        CREATE
+        CREATE,
+        UPDATE
     }
 
     public static void encode(MapCreatorToolActionC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeEnum(packet.action());
         buf.writeUtf(packet.selectedType());
+        buf.writeUtf(packet.selectedMap());
         buf.writeUtf(packet.draftMapName());
         writeNullableBlockPos(buf, packet.pos1());
         writeNullableBlockPos(buf, packet.pos2());
@@ -41,6 +44,7 @@ public record MapCreatorToolActionC2SPacket(
     public static MapCreatorToolActionC2SPacket decode(FriendlyByteBuf buf) {
         return new MapCreatorToolActionC2SPacket(
                 buf.readEnum(Action.class),
+                buf.readUtf(),
                 buf.readUtf(),
                 buf.readUtf(),
                 readNullableBlockPos(buf),
@@ -63,6 +67,7 @@ public record MapCreatorToolActionC2SPacket(
             switch (action()) {
                 case SAVE_DRAFT -> saveDraft(stack);
                 case CREATE -> createMap(player, stack);
+                case UPDATE -> updateMap(player, stack);
             }
         });
         ctx.get().setPacketHandled(true);
@@ -70,6 +75,7 @@ public record MapCreatorToolActionC2SPacket(
 
     private void saveDraft(ItemStack stack) {
         MapCreatorTool.setSelectedType(stack, selectedType().trim());
+        MapCreatorTool.setSelectedMap(stack, selectedMap().trim());
         MapCreatorTool.setDraftMapName(stack, draftMapName());
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1, pos1());
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2, pos2());
@@ -110,11 +116,55 @@ public record MapCreatorToolActionC2SPacket(
         FPSMCore.getInstance().registerMap(type, newMap);
 
         MapCreatorTool.setSelectedType(stack, type);
+        MapCreatorTool.setSelectedMap(stack, mapName);
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1, pos1());
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2, pos2());
         MapCreatorTool.setDraftMapName(stack, "");
 
         player.displayClientMessage(Component.translatable("commands.fpsm.create.success", mapName), false);
+        FPSMatch.sendToPlayer(player, OpenMapCreatorToolScreenS2CPacket.fromStack(stack, FPSMCore.getInstance().getGameTypes()));
+    }
+
+    private void updateMap(ServerPlayer player, ItemStack stack) {
+        String type = selectedType().trim();
+        if (!FPSMCore.getInstance().checkGameType(type)) {
+            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_type"), false);
+            return;
+        }
+
+        String mapName = selectedMap().trim();
+        if (mapName.isEmpty()) {
+            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.map_not_found"), false);
+            return;
+        }
+
+        Optional<AreaData> areaData = createArea();
+        if (areaData.isEmpty()) {
+            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_area"), false);
+            return;
+        }
+
+        Optional<BaseMap> mapOptional = FPSMCore.getInstance().getMapByTypeWithName(type, mapName);
+        if (mapOptional.isEmpty()) {
+            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.map_not_found"), false);
+            return;
+        }
+
+        BaseMap map = mapOptional.get();
+        if (!map.getServerLevel().dimension().equals(player.serverLevel().dimension())) {
+            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"), false);
+            return;
+        }
+
+        map.setMapArea(areaData.get());
+        FPSMCore.getInstance().getFPSMDataManager().saveAllData();
+
+        MapCreatorTool.setSelectedType(stack, type);
+        MapCreatorTool.setSelectedMap(stack, mapName);
+        MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1, pos1());
+        MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2, pos2());
+
+        player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.update_success", mapName), false);
         FPSMatch.sendToPlayer(player, OpenMapCreatorToolScreenS2CPacket.fromStack(stack, FPSMCore.getInstance().getGameTypes()));
     }
 

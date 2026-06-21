@@ -52,8 +52,7 @@ public record TeamManageActionC2SPacket(String mapName, UUID targetPlayer, Strin
             }
 
             // 先让玩家离开当前队伍，再加入目标队伍
-            mapTeams.leaveTeam(target);
-            MapTeams.JoinTeamResult result = mapTeams.joinTeam(targetTeam, target);
+            MapTeams.JoinTeamResult result = map.join(targetTeam, target);
             if (result.status() == MapTeams.JoinTeamResult.Status.JOINED) {
                 mapTeams.broadcast();
                 FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(true, Component.translatable("gui.fpsm.team_manage.move_success", target.getDisplayName().getString(), targetTeam)));

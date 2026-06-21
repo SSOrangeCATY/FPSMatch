@@ -73,6 +73,7 @@ public abstract class BaseMap {
     protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
     protected final Setting<Boolean> allowJoinInProgress = this.addSetting("allowJoinInProgress", true);
     protected final Setting<Boolean> teammateGlow = this.addSetting("teammateGlow", false);
+    protected final Setting<Boolean> enemyGlow = this.addSetting("enemyGlow", false);
     protected final Setting<Boolean> hideEnemyNameTag = this.addSetting("hideEnemyNameTag", true);
     protected final Setting<String> displayName = this.addSetting("displayName", "");
     /**
@@ -110,7 +111,7 @@ public abstract class BaseMap {
     private boolean readyCountdownAnnounced = false;
 
     // 地图区域数据
-    public final AreaData mapArea;
+    public AreaData mapArea;
 
     /**
      * BaseMap 类的构造函数。
@@ -772,6 +773,10 @@ public abstract class BaseMap {
         return mapArea;
     }
 
+    public void setMapArea(AreaData mapArea) {
+        this.mapArea = mapArea;
+    }
+
     /**
      * 发送数据包给所有玩家
      *
@@ -833,7 +838,7 @@ public abstract class BaseMap {
     }
 
     public void pullGameInfo(ServerPlayer player) {
-        this.sendPacketToJoinedPlayer(player, new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType()), true);
+        this.sendPacketToJoinedPlayer(player, new FPSMatchGameTypeS2CPacket(this.getMapName(), this.getGameType(), this.teammateGlow.get(), this.enemyGlow.get()), true);
     }
 
     public final boolean isStart() {
@@ -1064,6 +1069,14 @@ public abstract class BaseMap {
         return settings().stream()
                 .filter(setting -> setting.getConfigName().equals(settingName))
                 .findFirst();
+    }
+
+    public Setting<Boolean> getEnemyGlowSetting() {
+        return enemyGlow;
+    }
+
+    public Setting<Boolean> getTeammateGlowSetting() {
+        return teammateGlow;
     }
 
     public float getMinAssistDamageRatio() {

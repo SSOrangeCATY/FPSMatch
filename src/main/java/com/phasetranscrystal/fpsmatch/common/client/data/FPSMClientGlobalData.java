@@ -28,10 +28,13 @@ public class FPSMClientGlobalData {
     private volatile String currentMap = NONE_VALUE;
     private volatile String currentGameType = NONE_VALUE;
     private volatile String currentTeam = NONE_VALUE;
+    private volatile boolean teamGlow = false;
+    private volatile boolean enemyGlow = false;
 
     private final Map<String, List<ClientShopSlot>> clientShopData = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> playersMoney = new ConcurrentHashMap<>();
     private final Map<String, ClientTeam> clientTeamData = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerData> playerDataCache = new ConcurrentHashMap<>();
 
     private final DebugData debugData = new DebugData();
     private volatile boolean mapSelectionButtonVisible;
@@ -122,8 +125,12 @@ public class FPSMClientGlobalData {
      */
     public void updatePlayerTeamData(@NotNull String teamName, @NotNull UUID uuid,
                                      @NotNull PlayerData data) {
+        playerDataCache.put(uuid, data);
         ClientTeam targetTeam = clientTeamData.get(teamName);
         if (targetTeam == null) {
+            if ("csdm".equals(teamName)) {
+                return;
+            }
             FPSMatch.LOGGER.error("ClientGlobalData: Team {} does not exist", teamName);
             return;
         }
@@ -144,6 +151,10 @@ public class FPSMClientGlobalData {
 
     @NotNull
     public Optional<PlayerTeamData> getPlayerTeamData(@NotNull UUID uuid) {
+        PlayerData cached = playerDataCache.get(uuid);
+        if (cached != null) {
+            return Optional.of(new PlayerTeamData("csdm", cached));
+        }
         for (Map.Entry<String, ClientTeam> entry : clientTeamData.entrySet()) {
             Optional<PlayerData> playerData = entry.getValue().getPlayerData(uuid);
             if (playerData.isPresent()) {
@@ -159,6 +170,7 @@ public class FPSMClientGlobalData {
     }
 
     public void leaveTeam(@NotNull UUID uuid) {
+        playerDataCache.remove(uuid);
         getTeamByUUID(uuid).ifPresent(team -> team.delPlayer(uuid));
     }
 
@@ -286,6 +298,7 @@ public class FPSMClientGlobalData {
 
     public void removePlayer(@NotNull UUID uuid) {
         removePlayerFromAllTeams(uuid);
+        playerDataCache.remove(uuid);
         playersMoney.remove(uuid);
     }
 
@@ -293,9 +306,12 @@ public class FPSMClientGlobalData {
         this.currentMap = NONE_VALUE;
         this.currentGameType = NONE_VALUE;
         this.currentTeam = NONE_VALUE;
+        this.teamGlow = false;
+        this.enemyGlow = false;
         this.playersMoney.clear();
         this.clientShopData.clear();
         this.clientTeamData.clear();
+        this.playerDataCache.clear();
         clearMapSelectData();
     }
 
@@ -379,6 +395,22 @@ public class FPSMClientGlobalData {
 
     public void setCurrentTeam(String currentTeam) {
         this.currentTeam = Objects.requireNonNullElse(currentTeam, NONE_VALUE);
+    }
+
+    public boolean isTeamGlow() {
+        return teamGlow;
+    }
+
+    public void setTeamGlow(boolean teamGlow) {
+        this.teamGlow = teamGlow;
+    }
+
+    public boolean isEnemyGlow() {
+        return enemyGlow;
+    }
+
+    public void setEnemyGlow(boolean enemyGlow) {
+        this.enemyGlow = enemyGlow;
     }
 
     // === 相等性检查 ===

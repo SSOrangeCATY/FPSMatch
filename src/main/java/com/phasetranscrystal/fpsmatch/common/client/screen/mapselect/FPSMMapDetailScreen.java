@@ -123,6 +123,7 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
         }
 
         int listRight = left + width;
+        boolean freeForAll = isFreeForAll(summary);
         int teamX = left + Math.max(78, width / 2);
         graphics.enableScissor(left - 2, listTop, listRight + 2, listTop + visibleRows * ROW_HEIGHT);
         for (int i = playerScrollOffset; i < Math.min(detail.players().size(), playerScrollOffset + visibleRows); i++) {
@@ -130,8 +131,11 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
             int py = listTop + (i - playerScrollOffset) * ROW_HEIGHT;
             graphics.fill(left - 2, py - 1, listRight - 8, py + ROW_HEIGHT - 1, i % 2 == 0 ? FPSMGuiTheme.ROW_NORMAL : FPSMGuiTheme.BG_PANEL);
             int color = player.online() ? FPSMGuiTheme.TEXT_HIGHLIGHT : FPSMGuiTheme.TEXT_DISABLED;
-            drawClippedString(graphics, Component.literal(player.name()), left, py, color, Math.max(40, teamX - left - 8));
-            drawClippedString(graphics, Component.literal(player.teamName()), teamX, py, player.spectator() ? FPSMGuiTheme.ST_SPECTATOR : FPSMGuiTheme.ST_ONLINE, Math.max(32, listRight - teamX - 12));
+            int nameWidth = freeForAll ? Math.max(40, listRight - left - 12) : Math.max(40, teamX - left - 8);
+            drawClippedString(graphics, Component.literal(player.name()), left, py, color, nameWidth);
+            if (!freeForAll) {
+                drawClippedString(graphics, Component.literal(player.teamName()), teamX, py, player.spectator() ? FPSMGuiTheme.ST_SPECTATOR : FPSMGuiTheme.ST_ONLINE, Math.max(32, listRight - teamX - 12));
+            }
         }
         graphics.disableScissor();
 
@@ -181,6 +185,10 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
     }
 
     private void onJoinOrTeamManage() {
+        if (detail != null && isFreeForAll(detail.summary()) && !detail.summary().currentPlayerJoined()) {
+            sendRoomAction(MapRoomActionC2SPacket.Action.JOIN, new UUID(0L, 0L));
+            return;
+        }
         openTeamManage();
     }
 
@@ -214,9 +222,13 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
     }
 
     private void openTeamManage() {
-        if (detail != null) {
+        if (detail != null && !isFreeForAll(detail.summary())) {
             FPSMMapSelectScreens.openChild(new FPSMTeamManageScreen(detail, this));
         }
+    }
+
+    private boolean isFreeForAll(MapRoomSummary summary) {
+        return "csdm".equals(summary.gameType());
     }
 
     @Override

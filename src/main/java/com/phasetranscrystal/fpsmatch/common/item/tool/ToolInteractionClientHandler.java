@@ -24,6 +24,10 @@ public class ToolInteractionClientHandler {
                 || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
 
+    private static boolean isMenuModifierDown(Player player) {
+        return isControlDown() || player.isShiftKeyDown();
+    }
+
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         Player player = event.getEntity();
@@ -54,7 +58,7 @@ public class ToolInteractionClientHandler {
             return;
         }
 
-        ToolInteractionAction action = isControlDown()
+        ToolInteractionAction action = isMenuModifierDown(player)
                 ? ToolInteractionAction.CTRL_RIGHT_CLICK
                 : ToolInteractionAction.RIGHT_CLICK_BLOCK;
         FPSMatch.sendToServer(new ToolInteractionC2SPacket(action, event.getPos()));
@@ -66,7 +70,7 @@ public class ToolInteractionClientHandler {
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         Player player = event.getEntity();
         Level level = player.level();
-        if (!level.isClientSide || event.getHand() != InteractionHand.MAIN_HAND || !isControlDown()) {
+        if (!level.isClientSide || event.getHand() != InteractionHand.MAIN_HAND || !isMenuModifierDown(player)) {
             return;
         }
 
@@ -82,7 +86,8 @@ public class ToolInteractionClientHandler {
 
     @SubscribeEvent
     public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
-        if (!isControlDown()) {
+        Player player = event.getEntity();
+        if (!isMenuModifierDown(player)) {
             return;
         }
 

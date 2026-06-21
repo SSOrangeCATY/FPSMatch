@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
 import com.phasetranscrystal.fpsmatch.common.item.MapCreatorTool;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -14,6 +16,8 @@ import java.util.function.Supplier;
 public record OpenMapCreatorToolScreenS2CPacket(
         List<String> availableTypes,
         String selectedType,
+        String selectedMap,
+        List<MapEntry> maps,
         String draftMapName,
         @Nullable BlockPos pos1,
         @Nullable BlockPos pos2
@@ -22,6 +26,8 @@ public record OpenMapCreatorToolScreenS2CPacket(
         return new OpenMapCreatorToolScreenS2CPacket(
                 List.copyOf(availableTypes),
                 MapCreatorTool.getSelectedType(stack),
+                MapCreatorTool.getSelectedMap(stack),
+                collectMaps(),
                 MapCreatorTool.getDraftMapName(stack),
                 MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_1),
                 MapCreatorTool.getBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2)
@@ -31,15 +37,33 @@ public record OpenMapCreatorToolScreenS2CPacket(
     public static void encode(OpenMapCreatorToolScreenS2CPacket packet, FriendlyByteBuf buf) {
         writeStringList(buf, packet.availableTypes());
         buf.writeUtf(packet.selectedType());
+        buf.writeUtf(packet.selectedMap());
+        buf.writeVarInt(packet.maps().size());
+        for (MapEntry map : packet.maps()) {
+            buf.writeUtf(map.type());
+            buf.writeUtf(map.name());
+            buf.writeBlockPos(map.pos1());
+            buf.writeBlockPos(map.pos2());
+        }
         buf.writeUtf(packet.draftMapName());
         writeNullableBlockPos(buf, packet.pos1());
         writeNullableBlockPos(buf, packet.pos2());
     }
 
     public static OpenMapCreatorToolScreenS2CPacket decode(FriendlyByteBuf buf) {
+        List<String> availableTypes = readStringList(buf);
+        String selectedType = buf.readUtf();
+        String selectedMap = buf.readUtf();
+        int mapCount = buf.readVarInt();
+        List<MapEntry> maps = new ArrayList<>(mapCount);
+        for (int i = 0; i < mapCount; i++) {
+            maps.add(new MapEntry(buf.readUtf(), buf.readUtf(), buf.readBlockPos(), buf.readBlockPos()));
+        }
         return new OpenMapCreatorToolScreenS2CPacket(
-                readStringList(buf),
-                buf.readUtf(),
+                availableTypes,
+                selectedType,
+                selectedMap,
+                maps,
                 buf.readUtf(),
                 readNullableBlockPos(buf),
                 readNullableBlockPos(buf)
@@ -75,5 +99,21 @@ public record OpenMapCreatorToolScreenS2CPacket(
 
     private static @Nullable BlockPos readNullableBlockPos(FriendlyByteBuf buf) {
         return buf.readBoolean() ? buf.readBlockPos() : null;
+    }
+
+    private static List<MapEntry> collectMaps() {
+        List<MapEntry> maps = new ArrayList<>();
+        if (!FPSMCore.initialized()) {
+            return maps;
+        }
+        FPSMCore.getInstance().getAllMaps().forEach((type, mapList) -> {
+            for (BaseMap map : mapList) {
+                maps.add(new MapEntry(type, map.getMapName(), map.getMapArea().pos1(), map.getMapArea().pos2()));
+            }
+        });
+        return maps;
+    }
+
+    public record MapEntry(String type, String name, BlockPos pos1, BlockPos pos2) {
     }
 }

@@ -45,7 +45,28 @@ public class AreaData {
     }
 
     public boolean isBlockPosInArea(BlockPos blockPos) {
-        return isInArea(new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()));
+        int minX = Math.min(pos1.getX(), pos2.getX());
+        int minY = Math.min(pos1.getY(), pos2.getY());
+        int minZ = Math.min(pos1.getZ(), pos2.getZ());
+        int maxX = Math.max(pos1.getX(), pos2.getX());
+        int maxY = Math.max(pos1.getY(), pos2.getY());
+        int maxZ = Math.max(pos1.getZ(), pos2.getZ());
+        return blockPos.getX() >= minX && blockPos.getX() <= maxX
+                && blockPos.getY() >= minY && blockPos.getY() <= maxY
+                && blockPos.getZ() >= minZ && blockPos.getZ() <= maxZ;
+    }
+
+    public boolean isBlockPosInPlacementArea(BlockPos blockPos) {
+        return isBlockPosInArea(blockPos) || isBlockPosInHorizontalArea(blockPos);
+    }
+
+    public boolean isBlockPosInHorizontalArea(BlockPos blockPos) {
+        int minX = Math.min(pos1.getX(), pos2.getX());
+        int minZ = Math.min(pos1.getZ(), pos2.getZ());
+        int maxX = Math.max(pos1.getX(), pos2.getX());
+        int maxZ = Math.max(pos1.getZ(), pos2.getZ());
+        return blockPos.getX() >= minX && blockPos.getX() <= maxX
+                && blockPos.getZ() >= minZ && blockPos.getZ() <= maxZ;
     }
 
     public boolean isEntityInArea(Entity entity) {

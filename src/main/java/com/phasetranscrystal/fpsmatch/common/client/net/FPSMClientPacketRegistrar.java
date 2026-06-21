@@ -10,9 +10,11 @@ import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMusicPlayS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMusicStopS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
@@ -42,7 +44,9 @@ public final class FPSMClientPacketRegistrar {
         registered = true;
 
         ClientPacketRegistry.register(OpenMapCreatorToolScreenS2CPacket.class, FPSMClientPacketHandlers::handleOpenMapCreatorToolScreen);
+        ClientPacketRegistry.register(OpenMatchConfigToolScreenS2CPacket.class, FPSMClientPacketHandlers::handleOpenMatchConfigToolScreen);
         ClientPacketRegistry.register(OpenSpawnPointToolScreenS2CPacket.class, FPSMClientPacketHandlers::handleOpenSpawnPointToolScreen);
+        ClientPacketRegistry.register(OpenShopConfigToolScreenS2CPacket.class, FPSMClientPacketHandlers::handleOpenShopConfigToolScreen);
         ClientPacketRegistry.register(FPSMatchRespawnS2CPacket.class, FPSMClientPacketHandlers::handleRespawn);
         ClientPacketRegistry.register(FPSMInventorySelectedS2CPacket.class, FPSMClientPacketHandlers::handleInventorySelected);
         ClientPacketRegistry.register(AddAreaDataS2CPacket.class, FPSMClientPacketHandlers::handleAddAreaData);

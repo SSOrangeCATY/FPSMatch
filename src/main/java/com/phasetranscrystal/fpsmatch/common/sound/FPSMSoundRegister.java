@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.sound;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.tacz.guns.api.item.GunTabType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -82,16 +83,48 @@ public class FPSMSoundRegister {
         return GUN_PICKUP_REGISTRY.getOrDefault(gunType, SoundEvents.ITEM_PICKUP);
     }
 
+    /**
+     * @deprecated Use {@link #getGunPickupSound(GunTabTypeEnum)}.
+     */
+    @Deprecated
+    public static SoundEvent getGunPickupSound(GunTabType gunType) {
+        return getGunPickupSound(toGunTabTypeEnum(gunType));
+    }
+
     public static void registerGunPickupSound(GunTabTypeEnum gunType, SoundEvent sound) {
         GUN_PICKUP_REGISTRY.put(gunType, sound);
+    }
+
+    /**
+     * @deprecated Use {@link #registerGunPickupSound(GunTabTypeEnum, SoundEvent)}.
+     */
+    @Deprecated
+    public static void registerGunPickupSound(GunTabType gunType, SoundEvent sound) {
+        registerGunPickupSound(toGunTabTypeEnum(gunType), sound);
     }
 
     public static SoundEvent getGunDropSound(GunTabTypeEnum gunType) {
         return GUN_DROP_REGISTRY.getOrDefault(gunType, SoundEvents.STONE_BUTTON_CLICK_ON);
     }
 
+    /**
+     * @deprecated Use {@link #getGunDropSound(GunTabTypeEnum)}.
+     */
+    @Deprecated
+    public static SoundEvent getGunDropSound(GunTabType gunType) {
+        return getGunDropSound(toGunTabTypeEnum(gunType));
+    }
+
     public static void registerGunDropSound(GunTabTypeEnum gunType, SoundEvent sound) {
         GUN_DROP_REGISTRY.put(gunType, sound);
+    }
+
+    /**
+     * @deprecated Use {@link #registerGunDropSound(GunTabTypeEnum, SoundEvent)}.
+     */
+    @Deprecated
+    public static void registerGunDropSound(GunTabType gunType, SoundEvent sound) {
+        registerGunDropSound(toGunTabTypeEnum(gunType), sound);
     }
 
     public static void registerGunSounds(GunTabTypeEnum gunType, SoundEvent pickupSound, SoundEvent dropSound) {
@@ -99,9 +132,24 @@ public class FPSMSoundRegister {
         registerGunDropSound(gunType, dropSound);
     }
 
+    /**
+     * @deprecated Use {@link #registerGunSounds(GunTabTypeEnum, SoundEvent, SoundEvent)}.
+     */
+    @Deprecated
+    public static void registerGunSounds(GunTabType gunType, SoundEvent pickupSound, SoundEvent dropSound) {
+        registerGunSounds(toGunTabTypeEnum(gunType), pickupSound, dropSound);
+    }
+
     public static void registerItemSounds(Item item, SoundEvent pickupSound, SoundEvent dropSound) {
         registerItemPickupSound(item, pickupSound);
         registerItemDropSound(item, dropSound);
+    }
+
+    private static GunTabTypeEnum toGunTabTypeEnum(GunTabType gunType) {
+        if (gunType == null) {
+            return GunTabTypeEnum.RIFLE;
+        }
+        return GunTabTypeEnum.fromString(gunType.name());
     }
 
 }

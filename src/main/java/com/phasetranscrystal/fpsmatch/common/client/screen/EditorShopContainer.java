@@ -38,7 +38,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private final Map<String, TypeInfo> types = new LinkedHashMap<>();
     private final List<ShopSlot> allShopSlots;
 
-    private record TypeInfo(String name, int slotCount, int startIndex) {
+    public record TypeInfo(String name, int slotCount, int startIndex) {
     }
 
     // Server-side constructor
