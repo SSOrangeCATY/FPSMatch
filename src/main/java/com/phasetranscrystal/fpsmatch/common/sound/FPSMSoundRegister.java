@@ -22,6 +22,7 @@ public class FPSMSoundRegister {
     public static final RegistryObject<SoundEvent> VOICE_GRENADE = SOUNDS.register("voice_grenade", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "voice_grenade")));
     public static final RegistryObject<SoundEvent> FLASH = SOUNDS.register("flash", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "flash")));
     public static final RegistryObject<SoundEvent> BOOM = SOUNDS.register("boom", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "boom")));
+    public static final RegistryObject<SoundEvent> MVP_DEFAULT = SOUNDS.register("mvp.default", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(FPSMatch.MODID, "mvp.default")));
 
     private static final Map<GunTabTypeEnum, SoundEvent> GUN_PICKUP_REGISTRY = new ConcurrentHashMap<>();
     private static final Map<GunTabTypeEnum, SoundEvent> GUN_DROP_REGISTRY = new ConcurrentHashMap<>();

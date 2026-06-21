@@ -28,5 +28,11 @@
     "sounds": [
       "fpsmatch:boom"
     ]
+  },
+  "mvp.default": {
+    "subtitle": "sounds.fpsmatch.mvp.default",
+    "sounds": [
+      "fpsmatch:empty"
+    ]
   }
 }

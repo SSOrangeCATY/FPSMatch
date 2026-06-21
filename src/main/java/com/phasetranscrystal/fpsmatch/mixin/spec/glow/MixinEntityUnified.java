@@ -43,18 +43,15 @@ public abstract class MixinEntityUnified {
                 boolean targetIsSelf = target.getUUID().equals(localPlayer.getUUID());
 
                 if (localInNormalTeam && !targetIsSelf) {
-                    // 队友发光
-                    if (sameTeam && data.isTeamGlow()) {
-                        cir.setReturnValue(true);
-                        cir.cancel();
-                        return;
+                    // 在正常队伍中时，发光设置具有权威性：
+                    // 开启则发光，关闭则强制不发光（屏蔽原版GLOWING效果和其他来源的发光）
+                    if (sameTeam) {
+                        cir.setReturnValue(data.isTeamGlow());
+                    } else {
+                        cir.setReturnValue(data.isEnemyGlow());
                     }
-                    // 敌方发光
-                    if (!sameTeam && data.isEnemyGlow()) {
-                        cir.setReturnValue(true);
-                        cir.cancel();
-                        return;
-                    }
+                    cir.cancel();
+                    return;
                 }
 
                 if (FPSMConfig.Server.disableDefaultGlow.get()) {
