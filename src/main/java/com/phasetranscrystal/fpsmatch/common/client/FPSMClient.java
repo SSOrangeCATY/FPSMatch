@@ -13,55 +13,55 @@ import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 
 import java.util.*;
 
-@OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT, modid = FPSMatch.MODID)
 public class FPSMClient {
     private static final FPSMClientGlobalData DATA = new FPSMClientGlobalData();
     public static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((playerInfo) -> 0)
             .thenComparing((playerInfo) -> Optionull.mapOrDefault(playerInfo.getTeam(), PlayerTeam::getName, ""))
-            .thenComparing((playerInfo) -> playerInfo.getProfile().getName(), String::compareToIgnoreCase);
+            .thenComparing((playerInfo) -> playerInfo.getProfile().name(), String::compareToIgnoreCase);
 
     public static FPSMClientGlobalData getGlobalData(){
         return DATA;
     }
 
-    @SubscribeEvent
-    public static void onClientSetup(RegisterKeyMappingsEvent event) {
+    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         // 注册键位
+        event.registerCategory(FPSMKeyCategories.FPSM);
         event.register(CustomHudKey.KEY);
         event.register(SwitchPreviousItemKey.KEY);
         event.register(ClearRenderableAreasKey.KEY);
     }
 
-    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event)
     {
         //注册原版GUI
-        VanillaGuiRegister.register();
     }
 
-    @SubscribeEvent
-    public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
-        event.registerBelowAll("hud_manager", FPSMGameHudManager.INSTANCE);
+    public static void onRegisterGuiLayersEvent(RegisterGuiLayersEvent event) {
+        event.registerBelow(
+                VanillaGuiLayers.CHAT,
+                Identifier.fromNamespaceAndPath(FPSMatch.MODID, "flash_bomb_hud"),
+                FlashBombHud.INSTANCE);
+        event.registerBelowAll(
+                Identifier.fromNamespaceAndPath(FPSMatch.MODID, "hud_manager"),
+                FPSMGameHudManager.INSTANCE);
     }
 
-    @SubscribeEvent
     public static void onRegisterEntityRenderEvent(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(EntityRegister.SMOKE_SHELL.get(), new SmokeShellRenderer());
         event.registerEntityRenderer(EntityRegister.INCENDIARY_GRENADE.get(), new IncendiaryGrenadeRenderer());
@@ -80,6 +80,6 @@ public class FPSMClient {
 
     public static void reset() {
         DATA.reset();
-        MinecraftForge.EVENT_BUS.post(new FPSMClientResetEvent());
+        NeoForge.EVENT_BUS.post(new FPSMClientResetEvent());
     }
 }

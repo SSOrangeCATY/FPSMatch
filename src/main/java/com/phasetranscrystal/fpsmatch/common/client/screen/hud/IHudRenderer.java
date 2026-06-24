@@ -1,20 +1,20 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.hud;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 
 
 public interface IHudRenderer {
-    void onRenderGuiOverlayPre(RenderGuiOverlayEvent.Pre event);
-    void onSpectatorRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight);
-    void onPlayerRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight);
+    void onRenderGuiLayerPre(RenderGuiLayerEvent.Pre event);
+    void onSpectatorRender(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, int screenWidth, int screenHeight);
+    void onPlayerRender(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, int screenWidth, int screenHeight);
 
-    default void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight, boolean isSpectator) {
+    default void render(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, int screenWidth, int screenHeight, boolean isSpectator) {
         if (isSpectator) {
-            onSpectatorRender(gui, guiGraphics, partialTick, screenWidth, screenHeight);
+            onSpectatorRender(guiGraphics, deltaTracker, screenWidth, screenHeight);
         } else {
-            onPlayerRender(gui, guiGraphics, partialTick, screenWidth, screenHeight);
+            onPlayerRender(guiGraphics, deltaTracker, screenWidth, screenHeight);
         }
     }
 }

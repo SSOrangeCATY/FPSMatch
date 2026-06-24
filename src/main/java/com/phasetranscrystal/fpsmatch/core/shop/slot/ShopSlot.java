@@ -14,11 +14,11 @@ import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.common.event.PlayerObtainItemEvent;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -278,7 +278,7 @@ public class ShopSlot{
         return (itemStack)->{
             ItemStack shopItem = this.process();
             if(GunCompatManager.isGun(itemStack)){
-            ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
+            Identifier gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
             return GunCompatManager.isGun(shopItem) && gunId.equals(GunCompatManager.findProvider(shopItem).getGunId(shopItem));
             }else {
                 return itemStack.getDisplayName().getString().equals(shopItem.getDisplayName().getString()) && shopItem.getItem() == itemStack.getItem();
@@ -342,7 +342,7 @@ public class ShopSlot{
 
         checkAndHandleExistingItems(player, type);
 
-        MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, itemStack));
+        NeoForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, itemStack));
 
         FPSMUtil.addItemToPlayerInventory(player, itemStack);
 

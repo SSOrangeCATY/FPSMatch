@@ -5,7 +5,7 @@ import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -157,10 +157,10 @@ public class FPSMTeamManageScreen extends Screen {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
+    public void extractRenderState(@NotNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        this.extractBackground(graphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        graphics.centeredText(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
 
         // 底部面板背景框
         if (selectedPlayer != null) {
@@ -172,7 +172,7 @@ public class FPSMTeamManageScreen extends Screen {
 
             Component hint = Component.translatable("gui.fpsm.team_manage.selected",
                     selectedPlayer.name().getString(), selectedPlayerTeam.toUpperCase());
-            graphics.drawCenteredString(this.font, hint, this.width / 2, panelTop + 6, 0xFFE6F2FF);
+            graphics.centeredText(this.font, hint, this.width / 2, panelTop + 6, 0xFFE6F2FF);
         }
     }
 

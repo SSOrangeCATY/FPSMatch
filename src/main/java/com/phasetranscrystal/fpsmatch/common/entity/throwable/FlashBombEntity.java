@@ -79,12 +79,12 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         FlashEffectDuration effectDuration = calculateBlindnessDuration(angle, distanceFactor, blockingFactor);
 
         MobEffectInstance effect = new MobEffectInstance(
-                FPSMEffectRegister.FLASH_BLINDNESS.get(),
+                FPSMEffectRegister.FLASH_BLINDNESS,
                 effectDuration.totalDuration(),
                 1
         );
 
-        if (effect.getEffect() instanceof FlashBlindnessMobEffect flashEffect) {
+        if (effect.getEffect().value() instanceof FlashBlindnessMobEffect flashEffect) {
             flashEffect.setFullBlindnessTime(effectDuration.fullBlindnessTime());
             flashEffect.setTotalAndTicker(effectDuration.decayTime());
         }
@@ -105,7 +105,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
                 eyePos, flashPos,
                 ClipContext.Block.VISUAL,
                 ClipContext.Fluid.NONE,
-                null
+                this
         );
         HitResult result = level().clip(context);
         return result.getType() == HitResult.Type.MISS ? 1.0 : 0.0;

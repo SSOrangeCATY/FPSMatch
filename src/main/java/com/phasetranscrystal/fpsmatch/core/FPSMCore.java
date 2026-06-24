@@ -12,24 +12,24 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 @SuppressWarnings("unchecked")
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMCore {
     private static FPSMCore INSTANCE;
     public final String archiveName;
@@ -184,7 +184,7 @@ public class FPSMCore {
     }
 
     public void registerGameType(String typeName, Function3<ServerLevel,String, AreaData, BaseMap> map){
-        ResourceLocation.isValidResourceLocation(typeName);
+        Identifier.tryParse(typeName);
         REGISTRY.put(typeName,map);
     }
 
@@ -238,9 +238,9 @@ public class FPSMCore {
         // 设置实例
         INSTANCE = new FPSMCore(event.getServer().getWorldData().getLevelName());
         // 注册地图
-        MinecraftForge.EVENT_BUS.post(new RegisterFPSMapEvent(INSTANCE));
+        NeoForge.EVENT_BUS.post(new RegisterFPSMapEvent(INSTANCE));
         // 注册数据
-        MinecraftForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(INSTANCE.fpsmDataManager));
+        NeoForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(INSTANCE.fpsmDataManager));
         // 读取数据
         INSTANCE.fpsmDataManager.readAllData();
     }
@@ -279,7 +279,7 @@ public class FPSMCore {
     * 获取当前FPSMatch运行在何种环境
     * */
     public static FPSMDist getCurrentEnvironment() {
-        if (FMLEnvironment.dist.isDedicatedServer()) {
+        if (FMLEnvironment.getDist().isDedicatedServer()) {
             return FPSMDist.SERVER;
         }else{
             Minecraft mc = Minecraft.getInstance();

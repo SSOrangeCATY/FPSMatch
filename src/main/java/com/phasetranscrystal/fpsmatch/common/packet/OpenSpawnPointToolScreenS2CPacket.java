@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.packet;
 
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,11 +38,11 @@ public record OpenSpawnPointToolScreenS2CPacket(
                 readStringList(buf),
                 buf.readUtf(),
                 buf.readVarInt(),
-                buf.readJsonWithCodec(SpawnPointData.CODEC.listOf())
+                buf.readLenientJsonWithCodec(SpawnPointData.CODEC.listOf())
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 

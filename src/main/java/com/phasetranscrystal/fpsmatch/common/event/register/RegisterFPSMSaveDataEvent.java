@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.event.register;
 
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 /**
  * 注册 FPSMatch 可保存数据类型的事件。

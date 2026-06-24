@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.mixin.compat.spectate.tacz;
 
-import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorSyncNetwork;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.tacz.guns.client.gameplay.LocalPlayerInspect;
 import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorInspectPackets.C2SStartInspectPacket;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,6 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinLocalPlayerInspectSync {
     @Inject(method = "inspect", at = @At("HEAD"))
     private void fpsmatch$syncInspect(CallbackInfo ci) {
-        SpectatorSyncNetwork.CHANNEL.sendToServer(new C2SStartInspectPacket());
+        FPSMatch.sendToServer(new C2SStartInspectPacket());
     }
 }

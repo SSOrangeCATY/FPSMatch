@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.common.client.shop;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,7 +9,7 @@ public class ClientShopSlot{
     private ItemStack itemStack;
     private int cost;
     @Nullable
-    private ResourceLocation texture = null;
+    private Identifier texture = null;
     private int boughtCount = 0;
     private boolean locked = false;
     private int groupId = -1;
@@ -35,7 +35,7 @@ public class ClientShopSlot{
         return cost;
     }
 
-    public ResourceLocation texture(){
+    public Identifier texture(){
         return texture;
     }
 
@@ -66,7 +66,7 @@ public class ClientShopSlot{
         this.cost = cost;
     }
 
-    public void setTexture(@Nullable ResourceLocation hudTexture) {
+    public void setTexture(@Nullable Identifier hudTexture) {
         this.texture = hudTexture;
     }
 

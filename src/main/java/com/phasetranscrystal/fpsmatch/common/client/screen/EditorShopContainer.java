@@ -6,18 +6,17 @@ import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -33,7 +32,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     private final String gameType;
     private final String mapName;
     private final String teamName;
-    private final ItemStackHandler itemStackHandler;
+    private final SimpleContainer itemContainer;
     private int totalIndex;
     private final Map<String, TypeInfo> types = new LinkedHashMap<>();
     private final List<ShopSlot> allShopSlots;
@@ -59,7 +58,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
             if (cols < slotCount) cols = slotCount;
         }
         this.totalIndex = total;
-        this.itemStackHandler = new ItemStackHandler(total);
+        this.itemContainer = new SimpleContainer(total);
         this.allShopSlots = new ArrayList<>(total);
         for (int i = 0; i < total; i++) {
             this.allShopSlots.add(null);
@@ -79,22 +78,22 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 if (shopSlot != null) {
                     this.allShopSlots.set(slotIndex, shopSlot);
                 }
-                SlotItemHandler customSlot = new SlotItemHandler(
-                        itemStackHandler,
+                Slot customSlot = new Slot(
+                        itemContainer,
                         slotIndex,
                         start + col * slotSpan,
                         start + row * (SLOT_SIZE + d)
                 );
                 this.addSlot(customSlot);
                 if (!slotItem.isEmpty()) {
-                    itemStackHandler.setStackInSlot(slotIndex, slotItem);
+                    itemContainer.setItem(slotIndex, slotItem);
                 }
             }
         }
     }
 
     // Client-side constructor
-    public EditorShopContainer(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
+    public EditorShopContainer(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         super(VanillaGuiRegister.EDITOR_SHOP_CONTAINER.get(), containerId);
         this.gameType = buf.readUtf(ID_MAX_LENGTH);
         this.mapName = buf.readUtf(ID_MAX_LENGTH);
@@ -111,7 +110,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
             if (cols < slotCount) cols = slotCount;
         }
         this.totalIndex = total;
-        this.itemStackHandler = new ItemStackHandler(total);
+        this.itemContainer = new SimpleContainer(total);
         this.allShopSlots = new ArrayList<>(total);
         for (int i = 0; i < total; i++) {
             this.allShopSlots.add(null);
@@ -125,7 +124,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
             int slotCount = types.get(type).slotCount();
             for (int col = 0; col < slotCount; col++) {
                 int slotIndex = types.get(type).startIndex() + col;
-                ItemStack slotItem = buf.readItem();
+                ItemStack slotItem = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
                 String json = buf.readUtf();
                 ShopSlot shopSlot = null;
                 if (!json.isEmpty()) {
@@ -137,15 +136,15 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 if (shopSlot != null) {
                     this.allShopSlots.set(slotIndex, shopSlot);
                 }
-                SlotItemHandler customSlot = new SlotItemHandler(
-                        itemStackHandler,
+                Slot customSlot = new Slot(
+                        itemContainer,
                         slotIndex,
                         start + col * slotSpan,
                         start + row * (SLOT_SIZE + d)
                 );
                 this.addSlot(customSlot);
                 if (!slotItem.isEmpty()) {
-                    itemStackHandler.setStackInSlot(slotIndex, slotItem);
+                    itemContainer.setItem(slotIndex, slotItem);
                 }
             }
         }
@@ -159,8 +158,8 @@ public class EditorShopContainer extends AbstractContainerMenu {
         return totalIndex;
     }
 
-    public ItemStackHandler getItemStackHandler() {
-        return itemStackHandler;
+    public SimpleContainer getItemContainer() {
+        return itemContainer;
     }
 
     public int getCols() {
@@ -228,7 +227,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
     }
 
     @Override
-    public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
+    public void clicked(int slotIndex, int button, @NotNull ContainerInput containerInput, @NotNull Player player) {
         boolean isCustomContainer = slotIndex >= 0 && slotIndex < this.totalIndex;
         if (isCustomContainer) {
             ShopSlot targetShopSlot = getShopSlot(slotIndex);
@@ -238,7 +237,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
             }
             return;
         }
-        super.clicked(slotIndex, button, clickType, player);
+        super.clicked(slotIndex, button, containerInput, player);
     }
 
     @Override
@@ -255,7 +254,7 @@ public class EditorShopContainer extends AbstractContainerMenu {
             return;
         }
         if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openScreen(serverPlayer,
+            serverPlayer.openMenu(
                     new SimpleMenuProvider(
                             (windowId, inv, p) -> new EditShopSlotMenu(windowId, inv, shopSlot, gameType, mapName, teamName, slotRef.type(), slotRef.slotNum()),
                             Component.translatable("gui.fpsm.edit_shop_slot.title")

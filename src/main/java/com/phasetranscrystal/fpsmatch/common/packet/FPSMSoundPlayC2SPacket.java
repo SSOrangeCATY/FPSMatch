@@ -3,32 +3,32 @@ package com.phasetranscrystal.fpsmatch.common.packet;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
 public class FPSMSoundPlayC2SPacket {
-    ResourceLocation location;
+    Identifier location;
     boolean playToTeam;
 
-    public FPSMSoundPlayC2SPacket(ResourceLocation location, boolean playToTeam) {
+    public FPSMSoundPlayC2SPacket(Identifier location, boolean playToTeam) {
         this.location = location;
         this.playToTeam = playToTeam;
     }
 
     public static void encode(FPSMSoundPlayC2SPacket packet, FriendlyByteBuf buf) {
-        buf.writeResourceLocation(packet.location);
+        buf.writeIdentifier(packet.location);
         buf.writeBoolean(packet.playToTeam);
     }
 
     public static FPSMSoundPlayC2SPacket decode(FriendlyByteBuf buf) {
-        return new FPSMSoundPlayC2SPacket(buf.readResourceLocation(), buf.readBoolean());
+        return new FPSMSoundPlayC2SPacket(buf.readIdentifier(), buf.readBoolean());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(()-> {
             ServerPlayer player = ctx.get().getSender();
             if(player == null) return;
@@ -42,7 +42,7 @@ public class FPSMSoundPlayC2SPacket {
                     map.sendPacketToAllPlayer(packet);
                 }
             },()->{
-                MinecraftServer server = player.getServer();
+                MinecraftServer server = player.level().getServer();
                 if(server == null) return;
                 server.getPlayerList().getPlayers().forEach(
                         p->{

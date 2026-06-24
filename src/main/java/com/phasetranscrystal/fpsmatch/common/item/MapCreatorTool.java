@@ -13,16 +13,18 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.function.Consumer;
 
 public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
     public static final String BLOCK_POS_TAG_1 = "BlockPos1";
@@ -51,7 +53,7 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
                     return;
                 }
                 setBlockPos(stack, BLOCK_POS_TAG_1, clickedPos);
-                player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.set_pos1", formatPos(clickedPos))
+                player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.set_pos1", formatPos(clickedPos))
                         .withStyle(ChatFormatting.AQUA), true);
             }
             case RIGHT_CLICK_BLOCK -> {
@@ -59,7 +61,7 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
                     return;
                 }
                 setBlockPos(stack, BLOCK_POS_TAG_2, clickedPos);
-                player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.set_pos2", formatPos(clickedPos))
+                player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.set_pos2", formatPos(clickedPos))
                         .withStyle(ChatFormatting.AQUA), true);
             }
             case CTRL_RIGHT_CLICK -> FPSMatch.sendToPlayer(player,
@@ -81,7 +83,7 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
                 + "|" + draftMapName
                 + "|" + pos1.asLong()
                 + "|" + pos2.asLong();
-        String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG);
+        String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG).orElse("");
         if (signature.equals(previousSignature) && player.tickCount % HELD_PREVIEW_REFRESH_INTERVAL != 0) {
             return;
         }
@@ -113,36 +115,34 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
     }
 
     public static void setSelectedType(ItemStack stack, String selectedType) {
-        stack.getOrCreateTag().putString(TYPE_TAG, selectedType == null ? "" : selectedType);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(TYPE_TAG, selectedType == null ? "" : selectedType));
     }
 
     public static String getSelectedType(ItemStack stack) {
-        return stack.getOrCreateTag().getString(TYPE_TAG);
+        return customData(stack).getString(TYPE_TAG).orElse("");
     }
 
     public static void setDraftMapName(ItemStack stack, String draftMapName) {
-        stack.getOrCreateTag().putString(DRAFT_MAP_NAME_TAG, draftMapName == null ? "" : draftMapName);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(DRAFT_MAP_NAME_TAG, draftMapName == null ? "" : draftMapName));
     }
 
     public static String getDraftMapName(ItemStack stack) {
-        return stack.getOrCreateTag().getString(DRAFT_MAP_NAME_TAG);
+        return customData(stack).getString(DRAFT_MAP_NAME_TAG).orElse("");
     }
 
     public static void setBlockPos(ItemStack stack, String tag, @Nullable BlockPos pos) {
-        CompoundTag compoundTag = stack.getOrCreateTag();
-        if (pos == null) {
-            compoundTag.remove(tag);
-            return;
-        }
-        compoundTag.putLong(tag, pos.asLong());
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, compoundTag -> {
+            if (pos == null) {
+                compoundTag.remove(tag);
+            } else {
+                compoundTag.putLong(tag, pos.asLong());
+            }
+        });
     }
 
     public static @Nullable BlockPos getBlockPos(ItemStack stack, String tag) {
-        CompoundTag compoundTag = stack.getOrCreateTag();
-        if (!compoundTag.contains(tag, Tag.TAG_LONG)) {
-            return null;
-        }
-        return BlockPos.of(compoundTag.getLong(tag));
+        CompoundTag compoundTag = customData(stack);
+        return compoundTag.getLong(tag).map(BlockPos::of).orElse(null);
     }
 
     public static String formatPos(@Nullable BlockPos pos) {
@@ -150,28 +150,28 @@ public class MapCreatorTool extends CreatorToolItem implements WorldToolItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
-        super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.type")
+    public void appendHoverText(ItemStack pStack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag pIsAdvanced) {
+        super.appendHoverText(pStack, context, display, tooltip, pIsAdvanced);
+        tooltip.accept(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.selected.type")
                 .append(": ")
                 .append(Component.literal(getSelectedType(pStack).isBlank()
                         ? Component.translatable("tooltip.fpsm.none").getString()
                         : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.name")
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.selected.name")
                 .append(": ")
                 .append(Component.literal(getDraftMapName(pStack).isBlank()
                         ? Component.translatable("tooltip.fpsm.none").getString()
                         : getDraftMapName(pStack)).withStyle(ChatFormatting.GREEN)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.pos1")
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.selected.pos1")
                 .append(": ")
                 .append(Component.literal(formatPos(getBlockPos(pStack, BLOCK_POS_TAG_1))).withStyle(ChatFormatting.YELLOW)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.selected.pos2")
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.selected.pos2")
                 .append(": ")
                 .append(Component.literal(formatPos(getBlockPos(pStack, BLOCK_POS_TAG_2))).withStyle(ChatFormatting.YELLOW)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.left_click"));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.right_click"));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.map_creator.ctrl_right_click"));
+        tooltip.accept(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.left_click"));
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.right_click"));
+        tooltip.accept(Component.translatable("tooltip.fpsm.map_creator.ctrl_right_click"));
     }
 }

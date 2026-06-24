@@ -4,7 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -41,15 +41,15 @@ public class FPSMMapInvitationScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        extractBackground(graphics, mouseX, mouseY, partialTick);
         int left = width / 2 - PANEL_WIDTH / 2;
         int top = height / 2 - PANEL_HEIGHT / 2;
         graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xDD101820);
-        graphics.drawCenteredString(font, title, width / 2, top + 14, 0xFFFFFFFF);
-        graphics.drawCenteredString(font, invitation.message(), width / 2, top + 42, 0xFFE6F2FF);
-        graphics.drawCenteredString(font, Component.literal(invitation.gameType() + " / " + invitation.mapName()), width / 2, top + 58, 0xFFB8D4E3);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        graphics.centeredText(font, title, width / 2, top + 14, 0xFFFFFFFF);
+        graphics.centeredText(font, invitation.message(), width / 2, top + 42, 0xFFE6F2FF);
+        graphics.centeredText(font, Component.literal(invitation.gameType() + " / " + invitation.mapName()), width / 2, top + 58, 0xFFB8D4E3);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -65,11 +65,11 @@ public class FPSMMapInvitationScreen extends Screen {
     private void accept() {
         FPSMClient.getGlobalData().clearMapRoomInvitation();
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.ACCEPT_INVITE, invitation.gameType(), invitation.mapName(), new UUID(0L, 0L)));
-        minecraft.setScreen(parent);
+        minecraft.gui.setScreen(parent);
     }
 
     private void reject() {
         FPSMClient.getGlobalData().clearMapRoomInvitation();
-        minecraft.setScreen(parent);
+        minecraft.gui.setScreen(parent);
     }
 }

@@ -5,14 +5,14 @@ import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
+@net.neoforged.fml.common.EventBusSubscriber
 public class TeamSwitchRestrictionCapability extends TeamCapability {
 
     private final List<UUID> unableToSwitchPlayers = new ArrayList<>();
@@ -29,7 +29,7 @@ public class TeamSwitchRestrictionCapability extends TeamCapability {
             t.getCapabilityMap().get(TeamSwitchRestrictionCapability.class)
                     .ifPresent(cap->{
                         if(cap.isUnableToSwitch(playerUUID)){
-                            player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), t.getPlayerTeam());
+                            player.level().getScoreboard().addPlayerToTeam(player.getScoreboardName(), t.getPlayerTeam());
                             cap.removeUnableToSwitchPlayer(playerUUID);
                         };
                     });

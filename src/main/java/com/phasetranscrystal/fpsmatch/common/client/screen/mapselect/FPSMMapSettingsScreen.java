@@ -4,10 +4,13 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSettingsC2SPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
@@ -84,18 +87,17 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     @Override
     public void tick() {
         super.tick();
-        valueFields.forEach(EditBox::tick);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        extractBackground(graphics, mouseX, mouseY, partialTick);
         renderMultiLayerBackground(graphics);
 
-        // 标题
-        graphics.drawCenteredString(font, title, width / 2, 12, 0xFFFFFFFF);
+        // 鏍囬
+        graphics.centeredText(font, title, width / 2, 12, 0xFFFFFFFF);
         if (detail != null) {
-            graphics.drawCenteredString(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 26, 0xFFB8D4E3);
+            graphics.centeredText(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 26, 0xFFB8D4E3);
         }
 
         int contentHeight = height - LIST_TOP - 62;
@@ -103,7 +105,6 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
 
-        // 内容区背景
         int left = width / 2 - 210;
         int right = width / 2 + 210;
         int panelTop = LIST_TOP - 2;
@@ -112,10 +113,10 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         graphics.fill(left - 6, panelTop, right + 6, panelTop + 1, 0xFF666666);
         graphics.fill(left - 6, panelBottom - 1, right + 6, panelBottom, 0xFF666666);
 
-        // 裁剪区域
+        // 瑁佸壀鍖哄煙
         graphics.enableScissor(left - 8, panelTop + 2, right + 8, panelBottom - 2);
 
-        // 重定位所有组件并渲染标签
+        // 閲嶅畾浣嶆墍鏈夌粍浠跺苟娓叉煋鏍囩
         for (int i = 0; i < Math.min(valueFields.size(), detail.settings().size()); i++) {
             int targetY = rowBaseY.get(i) - scrollOffset * ROW_HEIGHT;
             boolean visible = targetY + ROW_HEIGHT > panelTop && targetY < panelBottom;
@@ -130,27 +131,26 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
 
             MapRoomSettingInfo setting = detail.settings().get(i);
             Component settingName = Component.translatable(setting.translationKey());
-            graphics.drawString(font, settingName, left, targetY + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 10, 0xFFB8D4E3, false);
+            graphics.text(font, settingName, left, targetY + 10, setting.editable() ? 0xFFE6F2FF : 0xFF8F9AA3, false);
+            graphics.text(font, Component.translatable("gui.fpsm.map_select.setting.default", setting.defaultValue()), left + 82, targetY + 10, 0xFFB8D4E3, false);
 
-            // 悬浮提示
+            // 鎮诞鎻愮ず
             if (mouseX >= left - 2 && mouseX <= left + 80 && mouseY >= targetY && mouseY <= targetY + ROW_HEIGHT) {
-                graphics.renderTooltip(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
+                graphics.setTooltipForNextFrame(font, Component.translatable(setting.translationKey() + ".desc"), mouseX, mouseY);
             }
         }
         graphics.disableScissor();
 
-        // 滚动条
         renderScrollBar(graphics, right, panelTop + 2, panelBottom - panelTop - 4, scrollOffset, maxScroll, detail.settings().size(), visibleRows);
 
         if (detail.settings().isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
+            graphics.centeredText(font, Component.translatable("gui.fpsm.map_select.settings.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
         }
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderMultiLayerBackground(GuiGraphics guiGraphics) {
+    private void renderMultiLayerBackground(GuiGraphicsExtractor guiGraphics) {
         guiGraphics.fill(2, 2, width + 2, height + 2, GUI_SHADOW_COLOR);
         guiGraphics.fill(0, 0, width, 1, GUI_OUTER_BORDER);
         guiGraphics.fill(0, height - 1, width, height, GUI_OUTER_BORDER);
@@ -163,7 +163,7 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         guiGraphics.fill(width - 1 - GUI_PADDING - 1, 1 + GUI_PADDING + 1, width - 1 - GUI_PADDING, height - 1 - GUI_PADDING - 1, GUI_INNER_BORDER);
     }
 
-    private void renderScrollBar(GuiGraphics graphics, int barX, int barY, int barHeight, int scroll, int maxScroll, int totalItems, int visibleItems) {
+    private void renderScrollBar(GuiGraphicsExtractor graphics, int barX, int barY, int barHeight, int scroll, int maxScroll, int totalItems, int visibleItems) {
         if (maxScroll <= 0) return;
         int barWidth = 4;
         graphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0x33000000);
@@ -173,7 +173,7 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         int contentHeight = height - LIST_TOP - 62;
         int visibleRows = Math.max(1, contentHeight / ROW_HEIGHT);
         int maxScroll = Math.max(0, detail.settings().size() - visibleRows);
@@ -183,35 +183,34 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         for (EditBox field : valueFields) {
-            if (field.keyPressed(keyCode, scanCode, modifiers)) {
+            if (field.keyPressed(event)) {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char codePoint, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
         for (EditBox field : valueFields) {
-            if (field.charTyped(codePoint, modifiers)) {
+            if (field.charTyped(event)) {
                 return true;
             }
         }
-        return super.charTyped(codePoint, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 将滚动后偏移的点击位置映射回组件实际位置
-        // 由于 setY 已经更新了组件位置，super 会正确路由点击
-        return super.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // 灏嗘粴鍔ㄥ悗鍋忕Щ鐨勭偣鍑讳綅缃槧灏勫洖缁勪欢瀹為檯浣嶇疆
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        minecraft.gui.setScreen(parent);
     }
 
     @Override

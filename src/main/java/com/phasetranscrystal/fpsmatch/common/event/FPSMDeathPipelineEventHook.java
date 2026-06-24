@@ -12,19 +12,21 @@ import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -34,34 +36,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 对局内伤害/击杀/死亡代理管线。
- * <p>
- * 核心约束：
- * <ul>
- *     <li>对局内所有击杀<strong>不实际触发原版死亡结算</strong>。</li>
- *     <li>原版 {@link LivingDeathEvent} 在对局中会被取消，由本管线代理后续结算。</li>
- *     <li>结算入口统一收敛到 {@link #finalizeDeath(BaseMap, DeathContext)}。</li>
- *     <li>枪械特有信息（爆头、子弹实体等）通过 {@link EntityKillByGunEvent} 进行延迟补全。</li>
+ * 鐎电懓鐪崘鍛縺鐎?閸戠粯娼?濮濊楠告禒锝囨倞缁狅紕鍤庨妴? * <p>
+ * 閺嶇ǹ绺剧痪锔芥将閿? * <ul>
+ *     <li>鐎电懓鐪崘鍛閺堝鍤弶鈧?strong>娑撳秴鐤勯梽鍛靶曢崣鎴濆斧閻楀牊顒存禍锛勭波缁?/strong>閵?/li>
+ *     <li>閸樼喓澧?{@link LivingDeathEvent} 閸︺劌顕仦鈧稉顓濈窗鐞氼偄褰囧☉鍫礉閻㈣鲸婀扮粻锛勫殠娴狅絿鎮婇崥搴ｇ敾缂佹挾鐣婚妴?/li>
+ *     <li>缂佹挾鐣婚崗銉ュ經缂佺喍绔撮弨鑸垫殐閸?{@link #finalizeDeath(BaseMap, DeathContext)}閵?/li>
+ *     <li>閺嬵亝顫悧瑙勬箒娣団剝浼呴敍鍫㈠瀻婢舵番鈧礁鐡欏鐟扮杽娴ｆ挾鐡戦敍澶愨偓姘崇箖 {@link EntityKillByGunEvent} 鏉╂稖顢戝鎯扮箿鐞涖儱鍙忛妴?/li>
  * </ul>
- * 因此，玩家在对局内“被击杀”语义上是由管线驱动的状态迁移，而不是原版死亡流程。
- */
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+ * 閸ョ姵顒濋敍宀?甯虹?硅泛婀?电懓鐪崘鍛偓婊嗩潶閸戠粯娼冮垾婵婎嚔娑斿绗傞弰顖滄暠缁狅紕鍤庢す鍗炲З閻ㄥ嫮濮搁幀浣界讣缁変紮绱濋懓灞肩瑝閺勵垰甯悧鍫燁劥娴溾剝绁︾粙瀣ㄢ偓? */
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMDeathPipelineEventHook {
 
 
     /**
-     * 本 tick 内被代理死亡的玩家 UUID（用于补全枪械击杀事件判定）。
-     */
+     * 閺?tick 閸愬懓顫︽禒锝囨倞濮濊楠搁惃鍕负鐎?UUID閿涘牏鏁ゆ禍搴に夐崗銊︾仚濮婃澘鍤弶鈧禍瀣╂閸掋倕鐣鹃敍澶堚偓?     */
     private static final Set<UUID> RECENTLY_KILLED = new HashSet<>();
 
     /**
-     * 本 tick END 需要结算的死亡上下文
-     */
+     * 閺?tick END 闂団偓鐟曚胶绮ㄧ粻妤冩畱濮濊楠告稉濠佺瑓閺?     */
     private static final ConcurrentHashMap<UUID, PendingDeath> readyDeaths = new ConcurrentHashMap<>();
 
     /**
-     * 暂存的枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发，需要暂存）
-     */
+     * 閺嗗倸鐡ㄩ惃鍕仚濮婃澘鍤弶鈧拠锔藉剰閿涘湕ntityKillByGunEvent 閸?LivingDeathEvent 娑斿澧犵憴锕?褰傞敍宀勬付鐟曚焦娈忕?涙﹫绱?     */
     private static final ConcurrentHashMap<UUID, GunKillDetail> pendingGunKills = new ConcurrentHashMap<>();
 
     public static boolean isRecentlyKilled(UUID uuid) {
@@ -69,14 +65,13 @@ public class FPSMDeathPipelineEventHook {
     }
 
     /**
-     * 伤害入口：
-     * <ul>
-     *     <li>先转发为 {@link FPSMapEvent.PlayerEvent.HurtEvent} 供模式层改写/取消。</li>
-     *     <li>最终伤害值落定后，调用 {@link BaseMap#recordHurtData(ServerPlayer, net.minecraft.world.damagesource.DamageSource, float)} 记录伤害明细。</li>
+     * 娴笺倕顔婇崗銉ュ經閿?     * <ul>
+     *     <li>閸忓牐娴嗛崣鎴滆礋 {@link FPSMapEvent.PlayerEvent.HurtEvent} 娓氭稒膩瀵繐鐪伴弨鐟板晸/閸欐牗绉烽妴?/li>
+     *     <li>閺堚偓缂佸牅婵?鐎瑰啿鈧壈鎯ょ?规艾鎮楅敍宀冪殶閻?{@link BaseMap#recordHurtData(ServerPlayer, net.minecraft.world.damagesource.DamageSource, float)} 鐠佹澘缍嶆导銈咁唺閺勫海绮忛妴?/li>
      * </ul>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerHurt(LivingHurtEvent event) {
+    public static void onPlayerHurt(LivingIncomingDamageEvent event) {
         if (event.getEntity() instanceof ServerPlayer hurt) {
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(hurt);
             if (opt.isEmpty()) return;
@@ -84,7 +79,7 @@ public class FPSMDeathPipelineEventHook {
             if (map.isStart()) {
                 FPSMapEvent.PlayerEvent.HurtEvent hurtEvent = new FPSMapEvent.PlayerEvent.HurtEvent(map, hurt, event.getSource(), event.getAmount());
 
-                if (MinecraftForge.EVENT_BUS.post(hurtEvent)) {
+                if (NeoForge.EVENT_BUS.post(hurtEvent).isCanceled()) {
                     event.setCanceled(true);
                     return;
                 }
@@ -102,11 +97,10 @@ public class FPSMDeathPipelineEventHook {
     }
 
     /**
-     * 死亡入口（代理原版死亡）：
-     * <ul>
-     *     <li>构建 {@link DeathContext} 并放入待结算缓存。</li>
-     *     <li>将结算推迟 1 tick，等待枪械事件补全更多击杀细节。</li>
-     *     <li>取消原版死亡事件，避免原版直接处理死亡。</li>
+     * 濮濊楠搁崗銉ュ經閿涘牅鍞悶鍡楀斧閻楀牊顒存禍鈽呯礆閿?     * <ul>
+     *     <li>閺嬪嫬缂?{@link DeathContext} 楠炶埖鏂侀崗銉ョ窡缂佹挾鐣荤紓鎾崇摠閵?/li>
+     *     <li>鐏忓棛绮ㄧ粻妤佸腹鏉?1 tick閿涘瞼鐡戝鍛仚濮婇绨ㄦ禒鎯八夐崗銊︽纯婢舵艾鍤弶鈧紒鍡氬Ν閵?/li>
+     *     <li>閸欐牗绉烽崢鐔哄濮濊楠告禍瀣╂閿涘矂浼╅崗宥呭斧閻楀牏娲块幒銉ヮ槱閻炲棙顒存禍掳鈧?/li>
      * </ul>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
@@ -117,13 +111,13 @@ public class FPSMDeathPipelineEventHook {
 
             BaseMap map = opt.get();
             if (map.isStart()) {
-                // 对局内击杀/死亡统一由管线代理结算，阻止原版死亡落地
+                // 鐎电懓鐪崘鍛毊閺夆偓/濮濊楠哥紒鐔剁閻㈣京顓哥痪澶稿敩閻炲棛绮ㄧ粻妤嬬礉闂冪粯顒涢崢鐔哄濮濊楠搁拃钘夋勾
                 event.setCanceled(true);
                 player.setHealth(player.getMaxHealth());
                 RECENTLY_KILLED.add(player.getUUID());
 
                 FPSMapEvent.PlayerEvent.DeathEvent deathEvent = new FPSMapEvent.PlayerEvent.DeathEvent(map, player, event.getSource());
-                MinecraftForge.EVENT_BUS.post(deathEvent);
+                NeoForge.EVENT_BUS.post(deathEvent);
                 if (deathEvent.isCanceled()) {
                     return;
                 }
@@ -131,23 +125,22 @@ public class FPSMDeathPipelineEventHook {
                 Optional<ServerPlayer> optional = deathEvent.getAttacker();
                 ServerPlayer attacker = optional.orElse(null);
                 ItemStack deathItem = map.resolveDeathItem(attacker, deathEvent.getSource());
-                DeathContext context = new DeathContext(player, attacker, deathEvent.getSource(), deathItem, player.serverLevel().getGameTime());
+                DeathContext context = new DeathContext(player, attacker, deathEvent.getSource(), deathItem, ((ServerLevel) player.level()).getGameTime());
 
                 readyDeaths.put(player.getUUID(), new PendingDeath(map, context));
             }
         }
-        if(event.getEntity() instanceof Player player && player.level().isClientSide){
+        if(event.getEntity() instanceof Player player && player.level().isClientSide()){
             if (FPSMCore.getInstance().getMapByPlayer(player).isEmpty()) return;
             event.setCanceled(true);
         }
     }
 
     /**
-     * 枪械击杀补全入口：
-     * <ul>
-     *     <li>该事件并非所有死亡都会触发（仅枪击路径）。</li>
-     *     <li>用于补全 {@link DeathContext} 的枪械细节：爆头标记、子弹实体、攻击者信息。</li>
-     *     <li>不在此处直接做最终统计，统计统一在 finalize 阶段执行。</li>
+     * 閺嬵亝顫崙缁樻絻鐞涖儱鍙忛崗銉ュ經閿?     * <ul>
+     *     <li>鐠囥儰绨ㄦ禒璺鸿嫙闂堢偞澧嶉張澶嬵劥娴滐繝鍏樻导姘承曢崣鎴礄娴犲懏鐏欓崙鏄忕熅瀵板嫸绱氶妴?/li>
+     *     <li>閻€劋绨悰銉ュ弿 {@link DeathContext} 閻ㄥ嫭鐏欏鎵矎閼哄偊绱伴悥鍡椼仈閺嶅洩顔囬妴浣哥摍瀵懓鐤勬担鎾扁偓浣规暰閸戞槒鈧懍淇婇幁顖樷偓?/li>
+     *     <li>娑撳秴婀銈咁槱閻╁瓨甯撮崑姘付缂佸牏绮虹拋鈽呯礉缂佺喕顓哥紒鐔剁閸?finalize 闂冭埖顔岄幍褑顢戦妴?/li>
      * </ul>
      */
     @SubscribeEvent
@@ -181,8 +174,7 @@ public class FPSMDeathPipelineEventHook {
         }
         pendingGunKills.put(deadPlayer.getUUID(), detail);
 
-        // 兜底：如果 LivingDeathEvent 未到达 FPSM（例如被 TACZ 或其他模组提前取消），
-        // 确保死者进入 readyDeaths，否则 death 结算管线不会执行 CSGameMap.handleDeath()
+        // 閸忔粌绨抽敍姘洤閺?LivingDeathEvent 閺堫亜鍩屾潏?FPSM閿涘牅绶ユ俊鍌濐潶 TACZ 閹存牕鍙炬禒鏍佺紒鍕絹閸撳秴褰囧☉鍫礆閿?        // 绾喕绻氬鏄忊偓鍛扮箻閸?readyDeaths閿涘苯鎯侀崚?death 缂佹挾鐣荤粻锛勫殠娑撳秳绱伴幍褑顢?BaseMap.handleDeath()
         final GunKillDetail finalDetail = detail;
         readyDeaths.computeIfAbsent(deadPlayer.getUUID(), uuid -> {
             deadPlayer.setHealth(deadPlayer.getMaxHealth());
@@ -194,23 +186,17 @@ public class FPSMDeathPipelineEventHook {
                     attacker,
                     source,
                     finalDetail.deathItem(),
-                    deadPlayer.serverLevel().getGameTime()
+                    ((ServerLevel) deadPlayer.level()).getGameTime()
             );
             return new PendingDeath(map, context);
         });
     }
 
     /**
-     * Tick 驱动的延迟结算器。
-     * <p>
-     * 在 END 阶段推进 tick，并将到期的死亡上下文送入统一结算方法。
-     */
+     * Tick 妞瑰崬濮╅惃鍕鏉╃喓绮ㄧ粻妤?娅掗妴?     * <p>
+     * 閸?END 闂冭埖顔岄幒銊ㄧ箻 tick閿涘苯鑻熺亸鍡楀煂閺堢喓娈戝璁抽娑撳﹣绗呴弬鍥偓浣稿弳缂佺喍绔寸紒鎾剁暬閺傝纭堕妴?     */
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-
+    public static void onServerTick(ServerTickEvent.Post event) {
         if (readyDeaths.isEmpty() && pendingGunKills.isEmpty()) return;
         readyDeaths.forEach((uuid, pending) -> finalizeDeath(pending.map(), pending.context()));
         readyDeaths.clear();
@@ -219,23 +205,20 @@ public class FPSMDeathPipelineEventHook {
     }
 
     /**
-     * 对局内死亡统一结算点。
-     * <p>
-     * 顺序：
-     * <ol>
-     *     <li>调用 {@link BaseMap#handleDeath(DeathContext)} 写入地图/模式死亡状态。</li>
-     *     <li>计算击杀、爆头击杀、助攻统计。</li>
-     *     <li>发布 {@link FPSMapEvent.PlayerEvent.KillEvent}。</li>
-     *     <li>发送重生信号包。</li>
+     * 鐎电懓鐪崘鍛劥娴滐紕绮烘稉鈧紒鎾剁暬閻愬箍鈧?     * <p>
+     * 妞ゅ搫绨敍?     * <ol>
+     *     <li>鐠嬪啰鏁?{@link BaseMap#handleDeath(DeathContext)} 閸愭瑥鍙嗛崷鏉挎禈/濡?崇础濮濊楠搁悩鑸碘偓浣碘偓?/li>
+     *     <li>鐠侊紕鐣婚崙缁樻絻閵嗕胶鍨庢径鏉戝毊閺夆偓閵嗕礁濮弨鑽ょ埠鐠伮扳偓?/li>
+     *     <li>閸欐垵绔?{@link FPSMapEvent.PlayerEvent.KillEvent}閵?/li>
+     *     <li>閸欐垿鈧線鍣搁悽鐔朵繆閸欏嘲瀵橀妴?/li>
      * </ol>
      * <p>
-     * 注意：这是“代理死亡”最终落点；对局内不依赖原版死亡流程完成上述逻辑。
-     */
+     * 濞夈劍鍓伴敍姘崇箹閺勵垪鈧粈鍞悶鍡橆劥娴溾檧鈧繃娓剁紒鍫ｆ儰閻愮櫢绱辩?电懓鐪崘鍛瑝娓氭繆绂嗛崢鐔哄濮濊楠稿ù浣衡柤鐎瑰本鍨氭稉濠呭牚闁槒绶妴?     */
     private static void finalizeDeath(BaseMap map, DeathContext context) {
         ServerPlayer player = context.getDeadPlayer();
         MapTeams mapTeams = map.getMapTeams();
 
-        // 补全枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发）
+        // 鐞涖儱鍙忛弸顏咁潾閸戠粯娼冪拠锔藉剰閿涘湕ntityKillByGunEvent 閸?LivingDeathEvent 娑斿澧犵憴锕?褰傞敍?        GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
         GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
         if (gunKill != null) {
             context.setGunKill(true);
@@ -257,7 +240,7 @@ public class FPSMDeathPipelineEventHook {
         if (killer != null) {
             boolean enemyKill = !mapTeams.isSameTeam(player, killer);
             if (enemyKill) {
-                if (!MinecraftForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.KillRecordEvent(map, killer, player, context.getDamageSource()))) {
+                if (!NeoForge.EVENT_BUS.post(new FPSMapEvent.PlayerEvent.KillRecordEvent(map, killer, player, context.getDamageSource())).isCanceled()) {
                     mapTeams.getPlayerData(killer).ifPresent(PlayerData::addKill);
                     if (context.isHeadShot()) {
                         mapTeams.getPlayerData(killer).ifPresent(PlayerData::addHeadshotKill);
@@ -272,25 +255,20 @@ public class FPSMDeathPipelineEventHook {
             });
 
             FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map, killer, player, context.getDamageSource());
-            MinecraftForge.EVENT_BUS.post(killEvent);
+            NeoForge.EVENT_BUS.post(killEvent);
         }
 
 //        FPSMatch.sendToPlayer(player, new FPSMatchRespawnS2CPacket());
     }
 
     /**
-     * 待结算死亡记录。
-     *
-     * @param map     所属地图
-     * @param context 死亡上下文（可被枪械事件补全）
-     */
+     * 瀵板懐绮ㄧ粻妤侇劥娴溌ゎ唶瑜版洏鈧?     *
+     * @param map     閹碘偓鐏炵偛婀撮崶?     * @param context 濮濊楠告稉濠佺瑓閺傚浄绱欓崣顖濐潶閺嬵亝顫禍瀣╂鐞涖儱鍙忛敍?     */
     private record PendingDeath(BaseMap map, DeathContext context) {
     }
 
     /**
-     * 暂存的枪械击杀详情（EntityKillByGunEvent 在 LivingDeathEvent 之前触发，
-     * 暂存后在 finalizeDeath 阶段补全到 DeathContext）。
-     */
+     * 閺嗗倸鐡ㄩ惃鍕仚濮婃澘鍤弶鈧拠锔藉剰閿涘湕ntityKillByGunEvent 閸?LivingDeathEvent 娑斿澧犵憴锕?褰傞敍?     * 閺嗗倸鐡ㄩ崥搴℃躬 finalizeDeath 闂冭埖顔岀悰銉ュ弿閸?DeathContext閿涘鈧?     */
     private record GunKillDetail(
             boolean isHeadShot,
             @Nullable Entity bullet,

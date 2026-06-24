@@ -5,7 +5,7 @@ import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -26,11 +26,11 @@ public record FPSMAddTeamS2CPacket(String gameType, String mapName, int color, T
                 packetBuffer.readUtf(),
                 packetBuffer.readUtf(),
                 packetBuffer.readInt(),
-                packetBuffer.readJsonWithCodec(TeamData.CODEC)
+                packetBuffer.readLenientJsonWithCodec(TeamData.CODEC)
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> supplier) {
+    public void handle(Supplier<NetworkPacketRegister.Context> supplier) {
         ClientPacketExecutor.execute(supplier, this);
     }
 }

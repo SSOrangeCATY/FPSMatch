@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.compat.gun;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
@@ -62,7 +62,7 @@ public class GunCompatManager {
     /**
      * 按 gunId 查询枪械数据，遍历所有 Provider。
      */
-    public static Optional<GunDataDTO> getGunData(ResourceLocation gunId) {
+    public static Optional<GunDataDTO> getGunData(Identifier gunId) {
         for (IGunProvider p : providers.values()) {
             Optional<GunDataDTO> data = p.getGunData(gunId);
             if (data.isPresent()) return data;

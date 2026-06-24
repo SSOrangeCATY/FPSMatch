@@ -8,11 +8,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(Player.class)
+@Mixin(value = Player.class, remap = false)
 public class PlayerHurtSelfMixin {
-    @Inject(method = "canHarmPlayer(Lnet/minecraft/world/entity/player/Player;)Z", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "canHarmPlayer(Lnet/minecraft/world/entity/player/Player;)Z", at = @At("HEAD"), cancellable = true, remap = false)
     public void canHarmPlayer(Player other, CallbackInfoReturnable<Boolean> cir) {
-        if(other.level().isClientSide) return;
+        if(other.level().isClientSide()) return;
         if(FPSMCore.getInstance().getMapByPlayer(other).isPresent()){
             if(other.is((Player)(Object)this)){
                 cir.setReturnValue(true);

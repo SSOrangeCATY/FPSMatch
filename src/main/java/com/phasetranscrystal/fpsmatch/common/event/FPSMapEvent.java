@@ -10,7 +10,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -67,11 +68,6 @@ public class FPSMapEvent extends Event {
 
         public Optional<TeamScoreSummary> getTeamSummary(ServerTeam team) {
             return getTeamSummary(team.getName());
-        }
-
-        @Override
-        public boolean isCancelable() {
-            return false;
         }
 
         private static Map<UUID, PlayerScoreSnapshot> buildScoreboardSnapshot(BaseMap map) {
@@ -165,14 +161,9 @@ public class FPSMapEvent extends Event {
             float averageHeadshotRate
     ) {}
 
-    public static class ClearEvent extends FPSMapEvent {
+    public static class ClearEvent extends FPSMapEvent implements ICancellableEvent {
         public ClearEvent(BaseMap map) {
             super(map);
-        }
-
-        @Override
-        public boolean isCancelable() {
-            return true;
         }
     }
 
@@ -182,25 +173,15 @@ public class FPSMapEvent extends Event {
         }
     }
 
-    public static class StartEvent extends FPSMapEvent {
+    public static class StartEvent extends FPSMapEvent implements ICancellableEvent {
         public StartEvent(BaseMap map) {
             super(map);
         }
-
-        @Override
-        public boolean isCancelable() {
-            return true;
-        }
     }
 
-    public static class ReloadEvent extends FPSMapEvent {
+    public static class ReloadEvent extends FPSMapEvent implements ICancellableEvent {
         public ReloadEvent(BaseMap map) {
             super(map);
-        }
-
-        @Override
-        public boolean isCancelable() {
-            return true;
         }
     }
 
@@ -227,31 +208,21 @@ public class FPSMapEvent extends Event {
             return player;
         }
 
-        public static class JoinEvent extends PlayerEvent {
+        public static class JoinEvent extends PlayerEvent implements ICancellableEvent {
 
             public JoinEvent(BaseMap map, ServerPlayer player) {
                 super(map, player);
             }
-
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
-        public static class LeaveEvent extends PlayerEvent {
+        public static class LeaveEvent extends PlayerEvent implements ICancellableEvent {
 
             public LeaveEvent(BaseMap map, ServerPlayer player) {
                 super(map, player);
             }
-
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
-        public static class HurtEvent extends PlayerEvent{
+        public static class HurtEvent extends PlayerEvent implements ICancellableEvent {
             private final DamageSource source;
             private float amount;
 
@@ -277,13 +248,9 @@ public class FPSMapEvent extends Event {
                 this.amount = amount;
             }
 
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
-        public static class DeathEvent extends PlayerEvent {
+        public static class DeathEvent extends PlayerEvent implements ICancellableEvent {
             private final DamageSource source;
 
             public DeathEvent(BaseMap map, ServerPlayer dead, DamageSource source) {
@@ -299,10 +266,6 @@ public class FPSMapEvent extends Event {
                 return getMap().getAttackerFromDamageSource(source);
             }
 
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
         public static class KillEvent extends PlayerEvent {
@@ -323,17 +286,13 @@ public class FPSMapEvent extends Event {
                 return dead;
             }
 
-            @Override
-            public boolean isCancelable() {
-                return false;
-            }
         }
 
         /**
          * 在死亡管线中、真正写入击杀统计前触发。
          * 取消该事件将阻止本次“击杀数/爆头击杀数”写入，但不影响后续 KillEvent 广播。
          */
-        public static class KillRecordEvent extends PlayerEvent {
+        public static class KillRecordEvent extends PlayerEvent implements ICancellableEvent {
             private final DamageSource source;
             private final ServerPlayer dead;
 
@@ -351,10 +310,6 @@ public class FPSMapEvent extends Event {
                 return dead;
             }
 
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
         public static class LoggedInEvent extends PlayerEvent {
@@ -366,18 +321,13 @@ public class FPSMapEvent extends Event {
         /*
         * 可以被取消，取消后不会退出队伍，需要额外处理一些逻辑来应对这个情况
         * */
-        public static class LoggedOutEvent extends PlayerEvent {
+        public static class LoggedOutEvent extends PlayerEvent implements ICancellableEvent {
             public LoggedOutEvent(BaseMap map, ServerPlayer player) {
                 super(map, player);
             }
-
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
-        public static class PickupItemEvent extends PlayerEvent {
+        public static class PickupItemEvent extends PlayerEvent implements ICancellableEvent {
             private final ItemEntity itemEntity;
             private final ItemStack stack;
 
@@ -395,13 +345,9 @@ public class FPSMapEvent extends Event {
                 return stack;
             }
 
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
-        public static class TossItemEvent extends PlayerEvent {
+        public static class TossItemEvent extends PlayerEvent implements ICancellableEvent {
             private final ItemEntity item;
             public TossItemEvent(BaseMap map, ServerPlayer player, ItemEntity item) {
                 super(map, player);
@@ -412,13 +358,9 @@ public class FPSMapEvent extends Event {
                 return item;
             }
 
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
 
-        public static class ChatEvent extends PlayerEvent {
+        public static class ChatEvent extends PlayerEvent implements ICancellableEvent {
             private final String message;
 
             public ChatEvent(BaseMap map, ServerPlayer player,String message) {
@@ -430,10 +372,6 @@ public class FPSMapEvent extends Event {
                 return message;
             }
 
-            @Override
-            public boolean isCancelable() {
-                return true;
-            }
         }
     }
 }

@@ -4,7 +4,7 @@ import com.phasetranscrystal.fpsmatch.common.client.screen.EditShopSlotMenu;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -42,7 +42,7 @@ public class SaveSlotDataC2SPacket {
     }
 
     // 处理包的逻辑（在服务端执行）
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();  // 获取当前玩家
             if (player != null && player.containerMenu instanceof EditShopSlotMenu menu) {

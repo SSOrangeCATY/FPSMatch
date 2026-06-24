@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 /**
  * FPSMatch 枪械射击事件（替代 TACZ GunShootEvent）。

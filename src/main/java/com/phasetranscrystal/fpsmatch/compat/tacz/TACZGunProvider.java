@@ -5,7 +5,7 @@ import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.resource.index.CommonGunIndex;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class TACZGunProvider implements IGunProvider {
 
     @Override
     public boolean isAvailable() {
-        return net.minecraftforge.fml.ModList.get().isLoaded(MOD_ID);
+        return net.neoforged.fml.ModList.get().isLoaded(MOD_ID);
     }
 
     // ========== 枪械识别 ==========
@@ -36,9 +36,9 @@ public class TACZGunProvider implements IGunProvider {
     }
 
     @Override
-    public ResourceLocation getGunId(ItemStack stack) {
+    public Identifier getGunId(ItemStack stack) {
         IGun iGun = IGun.getIGunOrNull(stack);
-        return iGun != null ? iGun.getGunId(stack) : new ResourceLocation("empty", "empty");
+        return iGun != null ? iGun.getGunId(stack) : Identifier.fromNamespaceAndPath("empty", "empty");
     }
 
     @Override
@@ -48,7 +48,7 @@ public class TACZGunProvider implements IGunProvider {
         return getGunTypeByGunId(iGun.getGunId(stack)).orElse(GunTabTypeEnum.RIFLE);
     }
 
-    private Optional<GunTabTypeEnum> getGunTypeByGunId(ResourceLocation gunId) {
+    private Optional<GunTabTypeEnum> getGunTypeByGunId(Identifier gunId) {
         return TimelessAPI.getCommonGunIndex(gunId)
                 .map(CommonGunIndex::getType)
                 .map(type -> {
@@ -122,7 +122,7 @@ public class TACZGunProvider implements IGunProvider {
     }
 
     @Override
-    public Optional<GunDataDTO> getGunData(ResourceLocation gunId) {
+    public Optional<GunDataDTO> getGunData(Identifier gunId) {
         return TimelessAPI.getCommonGunIndex(gunId).map(index -> {
             int ammoAmount = index.getGunData().getAmmoAmount();
             String type = index.getType();
@@ -139,7 +139,7 @@ public class TACZGunProvider implements IGunProvider {
     // ========== 枪械 ID 设置 ==========
 
     @Override
-    public void setGunId(ItemStack stack, ResourceLocation gunId) {
+    public void setGunId(ItemStack stack, Identifier gunId) {
         IGun iGun = IGun.getIGunOrNull(stack);
         if (iGun != null) {
             iGun.setGunId(stack, gunId);
@@ -147,7 +147,7 @@ public class TACZGunProvider implements IGunProvider {
     }
 
     @Override
-    public void setGunDisplayId(ItemStack stack, ResourceLocation gunId) {
+    public void setGunDisplayId(ItemStack stack, Identifier gunId) {
         IGun iGun = IGun.getIGunOrNull(stack);
         if (iGun != null) {
             iGun.setGunDisplayId(stack, gunId);

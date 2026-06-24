@@ -8,10 +8,13 @@ import com.phasetranscrystal.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CP
 import com.phasetranscrystal.fpsmatch.common.packet.ToolInteractionC2SPacket;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -21,7 +24,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -100,15 +103,13 @@ public class MapCreatorToolScreen extends Screen {
     public void tick() {
         super.tick();
         if (this.mapNameField != null) {
-            this.mapNameField.tick();
         }
         for (EditBox field : getPosFields()) {
-            field.tick();
         }
     }
 
     @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int left = 18;
         int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
         guiGraphics.fill(0, 0, this.width, this.height, SCREEN_OVERLAY);
@@ -118,53 +119,56 @@ public class MapCreatorToolScreen extends Screen {
         guiGraphics.fill(left, top, left + 1, top + PANEL_HEIGHT, PANEL_BORDER);
         guiGraphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
 
-        guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.type"), left + 10, top + 26, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 58, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 96, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 126, 0xD0E3EA, false);
-        guiGraphics.drawString(this.font, Component.literal("X"), left + 112, top + 80, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Y"), left + 168, top + 80, 0x8FA7B3, false);
-        guiGraphics.drawString(this.font, Component.literal("Z"), left + 224, top + 80, 0x8FA7B3, false);
+        guiGraphics.text(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.map_creator.type"), left + 10, top + 26, 0xD0E3EA, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.map_creator.name"), left + 10, top + 58, 0xD0E3EA, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.map_creator.pos1"), left + 10, top + 96, 0xD0E3EA, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.map_creator.pos2"), left + 10, top + 126, 0xD0E3EA, false);
+        guiGraphics.text(this.font, Component.literal("X"), left + 112, top + 80, 0x8FA7B3, false);
+        guiGraphics.text(this.font, Component.literal("Y"), left + 168, top + 80, 0x8FA7B3, false);
+        guiGraphics.text(this.font, Component.literal("Z"), left + 224, top + 80, 0x8FA7B3, false);
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (this.mapNameField.keyPressed(keyCode, scanCode, modifiers)) return true;
+    public boolean keyPressed(KeyEvent event) {
+        if (this.mapNameField.keyPressed(event)) return true;
         for (EditBox field : getPosFields()) {
-            if (field.keyPressed(keyCode, scanCode, modifiers)) {
+            if (field.keyPressed(event)) {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char codePoint, int modifiers) {
-        if (this.mapNameField.charTyped(codePoint, modifiers)) return true;
+    public boolean charTyped(CharacterEvent event) {
+        if (this.mapNameField.charTyped(event)) return true;
         for (EditBox field : getPosFields()) {
-            if (field.charTyped(codePoint, modifiers)) {
+            if (field.charTyped(event)) {
                 return true;
             }
         }
-        return super.charTyped(codePoint, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (isInsidePanel(mouseX, mouseY)) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT && button != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         BlockPos clickedPos = pickBlockPos(mouseX, mouseY);
         if (clickedPos == null) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         boolean isPos1 = button == GLFW.GLFW_MOUSE_BUTTON_LEFT;
@@ -298,10 +302,10 @@ public class MapCreatorToolScreen extends Screen {
             return null;
         }
 
-        Camera camera = minecraft.gameRenderer.getMainCamera();
-        Vec3 eyePosition = camera.getPosition();
+        Camera camera = minecraft.gameRenderer.mainCamera();
+        Vec3 eyePosition = camera.position();
         Vec3 direction = getRayDirection(camera, mouseX, mouseY);
-        double reach = minecraft.player.getBlockReach();
+        double reach = minecraft.player.blockInteractionRange();
         BlockHitResult hitResult = minecraft.level.clip(new ClipContext(
                 eyePosition,
                 eyePosition.add(direction.scale(reach)),
@@ -323,13 +327,13 @@ public class MapCreatorToolScreen extends Screen {
         double horizontalScale = normalizedX * aspect * tanHalfFov;
         double verticalScale = normalizedY * tanHalfFov;
 
-        Vec3 look = toVec3(camera.getLookVector());
-        Vec3 up = toVec3(camera.getUpVector());
-        Vec3 left = toVec3(camera.getLeftVector());
+        Vec3 look = toVec3(camera.forwardVector());
+        Vec3 up = toVec3(camera.upVector());
+        Vec3 left = toVec3(camera.leftVector());
         return look.add(left.scale(-horizontalScale)).add(up.scale(verticalScale)).normalize();
     }
 
-    private static Vec3 toVec3(Vector3f vector) {
+    private static Vec3 toVec3(Vector3fc vector) {
         return new Vec3(vector.x(), vector.y(), vector.z());
     }
 }

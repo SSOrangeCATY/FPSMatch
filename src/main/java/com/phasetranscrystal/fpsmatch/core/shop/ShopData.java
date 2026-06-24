@@ -9,9 +9,9 @@ import com.phasetranscrystal.fpsmatch.core.shop.event.CheckCostEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.event.ShopSlotChangeEvent;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import net.minecraft.core.NonNullList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -255,25 +255,28 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param player 玩家对象
      */
     public void lockShopSlots(ServerPlayer player) {
-        List<NonNullList<ItemStack>> items = ImmutableList.of(player.getInventory().items, player.getInventory().armor, player.getInventory().offhand);
+        Inventory inventory = player.getInventory();
 
         Map<ShopSlot, Boolean> checkFlag = new HashMap<>();
-        data.forEach(((itemType, shopSlots) -> items.forEach(list -> list.forEach(itemStack -> {
-            for (ShopSlot shopSlot : shopSlots) {
-                if (itemStack.isEmpty()) continue;
-                if (shopSlot.returningChecker.test(itemStack)) {
-                    if(itemStack.getCount() >= shopSlot.getMaxBuyCount()){
-                        shopSlot.lock();
-                    }else{
-                        shopSlot.unlock(itemStack.getCount());
+        data.forEach(((itemType, shopSlots) -> {
+            for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+                ItemStack itemStack = inventory.getItem(slot);
+                for (ShopSlot shopSlot : shopSlots) {
+                    if (itemStack.isEmpty()) continue;
+                    if (shopSlot.returningChecker.test(itemStack)) {
+                        if(itemStack.getCount() >= shopSlot.getMaxBuyCount()){
+                            shopSlot.lock();
+                        }else{
+                            shopSlot.unlock(itemStack.getCount());
+                        }
+                        checkFlag.put(shopSlot, false);
+                    } else if (checkFlag.getOrDefault(shopSlot, true)) {
+                        shopSlot.unlock();
+                        checkFlag.put(shopSlot, true);
                     }
-                    checkFlag.put(shopSlot, false);
-                } else if (checkFlag.getOrDefault(shopSlot, true)) {
-                    shopSlot.unlock();
-                    checkFlag.put(shopSlot, true);
                 }
             }
-        }))));
+        }));
         checkFlag.forEach(((shopSlot, aBoolean) -> {
             if (aBoolean && shopSlot.getBoughtCount() > 0) {
                 shopSlot.reset();
@@ -327,7 +330,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
     public Pair<T, ShopSlot> checkItemStackIsInData(ItemStack itemStack) {
         AtomicReference<Pair<T, ShopSlot>> flag = new AtomicReference<>();
         if (GunCompatManager.isGun(itemStack)) {
-            ResourceLocation gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
+            Identifier gunId = GunCompatManager.findProvider(itemStack).getGunId(itemStack);
             data.forEach(((itemType, shopSlots) -> shopSlots.forEach(shopSlot -> {
                 ItemStack itemStack1 = shopSlot.process();
                 if (GunCompatManager.isGun(itemStack1) && gunId.equals(GunCompatManager.findProvider(itemStack1).getGunId(itemStack1)) && !itemStack1.isEmpty()) {

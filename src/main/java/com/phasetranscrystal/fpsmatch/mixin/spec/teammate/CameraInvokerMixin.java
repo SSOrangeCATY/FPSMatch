@@ -4,9 +4,9 @@ import net.minecraft.client.Camera;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(Camera.class)
+@Mixin(value = Camera.class, remap = false)
 public interface CameraInvokerMixin {
 
-    @Invoker("setPosition")
+    @Invoker(value = "setPosition", remap = false)
     void invokeSetPosition(double x, double y, double z);
 }

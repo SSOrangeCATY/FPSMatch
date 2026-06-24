@@ -3,9 +3,10 @@ package com.phasetranscrystal.fpsmatch.common.packet.team;
 import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.chat.ComponentSerialization;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -67,10 +68,10 @@ public class TeamPlayerStatsS2CPacket {
         this.healthPercent = healthPercent;
     }
 
-    public TeamPlayerStatsS2CPacket(FriendlyByteBuf buf) {
+    public TeamPlayerStatsS2CPacket(RegistryFriendlyByteBuf buf) {
         this.uuid = buf.readUUID();
         this.teamName = buf.readUtf();
-        this.playerName = buf.readComponent();
+        this.playerName = ComponentSerialization.TRUSTED_STREAM_CODEC.decode(buf);
 
         this.scores = buf.readInt();
         this.Kills = buf.readInt();
@@ -83,10 +84,10 @@ public class TeamPlayerStatsS2CPacket {
         this.healthPercent = buf.readFloat();
     }
 
-    public static void encode(TeamPlayerStatsS2CPacket packet, FriendlyByteBuf buf) {
+    public static void encode(TeamPlayerStatsS2CPacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeUUID(packet.uuid);
         buf.writeUtf(packet.teamName);
-        buf.writeComponent(packet.playerName);
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, packet.playerName);
 
         buf.writeInt(packet.scores);
         buf.writeInt(packet.Kills);
@@ -99,11 +100,11 @@ public class TeamPlayerStatsS2CPacket {
         buf.writeFloat(packet.healthPercent);
     }
 
-    public static TeamPlayerStatsS2CPacket decode(FriendlyByteBuf buf) {
+    public static TeamPlayerStatsS2CPacket decode(RegistryFriendlyByteBuf buf) {
         return new TeamPlayerStatsS2CPacket(buf);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 

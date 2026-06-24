@@ -25,25 +25,19 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        boolean taczTweaksLoaded = FPSMImpl.findTaczTweaks();
         boolean taczLoaded = FPSMImpl.findTacz();
 
-        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.DefaultAmmoMixin")) {
-            return !taczTweaksLoaded;
-        }
-        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.TweakAmmoMixin")) {
-            return taczTweaksLoaded;
-        }
-        if (mixinClassName.contains("compat.spectate.lrt")) {
-            return FPSMImpl.findLrtacticalMod();
-        }
-        if (mixinClassName.contains("compat.spectate.tacz") || mixinClassName.contains("mixin.ammo.")) {
-            return taczLoaded;
-        }
-        if (mixinClassName.contains("collisiobox.MixinRenderHeadShotAABB")) {
+        if (isTaczMixin(mixinClassName)) {
             return taczLoaded;
         }
         return true;
+    }
+
+    private static boolean isTaczMixin(String mixinClassName) {
+        return mixinClassName.contains("compat.spectate.tacz")
+                || mixinClassName.contains("mixin.ammo.")
+                || mixinClassName.contains("collisiobox.MixinRenderHeadShotAABB")
+                || mixinClassName.endsWith("LivingEntityIsDeadOrDyingMixin");
     }
 
     @Override

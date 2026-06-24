@@ -17,16 +17,23 @@ import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
     private static final String HELD_PREVIEW_STATE_TAG = "HeldSpawnPointPreviewState";
@@ -68,7 +75,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
         }
 
         Optional<BaseMap> mapOptional = FPSMCore.getInstance().getMapByTypeWithName(selectedType, selectedMap)
-                .filter(map -> map.getServerLevel().dimension().equals(player.serverLevel().dimension()));
+                .filter(map -> map.getServerLevel().dimension().equals(((ServerLevel) player.level()).dimension()));
         if (mapOptional.isEmpty()) {
             clearHeldPreview(player);
             return;
@@ -77,7 +84,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
         String signature = selectedType + "|" + selectedMap;
         BaseMap map = mapOptional.get();
         String signatureWithPoints = buildHeldPreviewSignature(signature, map);
-        String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG);
+        String previousSignature = player.getPersistentData().getString(HELD_PREVIEW_STATE_TAG).orElse("");
         if (signatureWithPoints.equals(previousSignature) && player.tickCount % HELD_PREVIEW_REFRESH_INTERVAL != 0) {
             return;
         }
@@ -141,7 +148,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
             team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(capability -> {
                 for (SpawnPointData point : capability.getSpawnPointsData()) {
                     builder.append('|')
-                            .append(point.getDimension().location())
+                            .append(point.getDimension().identifier())
                             .append('@')
                             .append(point.getX()).append(',')
                             .append(point.getY()).append(',')
@@ -165,101 +172,101 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
         String selectedMap = getSelectedMap(stack);
         String selectedTeam = getSelectedTeam(stack);
         if (selectedType.isBlank() || selectedMap.isBlank() || selectedTeam.isBlank()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.missing_selection"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.missing_selection"));
             return;
         }
 
         Optional<BaseMap> mapOptional = FPSMCore.getInstance().getMapByTypeWithName(selectedType, selectedMap);
         if (mapOptional.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.map_not_found", selectedMap), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.map_not_found", selectedMap));
             return;
         }
 
         BaseMap map = mapOptional.get();
-        if (!map.getServerLevel().dimension().equals(player.serverLevel().dimension())) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"), false);
+        if (!map.getServerLevel().dimension().equals(((ServerLevel) player.level()).dimension())) {
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.dimension_mismatch"));
             return;
         }
         if (!map.getMapArea().isBlockPosInArea(clickedPos)) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.outside_map"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.outside_map"));
             return;
         }
 
         Optional<ServerTeam> teamOptional = map.getMapTeams().getTeamByName(selectedTeam).filter(ServerTeam::isNormal);
         if (teamOptional.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", selectedTeam), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", selectedTeam));
             return;
         }
 
         SpawnPointCapability capability = teamOptional.get().getCapabilityMap().get(SpawnPointCapability.class).orElse(null);
         if (capability == null) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.missing_capability"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.missing_capability"));
             return;
         }
 
         SpawnPointData spawnPointData = new SpawnPointData(
-                player.serverLevel().dimension(),
-                clickedPos.above().getCenter(),
+                ((ServerLevel) player.level()).dimension(),
+                Vec3.atCenterOf(clickedPos.above()),
                 player.getYRot(),
                 player.getXRot()
         );
         if (!capability.addSpawnPointDataIfAbsent(spawnPointData)) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.duplicate"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.duplicate"));
             return;
         }
         if (map.isStart()) {
             capability.assignNextSpawnPoints();
         }
 
-        player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.added",
+        player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.added",
                 MapCreatorTool.formatPos(clickedPos.above())).withStyle(ChatFormatting.GREEN), true);
     }
 
     public static void setSelectedType(ItemStack stack, String selectedType) {
-        stack.getOrCreateTag().putString(TYPE_TAG, selectedType == null ? "" : selectedType);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(TYPE_TAG, selectedType == null ? "" : selectedType));
     }
 
     public static String getSelectedType(ItemStack stack) {
-        return stack.getOrCreateTag().getString(TYPE_TAG);
+        return customData(stack).getString(TYPE_TAG).orElse("");
     }
 
     public static void setSelectedMap(ItemStack stack, String selectedMap) {
-        stack.getOrCreateTag().putString(MAP_TAG, selectedMap == null ? "" : selectedMap);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(MAP_TAG, selectedMap == null ? "" : selectedMap));
     }
 
     public static String getSelectedMap(ItemStack stack) {
-        return stack.getOrCreateTag().getString(MAP_TAG);
+        return customData(stack).getString(MAP_TAG).orElse("");
     }
 
     public static void setSelectedTeam(ItemStack stack, String selectedTeam) {
-        stack.getOrCreateTag().putString(TEAM_TAG, selectedTeam == null ? "" : selectedTeam);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(TEAM_TAG, selectedTeam == null ? "" : selectedTeam));
     }
 
     public static String getSelectedTeam(ItemStack stack) {
-        return stack.getOrCreateTag().getString(TEAM_TAG);
+        return customData(stack).getString(TEAM_TAG).orElse("");
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
-        super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.type")
+    public void appendHoverText(ItemStack pStack, Item.TooltipContext context, TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag pIsAdvanced) {
+        super.appendHoverText(pStack, context, display, tooltip, pIsAdvanced);
+        tooltip.accept(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.type")
                 .append(": ")
                 .append(Component.literal(getSelectedType(pStack).isBlank()
                         ? Component.translatable("tooltip.fpsm.none").getString()
                         : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.map")
+        tooltip.accept(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.map")
                 .append(": ")
                 .append(Component.literal(getSelectedMap(pStack).isBlank()
                         ? Component.translatable("tooltip.fpsm.none").getString()
                         : getSelectedMap(pStack)).withStyle(ChatFormatting.GREEN)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.team")
+        tooltip.accept(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.team")
                 .append(": ")
                 .append(Component.literal(getSelectedTeam(pStack).isBlank()
                         ? Component.translatable("tooltip.fpsm.none").getString()
                         : getSelectedTeam(pStack)).withStyle(ChatFormatting.YELLOW)));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.left_click"));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.ctrl_right_click"));
+        tooltip.accept(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.fpsm.spawn_point_tool.left_click"));
+        tooltip.accept(Component.translatable("tooltip.fpsm.spawn_point_tool.ctrl_right_click"));
     }
 }

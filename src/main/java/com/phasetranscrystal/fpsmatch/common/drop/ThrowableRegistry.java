@@ -1,8 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.drop;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -49,8 +49,8 @@ public class ThrowableRegistry {
     /**
      * 将物品注册到指定的投掷物子类型
      */
-    public static void registerItemToSubType(ResourceLocation itemId, String subTypeId) {
-        Item item = ForgeRegistries.ITEMS.getValue(itemId);
+    public static void registerItemToSubType(Identifier itemId, String subTypeId) {
+        Item item = BuiltInRegistries.ITEM.getValue(itemId);
         if (item != null) {
             registerItemToSubType(item, subTypeId);
         }
@@ -69,7 +69,7 @@ public class ThrowableRegistry {
     /**
      * 批量注册物品到子类型
      */
-    public static void registerItemsToSubTypes(Map<ResourceLocation, String> registrations) {
+    public static void registerItemsToSubTypes(Map<Identifier, String> registrations) {
         registrations.forEach(ThrowableRegistry::registerItemToSubType);
     }
 

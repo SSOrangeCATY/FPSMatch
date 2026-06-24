@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -86,7 +87,7 @@ public final class MapRoomActionService {
     }
 
     public static Result debug(ServerPlayer player, BaseMap map, DebugAction action) {
-        if (!player.hasPermissions(2)) {
+        if (!FPSMUtil.hasPermissionLevel(player, 2)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         switch (action) {
@@ -106,7 +107,7 @@ public final class MapRoomActionService {
     }
 
     public static Result kick(ServerPlayer player, BaseMap map, UUID target) {
-        if (!player.hasPermissions(2)) {
+        if (!FPSMUtil.hasPermissionLevel(player, 2)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         Optional<ServerPlayer> targetPlayer = map.getPlayerByUUID(target);
@@ -114,7 +115,7 @@ public final class MapRoomActionService {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.player_not_found"));
         }
         map.leave(targetPlayer.get());
-        return Result.success(Component.translatable("gui.fpsm.map_select.action.kick.success", targetPlayer.get().getGameProfile().getName()), map, player);
+        return Result.success(Component.translatable("gui.fpsm.map_select.action.kick.success", targetPlayer.get().getPlainTextName()), map, player);
     }
 
     public static Result setSetting(ServerPlayer player, String gameType, String mapName, String settingName, String value) {
@@ -124,7 +125,7 @@ public final class MapRoomActionService {
     }
 
     public static Result setSetting(ServerPlayer player, BaseMap map, String settingName, String value) {
-        if (!player.hasPermissions(2)) {
+        if (!FPSMUtil.hasPermissionLevel(player, 2)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.no_permission"));
         }
         for (Setting<?> setting : map.settings()) {
@@ -161,10 +162,10 @@ public final class MapRoomActionService {
         if (isFull(map)) {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.invite.full"));
         }
-        Component message = Component.translatable("gui.fpsm.map_select.action.invite.received", player.getGameProfile().getName(), map.getMapName());
+        Component message = Component.translatable("gui.fpsm.map_select.action.invite.received", player.getPlainTextName(), map.getMapName());
         PENDING_INVITES.put(targetPlayer.get().getUUID(), new PendingInvite(map.getGameType(), map.getMapName(), System.currentTimeMillis() + INVITE_TTL_MILLIS));
         FPSMatch.sendToPlayer(targetPlayer.get(), new MapRoomInvitationS2CPacket(map.getGameType(), map.getMapName(), message));
-        return Result.success(Component.translatable("gui.fpsm.map_select.action.invite.success", targetPlayer.get().getGameProfile().getName()), map, player);
+        return Result.success(Component.translatable("gui.fpsm.map_select.action.invite.success", targetPlayer.get().getPlainTextName()), map, player);
     }
 
     public static Result acceptInvite(ServerPlayer player, String gameType, String mapName) {
@@ -178,7 +179,7 @@ public final class MapRoomActionService {
     }
 
     public static void sendMessage(ServerPlayer player, Result result) {
-        player.displayClientMessage(result.message(), false);
+        player.sendSystemMessage(result.message());
     }
 
     private static boolean isFull(BaseMap map) {

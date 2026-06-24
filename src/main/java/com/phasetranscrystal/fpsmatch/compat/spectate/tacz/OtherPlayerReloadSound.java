@@ -13,11 +13,11 @@ import com.tacz.guns.sound.SoundManager;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 /**
  * Plays TACZ reload sounds for other players on the client.
@@ -55,7 +55,7 @@ public final class OtherPlayerReloadSound {
         if (iGun == null) {
             return;
         }
-        ResourceLocation gunId = iGun.getGunId(stack);
+        Identifier gunId = iGun.getGunId(stack);
         GunData gunData = TimelessAPI.getClientGunIndex(gunId).map(ClientGunIndex::getGunData).orElse(null);
         if (gunData == null) {
             return;
@@ -68,7 +68,7 @@ public final class OtherPlayerReloadSound {
     }
 
     private static void playReloadSound(LivingEntity shooter, GunDisplayInstance display, boolean noAmmo) {
-        ResourceLocation soundId = display.getSounds(noAmmo ? SoundManager.RELOAD_EMPTY_SOUND : SoundManager.RELOAD_TACTICAL_SOUND);
+        Identifier soundId = display.getSounds(noAmmo ? SoundManager.RELOAD_EMPTY_SOUND : SoundManager.RELOAD_TACTICAL_SOUND);
         if (soundId == null) {
             return;
         }

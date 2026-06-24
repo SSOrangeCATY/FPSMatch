@@ -2,9 +2,10 @@ package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabRenderer;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,9 +26,9 @@ public class TabScreen extends Screen {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         Scoreboard scoreboard = RenderUtil.getScoreboard();
-        tab.render(guiGraphics,this.width, RenderUtil.getPlayerInfos(), scoreboard, scoreboard.getDisplayObjective(0));
+        tab.render(guiGraphics, this.width, RenderUtil.getPlayerInfos(), scoreboard, scoreboard.getDisplayObjective(DisplaySlot.LIST));
     }
 
     @Override

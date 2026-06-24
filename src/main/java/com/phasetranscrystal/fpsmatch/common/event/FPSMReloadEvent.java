@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 /**
  * FPSMatch重新加载事件
@@ -17,8 +17,4 @@ public class FPSMReloadEvent extends Event {
         return core;
     }
 
-    @Override
-    public boolean isCancelable() {
-        return false;
-    }
 }

@@ -6,10 +6,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 import javax.sound.sampled.*;
 import java.io.BufferedInputStream;
@@ -29,13 +29,13 @@ public class FPSClientMusicManager {
     private static final float FADE_DURATION_SECONDS = 1f; // 淡入淡出时长，单位秒
     private static Thread playThread;
     private static volatile boolean playing;
-    private static ResourceLocation lastMusic = null;
+    private static Identifier lastMusic = null;
 
     /**
      * 播放指定的音乐资源。
-     * @param musicResource 音乐资源的 ResourceLocation
+     * @param musicResource 音乐资源的 Identifier
      */
-    public static void playMusic(ResourceLocation musicResource) {
+    public static void playMusic(Identifier musicResource) {
         SoundManager soundManager = mc.getSoundManager();
         if (musicResource != null) {
             stopMusic();
@@ -48,7 +48,7 @@ public class FPSClientMusicManager {
         }
     }
 
-    public static void playSound(ResourceLocation musicResource) {
+    public static void playSound(Identifier musicResource) {
         SoundManager soundManager = mc.getSoundManager();
         if (musicResource != null) {
             SimpleSoundInstance instance = new SimpleSoundInstance(musicResource, SoundSource.VOICE, 1.0F, 1.0F, SoundInstance.createUnseededRandom(), false, 0, SoundInstance.Attenuation.LINEAR, 0.0D, 0.0D, 0.0D, true);
@@ -61,16 +61,16 @@ public class FPSClientMusicManager {
     /**
      * 播放指定的音乐事件。
      * <p>
-     * 该方法会调用 {@link #playMusic(ResourceLocation)}，并传入音乐事件的资源路径。
+     * 该方法会调用 {@link #playMusic(Identifier)}，并传入音乐事件的资源路径。
      *
      * @param musicResource 音乐事件
      */
     public static void playMusic(SoundEvent musicResource) {
-        playMusic(musicResource.getLocation());
+        playMusic(musicResource.location());
     }
 
     public static void playSound(SoundEvent musicResource) {
-        playSound(musicResource.getLocation());
+        playSound(musicResource.location());
     }
 
     /**

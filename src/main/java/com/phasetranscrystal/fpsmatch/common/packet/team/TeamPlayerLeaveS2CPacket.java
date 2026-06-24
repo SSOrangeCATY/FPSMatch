@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.packet.team;
 
 import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -18,7 +18,7 @@ public record TeamPlayerLeaveS2CPacket(UUID player) {
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> supplier) {
+    public void handle(Supplier<NetworkPacketRegister.Context> supplier) {
         ClientPacketExecutor.execute(supplier, this);
     }
 }

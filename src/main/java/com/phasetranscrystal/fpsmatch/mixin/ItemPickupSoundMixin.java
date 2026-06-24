@@ -1,8 +1,6 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.mixin.accessor.ClientPacketListenerAccessor;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket;
@@ -16,28 +14,25 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ClientPacketListener.class)
+@Mixin(value = ClientPacketListener.class, remap = false)
 public class ItemPickupSoundMixin {
 
     @Inject(
             method = "handleTakeItemEntity",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/multiplayer/ClientLevel;playLocalSound(DDDLnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FFZ)V"
+                    target = "Lnet/minecraft/client/multiplayer/ClientLevel;playLocalSound(DDDLnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FFZ)V",
+                    remap = false
             ),
-            cancellable = true
+            cancellable = true,
+            remap = false
     )
     private void onPlayPickupSound(ClientboundTakeItemEntityPacket pPacket, CallbackInfo ci) {
         ClientPacketListener self = (ClientPacketListener)(Object)this;
         Entity entity = self.getLevel().getEntity(pPacket.getItemId());
 
         if (entity instanceof ItemEntity itemEntity) {
-            SoundEvent sound;
-            if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemEntity.getItem().getItem())){
-                sound = FPSMSoundRegister.getKnifePickupSound();
-            }else{
-                sound = FPSMSoundRegister.getItemPickSound(itemEntity.getItem().getItem());
-            }
+            SoundEvent sound = FPSMSoundRegister.getItemPickSound(itemEntity.getItem().getItem());
             if (sound != null) {
                 ClientPacketListenerAccessor accessor = (ClientPacketListenerAccessor) self;
                 RandomSource random = accessor.getRandom();

@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.packet.attribute;
 
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -28,7 +28,7 @@ public class BulletproofArmorAttributeS2CPacket {
         return new BulletproofArmorAttributeS2CPacket(buf.readBoolean(),buf.readInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             BulletproofArmorAttribute.Client.bpAttributeDurability = durability;
             BulletproofArmorAttribute.Client.bpAttributeHasHelmet = hasHelmet;

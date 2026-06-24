@@ -12,14 +12,13 @@ import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +28,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     private static final int ID_MAX_LENGTH = 128;
 
     private final ContainerData data;
-    private final ItemStackHandler itemHandler;
+    private final SimpleContainer itemContainer;
     private final ShopSlot shopSlot;
     private final String gameType;
     private final String mapName;
@@ -38,10 +37,10 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     private final int slotNum;
 
     public EditShopSlotMenu(int id, Inventory playerInventory, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
-        this(id, playerInventory, new ItemStackHandler(1), new SimpleContainerData(3), shopSlot, gameType, mapName, teamName, shopType, slotNum);
+        this(id, playerInventory, new SimpleContainer(1), new SimpleContainerData(3), shopSlot, gameType, mapName, teamName, shopType, slotNum);
     }
 
-    public EditShopSlotMenu(int id, Inventory playerInventory, FriendlyByteBuf buf) {
+    public EditShopSlotMenu(int id, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
         this(
                 id,
                 playerInventory,
@@ -54,9 +53,9 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         );
     }
 
-    public EditShopSlotMenu(int id, Inventory playerInventory, ItemStackHandler handler, ContainerData data, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
+    public EditShopSlotMenu(int id, Inventory playerInventory, SimpleContainer itemContainer, ContainerData data, ShopSlot shopSlot, String gameType, String mapName, String teamName, String shopType, int slotNum) {
         super(VanillaGuiRegister.EDIT_SHOP_SLOT_MENU.get(), id);
-        this.itemHandler = handler;
+        this.itemContainer = itemContainer;
         this.data = data;
         this.shopSlot = shopSlot;
         this.gameType = gameType;
@@ -67,8 +66,8 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         this.setAmmo(shopSlot.getAmmoCount());
         this.setPrice(shopSlot.getDefaultCost());
         this.setGroupId(shopSlot.getGroupId());
-        this.itemHandler.setStackInSlot(0, this.shopSlot.process());
-        this.addSlot(new SlotItemHandler(itemHandler, 0, 20, 20));
+        this.itemContainer.setItem(0, this.shopSlot.process());
+        this.addSlot(new Slot(itemContainer, 0, 20, 20));
 
         addPlayerInventory(playerInventory, 8, 124);
 
@@ -111,7 +110,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
         }
 
         FPSMShop<?> shop = resolvedShop.get();
-        shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
+        shopSlot.setItemSupplier(() -> itemContainer.getItem(0));
         ItemStack slotStack = shopSlot.process();
         shopSlot.setDefaultCost(this.getPrice());
         shopSlot.setGroupId(this.getGroupId());

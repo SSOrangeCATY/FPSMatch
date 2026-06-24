@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.packet.mapselect;
 
 import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -15,7 +15,7 @@ public record MapSelectionAccessS2CPacket(boolean visible) {
         return new MapSelectionAccessS2CPacket(buf.readBoolean());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 }

@@ -18,19 +18,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 import java.util.Map;
 
-@Mixin(SoundEngine.class)
+@Mixin(value = SoundEngine.class, remap = false)
 public class SoundEngineMixin {
     
     @Inject(
         method = "play",
         at = @At("HEAD"),
-        cancellable = true
+        cancellable = true,
+        remap = false
     )
     private void onPlaySound(SoundInstance sound, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         
-        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
+        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
             if (!fPSMatch$isAllowedSound(sound)) {
                 ci.cancel();
             }
@@ -40,13 +41,14 @@ public class SoundEngineMixin {
     @Inject(
         method = "stop(Lnet/minecraft/client/resources/sounds/SoundInstance;)V",
         at = @At("HEAD"),
-        cancellable = true
+        cancellable = true,
+        remap = false
     )
     private void onStopSound(SoundInstance sound, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         
-        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
+        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
             if (fPSMatch$isAllowedSound(sound)) {
                 ci.cancel();
             }
@@ -56,13 +58,14 @@ public class SoundEngineMixin {
     @Inject(
         method = "isActive",
         at = @At("HEAD"),
-        cancellable = true
+        cancellable = true,
+        remap = false
     )
     private void onIsActive(SoundInstance sound, CallbackInfoReturnable<Boolean> cir) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         
-        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
+        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
             if (!fPSMatch$isAllowedSound(sound)) {
                 cir.setReturnValue(false);
             }
@@ -72,13 +75,14 @@ public class SoundEngineMixin {
     @Inject(
         method = "stopAll",
         at = @At("HEAD"),
-        cancellable = true
+        cancellable = true,
+        remap = false
     )
     private void onStopAll(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         
-        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
+        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
             fPSMatch$stopNonAllowedSounds();
             ci.cancel();
         }
@@ -87,7 +91,7 @@ public class SoundEngineMixin {
 
     @Unique
     private boolean fPSMatch$isAllowedSound(SoundInstance sound) {
-        return sound.getLocation().equals(FPSMSoundRegister.FLASH.get().getLocation());
+        return sound.getIdentifier().equals(FPSMSoundRegister.FLASH.get().location());
     }
     
 

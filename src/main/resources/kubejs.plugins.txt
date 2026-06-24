@@ -1,1 +1,0 @@
-com.phasetranscrystal.fpsmatch.compat.kubejs.FPSMatchKubeJSPlugin fpsmatch

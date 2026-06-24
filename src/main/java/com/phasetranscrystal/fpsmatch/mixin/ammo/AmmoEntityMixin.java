@@ -1,10 +1,7 @@
 package com.phasetranscrystal.fpsmatch.mixin.ammo;
 
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.SmokeShellEntity;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.tacz.guns.entity.EntityKineticBullet;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
@@ -37,16 +34,6 @@ public abstract class AmmoEntityMixin implements IPassThroughEntity {
         if (entities.isEmpty()) return;
 
         AABB checker = bullet.getBoundingBox().expandTowards(bullet.getDeltaMovement()).inflate(1D);
-
-        if (FPSMImpl.findCounterStrikeGrenadesMod() && CounterStrikeGrenadesCompat.isInSmokeGrenadeArea(entities, checker)) {
-            fpsmatch$passedThroughSmoke = true;
-            return;
-        }
-
-        if (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isInSmokeGrenadeArea(entities, checker)) {
-            fpsmatch$passedThroughSmoke = true;
-            return;
-        }
 
         if (fpsmatch$isPassedSmoke(entities, checker)) {
             fpsmatch$passedThroughSmoke = true;

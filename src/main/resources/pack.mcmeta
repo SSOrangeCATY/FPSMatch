@@ -1,7 +1,13 @@
 {
   "pack": {
     "description": "fpsmatch resources",
-    "pack_format": 15,
-    "forge:server_data_pack_format": 12
+    "min_format": [
+      88,
+      0
+    ],
+    "max_format": [
+      107,
+      1
+    ]
   }
 }

@@ -10,12 +10,13 @@ import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMCodec;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.world.item.ItemStack;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
         return new OpenShopEditorC2SPacket(buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH));
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) {
@@ -44,7 +45,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                 player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
                 return;
             }
-            if (!player.hasPermissions(2)) {
+            if (!FPSMUtil.hasPermissionLevel(player, 2)) {
                 player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
                 return;
             }
@@ -58,7 +59,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
             FPSMShop<?> shop = shopOpt.get();
             List<?> enums = shop.getEnums();
 
-            NetworkHooks.openScreen(player,
+            player.openMenu(
                     new SimpleMenuProvider(
                             (windowId, inv, p) -> new EditorShopContainer(windowId, inv, shop, gameType, mapName, teamName),
                             Component.translatable("gui.fpsm.shop_editor.title")
@@ -80,7 +81,7 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                             if (!(type instanceof INamedType named)) continue;
                             List<ShopSlot> slots = shop.getDefaultShopSlotListByType(named.name());
                             for (ShopSlot slot : slots) {
-                                buf.writeItem(slot.process());
+                                ItemStack.STREAM_CODEC.encode(buf, slot.process());
                                 try {
                                     String json = new Gson().toJson(FPSMCodec.encodeToJson(ShopSlot.CODEC, slot));
                                     buf.writeUtf(json);

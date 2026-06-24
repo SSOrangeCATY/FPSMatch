@@ -3,18 +3,19 @@ package com.phasetranscrystal.fpsmatch.common.mapselect;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public final class MapSelectionAccessSync {
     private MapSelectionAccessSync() {
     }
 
     public static boolean canUseMapSelection(ServerPlayer player) {
-        return player.hasPermissions(2) || FPSMConfig.Server.enableMapSelectionButtonForNonOps.get();
+        return FPSMUtil.hasPermissionLevel(player, 2) || FPSMConfig.Server.enableMapSelectionButtonForNonOps.get();
     }
 
     public static void sync(ServerPlayer player) {

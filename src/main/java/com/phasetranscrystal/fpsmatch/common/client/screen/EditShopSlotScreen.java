@@ -5,10 +5,11 @@ import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket
 import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -41,9 +42,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     private EditBox groupField;
 
     public EditShopSlotScreen(EditShopSlotMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        this.imageWidth = 200;
-        this.imageHeight = 160;
+        super(menu, playerInventory, title, 200, 160);
         this.data = new SimpleContainerData(3);
         int dataCount = Math.min(this.menu.getData().getCount(), 3);
         for (int i = 0; i < dataCount; i++) {
@@ -85,16 +84,16 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape()) {
             openShopEditor();
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     private void onSaveButtonClick() {
-        FPSMatch.INSTANCE.sendToServer(new SaveSlotDataC2SPacket(this.data));
+        FPSMatch.sendToServer(new SaveSlotDataC2SPacket(this.data));
 
         LocalPlayer player = Minecraft.getInstance().player;
 
@@ -104,36 +103,35 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     }
 
     private void openShopEditor() {
-        FPSMatch.INSTANCE.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
+        FPSMatch.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
     }
 
-    private void drawLabel(GuiGraphics guiGraphics, Component text, EditBox field) {
+    private void drawLabel(GuiGraphicsExtractor guiGraphics, Component text, EditBox field) {
         if (field == null) return;
-        guiGraphics.drawString(this.font, text, field.getX() - this.leftPos, field.getY() - this.topPos - 10, 0xFFFFFF);
+        guiGraphics.text(this.font, text, field.getX() - this.leftPos, field.getY() - this.topPos - 10, 0xFFFFFF);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX - 20, this.titleLabelY - 15, 0xFFFFFF, false);
+    protected void extractLabels(GuiGraphicsExtractor pGuiGraphicsExtractor, int pMouseX, int pMouseY) {
+        pGuiGraphicsExtractor.text(this.font, this.title, this.titleLabelX - 20, this.titleLabelY - 15, 0xFFFFFF, false);
         if(menu.isGun()){
-            drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.dummyAmmo"), ammoFiled);
+            drawLabel(pGuiGraphicsExtractor, Component.translatable("gui.fpsm.dummyAmmo"), ammoFiled);
         }
-        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.price"), priceField);
-        drawLabel(pGuiGraphics, Component.translatable("gui.fpsm.group"), groupField);
+        drawLabel(pGuiGraphicsExtractor, Component.translatable("gui.fpsm.price"), priceField);
+        drawLabel(pGuiGraphicsExtractor, Component.translatable("gui.fpsm.group"), groupField);
         int inventoryLabelY = this.imageHeight - 47;
-        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, 8, inventoryLabelY, 0xFFFFFF, false);
+        pGuiGraphicsExtractor.text(this.font, this.playerInventoryTitle, 8, inventoryLabelY, 0xFFFFFF, false);
     }
 
     @Override
-    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
         renderGuiMultiLayerBackground(guiGraphics);
         renderShopSlotsBackground(guiGraphics);
     }
 
     @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         if(!menu.isGun()){
             if(this.isAmmoFiledAdded){
                 this.removeWidget(this.ammoFiled);
@@ -148,9 +146,8 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
             }
         }
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         this.renderHoveredSlotHighlight(guiGraphics, mouseX, mouseY);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     private void createAmmoField() {
@@ -167,7 +164,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     }
 
     @Override
-    protected void renderTooltip(@NotNull GuiGraphics pGuiGraphics, int pX, int pY) {
+    protected void extractTooltip(@NotNull GuiGraphicsExtractor pGuiGraphicsExtractor, int pX, int pY) {
         if (this.menu.getCarried().isEmpty() && this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
             ItemStack itemstack = this.hoveredSlot.getItem();
             List<Component> components = this.getTooltipFromContainerItem(itemstack);
@@ -185,7 +182,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
                     components.add(line);
                 }
             }
-            pGuiGraphics.renderTooltip(this.font, components, itemstack.getTooltipImage(), itemstack, pX, pY);
+            pGuiGraphicsExtractor.setTooltipForNextFrame(this.font, components, itemstack.getTooltipImage(), itemstack, pX, pY);
         }
 
     }
@@ -198,7 +195,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         return slot.y - 1;
     }
 
-    private void renderGuiMultiLayerBackground(GuiGraphics guiGraphics) {
+    private void renderGuiMultiLayerBackground(GuiGraphicsExtractor guiGraphics) {
         int guiX = this.leftPos - 20;
         int guiY = this.topPos;
         int guiWidth = this.imageWidth + 20;
@@ -248,7 +245,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         guiGraphics.fill(innerBorderX2 - 1, innerBorderY1 + 1, innerBorderX2, innerBorderY2 - 1, GUI_INNER_BORDER);
     }
 
-    private void renderShopSlotsBackground(GuiGraphics guiGraphics) {
+    private void renderShopSlotsBackground(GuiGraphicsExtractor guiGraphics) {
         for (Slot slot : menu.slots) {
             int slotRenderX = this.leftPos + getSlotX(slot);
             int slotRenderY = this.topPos + getSlotY(slot);
@@ -300,7 +297,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         return -1;
     }
 
-    private void renderHoveredSlotHighlight(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderHoveredSlotHighlight(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int hoveredIndex = getHoveredCustomSlotIndex(mouseX, mouseY);
         if (hoveredIndex == -1) {
             return;

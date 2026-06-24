@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.compat.gun;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
@@ -28,8 +28,8 @@ public enum NoGunProvider implements IGunProvider {
     }
 
     @Override
-    public ResourceLocation getGunId(ItemStack stack) {
-        return new ResourceLocation("empty", "empty");
+    public Identifier getGunId(ItemStack stack) {
+        return Identifier.fromNamespaceAndPath("empty", "empty");
     }
 
     @Override
@@ -74,7 +74,7 @@ public enum NoGunProvider implements IGunProvider {
     }
 
     @Override
-    public Optional<GunDataDTO> getGunData(ResourceLocation gunId) {
+    public Optional<GunDataDTO> getGunData(Identifier gunId) {
         return Optional.empty();
     }
 }

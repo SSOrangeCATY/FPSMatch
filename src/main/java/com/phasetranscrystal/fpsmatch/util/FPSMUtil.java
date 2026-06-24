@@ -1,44 +1,46 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.mojang.authlib.GameProfile;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunDataDTO;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.NonNullList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -73,43 +75,13 @@ public class FPSMUtil {
         }));
 
         addThrowablePredicate((itemStack -> itemStack.getItem() instanceof IThrowEntityAble));
-        addThrowablePredicate((itemStack -> {
-            if (FPSMImpl.findLrtacticalMod()){
-                try{
-                    return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IThrowable;
-                }catch (Exception e){
-                    return false;
-                }
-            }else{
-                return false;
-            }
-        }));
-        addThrowablePredicate((itemStack -> {
-            if (FPSMImpl.findCounterStrikeGrenadesMod()){
-                try{
-                    return itemStack.getItem() instanceof club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
-                }catch (Exception e){
-                    return false;
-                }
-            }else{
-                return false;
-            }
-        }));
 
         addThirdWeaponPredicate((itemStack -> {
             IGunProvider provider = GunCompatManager.findProvider(itemStack);
             if (provider.isGun(itemStack)) {
                 return provider.getGunTabType(itemStack) == GunTabTypeEnum.RPG;
             } else {
-                if (FPSMImpl.findLrtacticalMod()){
-                    try{
-                        return itemStack.getItem() instanceof me.xjqsh.lrtactical.api.item.IMeleeWeapon;
-                    }catch (Exception e){
-                        return false;
-                    }
-                }else{
-                    return false;
-                }
+                return false;
             }
         }));
 
@@ -118,26 +90,27 @@ public class FPSMUtil {
         MISC_PREDICATE.add((itemStack -> true));
     }
 
-    public static Optional<GunTabTypeEnum> getGunTypeByGunId(ResourceLocation gunId) {
+    public static Optional<GunTabTypeEnum> getGunTypeByGunId(Identifier gunId) {
         return GunCompatManager.getGunData(gunId)
                 .map(GunDataDTO::getGunTabType);
     }
 
-    public static boolean isMainWeapon(ResourceLocation gunId) {
+    public static boolean isMainWeapon(Identifier gunId) {
         return getGunTypeByGunId(gunId).filter(MAIN_WEAPON::contains).isPresent();
     }
 
     public static boolean sortPlayerInventory(ServerPlayer player) {
-        if (player.level().getGameRules().getRule(FPSMatchRule.RULE_AUTO_SORT_PLAYER_INV).get()) {
+        if (player.level().getGameRules().get(FPSMatchRule.RULE_AUTO_SORT_PLAYER_INV)) {
             Inventory inventory = player.getInventory();
+            List<ItemStack> inventoryItems = inventory.getNonEquipmentItems();
 
             List<ItemStack> allItems = new ArrayList<>();
-            for (int i = 0; i < inventory.items.size(); i++) {
-                ItemStack stack = inventory.items.get(i);
+            for (int i = 0; i < inventoryItems.size(); i++) {
+                ItemStack stack = inventoryItems.get(i);
                 if (!stack.isEmpty()) {
                     allItems.add(stack.copy());
                 }
-                inventory.items.set(i, ItemStack.EMPTY);
+                inventoryItems.set(i, ItemStack.EMPTY);
             }
 
             Map<List<Predicate<ItemStack>>, List<ItemStack>> categoryMap = new LinkedHashMap<>();
@@ -199,17 +172,17 @@ public class FPSMUtil {
             remainingItems.addAll(c4Items);
             remainingItems.addAll(miscItems);
 
-            for (int i = 0; i < inventory.items.size(); i++) {
+            for (int i = 0; i < inventoryItems.size(); i++) {
                 if (sortedSlots.containsKey(i)) {
-                    inventory.items.set(i, sortedSlots.get(i));
+                    inventoryItems.set(i, sortedSlots.get(i));
                 } else if (i >= 9 && !remainingItems.isEmpty()) {
-                    inventory.items.set(i, remainingItems.remove(0));
+                    inventoryItems.set(i, remainingItems.remove(0));
                 }
             }
 
-            int carriedSlot = inventory.selected;
+            int carriedSlot = inventory.getSelectedSlot();
 
-            if (inventory.items.get(carriedSlot).isEmpty()) {
+            if (inventoryItems.get(carriedSlot).isEmpty()) {
                 int direction = 1;
                 int currentSlot = carriedSlot;
                 int attempts = 0;
@@ -225,7 +198,7 @@ public class FPSMUtil {
                         currentSlot = 0;
                     }
 
-                    if (!inventory.items.get(currentSlot).isEmpty()) {
+                    if (!inventoryItems.get(currentSlot).isEmpty()) {
                         carriedSlot = currentSlot;
                         break;
                     }
@@ -234,6 +207,7 @@ public class FPSMUtil {
                 }
             }
 
+            inventory.setSelectedSlot(carriedSlot);
             FPSMatch.sendToPlayer(player, new FPSMInventorySelectedS2CPacket(carriedSlot));
 
             player.getInventory().setChanged();
@@ -347,12 +321,12 @@ public class FPSMUtil {
      */
     public static void resetAllGunAmmo(@NotNull ServerPlayer serverPlayer) {
         Inventory inventory = serverPlayer.getInventory();
-        List<NonNullList<ItemStack>> compartments = ImmutableList.of(inventory.items, inventory.armor, inventory.offhand);
-        compartments.forEach((itemList) -> itemList.forEach(itemStack -> {
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack itemStack = inventory.getItem(slot);
             if (GunCompatManager.isGun(itemStack)) {
                 resetGunAmmo(itemStack, GunCompatManager.findProvider(itemStack));
             }
-        }));
+        }
     }
 
     public static void addMainWeaponPredicate(Predicate<ItemStack> predicate){
@@ -433,6 +407,18 @@ public class FPSMUtil {
      * 在物品栏中搜索指定类型的物品
      */
     public static List<ItemStack> searchInventoryForType(Inventory inventory, DropType... type) {
+        ArrayList<ItemStack> foundItems = new ArrayList<>();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            for (DropType dropType : type) {
+                if (!stack.isEmpty() && dropType.itemMatch().test(stack)) {
+                    foundItems.add(stack);
+                }
+            }
+        }
+
+        return foundItems;
+        /*
         List<List<ItemStack>> inventorySections = Arrays.asList(
                 inventory.items,    // 主物品栏
                 inventory.armor,    // 装备栏
@@ -451,6 +437,7 @@ public class FPSMUtil {
         }
 
         return foundItems;
+        */
     }
 
     public static double linearInterpolate(double start, double end, double factor) {
@@ -461,8 +448,9 @@ public class FPSMUtil {
      * 将物品添加到玩家库存
      */
     public static void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
-        if (itemStack.getItem() instanceof ArmorItem armorItem) {
-            player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
+        Equippable equippable = itemStack.get(DataComponents.EQUIPPABLE);
+        if (equippable != null && equippable.slot().getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+            player.setItemSlot(equippable.slot(), itemStack);
         } else {
             player.getInventory().add(fixGunItem(itemStack));
             FPSMUtil.sortPlayerInventory(player);
@@ -473,11 +461,12 @@ public class FPSMUtil {
      * 获取玩家所有物品(包括装备和副手)
      */
     public static Iterable<ItemStack> getAllPlayerItems(ServerPlayer player) {
-        return Iterables.concat(
-                player.getInventory().items,
-                player.getInventory().armor,
-                player.getInventory().offhand
-        );
+        Inventory inventory = player.getInventory();
+        List<ItemStack> items = new ArrayList<>(inventory.getContainerSize());
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            items.add(inventory.getItem(slot));
+        }
+        return items;
     }
 
 
@@ -534,8 +523,6 @@ public class FPSMUtil {
         ItemStack itemStack;
         if (source.getDirectEntity() instanceof ThrowableItemProjectile projectile) {
             itemStack = projectile.getItem();
-        } else if (FPSMImpl.findCounterStrikeGrenadesMod()) {
-            itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
         }else{
             itemStack = ItemStack.EMPTY;
         }
@@ -543,9 +530,13 @@ public class FPSMUtil {
         return (itemStack.isEmpty() && attacker != null) ? attacker.getMainHandItem() : itemStack;
     }
 
-    public static ResourceLocation fetchSkin(UUID id, String name){
-        return Minecraft.getInstance().getSkinManager()
-                .getInsecureSkinLocation(new GameProfile(id, name));
+    public static Identifier fetchSkin(UUID id, String name){
+        GameProfile profile = new GameProfile(id, name);
+        return Minecraft.getInstance().getSkinManager().get(profile)
+                .getNow(Optional.empty())
+                .orElseGet(() -> DefaultPlayerSkin.get(profile))
+                .body()
+                .texturePath();
     }
 
     /**
@@ -594,7 +585,11 @@ public class FPSMUtil {
 
     //服务端
     public static boolean isOp(GameProfile profile) {
-        return ServerLifecycleHooks.getCurrentServer().getPlayerList().isOp(profile);
+        return ServerLifecycleHooks.getCurrentServer().getPlayerList().isOp(new NameAndId(profile));
+    }
+
+    public static boolean hasPermissionLevel(ServerPlayer player, int level) {
+        return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.byId(level)));
     }
 
 }

@@ -11,7 +11,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +63,7 @@ public record SpawnPointToolActionC2SPacket(
         ));
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) {
@@ -88,7 +88,7 @@ public record SpawnPointToolActionC2SPacket(
     private void deleteSelected(ServerPlayer player, ItemStack stack) {
         SelectionSnapshot snapshot = resolveSelection(stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
         if (snapshot.capability().isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()));
             return;
         }
         if (snapshot.selectedIndex() < 0 || snapshot.selectedIndex() >= snapshot.spawnPoints().size()) {
@@ -107,7 +107,7 @@ public record SpawnPointToolActionC2SPacket(
     private void clearTeam(ServerPlayer player, ItemStack stack) {
         SelectionSnapshot snapshot = resolveSelection(stack, selectedType(), selectedMap(), selectedTeam(), selectedIndex());
         if (snapshot.capability().isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.spawn_point_tool.team_not_found", snapshot.selectedTeam()));
             return;
         }
 

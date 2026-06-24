@@ -6,16 +6,14 @@ import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAt
 import com.phasetranscrystal.fpsmatch.common.event.FPSMGunDamageEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public class GunDamageHandler {
     @SubscribeEvent
     public static void onEntityHurtByGun(FPSMGunDamageEvent event) {
@@ -61,7 +59,7 @@ public class GunDamageHandler {
             return;
         }
         BulletproofArmorAttribute.getInstance(player)
-                .ifPresent(attribute -> FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BulletproofArmorAttributeS2CPacket(attribute)));
+                .ifPresent(attribute -> FPSMatch.sendToPlayer(player, new BulletproofArmorAttributeS2CPacket(attribute)));
     }
 
     public static int getArmorValue(Player player, boolean headshot) {
@@ -89,7 +87,7 @@ public class GunDamageHandler {
                 BulletproofArmorAttribute.removePlayer(player);
             } else {
                 attribute.reduceDurability(damage);
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BulletproofArmorAttributeS2CPacket(attribute));
+                FPSMatch.sendToPlayer(player, new BulletproofArmorAttributeS2CPacket(attribute));
             }
         }
     }

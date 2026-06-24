@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.core.persistence;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ConfigManager {
-    private static final Path CONFIG_DIR = Paths.get(FMLLoader.getGamePath().toString(), "fpsmatch");
+    private static final Path CONFIG_DIR = FMLLoader.getCurrent().getGameDir().resolve("fpsmatch");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
     private static final Gson GSON = new Gson();
     private static Map<String, String> config = new HashMap<>();

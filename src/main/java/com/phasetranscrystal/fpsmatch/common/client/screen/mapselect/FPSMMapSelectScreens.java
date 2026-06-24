@@ -12,34 +12,34 @@ public final class FPSMMapSelectScreens {
 
     public static void openSelection(MapSelectionSnapshotS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapSelectionScreen screen) {
+        if (minecraft.gui.screen() instanceof FPSMMapSelectionScreen screen) {
             screen.applySnapshot(packet);
         } else {
-            minecraft.setScreen(new FPSMMapSelectionScreen(packet, minecraft.screen));
+            minecraft.gui.setScreen(new FPSMMapSelectionScreen(packet, minecraft.gui.screen()));
         }
     }
 
     public static void openDetail(MapRoomDetailS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapDetailScreen screen) {
+        if (minecraft.gui.screen() instanceof FPSMMapDetailScreen screen) {
             screen.applyDetail(packet.detail());
-        } else if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
+        } else if (minecraft.gui.screen() instanceof FPSMMapDetailChildScreen screen) {
             screen.applyDetail(packet.detail());
         } else {
-            minecraft.setScreen(new FPSMMapDetailScreen(packet.detail(), minecraft.screen));
+            minecraft.gui.setScreen(new FPSMMapDetailScreen(packet.detail(), minecraft.gui.screen()));
         }
     }
 
     public static void openChild(Screen child) {
-        Minecraft.getInstance().setScreen(child);
+        Minecraft.getInstance().gui.setScreen(child);
     }
 
     public static void openInvitation(MapRoomInvitationS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapInvitationScreen screen) {
-            minecraft.setScreen(new FPSMMapInvitationScreen(packet, screen.parentScreen()));
+        if (minecraft.gui.screen() instanceof FPSMMapInvitationScreen screen) {
+            minecraft.gui.setScreen(new FPSMMapInvitationScreen(packet, screen.parentScreen()));
         } else {
-            minecraft.setScreen(new FPSMMapInvitationScreen(packet, minecraft.screen));
+            minecraft.gui.setScreen(new FPSMMapInvitationScreen(packet, minecraft.gui.screen()));
         }
     }
 }

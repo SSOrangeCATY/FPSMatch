@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -51,7 +52,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     private void explode() {
-        if (level().isClientSide) return;
+        if (level().isClientSide()) return;
 
         spawnExplosionParticles();
         applyExplosionDamage();
@@ -210,7 +211,7 @@ public class GrenadeEntity extends BaseProjectileLifeTimeEntity {
     @Override
     public void onActiveTick() {
         if (level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.FLASH,
+            serverLevel.sendParticles(ColorParticleOption.create(ParticleTypes.FLASH, 1.0F, 1.0F, 1.0F),
                     getX(), getY(), getZ(), 2,
                     0, 0, 0, 0.1);
         }

@@ -5,8 +5,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.*;
 
@@ -46,7 +44,6 @@ public class PlayerData {
     private boolean lastDeath = false; //上次死亡标记 用于复活后判别发放物资
 
     //客户端独有字段
-    @OnlyIn(Dist.CLIENT)
     private float hp; // 生命值百分比
 
     public PlayerData(Player owner) {
@@ -163,7 +160,6 @@ public class PlayerData {
     }
 
     // 客户端生命值百分比（仅客户端访问）
-    @OnlyIn(Dist.CLIENT)
     public float getHealthPercent() {
         return hp;
     }
@@ -357,7 +353,6 @@ public class PlayerData {
         return FPSMCore.getInstance().getPlayerByUUID(owner);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void setHealthPercent(float hp) {
         this.hp = hp;
     }
@@ -432,7 +427,6 @@ public class PlayerData {
     }
 
     // 客户端Tab栏展示用
-    @OnlyIn(Dist.CLIENT)
     public String getTabString() {
         return getKills() + "/" + getDeaths() + "/" + getAssists();
     }

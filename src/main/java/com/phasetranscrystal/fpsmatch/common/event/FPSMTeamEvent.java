@@ -2,7 +2,8 @@ package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
 
 public class FPSMTeamEvent extends Event {
     private final BaseTeam team;
@@ -15,7 +16,7 @@ public class FPSMTeamEvent extends Event {
         return team;
     }
 
-    public static class JoinEvent extends FPSMTeamEvent {
+    public static class JoinEvent extends FPSMTeamEvent implements ICancellableEvent {
         private final Player player;
 
         public JoinEvent(BaseTeam team, Player player) {
@@ -28,7 +29,7 @@ public class FPSMTeamEvent extends Event {
         }
     }
 
-    public static class LeaveEvent extends FPSMTeamEvent {
+    public static class LeaveEvent extends FPSMTeamEvent implements ICancellableEvent {
         private final Player player;
 
         public LeaveEvent(BaseTeam team, Player player) {

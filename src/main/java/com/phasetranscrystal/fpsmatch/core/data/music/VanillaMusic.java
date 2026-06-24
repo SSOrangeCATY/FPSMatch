@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.data.music;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record VanillaMusic(ResourceLocation location) {
+public record VanillaMusic(Identifier location) {
 }

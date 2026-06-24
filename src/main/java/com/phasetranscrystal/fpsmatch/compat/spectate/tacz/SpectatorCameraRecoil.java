@@ -13,14 +13,14 @@ import java.util.Optional;
 import com.phasetranscrystal.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 /**
@@ -90,7 +90,7 @@ public final class SpectatorCameraRecoil {
         if (cacheProperty == null) {
             return false;
         }
-        ResourceLocation gunId = iGun.getGunId(mainHandItem);
+        Identifier gunId = iGun.getGunId(mainHandItem);
         Optional<ClientGunIndex> gunIndexOptional = TimelessAPI.getClientGunIndex(gunId);
         if (gunIndexOptional.isEmpty()) {
             return false;

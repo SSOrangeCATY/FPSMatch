@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.packet;
 import com.phasetranscrystal.fpsmatch.common.item.MapCreatorTool;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +46,7 @@ public record OpenMapCreatorToolScreenS2CPacket(
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 

@@ -8,7 +8,7 @@ import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -39,11 +39,11 @@ public abstract class BaseTeam {
 
 
     public boolean join(Player player){
-       return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player));
+       return !NeoForge.EVENT_BUS.post(new FPSMTeamEvent.JoinEvent(this,player)).isCanceled();
     };
 
     public boolean leave(Player player){
-        return !MinecraftForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player));
+        return !NeoForge.EVENT_BUS.post(new FPSMTeamEvent.LeaveEvent(this,player)).isCanceled();
     };
     public abstract void delPlayer(UUID player);
     public abstract void resetLiving();

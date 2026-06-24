@@ -40,10 +40,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
@@ -51,10 +51,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 商店能力：为队伍提供商店系统支持
- * 使用注册的商店类型系统，无需泛型
- */
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
+ * 閸熷棗绨甸懗钘夊閿涙矮璐熼梼鐔剁礊閹绘劒绶甸崯鍡楃暗缁崵绮洪弨顖涘瘮
+ * 娴ｈ法鏁ゅ▔銊ュ斀閻ㄥ嫬鏅㈡惔妤冭閸ㄥ閮寸紒鐕傜礉閺冪娀娓跺▔娑樼?? */
 public class ShopCapability extends TeamCapability implements FPSMCapability.Savable<FPSMShop<?>>, FPSMCapability.DataSynchronizable {
 
     public static Optional<FPSMShop<?>> getShopByPlayer(ServerPlayer player) {
@@ -115,6 +113,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
 
     public ShopCapability(BaseTeam team) {
         super(team);
+        NeoForge.EVENT_BUS.register(this);
     }
 
     @SubscribeEvent
@@ -153,7 +152,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onPlayerDropItem(ItemTossEvent event){
-        if(event.getEntity().level().isClientSide) return;
+        if(event.getEntity().level().isClientSide()) return;
         ItemStack itemStack = event.getEntity().getItem();
 
         ShopCapability.getShopByPlayer((ServerPlayer) event.getPlayer()).ifPresent(shop -> {
@@ -170,8 +169,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 初始化商店系统
-     */
+     * 閸掓繂顫愰崠鏍ф櫌鎼存閮寸紒?     */
     public boolean initialize(String shopTypeId, int startMoney) {
         try {
             this.shopTypeId = shopTypeId;
@@ -186,8 +184,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 检查是否已初始化
-     */
+     * 濡偓閺屻儲妲搁崥锕?鍑￠崚婵嗩潗閸?     */
     public boolean isInitialized() {
         return initialized && shop != null;
     }
@@ -218,8 +215,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 设置起始金钱（仅在使用前设置有效）
-     */
+     * 鐠佸墽鐤嗙挧宄邦潗闁叉垿鎸堕敍鍫滅矌閸︺劋濞囬悽銊ュ鐠佸墽鐤嗛張澶嬫櫏閿?     */
     public void setStartMoney(int startMoney) {
         this.startMoney = startMoney;
         if (isInitialized()) {
@@ -228,8 +224,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 获取商店实例
-     */
+     * 閼惧嘲褰囬崯鍡楃暗鐎圭偘绶?     */
     public FPSMShop<?> getShop() {
         if (!isInitialized()) {
             throw new IllegalStateException("ShopCapability not initialized. Call initialize() first.");
@@ -245,28 +240,26 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 安全获取商店实例
-     */
+     * 鐎瑰鍙忛懢宄板絿閸熷棗绨电?圭偘绶?     */
     public Optional<FPSMShop<?>> getShopSafe() {
         return isInitialized() ? Optional.of(shop) : Optional.empty();
     }
 
     /**
-     * 获取商店类型ID
+     * 閼惧嘲褰囬崯鍡楃暗缁鐎稩D
      */
     public String getShopTypeId() {
         return shopTypeId;
     }
 
     /**
-     * 获取起始金钱
-     */
+     * 閼惧嘲褰囩挧宄邦潗闁叉垿鎸?     */
     public int getStartMoney() {
         return startMoney;
     }
 
     /**
-     * 重置玩家商店数据
+     * 闁插秶鐤嗛悳鈺侇啀閸熷棗绨甸弫鐗堝祦
      */
     public void resetPlayerData() {
         if (isInitialized()) {
@@ -277,8 +270,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 同步商店数据
-     */
+     * 閸氬本顒為崯鍡楃暗閺佺増宓?     */
     public void syncShopData() {
         if (isInitialized()) {
             shop.syncShopData();
@@ -300,8 +292,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 同步金钱数据
-     */
+     * 閸氬本顒為柌鎴︽尪閺佺増宓?     */
     public void syncShopMoneyData() {
         if (isInitialized()) {
             shop.syncShopMoneyData();
@@ -332,6 +323,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
 
     @Override
     public void destroy() {
+        NeoForge.EVENT_BUS.unregister(this);
         if (isInitialized()) {
             shop.clearPlayerShopData();
             initialized = false;
@@ -347,9 +339,9 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
     }
 
-    // ------------------------------ 商店相关工具方法 ------------------------------
+    // ------------------------------ 閸熷棗绨甸惄绋垮彠瀹搞儱鍙块弬瑙勭《 ------------------------------
     /**
-     * 添加监听器模块到商店
+     * 濞ｈ濮為惄鎴濇儔閸ｃ劍膩閸ф鍩岄崯鍡楃暗
      */
     public void addListenerModule(String moduleName, String shopType, int slotNum) {
         LMManager manager = FPSMCore.getInstance().getListenerModuleManager();
@@ -358,29 +350,27 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 从商店移除监听器模块
+     * 娴犲骸鏅㈡惔妤冃╅梽銈囨磧閸氼剙娅掑Ο鈥虫健
      */
     public void removeListenerModule(String moduleName, String shopType, int slotNum) {
         getShop().removeDefaultShopDataListenerModule(shopType, slotNum, moduleName);
     }
 
     /**
-     * 设置商店组ID
+     * 鐠佸墽鐤嗛崯鍡楃暗缂佸嚘D
      */
     public void setShopGroupID(int groupId, String shopType, int slotNum) {
         getShop().setDefaultShopDataGroupId(shopType, slotNum, groupId);
     }
 
     /**
-     * 设置商店成本
-     */
+     * 鐠佸墽鐤嗛崯鍡楃暗閹存劖婀?     */
     public void setShopCost(int cost, String shopType, int slotNum) {
         getShop().setDefaultShopDataCost(shopType, slotNum, cost);
     }
 
     /**
-     * 设置商店物品
-     */
+     * 鐠佸墽鐤嗛崯鍡楃暗閻椻晛鎼?     */
     public void setShopItem(ItemStack itemStack, String shopType, int slotNum) {
         if (GunCompatManager.isGun(itemStack)) {
             FPSMUtil.fixGunItem(itemStack, GunCompatManager.findProvider(itemStack));
@@ -389,15 +379,14 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 从玩家手中获取物品并设置到商店
-     */
+     * 娴犲海甯虹?硅埖澧滄稉顓″箯閸欐牜澧块崫浣歌嫙鐠佸墽鐤嗛崚鏉挎櫌鎼?     */
     public void setShopItemFromPlayer(ServerPlayer player, String shopType, int slotNum) {
         ItemStack itemStack = player.getMainHandItem().copy();
         setShopItem(itemStack, shopType, slotNum);
     }
 
     /**
-     * 设置枪支弹药数量
+     * 鐠佸墽鐤嗛弸顏呮暜瀵宓傞弫浼村櫤
      */
     public void setGunAmmoAmount(int amount, String shopType, int slotNum) {
         ItemStack itemStack = getShop().getDefaultShopDataItemStack(shopType, slotNum);
@@ -408,8 +397,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 注册能力到全局管理器
-     */
+     * 濞夈劌鍞介懗钘夊閸掓澘鍙忕仦鈧粻锛勬倞閸?     */
     public static void register() {
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, ShopCapability.class, new Factory<>() {
             @Override
@@ -429,8 +417,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
     }
 
     /**
-     * 商店命令处理器
-     */
+     * 閸熷棗绨甸崨鎴掓姢婢跺嫮鎮婇崳?     */
     protected static class ShopCommand implements Factory.Command {
         @Override
         public String getName() {
@@ -516,8 +503,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         /**
-         * 清除所有商店区域
-         */
+         * 濞撳懘娅庨幍鈧張澶婃櫌鎼存灏崺?         */
         private static int handleClearAreas(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(cap -> {
                 if (cap.clearAreas()) {
@@ -537,8 +523,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         /**
-         * 添加商店区域
-         */
+         * 濞ｈ濮為崯鍡楃暗閸栧搫鐓?         */
         private static int handleAddArea(CommandContext<CommandSourceStack> context) {
             BlockPos pos1 = BlockPosArgument.getBlockPos(context, "pos1");
             BlockPos pos2 = BlockPosArgument.getBlockPos(context, "pos2");
@@ -592,8 +577,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         /**
-         * 处理商店初始化
-         */
+         * 婢跺嫮鎮婇崯鍡楃暗閸掓繂顫愰崠?         */
         private static int handleInitialize(CommandContext<CommandSourceStack> context, int startMoney) {
             String typeId = StringArgumentType.getString(context, "type");
 
@@ -618,7 +602,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         /**
-         * 处理重置玩家数据
+         * 婢跺嫮鎮婇柌宥囩枂閻溾晛顔嶉弫鐗堝祦
          */
         private static int handleReset(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(capability -> {
@@ -638,8 +622,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         /**
-         * 处理数据同步
-         */
+         * 婢跺嫮鎮婇弫鐗堝祦閸氬本顒?         */
         private static int handleSync(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(capability -> {
                 if (!capability.isInitialized()) {
@@ -659,8 +642,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
         }
 
         /**
-         * 处理信息查询
-         */
+         * 婢跺嫮鎮婃穱鈩冧紖閺屻儴顕?         */
         private static int handleInfo(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(capability -> {
                 if (!capability.isInitialized()) {
@@ -681,7 +663,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             });
         }
 
-        // ------------------------------ 商店相关处理方法 ------------------------------
+        // ------------------------------ 閸熷棗绨甸惄绋垮彠婢跺嫮鎮婇弬瑙勭《 ------------------------------
         private static int handleAddListenerModule(CommandContext<CommandSourceStack> context) {
             String moduleName = StringArgumentType.getString(context, "listener_module");
             String shopType = StringArgumentType.getString(context, FPSMCommandSuggests.SHOP_TYPE_ARG).toUpperCase(Locale.ROOT);
@@ -792,7 +774,7 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
             String shopType = StringArgumentType.getString(context, FPSMCommandSuggests.SHOP_TYPE_ARG).toUpperCase(Locale.ROOT);
             int slotNum = IntegerArgumentType.getInteger(context, FPSMCommandSuggests.SHOP_SLOT_ARG) - 1;
 
-            ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(1, false);
+            ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(1);
 
             return FPSMCommand.getTeamCapability(context, ShopCapability.class).map(capability -> {
                 if (!capability.isInitialized()) {

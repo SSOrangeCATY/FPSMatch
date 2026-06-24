@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 public class SkinHandler {
@@ -17,18 +17,18 @@ public class SkinHandler {
         switch (skinType) {
             case GUN_ID : {
                 if(GunCompatManager.isGun(itemStack)){
-                    GunCompatManager.findProvider(itemStack).setGunId(itemStack, new ResourceLocation(data.toString()));
+                    GunCompatManager.findProvider(itemStack).setGunId(itemStack, Identifier.parse(data.toString()));
                 }
                 break;
             }
             case GUN_DISPLAY_ID : {
                 if(GunCompatManager.isGun(itemStack)){
-                    GunCompatManager.findProvider(itemStack).setGunDisplayId(itemStack, new ResourceLocation(data.toString()));
+                    GunCompatManager.findProvider(itemStack).setGunDisplayId(itemStack, Identifier.parse(data.toString()));
                 }
                 break;
             }
             case ITEM : {
-                itemStack = ItemStack.CODEC.decode(JsonOps.INSTANCE, data).getOrThrow(false,(e)->{}).getFirst();
+                itemStack = ItemStack.CODEC.decode(JsonOps.INSTANCE, data).getOrThrow(IllegalArgumentException::new).getFirst();
                 break;
             }
             default : {

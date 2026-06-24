@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -14,7 +14,7 @@ public record FPSMInventorySelectedS2CPacket(int selected) {
         return new FPSMInventorySelectedS2CPacket(buf.readInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 }

@@ -6,8 +6,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.common.NeoForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,10 +16,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * 禁用原版高亮玩家按键
  */
-@Mixin(KeyMapping.class)
+@Mixin(value = KeyMapping.class, remap = false)
 public abstract class MixinKeyMappingBlockSpectatorOutlines {
 
-    @Inject(method = "setDown(Z)V", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "setDown(Z)V", at = @At("HEAD"), cancellable = true, remap = false)
     private void onSetDown(boolean isDown, CallbackInfo ci) {
         LocalPlayer player = Minecraft.getInstance().player;
         MultiPlayerGameMode gameMode = Minecraft.getInstance().gameMode;
@@ -27,7 +27,7 @@ public abstract class MixinKeyMappingBlockSpectatorOutlines {
         KeyMapping self = (KeyMapping)(Object)this;
         if ("key.spectatorOutlines".equals(self.getName())) {
             if (isDown) {
-                if(FPSMConfig.Server.disableSpecGlowKey.get() || MinecraftForge.EVENT_BUS.post(new RequestSpectatorOutlinesEvent(player, gameMode))){
+                if(FPSMConfig.Server.disableSpecGlowKey.get() || NeoForge.EVENT_BUS.post(new RequestSpectatorOutlinesEvent(player, gameMode)).isCanceled()){
                     ci.cancel();
                 }
             }

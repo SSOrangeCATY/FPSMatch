@@ -7,31 +7,29 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.client.settings.KeyModifier;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
 import static com.tacz.guns.util.InputExtraCheck.isInGame;
 
 
-@OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@net.neoforged.fml.common.EventBusSubscriber(value = Dist.CLIENT)
 public class CustomHudKey {
     public static final KeyMapping KEY = new KeyMapping("key.fpsm.hud.custom.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_N,
-            "key.category.fpsm");
+            FPSMKeyCategories.FPSM);
 
     @SubscribeEvent
     public static void onInspectPress(InputEvent.Key event) {
-        if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && KEY.matches(event.getKey(), event.getScanCode())) {
+        if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && KEY.matches(event.getKeyEvent())) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player == null || player.isSpectator()) {
                 return;
@@ -39,9 +37,9 @@ public class CustomHudKey {
             // 切换自定义Tab
             FPSMGameHudManager.enable = !FPSMGameHudManager.enable;
             if(FPSMGameHudManager.enable){
-                player.displayClientMessage(Component.translatable("key.fpsm.hud.custom.on").withStyle(ChatFormatting.GREEN),true);
+                player.sendSystemMessage(Component.translatable("key.fpsm.hud.custom.on").withStyle(ChatFormatting.GREEN));
             }else{
-                player.displayClientMessage(Component.translatable("key.fpsm.hud.custom.off").withStyle(ChatFormatting.RED),true);
+                player.sendSystemMessage(Component.translatable("key.fpsm.hud.custom.off").withStyle(ChatFormatting.RED));
             }
         }
     }

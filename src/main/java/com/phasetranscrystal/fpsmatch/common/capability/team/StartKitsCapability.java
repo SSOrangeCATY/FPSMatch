@@ -20,11 +20,13 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.world.item.equipment.Equippable;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -131,12 +133,13 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
         player.getInventory().clearContent();
         teamKits.forEach(itemStack -> {
             ItemStack copy = itemStack.copy();
-            if (copy.getItem() instanceof ArmorItem armorItem) {
-                MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
-                player.setItemSlot(armorItem.getEquipmentSlot(), copy);
+            Equippable equippable = copy.get(DataComponents.EQUIPPABLE);
+            if (equippable != null && equippable.slot().getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                NeoForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
+                player.setItemSlot(equippable.slot(), copy);
             } else {
                 FPSMUtil.fixGunItem(copy);
-                MinecraftForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
+                NeoForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, copy));
                 player.getInventory().add(copy);
             }
         });
@@ -244,7 +247,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
          */
         private static int handleAddKitWithItem(CommandContext<CommandSourceStack> context, int count) {
             try {
-                ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(count, false);
+                ItemStack itemStack = ItemArgument.getItem(context, "item").createItemStack(count);
                 return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                     capability.addKit(itemStack);
                     context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.add.success",

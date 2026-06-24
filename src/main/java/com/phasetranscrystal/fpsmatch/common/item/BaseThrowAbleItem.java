@@ -8,18 +8,21 @@ import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiFunction;
 
@@ -42,12 +45,13 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
     }
 
     @Override
-    public @NotNull UseAnim getUseAnimation(@NotNull ItemStack pStack) {
-        return UseAnim.BOW;
+    public @NotNull ItemUseAnimation getUseAnimation(@NotNull ItemStack pStack) {
+        return ItemUseAnimation.BOW;
     }
 
-    public void releaseUsing(@NotNull ItemStack pStack, Level level, @NotNull LivingEntity pEntityLiving, int pTimeLeft) {
-        if(level.isClientSide){
+    @Override
+    public boolean releaseUsing(@NotNull ItemStack pStack, Level level, @NotNull LivingEntity pEntityLiving, int pTimeLeft) {
+        if(level.isClientSide()){
             if (isLeftPressed && isRightPressed) {
                 handleThrow(level,pEntityLiving,pStack, ThrowType.MID);
             } else {
@@ -58,53 +62,55 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
                 }
             }
         }
+        return true;
     }
 
-    public int getUseDuration(@NotNull ItemStack pStack) {
+    @Override
+    public int getUseDuration(@NotNull ItemStack pStack, @NotNull LivingEntity user) {
         return 72000;
     }
 
-    public void inventoryTick(@NotNull ItemStack itemStack, Level level, @NotNull Entity entity, int slotId, boolean isSelected) {
-        if (level.isClientSide) {
-            Minecraft minecraft = Minecraft.getInstance();
-            LocalPlayer player = minecraft.player;
-            if (player == null) return;
-            boolean isLocal = entity.getUUID().equals(player.getUUID());
-            if (isLocal && isSelected) {
-                boolean currentLeft = minecraft.options.keyAttack.isDown();
-                boolean currentRight = minecraft.options.keyUse.isDown();
-                if(tickCount == 5){
-                    isLeftPressed = currentLeft;
-                    isRightPressed = currentRight;
-                }else{
-                    if (currentRight && !isRightPressed){
-                        isRightPressed = true;
-                    }
-                    if (currentLeft && !isLeftPressed){
-                        isLeftPressed = true;
-                    }
+    @Override
+    public void inventoryTick(@NotNull ItemStack itemStack, @NotNull ServerLevel level, @NotNull Entity entity, @Nullable EquipmentSlot slot) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null) return;
+        boolean isSelected = slot == EquipmentSlot.MAINHAND || slot == EquipmentSlot.OFFHAND;
+        boolean isLocal = entity.getUUID().equals(player.getUUID());
+        if (isLocal && isSelected) {
+            boolean currentLeft = minecraft.options.keyAttack.isDown();
+            boolean currentRight = minecraft.options.keyUse.isDown();
+            if(tickCount == 5){
+                isLeftPressed = currentLeft;
+                isRightPressed = currentRight;
+            }else{
+                if (currentRight && !isRightPressed){
+                    isRightPressed = true;
                 }
+                if (currentLeft && !isLeftPressed){
+                    isLeftPressed = true;
+                }
+            }
 
-                if(tickCount > 5){
-                    tickCount = 0;
-                }else{
-                    tickCount++;
-                }
+            if(tickCount > 5){
+                tickCount = 0;
+            }else{
+                tickCount++;
             }
         }
     }
 
-    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level pLevel, Player pPlayer, @NotNull InteractionHand pHand) {
-        ItemStack itemstack = pPlayer.getItemInHand(pHand);
+    @Override
+    public @NotNull InteractionResult use(@NotNull Level pLevel, Player pPlayer, @NotNull InteractionHand pHand) {
         pPlayer.startUsingItem(pHand);
-        return InteractionResultHolder.consume(itemstack);
+        return InteractionResult.CONSUME;
     }
 
     public void handleThrow(Level level,LivingEntity entity, ItemStack stack, ThrowType type) {
-        if (level.isClientSide) {
-            if(MinecraftForge.EVENT_BUS.post(new FPSMThrowGrenadeEvent(entity,stack,type))) return;
+        if (level.isClientSide()) {
+            if(NeoForge.EVENT_BUS.post(new FPSMThrowGrenadeEvent(entity,stack,type)).isCanceled()) return;
 
-            FPSMatch.INSTANCE.sendToServer(new ThrowEntityC2SPacket(type));
+            FPSMatch.sendToServer(new ThrowEntityC2SPacket(type));
             this.isLeftPressed = false;
             this.isRightPressed = false;
             this.tickCount = 0;

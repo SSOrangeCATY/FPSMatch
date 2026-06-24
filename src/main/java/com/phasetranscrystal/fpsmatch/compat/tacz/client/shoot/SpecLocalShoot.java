@@ -15,7 +15,7 @@ import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -46,7 +46,7 @@ public final class SpecLocalShoot {
         if (iGun == null) return ShootResult.NOT_GUN;
 
         // 检查枪械数据
-        ResourceLocation gunId = iGun.getGunId(stack);
+        Identifier gunId = iGun.getGunId(stack);
         Optional<ClientGunIndex> gunIndex = TimelessAPI.getClientGunIndex(gunId);
         GunDisplayInstance display = TimelessAPI.getGunDisplay(stack).orElse(null);
         if (gunIndex.isEmpty() || display == null) return ShootResult.ID_NOT_EXIST;

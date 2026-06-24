@@ -1,8 +1,8 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -14,8 +14,6 @@ import java.util.List;
 
 public class EditorShopScreen extends AbstractContainerScreen<EditorShopContainer> {
     private static final int SLOT_SIZE = 18;
-    private final int guiX = 0;
-    private final int guiY = 0;
     // GUI阴影色
     private static final int GUI_SHADOW_COLOR = 0x80000000;
     // GUI主背景色
@@ -36,38 +34,27 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     private static final int GUI_PADDING = 4;
 
     public EditorShopScreen(EditorShopContainer container, Inventory inv, Component title) {
-        super(container, inv, Component.translatable("gui.fpsm.shop_editor.title"));
+        super(container, inv, Component.translatable("gui.fpsm.shop_editor.title"),
+                Math.max(176, 10 + Math.max(1, container.getCols()) * (SLOT_SIZE + 40)),
+                Math.max(166, 44 + Math.max(1, container.getRows()) * (SLOT_SIZE + 10)));
     }
 
     @Override
     protected void init() {
-        this.leftPos = guiX;
-        this.topPos = guiY;
-        calculateGuiPosition();
-        addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.translatable("gui.back"), button -> onClose())
+        super.init();
+        addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
                 .bounds(width / 2 - 50, height - 30, 100, 20)
                 .build());
     }
 
-
-    private void calculateGuiPosition() {
-        Minecraft mc = Minecraft.getInstance();
-        this.imageWidth = mc.getWindow().getWidth();
-        this.imageHeight = mc.getWindow().getHeight();
+    @Override
+    protected void extractLabels(@NotNull GuiGraphicsExtractor pGuiGraphicsExtractor, int pMouseX, int pMouseY) {
     }
 
     @Override
-    protected void renderLabels(@NotNull GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-    }
-
-    @Override
-    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        this.renderBackground(guiGraphics);
-
-        calculateGuiPosition();
-
+    public void extractBackground(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
         renderGuiMultiLayerBackground(guiGraphics);
-
         renderShopSlotsBackground(guiGraphics);
     }
 
@@ -80,44 +67,44 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     }
 
 
-    private void renderGuiMultiLayerBackground(GuiGraphics guiGraphics) {
+    private void renderGuiMultiLayerBackground(GuiGraphicsExtractor guiGraphics) {
         guiGraphics.fill(
-                guiX + 2, guiY + 2,
-                guiX + imageWidth + 2, guiY + imageHeight + 2,
+                leftPos + 2, topPos + 2,
+                leftPos + imageWidth + 2, topPos + imageHeight + 2,
                 GUI_SHADOW_COLOR
         );
 
         guiGraphics.fill(
-                guiX, guiY,
-                guiX + imageWidth, guiY + 1,
+                leftPos, topPos,
+                leftPos + imageWidth, topPos + 1,
                 GUI_OUTER_BORDER
         );
         guiGraphics.fill(
-                guiX, guiY + imageHeight - 1,
-                guiX + imageWidth, guiY + imageHeight,
+                leftPos, topPos + imageHeight - 1,
+                leftPos + imageWidth, topPos + imageHeight,
                 GUI_OUTER_BORDER
         );
         guiGraphics.fill(
-                guiX, guiY + 1,
-                guiX + 1, guiY + imageHeight - 1,
+                leftPos, topPos + 1,
+                leftPos + 1, topPos + imageHeight - 1,
                 GUI_OUTER_BORDER
         );
         guiGraphics.fill(
-                guiX + imageWidth - 1, guiY + 1,
-                guiX + imageWidth, guiY + imageHeight - 1,
+                leftPos + imageWidth - 1, topPos + 1,
+                leftPos + imageWidth, topPos + imageHeight - 1,
                 GUI_OUTER_BORDER
         );
 
         guiGraphics.fill(
-                guiX + 1, guiY + 1,
-                guiX + imageWidth - 1, guiY + imageHeight - 1,
+                leftPos + 1, topPos + 1,
+                leftPos + imageWidth - 1, topPos + imageHeight - 1,
                 GUI_MAIN_BACKGROUND
         );
 
-        int innerBorderX1 = guiX + 1 + GUI_PADDING;
-        int innerBorderY1 = guiY + 1 + GUI_PADDING;
-        int innerBorderX2 = guiX + imageWidth - 1 - GUI_PADDING;
-        int innerBorderY2 = guiY + imageHeight - 1 - GUI_PADDING;
+        int innerBorderX1 = leftPos + 1 + GUI_PADDING;
+        int innerBorderY1 = topPos + 1 + GUI_PADDING;
+        int innerBorderX2 = leftPos + imageWidth - 1 - GUI_PADDING;
+        int innerBorderY2 = topPos + imageHeight - 1 - GUI_PADDING;
 
         guiGraphics.fill(innerBorderX1, innerBorderY1, innerBorderX2, innerBorderY1 + 1, GUI_INNER_BORDER);
         guiGraphics.fill(innerBorderX1, innerBorderY2 - 1, innerBorderX2, innerBorderY2, GUI_INNER_BORDER);
@@ -125,7 +112,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         guiGraphics.fill(innerBorderX2 - 1, innerBorderY1 + 1, innerBorderX2, innerBorderY2 - 1, GUI_INNER_BORDER);
     }
 
-    private void renderShopSlotsBackground(GuiGraphics guiGraphics) {
+    private void renderShopSlotsBackground(GuiGraphicsExtractor guiGraphics) {
         for (Slot shopSlot : menu.slots) {
             int slotRenderX = this.leftPos + getSlotX(shopSlot);
             int slotRenderY = this.topPos + getSlotY(shopSlot);
@@ -160,19 +147,19 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     }
 
     @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         renderShopIdentity(guiGraphics);
         renderHoveredSlotHighlight(guiGraphics, mouseX, mouseY);
         renderShopSlotTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    private void renderShopIdentity(GuiGraphics guiGraphics) {
-        guiGraphics.drawCenteredString(font, title, width / 2, 12, 0xFFFFFFFF);
-        guiGraphics.drawCenteredString(font, Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()), width / 2, 26, 0xFFB8D4E3);
+    private void renderShopIdentity(GuiGraphicsExtractor guiGraphics) {
+        guiGraphics.centeredText(font, title, width / 2, 12, 0xFFFFFFFF);
+        guiGraphics.centeredText(font, Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()), width / 2, 26, 0xFFB8D4E3);
     }
 
-    private void renderHoveredSlotHighlight(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderHoveredSlotHighlight(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int hoveredIndex = getHoveredCustomSlotIndex(mouseX, mouseY);
         if (hoveredIndex == -1) {
             return;
@@ -225,7 +212,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         return -1;
     }
 
-    private void renderShopSlotTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    private void renderShopSlotTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         int hoveredIndex = getHoveredCustomSlotIndex(mouseX, mouseY);
         if (hoveredIndex == -1) {
             return;
@@ -257,6 +244,6 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         tooltipComponents.add(Component.literal("\n"));
         tooltipComponents.add(Component.translatable("gui.shop.slot.tooltip.edit_prompt"));
 
-        guiGraphics.renderComponentTooltip(this.font, tooltipComponents, mouseX, mouseY);
+        guiGraphics.setComponentTooltipForNextFrame(this.font, tooltipComponents, mouseX, mouseY);
     }
 }

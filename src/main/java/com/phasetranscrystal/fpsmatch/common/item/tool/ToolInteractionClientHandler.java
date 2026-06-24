@@ -9,17 +9,17 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID, value = Dist.CLIENT)
 public class ToolInteractionClientHandler {
     private static boolean isControlDown() {
         Minecraft minecraft = Minecraft.getInstance();
-        long window = minecraft.getWindow().getWindow();
+        var window = minecraft.getWindow();
         return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
                 || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
@@ -28,7 +28,7 @@ public class ToolInteractionClientHandler {
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         Player player = event.getEntity();
         Level level = player.level();
-        if (!level.isClientSide || event.getHand() != InteractionHand.MAIN_HAND) {
+        if (!level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) {
             return;
         }
 
@@ -45,7 +45,7 @@ public class ToolInteractionClientHandler {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         Player player = event.getEntity();
         Level level = player.level();
-        if (!level.isClientSide || event.getHand() != InteractionHand.MAIN_HAND) {
+        if (!level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND) {
             return;
         }
 
@@ -66,7 +66,7 @@ public class ToolInteractionClientHandler {
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         Player player = event.getEntity();
         Level level = player.level();
-        if (!level.isClientSide || event.getHand() != InteractionHand.MAIN_HAND || !isControlDown()) {
+        if (!level.isClientSide() || event.getHand() != InteractionHand.MAIN_HAND || !isControlDown()) {
             return;
         }
 

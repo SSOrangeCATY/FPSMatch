@@ -20,10 +20,12 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.*;
 
@@ -35,7 +37,7 @@ public class FPSMCommand {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
 
         LiteralArgumentBuilder<CommandSourceStack> tree = Commands.literal("fpsm")
-                .requires(permission -> permission.hasPermission(2))
+                .requires(permission -> permission.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                 .then(Commands.literal("help")
                         .executes(FPSMCommand::handleHelp)
                         .then(Commands.literal("toggle")
@@ -49,7 +51,7 @@ public class FPSMCommand {
         LiteralArgumentBuilder<CommandSourceStack> literal = init(builder);
 
         RegisterFPSMCommandEvent registerFPSMCommandEvent = new RegisterFPSMCommandEvent(literal,context, FPSMHelpManager.getInstance());
-        MinecraftForge.EVENT_BUS.post(registerFPSMCommandEvent);
+        NeoForge.EVENT_BUS.post(registerFPSMCommandEvent);
         dispatcher.register(registerFPSMCommandEvent.getTree());
     }
 

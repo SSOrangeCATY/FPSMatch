@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.packet.mapselect;
 
 import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public record MapSelectionSnapshotS2CPacket(List<MapRoomSummary> maps, boolean v
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 }

@@ -16,12 +16,12 @@ public interface IThrowEntityAble {
 
     default void shoot(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy){
             ItemStack itemstack = pPlayer.getItemInHand(pHand);
-            if(pPlayer.getCooldowns().isOnCooldown((Item) this)){
+            if(pPlayer.getCooldowns().isOnCooldown(itemstack)){
                 return;
             }
             pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), this.getThrowVoice(), SoundSource.PLAYERS, 0.5F, 1);
-            pPlayer.getCooldowns().addCooldown((Item) this, 20);
-            if (!pLevel.isClientSide) {
+            pPlayer.getCooldowns().addCooldown(itemstack, 20);
+            if (!pLevel.isClientSide()) {
                 BaseProjectileEntity shell = this.getEntity(pPlayer, pLevel);
                 shell.setItem(itemstack);
                 shell.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, velocity, inaccuracy);

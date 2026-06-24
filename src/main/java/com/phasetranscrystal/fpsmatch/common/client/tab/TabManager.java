@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.tab;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
@@ -35,7 +35,7 @@ public class TabManager {
     /**
      * 渲染CustomTab
      * */
-    public void render(GuiGraphics graphics, int windowWidth, List<PlayerInfo> players, Scoreboard scoreboard, Objective objective) {        
+    public void render(GuiGraphicsExtractor graphics, int windowWidth, List<PlayerInfo> players, Scoreboard scoreboard, Objective objective) {        
         TabRenderer renderer = renderers.getOrDefault(FPSMClient.getGlobalData().getCurrentGameType(), null);
         if (renderer != null) {
             renderer.render(graphics, windowWidth, players, scoreboard, objective);

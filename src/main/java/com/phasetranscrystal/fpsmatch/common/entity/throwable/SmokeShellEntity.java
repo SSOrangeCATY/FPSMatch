@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,7 +22,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
 
 import java.util.Optional;
 
@@ -31,26 +31,24 @@ public class SmokeShellEntity extends BaseProjectileLifeTimeEntity {
 
     public SmokeShellEntity(EntityType<? extends SmokeShellEntity> type, Level level) {
         super(type, level);
-        this.noCulling = true;
     }
 
     public SmokeShellEntity(LivingEntity shooter, Level level) {
         super(EntityRegister.SMOKE_SHELL.get(), shooter, level);
-        this.noCulling = true;
         setTimeLeft(FPSMConfig.common.smokeShellLivingTime.get());
         setTimeoutTicks(-1);
         if(this.getOwner() instanceof Player player){
             Optional<BaseMap> baseMap = FPSMCore.getInstance().getMapByPlayer(player);
             baseMap.flatMap(map -> map.getMapTeams().getTeamByPlayer(player)).ifPresent(t -> {
-                this.setParticleOptions(new DustParticleOptions(t.getColorVec3f(), 10F));
+                this.setParticleOptions(new DustParticleOptions(RenderUtil.color(t.getColorVec3f()), 10F));
             });
         }
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        entityData.define(PARTICLE_OPTIONS, new DustParticleOptions(new Vector3f(1, 1, 1), 10F));
+    protected void defineSynchedData(SynchedEntityData.Builder entityData) {
+        super.defineSynchedData(entityData);
+        entityData.define(PARTICLE_OPTIONS, new DustParticleOptions(RenderUtil.color(255, 255, 255), 10F));
         entityData.define(Particle_COOLDOWN, 0);
     }
 

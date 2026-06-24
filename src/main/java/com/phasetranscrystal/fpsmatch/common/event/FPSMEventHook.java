@@ -6,29 +6,31 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.TriState;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.ServerChatEvent;
-import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public class FPSMEventHook {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+    public static void onPlayerPickupItem(ItemEntityPickupEvent.Pre event) {
+        if (event.getPlayer() instanceof ServerPlayer player) {
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
             if (opt.isPresent()) {
                 BaseMap map = opt.get();
-                FPSMapEvent.PlayerEvent.PickupItemEvent pickupItemEvent = new FPSMapEvent.PlayerEvent.PickupItemEvent(map, player, event.getOriginalEntity(), event.getStack());
-                if (MinecraftForge.EVENT_BUS.post(pickupItemEvent)) {
-                    event.setCanceled(true);
+                FPSMapEvent.PlayerEvent.PickupItemEvent pickupItemEvent = new FPSMapEvent.PlayerEvent.PickupItemEvent(map, player, event.getItemEntity(), event.getItemEntity().getItem());
+                if (NeoForge.EVENT_BUS.post(pickupItemEvent).isCanceled()) {
+                    event.setCanPickup(TriState.FALSE);
                 }
             }
         }
@@ -41,7 +43,7 @@ public class FPSMEventHook {
             if (opt.isPresent()) {
                 BaseMap map = opt.get();
                 FPSMapEvent.PlayerEvent.TossItemEvent tossItemEvent = new FPSMapEvent.PlayerEvent.TossItemEvent(map, player, event.getEntity());
-                if (MinecraftForge.EVENT_BUS.post(tossItemEvent)) {
+                if (NeoForge.EVENT_BUS.post(tossItemEvent).isCanceled()) {
                     event.setCanceled(true);
                 }
             }
@@ -54,16 +56,16 @@ public class FPSMEventHook {
         if (opt.isPresent()) {
             BaseMap map = opt.get();
             FPSMapEvent.PlayerEvent.ChatEvent chatEvent = new FPSMapEvent.PlayerEvent.ChatEvent(map, event.getPlayer(), event.getMessage().getString());
-            if (MinecraftForge.EVENT_BUS.post(chatEvent)) {
+            if (NeoForge.EVENT_BUS.post(chatEvent).isCanceled()) {
                 event.setCanceled(true);
             }
         }
     }
 
     /**
-     * 玩家登录事件处理
+     * 鐜╁鐧诲綍浜嬩欢澶勭悊
      *
-     * @param event 玩家登录事件
+     * @param event 鐜╁鐧诲綍浜嬩欢
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
@@ -71,7 +73,7 @@ public class FPSMEventHook {
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
             opt.ifPresentOrElse(map -> {
                 FPSMapEvent.PlayerEvent.LoggedInEvent loggedInEvent = new FPSMapEvent.PlayerEvent.LoggedInEvent(map, player);
-                MinecraftForge.EVENT_BUS.post(loggedInEvent);
+                NeoForge.EVENT_BUS.post(loggedInEvent);
             }, () -> {
                 if (FPSMConfig.common.autoAdventureMode.get()) {
                     if (!player.isCreative()) {
@@ -84,9 +86,9 @@ public class FPSMEventHook {
     }
 
     /**
-     * 玩家登出事件处理
+     * 鐜╁鐧诲嚭浜嬩欢澶勭悊
      *
-     * @param event 玩家登出事件
+     * @param event 鐜╁鐧诲嚭浜嬩欢
      */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
@@ -96,7 +98,7 @@ public class FPSMEventHook {
             if (opt.isPresent()) {
                 BaseMap map = opt.get();
                 FPSMapEvent.PlayerEvent.LoggedOutEvent loggedOutEvent = new FPSMapEvent.PlayerEvent.LoggedOutEvent(map, player);
-                if (MinecraftForge.EVENT_BUS.post(loggedOutEvent)) {
+                if (NeoForge.EVENT_BUS.post(loggedOutEvent).isCanceled()) {
                     leave = false;
                 }
             }
@@ -120,7 +122,7 @@ public class FPSMEventHook {
     }
 
     //    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 转移到死斗模式内
+    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 杞Щ鍒版鏂楁ā寮忓唴
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }

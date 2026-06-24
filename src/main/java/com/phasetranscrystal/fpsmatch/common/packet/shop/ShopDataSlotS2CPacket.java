@@ -4,9 +4,9 @@ import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketExecutor;
 import com.phasetranscrystal.fpsmatch.core.shop.UnknownShopType;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -36,27 +36,27 @@ public class ShopDataSlotS2CPacket {
         this.locked = shopSlot.isLocked();
     }
 
-    public static void encode(ShopDataSlotS2CPacket packet, FriendlyByteBuf buf) {
+    public static void encode(ShopDataSlotS2CPacket packet, RegistryFriendlyByteBuf buf) {
         buf.writeUtf(packet.type.name());
         buf.writeInt(packet.index);
-        buf.writeItemStack(packet.itemStack, false);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, packet.itemStack);
         buf.writeInt(packet.cost);
         buf.writeInt(packet.boughtCount);
         buf.writeBoolean(packet.locked);
     }
 
-    public static ShopDataSlotS2CPacket decode(FriendlyByteBuf buf) {
+    public static ShopDataSlotS2CPacket decode(RegistryFriendlyByteBuf buf) {
         return new ShopDataSlotS2CPacket(
                 new UnknownShopType(buf.readUtf()),
                 buf.readInt(),
-                buf.readItem(),
+                ItemStack.OPTIONAL_STREAM_CODEC.decode(buf),
                 buf.readInt(),
                 buf.readInt(),
                 buf.readBoolean()
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ClientPacketExecutor.execute(ctx, this);
     }
 }

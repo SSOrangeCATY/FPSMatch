@@ -123,9 +123,7 @@ public class Setting<T> {
      * @throws RuntimeException 如果编码过程中发生错误。
      */
     public JsonElement toJson() {
-        return this.codec().encodeStart(JsonOps.INSTANCE, this.value).getOrThrow(false, e -> {
-            throw new RuntimeException(e);
-        });
+        return this.codec().encodeStart(JsonOps.INSTANCE, this.value).getOrThrow(RuntimeException::new);
     }
 
     @Override
@@ -140,9 +138,7 @@ public class Setting<T> {
      * @throws RuntimeException 如果解码过程中发生错误。
      */
     public void fromJson(JsonElement json) {
-        this.value = this.codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
-            throw new RuntimeException(e);
-        }).getFirst();
+        this.value = this.codec().decode(JsonOps.INSTANCE, json).getOrThrow(RuntimeException::new).getFirst();
     }
 
     public boolean parse(String value){
@@ -159,7 +155,7 @@ public class Setting<T> {
     }
 
     public void readFromBuf(FriendlyByteBuf buf){
-        value = buf.readJsonWithCodec(codec);
+        value = buf.readLenientJsonWithCodec(codec);
     }
 
     public void writeToBuf(FriendlyByteBuf buf){

@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.event.register;
 
 import com.phasetranscrystal.fpsmatch.core.shop.functional.LMManager;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 public class RegisterListenerModuleEvent extends Event {
     LMManager manager;

@@ -3,8 +3,8 @@ package com.phasetranscrystal.fpsmatch.core.persistence;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.loading.FMLLoader;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -29,12 +29,12 @@ public class FPSMDataManager {
 
     public FPSMDataManager(String levelName) {
         String fixedLevelName = PersistenceUtils.fixFileName(levelName);
-        this.levelDataPath = Paths.get(FMLLoader.getGamePath().toString(), "fpsmatch", fixedLevelName);
+        this.levelDataPath = FMLLoader.getCurrent().getGameDir().resolve("fpsmatch").resolve(fixedLevelName);
         this.globalDataPath = ConfigManager.getGlobalDataPath();
         PersistenceUtils.ensureDirectoryExists(levelDataPath);
         PersistenceUtils.ensureDirectoryExists(globalDataPath);
 
-        MinecraftForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(this));
+        NeoForge.EVENT_BUS.post(new RegisterFPSMSaveDataEvent(this));
     }
 
     // 注册数据类型

@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.Map;
 
-@Mixin(SoundEngine.class)
+@Mixin(value = SoundEngine.class, remap = false)
 public interface SoundEngineAccessor {
-    @Accessor("instanceToChannel")
+    @Accessor(value = "instanceToChannel", remap = false)
     Map<SoundInstance, ChannelAccess.ChannelHandle> getInstanceToChannel();
 }

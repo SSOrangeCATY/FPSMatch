@@ -2,11 +2,10 @@ package com.phasetranscrystal.fpsmatch.core.persistence;
 
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLLoader;
 import org.slf4j.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class PersistenceUtils {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -37,7 +36,7 @@ public class PersistenceUtils {
 
     /** 获取本地缓存文件 */
     public static Path getLocalCachePath(String filename, String type) {
-        Path cacheDir = Paths.get(FMLLoader.getGamePath().toString(), "fpsmatch", "cache", type);
+        Path cacheDir = FMLLoader.getCurrent().getGameDir().resolve("fpsmatch").resolve("cache").resolve(type);
         ensureDirectoryExists(cacheDir);
         String fixedFilename = fixFileName(filename);
         return cacheDir.resolve(fixedFilename + "." + type);

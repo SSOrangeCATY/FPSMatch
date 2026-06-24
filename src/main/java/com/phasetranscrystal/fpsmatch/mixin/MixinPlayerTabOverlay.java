@@ -2,7 +2,7 @@ package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabManager;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.world.scores.Objective;
@@ -15,10 +15,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
 
-@Mixin(PlayerTabOverlay.class)
+@Mixin(value = PlayerTabOverlay.class, remap = false)
 public abstract class MixinPlayerTabOverlay{
-    @Inject(at = {@At("HEAD")}, method = "render(Lnet/minecraft/client/gui/GuiGraphics;ILnet/minecraft/world/scores/Scoreboard;Lnet/minecraft/world/scores/Objective;)V", cancellable = true)
-    public void fpsMatch$render$Custom(GuiGraphics guiGraphics, int windowWidth, Scoreboard scoreboard, Objective objective, CallbackInfo ci) {
+    @Inject(at = {@At("HEAD")}, method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;ILnet/minecraft/world/scores/Scoreboard;Lnet/minecraft/world/scores/Objective;)V", cancellable = true, remap = false)
+    public void fpsMatch$render$Custom(GuiGraphicsExtractor guiGraphics, int windowWidth, Scoreboard scoreboard, Objective objective, CallbackInfo ci) {
         if(!FPSMGameHudManager.shouldRender()) {
             return;
         }
@@ -30,6 +30,6 @@ public abstract class MixinPlayerTabOverlay{
         ci.cancel();
     }
 
-    @Shadow
+    @Shadow(remap = false)
     protected abstract List<PlayerInfo> getPlayerInfos();
 }

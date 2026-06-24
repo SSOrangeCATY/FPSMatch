@@ -4,7 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -116,7 +116,7 @@ public class SpawnPointToolScreen extends Screen {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int left = 18;
         int top = Math.max(18, (this.height - PANEL_HEIGHT) / 2);
         guiGraphics.fill(0, 0, this.width, this.height, SCREEN_OVERLAY);
@@ -126,15 +126,15 @@ public class SpawnPointToolScreen extends Screen {
         guiGraphics.fill(left, top, left + 1, top + PANEL_HEIGHT, PANEL_BORDER);
         guiGraphics.fill(left + PANEL_WIDTH - 1, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, PANEL_BORDER);
 
-        guiGraphics.drawString(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.type"), left + 12, top + 30, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.map"), left + 12, top + 60, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.team"), left + 12, top + 90, 0xF1D9B0, false);
-        guiGraphics.drawString(this.font, Component.translatable("gui.fpsm.spawn_point_tool.count", this.spawnPoints.size()), left + 12, top + 120, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, currentPointLabel(), left + 160, top + 120, 0xD7E3EA, false);
-        guiGraphics.drawString(this.font, currentPointDetail(), left + 12, top + 144, 0xA4C4D3, false);
+        guiGraphics.text(this.font, this.title, left + 10, top + 8, 0xFFFFFF, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.spawn_point_tool.type"), left + 12, top + 30, 0xF1D9B0, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.spawn_point_tool.map"), left + 12, top + 60, 0xF1D9B0, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.spawn_point_tool.team"), left + 12, top + 90, 0xF1D9B0, false);
+        guiGraphics.text(this.font, Component.translatable("gui.fpsm.spawn_point_tool.count", this.spawnPoints.size()), left + 12, top + 120, 0xFFFFFF, false);
+        guiGraphics.text(this.font, currentPointLabel(), left + 160, top + 120, 0xD7E3EA, false);
+        guiGraphics.text(this.font, currentPointDetail(), left + 12, top + 144, 0xA4C4D3, false);
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void cycleType() {

@@ -2,7 +2,6 @@ package com.phasetranscrystal.fpsmatch.compat.spectate.tacz;
 
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -24,7 +23,7 @@ public final class SpectatorGunItemMirror {
             return;
         }
         if (!isHoldingFake) {
-            fakeSlotIndex = localPlayer.getInventory().selected;
+            fakeSlotIndex = localPlayer.getInventory().getSelectedSlot();
             oldStack = localPlayer.getInventory().getItem(fakeSlotIndex);
             mirrorStack = targetStack == null ? ItemStack.EMPTY : targetStack.copy();
             localPlayer.getInventory().setItem(fakeSlotIndex, mirrorStack);
@@ -48,10 +47,10 @@ public final class SpectatorGunItemMirror {
         if (!isHoldingFake) {
             return;
         }
-        if (fakeSlotIndex < 0 || fakeSlotIndex >= localPlayer.getInventory().items.size()) {
+        if (fakeSlotIndex < 0 || fakeSlotIndex >= localPlayer.getInventory().getNonEquipmentItems().size()) {
             return;
         }
-        if (localPlayer.getInventory().items.get(fakeSlotIndex) != mirrorStack) {
+        if (localPlayer.getInventory().getNonEquipmentItems().get(fakeSlotIndex) != mirrorStack) {
             localPlayer.getInventory().setItem(fakeSlotIndex, mirrorStack);
         }
     }
@@ -60,7 +59,7 @@ public final class SpectatorGunItemMirror {
         if (!isHoldingFake) {
             return;
         }
-        if (fakeSlotIndex >= 0 && fakeSlotIndex < localPlayer.getInventory().items.size()) {
+        if (fakeSlotIndex >= 0 && fakeSlotIndex < localPlayer.getInventory().getNonEquipmentItems().size()) {
             localPlayer.getInventory().setItem(fakeSlotIndex, oldStack);
         }
         oldStack = ItemStack.EMPTY;
@@ -95,8 +94,7 @@ public final class SpectatorGunItemMirror {
         if (mirror == null || target == null) {
             return;
         }
-        CompoundTag tag = target.getTag();
-        mirror.setTag(tag == null ? null : tag.copy());
+        mirror.applyComponentsAndValidate(target.getComponentsPatch());
         mirror.setCount(target.getCount());
         mirror.setDamageValue(target.getDamageValue());
     }

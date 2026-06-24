@@ -3,7 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.item;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -18,14 +18,14 @@ public class BulletproofArmor extends Item {
     }
 
     @Override
-    public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
-        if(!pLevel.isClientSide){
+    public @NotNull InteractionResult use(Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
+        if(!pLevel.isClientSide()){
             BulletproofArmorAttribute.addPlayer((ServerPlayer) pPlayer,new BulletproofArmorAttribute(hasHelmet));
             ItemStack itemstack = pPlayer.getItemInHand(pUsedHand);
             if (!pPlayer.isCreative()) {
                 itemstack.shrink(1);
             }
-            return InteractionResultHolder.success(pPlayer.getItemInHand(pUsedHand));
+            return InteractionResult.SUCCESS_SERVER;
         }
         return super.use(pLevel,pPlayer,pUsedHand);
     }

@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.TeamColor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -261,7 +262,7 @@ public class MapTeams {
     public void setTeamNameColor(BaseMap map, String teamName, ChatFormatting color){
         String fixedName = map.getGameType()+"_"+map.getMapName()+"_"+teamName;
         PlayerTeam playerteam = Objects.requireNonNullElseGet(this.level.getScoreboard().getPlayersTeam(fixedName), () -> this.level.getScoreboard().addPlayerTeam(fixedName));
-        playerteam.setColor(color);
+        playerteam.setColor(toTeamColor(color));
     }
 
     /**
@@ -675,7 +676,7 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void leaveTeam(ServerPlayer player) {
-        player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+        player.level().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
 
         for (ServerTeam team : teams.values()) {
             if(team.hasPlayer(player.getUUID())) {
@@ -964,6 +965,10 @@ public class MapTeams {
      * @param reason 获得 MVP 的原因
      */
     public record RawMVPData(UUID uuid, String reason) {
+    }
+
+    private static Optional<TeamColor> toTeamColor(ChatFormatting color) {
+        return color == null ? Optional.empty() : Optional.ofNullable(TeamColor.byName(color.name().toLowerCase(Locale.ROOT)));
     }
 
 }

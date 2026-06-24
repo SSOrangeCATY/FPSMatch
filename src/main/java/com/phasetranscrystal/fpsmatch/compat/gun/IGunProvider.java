@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.compat.gun;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ItemStack;
@@ -28,17 +28,17 @@ public interface IGunProvider {
     boolean isGun(ItemStack stack);
 
     /** 获取枪械 ID */
-    ResourceLocation getGunId(ItemStack stack);
+    Identifier getGunId(ItemStack stack);
 
     /** 获取枪械类别 */
     GunTabTypeEnum getGunTabType(ItemStack stack);
 
     /** 设置枪械 ID（NBT 写入） */
-    default void setGunId(ItemStack stack, ResourceLocation gunId) {
+    default void setGunId(ItemStack stack, Identifier gunId) {
     }
 
     /** 设置枪械显示 ID（NBT 写入） */
-    default void setGunDisplayId(ItemStack stack, ResourceLocation gunId) {
+    default void setGunDisplayId(ItemStack stack, Identifier gunId) {
     }
 
     // ========== 弹药操作 ==========
@@ -70,12 +70,12 @@ public interface IGunProvider {
     Optional<GunDataDTO> getGunData(ItemStack stack);
 
     /** 通过 gunId 获取枪械数据 */
-    Optional<GunDataDTO> getGunData(ResourceLocation gunId);
+    Optional<GunDataDTO> getGunData(Identifier gunId);
 
     // ========== 渲染（客户端） ==========
 
     /** 获取枪械 HUD 纹理（客户端专用） */
-    default ResourceLocation getGunHUDTexture(ItemStack stack) {
+    default Identifier getGunHUDTexture(ItemStack stack) {
         return null;
     }
 

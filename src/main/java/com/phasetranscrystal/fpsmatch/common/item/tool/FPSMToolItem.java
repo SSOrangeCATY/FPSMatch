@@ -8,29 +8,28 @@ import com.phasetranscrystal.fpsmatch.common.packet.EditToolClickC2SPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
-import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public abstract class FPSMToolItem extends Item implements EditToolClickHandler {
     public static final String TYPE_TAG = "SelectedType";
     public static final String MAP_TAG = "SelectedMap";
@@ -41,8 +40,8 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
     public static final String DOUBLE_CLICK_LAST_TICK_TAG = "DoubleClickLastTick";
     public static final int DOUBLE_CLICK_TICK_LIMIT = 15;
 
-    public FPSMToolItem(Properties pProperties) {
-        super(pProperties);
+    public FPSMToolItem(Properties properties) {
+        super(properties);
     }
 
     @Override
@@ -58,42 +57,42 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
     }
 
     @Override
-    public final @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand interactionHand) {
-        if(level.isClientSide()) return InteractionResultHolder.pass(player.getItemInHand(interactionHand));
-        this.handleClick(player.getItemInHand(interactionHand),(ServerPlayer) player,false,player.isShiftKeyDown(),ClickAction.RIGHT_CLICK);
-        return InteractionResultHolder.success(player.getItemInHand(interactionHand));
+    public final @NotNull InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand interactionHand) {
+        if (level.isClientSide()) return InteractionResult.PASS;
+        this.handleClick(player.getItemInHand(interactionHand), (ServerPlayer) player, false, player.isShiftKeyDown(), ClickAction.RIGHT_CLICK);
+        return InteractionResult.SUCCESS_SERVER;
     }
 
     protected abstract void onLeftClick(ClickActionContext context);
+
     protected abstract void onRightClick(ClickActionContext context);
 
-    // 标签操作方法
     public void setTag(ItemStack stack, String tagName, String value) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putString(tagName, value);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(tagName, value));
     }
 
     public String getTag(ItemStack stack, String tagName) {
-        CompoundTag tag = stack.getOrCreateTag();
-        return tag.contains(tagName) ? tag.getString(tagName) : "";
+        CompoundTag tag = customData(stack);
+        return tag.getString(tagName).orElse("");
     }
 
     public int getIntTag(ItemStack stack, String tagName) {
-        CompoundTag tag = stack.getOrCreateTag();
-        return tag.contains(tagName) ? tag.getInt(tagName) : 0;
+        CompoundTag tag = customData(stack);
+        return tag.getInt(tagName).orElse(0);
     }
 
     public void setIntTag(ItemStack stack, String tagName, int value) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt(tagName, value);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(tagName, value));
     }
 
     public void removeTag(ItemStack stack, String tagName) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.remove(tagName);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.remove(tagName));
     }
 
-    // FPSMCore相关方法
+    protected static CompoundTag customData(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    }
+
     public List<String> getAvailableMapTypes() {
         return FPSMCore.getInstance().getGameTypes();
     }
@@ -114,20 +113,18 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity,
-                              int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (level.isClientSide) return;
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull ServerLevel level, @NotNull Entity entity,
+                              @Nullable EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
 
-        // 初始化标签
-        if (!stack.getOrCreateTag().contains(DOUBLE_CLICK_COUNT_TAG)) {
+        CompoundTag tag = customData(stack);
+        if (!tag.contains(DOUBLE_CLICK_COUNT_TAG)) {
             this.setIntTag(stack, DOUBLE_CLICK_COUNT_TAG, 0);
         }
-        if (!stack.getOrCreateTag().contains(DOUBLE_CLICK_LAST_TICK_TAG)) {
+        if (!tag.contains(DOUBLE_CLICK_LAST_TICK_TAG)) {
             this.setIntTag(stack, DOUBLE_CLICK_LAST_TICK_TAG, 0);
         }
 
-        // 双击检测逻辑
         int lastClickTick = this.getIntTag(stack, DOUBLE_CLICK_LAST_TICK_TAG);
         int clickCount = this.getIntTag(stack, DOUBLE_CLICK_COUNT_TAG);
 
@@ -146,7 +143,7 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
     public static void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event) {
         Player player = event.getEntity();
         Level level = player.level();
-        if (!level.isClientSide) return;
+        if (!level.isClientSide()) return;
         ItemStack stack = player.getMainHandItem();
 
         if (!(stack.getItem() instanceof FPSMToolItem)) return;
@@ -156,5 +153,4 @@ public abstract class FPSMToolItem extends Item implements EditToolClickHandler 
                 player.isShiftKeyDown()
         ));
     }
-
 }

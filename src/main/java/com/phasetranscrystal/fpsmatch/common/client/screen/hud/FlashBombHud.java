@@ -3,14 +3,14 @@ package com.phasetranscrystal.fpsmatch.common.client.screen.hud;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FlashBlindnessMobEffect;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.neoforged.neoforge.client.gui.GuiLayer;
 
-public class FlashBombHud implements IGuiOverlay {
+public class FlashBombHud implements GuiLayer {
 
     public static final FlashBombHud INSTANCE = new FlashBombHud();
     public final Minecraft minecraft;
@@ -20,11 +20,13 @@ public class FlashBombHud implements IGuiOverlay {
     }
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker) {
+        int screenWidth = guiGraphics.guiWidth();
+        int screenHeight = guiGraphics.guiHeight();
         LocalPlayer player = minecraft.player;
-        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
-            MobEffectInstance effectInstance = player.getEffect(FPSMEffectRegister.FLASH_BLINDNESS.get());
-            if (effectInstance != null && effectInstance.getEffect() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect) {
+        if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
+            MobEffectInstance effectInstance = player.getEffect(FPSMEffectRegister.FLASH_BLINDNESS);
+            if (effectInstance != null && effectInstance.getEffect().value() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect) {
                 float fullBlindnessTime = flashBlindnessMobEffect.getFullBlindnessTime();
                 if(fullBlindnessTime > 0){
                     int colorWithAlpha = RenderUtil.color(255, 255, 255, 255);

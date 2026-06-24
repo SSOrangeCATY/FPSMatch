@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -33,12 +33,12 @@ public class FlashBombAddonS2CPacket {
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(()->{
             LocalPlayer player = Minecraft.getInstance().player;
-            if(player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get())) {
-                MobEffectInstance effectInstance = player.getEffect(FPSMEffectRegister.FLASH_BLINDNESS.get());
-                if(effectInstance != null && effectInstance.getEffect() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect){
+            if(player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
+                MobEffectInstance effectInstance = player.getEffect(FPSMEffectRegister.FLASH_BLINDNESS);
+                if(effectInstance != null && effectInstance.getEffect().value() instanceof FlashBlindnessMobEffect flashBlindnessMobEffect){
                     flashBlindnessMobEffect.setFullBlindnessTime(fullBlindnessTime);
                     flashBlindnessMobEffect.setTotalBlindnessTime(totalBlindnessTime);
                     flashBlindnessMobEffect.setTicker(ticker);

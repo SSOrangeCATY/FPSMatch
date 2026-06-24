@@ -26,7 +26,6 @@ import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageResultS2CPack
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorInspectPackets;
-import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets;
 
 public final class FPSMClientPacketRegistrar {
     private static boolean registered;
@@ -65,6 +64,5 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(MapRoomInvitationS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomInvitation);
         ClientPacketRegistry.register(TeamManageResultS2CPacket.class, FPSMClientPacketHandlers::handleTeamManageResult);
         ClientPacketRegistry.register(SpectatorInspectPackets.S2CWatchedPlayerInspectPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerInspect);
-        ClientPacketRegistry.register(SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerLrtAttack);
     }
 }

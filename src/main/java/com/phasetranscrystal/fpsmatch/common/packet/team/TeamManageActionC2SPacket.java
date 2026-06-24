@@ -7,7 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -27,13 +27,13 @@ public record TeamManageActionC2SPacket(String mapName, UUID targetPlayer, Strin
         return new TeamManageActionC2SPacket(buf.readUtf(), buf.readUUID(), buf.readUtf());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer sender = ctx.get().getSender();
             if (sender == null) return;
 
             // 验证OP权限
-            if (!sender.getServer().getPlayerList().isOp(sender.getGameProfile())) {
+            if (!sender.level().getServer().getPlayerList().isOp(sender.nameAndId())) {
                 FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(false, Component.translatable("gui.fpsm.team_manage.no_permission")));
                 return;
             }
@@ -45,7 +45,7 @@ public record TeamManageActionC2SPacket(String mapName, UUID targetPlayer, Strin
             }
 
             MapTeams mapTeams = map.getMapTeams();
-            ServerPlayer target = sender.getServer().getPlayerList().getPlayer(targetPlayer);
+            ServerPlayer target = sender.level().getServer().getPlayerList().getPlayer(targetPlayer);
             if (target == null) {
                 FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(false, Component.translatable("gui.fpsm.team_manage.player_not_found")));
                 return;

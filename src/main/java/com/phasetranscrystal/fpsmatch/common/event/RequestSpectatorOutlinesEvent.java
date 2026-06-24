@@ -2,9 +2,10 @@ package com.phasetranscrystal.fpsmatch.common.event;
 
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.ICancellableEvent;
 
-public class RequestSpectatorOutlinesEvent extends Event {
+public class RequestSpectatorOutlinesEvent extends Event implements ICancellableEvent {
     private final LocalPlayer player;
     private final MultiPlayerGameMode gameMode;
 
@@ -21,8 +22,4 @@ public class RequestSpectatorOutlinesEvent extends Event {
         return gameMode;
     }
 
-    @Override
-    public boolean isCancelable(){
-        return true;
-    }
 }

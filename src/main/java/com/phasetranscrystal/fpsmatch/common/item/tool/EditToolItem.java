@@ -12,24 +12,29 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public abstract class EditToolItem extends FPSMToolItem {
     public static final String TYPE_TAG = "SelectedType";
     public static final String MAP_TAG = "SelectedMap";
@@ -54,7 +59,7 @@ public abstract class EditToolItem extends FPSMToolItem {
             EditMode currentMode = this.getCurrentEditMode(context.stack());
             EditMode nextMode = getNextEditMode(currentMode);
             this.setEditMode(context.stack(), nextMode);
-            context.player().displayClientMessage(
+            context.player().sendSystemMessage(
                     Component.translatable("message.fpsm.edit_tool.switch_mode",
                             getModeName(nextMode)).withStyle(ChatFormatting.DARK_AQUA), true);
         }
@@ -93,19 +98,19 @@ public abstract class EditToolItem extends FPSMToolItem {
         this.removeTag(context.stack(), TYPE_TAG);
         this.removeTag(context.stack(), MAP_TAG);
         this.removeTag(context.stack(), TEAM_TAG);
-        context.player().displayClientMessage(
+        context.player().sendSystemMessage(
                 Component.translatable("message.fpsm.edit_tool.clear").withStyle(ChatFormatting.DARK_AQUA), true);
     }
 
 
     public EditMode getCurrentEditMode(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = customData(stack);
         if (!tag.contains(EDIT_MODE_TAG)) {
             setEditMode(stack, EditMode.TYPE);
             return EditMode.TYPE;
         }
         try {
-            return EditMode.valueOf(tag.getString(EDIT_MODE_TAG));
+            return EditMode.valueOf(tag.getString(EDIT_MODE_TAG).orElse(EditMode.TYPE.name()));
         } catch (Exception e) {
             setEditMode(stack, EditMode.TYPE);
             return EditMode.TYPE;
@@ -137,11 +142,11 @@ public abstract class EditToolItem extends FPSMToolItem {
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity,
-                              int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull ServerLevel level, @NotNull Entity entity,
+                              @Nullable EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
 
-        if (!stack.getOrCreateTag().contains(EDIT_MODE_TAG)) {
+        if (!customData(stack).contains(EDIT_MODE_TAG)) {
             this.setEditMode(stack, EditMode.TYPE);
         }
     }
@@ -152,7 +157,7 @@ public abstract class EditToolItem extends FPSMToolItem {
             case MAP -> {
                 String currentType = this.getTag(stack, TYPE_TAG);
                 if (currentType.isEmpty()) {
-                    player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
+                    player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
                             .withStyle(ChatFormatting.RED), true);
                     return;
                 }
@@ -164,7 +169,7 @@ public abstract class EditToolItem extends FPSMToolItem {
                 if (type.isEmpty() || map.isEmpty()) {
                     MutableComponent msg = type.isEmpty() ? Component.translatable("message.fpsm.edit_tool.missing_type")
                             : Component.translatable("message.fpsm.edit_tool.missing_map");
-                    player.displayClientMessage(msg
+                    player.sendSystemMessage(msg
                             .withStyle(ChatFormatting.RED), true);
                     return;
                 }
@@ -176,7 +181,7 @@ public abstract class EditToolItem extends FPSMToolItem {
     public void modifyType(ItemStack stack, ServerPlayer player) {
         List<String> typeList = getAvailableMapTypes();
         if (typeList.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
+            player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.missing_type")
                     .withStyle(ChatFormatting.RED), true);
             return;
         }
@@ -187,7 +192,7 @@ public abstract class EditToolItem extends FPSMToolItem {
         String newType = typeList.get(currentIndex);
 
         this.setTag(stack, TYPE_TAG, newType);
-        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_type", newType)
+        player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.switch_type", newType)
                 .withStyle(ChatFormatting.LIGHT_PURPLE), true);
 
         List<String> newMapList = getMapsByType(newType);
@@ -206,7 +211,7 @@ public abstract class EditToolItem extends FPSMToolItem {
     public void modifyMap(ItemStack stack, ServerPlayer player, String currentType) {
         List<String> mapList = getMapsByType(currentType);
         if (mapList.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_map_by_type", currentType)
+            player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.missing_map_by_type", currentType)
                     .withStyle(ChatFormatting.RED), true);
             return;
         }
@@ -217,7 +222,7 @@ public abstract class EditToolItem extends FPSMToolItem {
         String newMap = mapList.get(currentIndex);
 
         this.setTag(stack, MAP_TAG, newMap);
-        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_map", newMap)
+        player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.switch_map", newMap)
                 .withStyle(ChatFormatting.AQUA), true);
 
         this.removeTag(stack, TEAM_TAG);
@@ -226,7 +231,7 @@ public abstract class EditToolItem extends FPSMToolItem {
     public void modifyTeam(ItemStack stack, ServerPlayer player, String type, String map) {
         List<String> teamList = getTeamsByMap(type, map);
         if (teamList.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.missing_team")
+            player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.missing_team")
                     .withStyle(ChatFormatting.RED), true);
             return;
         }
@@ -237,7 +242,7 @@ public abstract class EditToolItem extends FPSMToolItem {
         String newTeam = teamList.get(currentIndex);
 
         this.setTag(stack, TEAM_TAG, newTeam);
-        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_team", newTeam)
+        player.sendSystemMessage(Component.translatable("message.fpsm.edit_tool.switch_team", newTeam)
                 .withStyle(ChatFormatting.GREEN), true);
     }
 
@@ -284,8 +289,8 @@ public abstract class EditToolItem extends FPSMToolItem {
             case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
             case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
         };
-        player.displayClientMessage(Component.translatable("message.fpsm.edit_tool.switch_mode", modeName)
-                .withStyle(ChatFormatting.DARK_AQUA), true);
+        player.sendOverlayMessage(Component.translatable("message.fpsm.edit_tool.switch_mode", modeName)
+                .withStyle(ChatFormatting.DARK_AQUA));
     }
 
     public Optional<ServerTeam> getPlayerCurrentTeam(ServerPlayer player) {
@@ -297,9 +302,9 @@ public abstract class EditToolItem extends FPSMToolItem {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel,
-                                @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-        super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
+    public void appendHoverText(@NotNull ItemStack pStack, Item.TooltipContext context, TooltipDisplay display,
+                                @NotNull Consumer<Component> tooltip, @NotNull TooltipFlag pIsAdvanced) {
+        super.appendHoverText(pStack, context, display, tooltip, pIsAdvanced);
         EditToolItem editTool = (EditToolItem) pStack.getItem();
 
         EditMode currentMode = editTool.getCurrentEditMode(pStack);
@@ -308,43 +313,43 @@ public abstract class EditToolItem extends FPSMToolItem {
             case MAP -> Component.translatable("message.fpsm.edit_tool.mode.map");
             case TEAM -> Component.translatable("message.fpsm.edit_tool.mode.team");
         };
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.mode")
+        tooltip.accept(Component.translatable("tooltip.fpsm.edit_tool.selected.mode")
                 .append(": ")
                 .append(modeName.withStyle(ChatFormatting.BLUE)));
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
 
         String selectedType = getTag(pStack, TYPE_TAG);
         String selectedMap = getTag(pStack, MAP_TAG);
         String selectedShop = getTag(pStack, TEAM_TAG);
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.type")
+        tooltip.accept(Component.translatable("tooltip.fpsm.edit_tool.selected.type")
                 .append(": ")
                 .append(Component.literal(selectedType.isEmpty() ?
                                 Component.translatable("tooltip.fpsm.none").getString() : selectedType)
                         .withStyle(ChatFormatting.LIGHT_PURPLE)));
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.map")
+        tooltip.accept(Component.translatable("tooltip.fpsm.edit_tool.selected.map")
                 .append(": ")
                 .append(Component.literal(selectedMap.isEmpty() ?
                                 Component.translatable("tooltip.fpsm.none").getString() : selectedMap)
                         .withStyle(ChatFormatting.AQUA)));
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.edit_tool.selected.team")
+        tooltip.accept(Component.translatable("tooltip.fpsm.edit_tool.selected.team")
                 .append(": ")
                 .append(Component.literal(selectedShop.isEmpty() ?
                                 Component.translatable("tooltip.fpsm.none").getString() : selectedShop)
                         .withStyle(ChatFormatting.GREEN)));
 
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-        pTooltipComponents.add(Component.translatable("tooltip.fpsm.usage").withStyle(ChatFormatting.GRAY));
+        tooltip.accept(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
+        tooltip.accept(Component.translatable("tooltip.fpsm.usage").withStyle(ChatFormatting.GRAY));
     }
 
     @SubscribeEvent
     public static void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event) {
         Player player = event.getEntity();
         Level level = player.level();
-        if (!level.isClientSide) return;
+        if (!level.isClientSide()) return;
         ItemStack stack = player.getMainHandItem();
 
         if (!(stack.getItem() instanceof EditToolItem)) return;

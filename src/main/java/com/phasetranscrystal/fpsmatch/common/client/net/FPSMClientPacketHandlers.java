@@ -47,25 +47,25 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleOpenMapCreatorToolScreen(OpenMapCreatorToolScreenS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof MapCreatorToolScreen screen) {
+        if (minecraft.gui.screen() instanceof MapCreatorToolScreen screen) {
             screen.applyData(packet);
         } else {
-            minecraft.setScreen(new MapCreatorToolScreen(packet));
+            minecraft.gui.setScreen(new MapCreatorToolScreen(packet));
         }
     }
 
     public static void handleOpenSpawnPointToolScreen(OpenSpawnPointToolScreenS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof SpawnPointToolScreen screen) {
+        if (minecraft.gui.screen() instanceof SpawnPointToolScreen screen) {
             screen.applyData(packet);
         } else {
-            minecraft.setScreen(new SpawnPointToolScreen(packet));
+            minecraft.gui.setScreen(new SpawnPointToolScreen(packet));
         }
     }
 
     public static void handleRespawn(FPSMatchRespawnS2CPacket packet) {
         if (Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().gui.setScreen(null);
             Minecraft.getInstance().player.respawn();
         }
     }
@@ -73,7 +73,7 @@ public final class FPSMClientPacketHandlers {
     public static void handleInventorySelected(FPSMInventorySelectedS2CPacket packet) {
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         if (localPlayer != null) {
-            localPlayer.getInventory().selected = packet.selected();
+            localPlayer.getInventory().setSelectedSlot(packet.selected());
         }
     }
 
@@ -189,7 +189,7 @@ public final class FPSMClientPacketHandlers {
         Minecraft minecraft = Minecraft.getInstance();
         FPSMClient.getGlobalData().setMapRoomToast(packet);
         if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(packet.message(), packet.error());
+            minecraft.player.sendSystemMessage(packet.message());
         }
     }
 
@@ -197,7 +197,7 @@ public final class FPSMClientPacketHandlers {
         Minecraft minecraft = Minecraft.getInstance();
         FPSMClient.getGlobalData().setMapRoomInvitation(packet.gameType(), packet.mapName(), packet.message());
         if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(packet.message(), false);
+            minecraft.player.sendSystemMessage(packet.message());
         }
         FPSMMapSelectScreens.openInvitation(packet);
     }
@@ -205,7 +205,7 @@ public final class FPSMClientPacketHandlers {
     public static void handleTeamManageResult(TeamManageResultS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(packet.message(), false);
+            minecraft.player.sendSystemMessage(packet.message());
         }
     }
 }

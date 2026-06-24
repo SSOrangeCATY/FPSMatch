@@ -13,7 +13,7 @@ import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.ExtraCodecs;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -121,7 +121,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         Class<T> capabilityClass = (Class<T>) capability.getClass();
         if (!contains(capabilityClass)) {
             capabilities.put(capabilityClass, capability);
-            MinecraftForge.EVENT_BUS.register(capability);
+            NeoForge.EVENT_BUS.register(capability);
             capability.init();
             return true;
         }
@@ -138,7 +138,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             if (cap.isImmutable()) return false;
             cap.destroy();
             capabilities.remove(capabilityClass);
-            MinecraftForge.EVENT_BUS.unregister(cap);
+            NeoForge.EVENT_BUS.unregister(cap);
             return true;
         });
         return true;
@@ -348,7 +348,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         ).apply(instance, Wrapper::new));
 
         public JsonElement encode(){
-            return CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});
+            return CODEC.encodeStart(JsonOps.INSTANCE, this).getOrThrow(e -> new DataPersistenceException("Error while encode capability map to json.", e));
         }
 
         public static class Builder<H> {
@@ -365,7 +365,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             }
 
             public JsonElement encode(){
-                return DATA_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(false,e->{throw new DataPersistenceException("Error while encode capability map to json.");});
+                return DATA_CODEC.encodeStart(JsonOps.INSTANCE, data).getOrThrow(e -> new DataPersistenceException("Error while encode capability map to json.", e));
             }
 
             public Wrapper build() {

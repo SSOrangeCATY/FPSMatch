@@ -7,7 +7,7 @@ import com.phasetranscrystal.fpsmatch.common.mapselect.MapSelectionAccessSync;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -45,7 +45,7 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
         return new MapRoomActionC2SPacket(buf.readEnum(Action.class), buf.readUtf(ID_MAX_LENGTH), buf.readUtf(ID_MAX_LENGTH), buf.readUUID());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) {

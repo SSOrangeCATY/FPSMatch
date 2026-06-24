@@ -1,21 +1,18 @@
 package com.phasetranscrystal.fpsmatch.util;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -64,7 +61,7 @@ public class RenderUtil {
     }
 
     public static Optional<PlayerData> getPlayerData(PlayerInfo player) {
-        return FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId());
+        return FPSMClient.getGlobalData().getPlayerData(player.getProfile().id());
     }
 
     public static Scoreboard getScoreboard(){
@@ -75,7 +72,7 @@ public class RenderUtil {
         Map<String, List<PlayerInfo>> teamPlayers = new HashMap<>();
 
         for (PlayerInfo info : playerInfoList) {
-            UUID uuid = info.getProfile().getId();
+            UUID uuid = info.getProfile().id();
             FPSMClient.getGlobalData().getTeamByUUID(uuid).ifPresent(team -> {
                 team.getPlayerData(uuid).ifPresent(tabData -> {
                     teamPlayers.computeIfAbsent(team.name,k -> new ArrayList<>()).add(info);
@@ -85,57 +82,28 @@ public class RenderUtil {
         return teamPlayers;
     }
 
-    public static void renderReverseTexture(GuiGraphics guiGraphics, ResourceLocation icon,
+    public static void renderReverseTexture(GuiGraphicsExtractor guiGraphics, Identifier icon,
                                             int x, int y, int width, int height) {
         renderTexture(guiGraphics, icon, x, y, width, height, true, false);
     }
 
-    public static void renderTexture(GuiGraphics guiGraphics, ResourceLocation texture,
+    public static void renderTexture(GuiGraphicsExtractor guiGraphics, Identifier texture,
                                      int x, int y, int width, int height,
                                      boolean flipHorizontal, boolean flipVertical) {
-        if (!flipHorizontal && !flipVertical) {
-            guiGraphics.blit(texture, x, y, 0, 0, width, height, width, height);
-            return;
-        }
-
-        // Calculate UV coordinates
-        float minU = 0;
-        float maxU = 1;
-        float minV = 0;
-        float maxV = 1;
-
-        if (flipHorizontal) {
-            float temp = minU;
-            minU = maxU;
-            maxU = temp;
-        }
-
-        if (flipVertical) {
-            float temp = minV;
-            minV = maxV;
-            maxV = temp;
-        }
-
-        PoseStack poseStack = guiGraphics.pose();
-        RenderSystem.setShaderTexture(0, texture);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-
-        Matrix4f matrix = poseStack.last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-
-        // 构建顶点
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        buffer.vertex(matrix, x, y, 0).uv(minU, minV).endVertex();
-        buffer.vertex(matrix, x, y + height, 0).uv(minU, maxV).endVertex();
-        buffer.vertex(matrix, x + width, y + height, 0).uv(maxU, maxV).endVertex();
-        buffer.vertex(matrix, x + width, y, 0).uv(maxU, minV).endVertex();
-
-        BufferUploader.drawWithShader(buffer.end());
+        float minU = flipHorizontal ? 1.0F : 0.0F;
+        float maxU = flipHorizontal ? 0.0F : 1.0F;
+        float minV = flipVertical ? 1.0F : 0.0F;
+        float maxV = flipVertical ? 0.0F : 1.0F;
+        guiGraphics.blit(texture, x, y, x + width, y + height, minU, maxU, minV, maxV);
     }
 
-    public static ResourceLocation fetchSkin(UUID id, String name) {
-        return Minecraft.getInstance().getSkinManager()
-                .getInsecureSkinLocation(new GameProfile(id, name));
+    public static Identifier fetchSkin(UUID id, String name) {
+        GameProfile profile = new GameProfile(id, name);
+        return Minecraft.getInstance().getSkinManager().get(profile)
+                .getNow(Optional.empty())
+                .orElseGet(() -> DefaultPlayerSkin.get(profile))
+                .body()
+                .texturePath();
     }
 
 
@@ -199,7 +167,7 @@ public class RenderUtil {
      * @param h     绘制区域高度
      * @param color 文本颜色
      */
-    public static void drawCenteredScaledString(GuiGraphics g, Minecraft mc, String text,
+    public static void drawCenteredScaledString(GuiGraphicsExtractor g, Minecraft mc, String text,
                                                 int x, int y, int w, int h, int color) {
         int tw = mc.font.width(text);
         int th = mc.font.lineHeight;
@@ -213,11 +181,11 @@ public class RenderUtil {
         int dx = x + (w - drawW) / 2;
         int dy = y + (h - drawH) / 2;
 
-        g.pose().pushPose();
-        g.pose().translate(dx, dy, 0);
-        g.pose().scale(scale, scale, 1f);
-        g.drawString(mc.font, text, 0, 0, color, false);
-        g.pose().popPose();
+        g.pose().pushMatrix();
+        g.pose().translate(dx, dy);
+        g.pose().scale(scale, scale);
+        g.text(mc.font, text, 0, 0, color, false);
+        g.pose().popMatrix();
     }
 
     public static int lighten(int rgb, float p) {

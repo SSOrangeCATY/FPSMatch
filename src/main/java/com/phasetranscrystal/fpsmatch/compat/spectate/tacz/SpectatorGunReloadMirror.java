@@ -9,7 +9,7 @@ import com.tacz.guns.client.sound.SoundPlayManager;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -33,7 +33,7 @@ public final class SpectatorGunReloadMirror {
             boolean noAmmo = false;
             IGun iGun = IGun.getIGunOrNull(stack);
             if (iGun != null) {
-                ResourceLocation gunId = iGun.getGunId(stack);
+                Identifier gunId = iGun.getGunId(stack);
                 GunData gunData = TimelessAPI.getClientGunIndex(gunId).map(ClientGunIndex::getGunData).orElse(null);
                 if (gunData != null) {
                     Bolt bolt = gunData.getBolt();

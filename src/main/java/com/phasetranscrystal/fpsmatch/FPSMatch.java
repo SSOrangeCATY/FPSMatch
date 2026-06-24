@@ -1,164 +1,130 @@
 package com.phasetranscrystal.fpsmatch;
 
-import com.phasetranscrystal.fpsmatch.bukkit.FPSMBukkit;
 import com.phasetranscrystal.fpsmatch.common.capability.FPSMCapabilityRegister;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
 import com.phasetranscrystal.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
-import com.phasetranscrystal.fpsmatch.common.client.net.FPSMClientPacketRegistrar;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
-import com.phasetranscrystal.fpsmatch.common.packet.*;
-import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.mapselect.*;
-import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.AddPointDataS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.EditToolClickC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMusicPlayS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMusicStopS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.MapCreatorToolActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.PullGameInfoC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.RemoveDebugDataByPrefixS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.ToolInteractionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSettingsC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.team.*;
+import com.phasetranscrystal.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamChatMessageC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageResultS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
-import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorSyncNetwork;
 import com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/*
-    <FPSMatch>
-    Copyright (C) <2025>  <SSOrangeCATY>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 @Mod(FPSMatch.MODID)
 public class FPSMatch {
-
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
     private static final String PROTOCOL_VERSION = "1.3.0";
-    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
-    public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
+    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(Identifier.fromNamespaceAndPath("fpsmatch", "main"), PROTOCOL_VERSION);
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
-    private static volatile boolean DEBUG_ENABLED =
-            Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
+    private static volatile boolean DEBUG_ENABLED = Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
 
-    public FPSMatch(FMLJavaModLoadingContext context)
-    {
-        IEventBus modEventBus = context.getModEventBus();
+    public FPSMatch(IEventBus modEventBus, ModContainer container) {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onRegisterPackets);
-        modEventBus.addListener(this::onEnqueue);
-        MinecraftForge.EVENT_BUS.register(this);
+        modEventBus.addListener(PACKET_REGISTER::registerPayloadHandlers);
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
+            modEventBus.addListener(FPSMClient::onRegisterKeyMappings);
+            modEventBus.addListener(FPSMClient::onClientSetup);
+            modEventBus.addListener(FPSMClient::onRegisterGuiLayersEvent);
+            modEventBus.addListener(FPSMClient::onRegisterEntityRenderEvent);
+            modEventBus.addListener(VanillaGuiRegister::register);
+        }
+        NeoForge.EVENT_BUS.register(this);
         VanillaGuiRegister.CONTAINERS.register(modEventBus);
         FPSMItemRegister.ITEMS.register(modEventBus);
         FPSMItemRegister.TABS.register(modEventBus);
         FPSMSoundRegister.SOUNDS.register(modEventBus);
         EntityRegister.ENTITY_TYPES.register(modEventBus);
         FPSMEffectRegister.MOB_EFFECTS.register(modEventBus);
-        FPSMatchRule.init();
+        FPSMatchRule.register(modEventBus);
         FPSMCapabilityRegister.register();
-        context.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
-        context.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
-        context.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());
-        if(FPSMBukkit.isBukkitEnvironment()){
-            FPSMBukkit.register();
-        }
+        container.registerConfig(ModConfig.Type.CLIENT, FPSMConfig.clientSpec);
+        container.registerConfig(ModConfig.Type.COMMON, FPSMConfig.commonSpec);
+        container.registerConfig(ModConfig.Type.SERVER, FPSMConfig.initServer());
     }
-
-    @SubscribeEvent
-    public void onEnqueue(final InterModEnqueueEvent event) {
-        event.enqueueWork(()->{
-            if(FPSMImpl.findClothConfig()){
-                DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> FPSMenuIntegration::registerModsPage);
-            }else{
-                if (FMLEnvironment.dist == Dist.CLIENT) {
-                    try {
-                        // 尝试通过 TACZ 兼容层注册无 Cloth Config 页面
-                        Class<?> clothScreenClass = Class.forName("com.tacz.guns.client.gui.compat.ClothConfigScreen");
-                        clothScreenClass.getMethod("registerNoClothConfigPage").invoke(null);
-                    } catch (Exception ignored) {
-                        // TACZ 未加载，无需注册
-                    }
-                }
-            }
-        });
-    }
-
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(()->{
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(),ThrowableRegistry.FLASH_BANG);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(),ThrowableRegistry.GRENADE);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(),ThrowableRegistry.SMOKE);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
-            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(),ThrowableRegistry.MOLOTOV);
-
-            // 兼容层注册（各模组兼容层在此统一注册）
+        event.enqueueWork(() -> {
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.FLASH_BOMB.get(), ThrowableRegistry.FLASH_BANG);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.GRENADE.get(), ThrowableRegistry.GRENADE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.SMOKE_SHELL.get(), ThrowableRegistry.SMOKE);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.CT_INCENDIARY_GRENADE.get(), ThrowableRegistry.MOLOTOV);
+            ThrowableRegistry.registerItemToSubType(FPSMItemRegister.T_INCENDIARY_GRENADE.get(), ThrowableRegistry.MOLOTOV);
             registerCompat();
         });
     }
 
-    /**
-     * 统一注册所有模组兼容层。
-     * 由 {@code commonSetup} 在 enqueueWork 中调用，确保在主线程执行。
-     */
     private static void registerCompat() {
-        // TACZ 兼容层 —— 必须在外部判断模组加载，避免 JVM 解析 TACZBootstrap 时引入 TACZ 依赖类导致 CNF
         if (ModList.get().isLoaded("tacz")) {
             TACZBootstrap.registerCompat();
         }
-        // CS Grenade 兼容层
-        if (FPSMImpl.findCounterStrikeGrenadesMod()) {
-            CounterStrikeGrenadesCompat.init();
-        }
     }
 
-    /**
-     * 注册 FPSMatch 的网络包。
-     * <p>
-     * 注意：这里注册的 S2C packet 类必须保持“公共可加载”，不要在 packet 类中直接引用
-     * Minecraft、Screen、FPSMClient、客户端渲染/音频类或其它 client-only 类型。
-     * dedicated server 会在注册阶段反射扫描 packet 方法；一旦 packet 类自身带有客户端依赖，
-     * 就可能在启动期触发 DistCleaner 崩溃。
-     * <p>
-     * 所有客户端执行行为都应通过 ClientPacketExecutor 分发；新增客户端包行为时，
-     * 请在 {@link com.phasetranscrystal.fpsmatch.common.client.net.FPSMClientPacketRegistrar#registerAll()} 中
-     * 添加 packet 到客户端处理器的注册映射，而不是把客户端逻辑直接写回 packet 类。
-     */
     private void onRegisterPackets(final FMLCommonSetupEvent event) {
         PACKET_REGISTER.registerPacket(ShopDataSlotS2CPacket.class);
         PACKET_REGISTER.registerPacket(ShopActionC2SPacket.class);
@@ -202,24 +168,35 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageResultS2CPacket.class);
+        SpectatorSyncNetwork.registerPackets();
 
-        event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
-    }
-
-    public static <M> void sendTo(Player player,M message){
-        if(player.level().isClientSide){
-            sendToServer(message);
-        }else{
-            sendToPlayer((ServerPlayer)player, message);
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
+            event.enqueueWork(FPSMClientPacketRegistrar::registerAll);
         }
     }
 
-    public static <M> void sendToPlayer(ServerPlayer player,M message){
-        NetworkPacketRegister.getChannelFromCache(message.getClass()).send(PacketDistributor.PLAYER.with(() -> player), message);
+    public static <M> void sendTo(Player player, M message) {
+        if (player.level().isClientSide()) {
+            sendToServer(message);
+        } else {
+            sendToPlayer((ServerPlayer) player, message);
+        }
     }
 
-    public static <M> void sendToServer(M message){
-        NetworkPacketRegister.getChannelFromCache(message.getClass()).sendToServer(message);
+    public static <M> void sendToPlayer(ServerPlayer player, M message) {
+        NetworkPacketRegister.getRegisterFromCache(message.getClass()).sendToPlayer(player, message);
+    }
+
+    public static <M> void sendToServer(M message) {
+        NetworkPacketRegister.getRegisterFromCache(message.getClass()).sendToServer(message);
+    }
+
+    public static <M> void sendToAllPlayers(M message) {
+        NetworkPacketRegister.getRegisterFromCache(message.getClass()).sendToAllPlayers(message);
+    }
+
+    public static <M> void registerPacket(Class<M> packetClass) {
+        PACKET_REGISTER.registerPacket(packetClass);
     }
 
     @SubscribeEvent
@@ -227,20 +204,25 @@ public class FPSMatch {
         FPSMCommand.onRegisterCommands(event);
     }
 
-    public static synchronized boolean switchDebug(){
+    public static synchronized boolean switchDebug() {
         return DEBUG_ENABLED = !DEBUG_ENABLED;
     }
 
-    public static boolean isDebugEnabled(){
+    public static boolean isDebugEnabled() {
         return DEBUG_ENABLED;
     }
 
-    public static void debug(String msg, Object... args) { if (DEBUG_ENABLED) LOGGER.info(msg, args); }
+    public static void debug(String msg, Object... args) {
+        if (DEBUG_ENABLED) {
+            LOGGER.info(msg, args);
+        }
+    }
 
-    public static void info(String msg, Object... args) { LOGGER.info(msg,args);}
+    public static void info(String msg, Object... args) {
+        LOGGER.info(msg, args);
+    }
 
-    @OnlyIn(Dist.CLIENT)
-    public static void pullGameInfo(){
-        INSTANCE.sendToServer(new PullGameInfoC2SPacket());
+    public static void pullGameInfo() {
+        sendToServer(new PullGameInfoC2SPacket());
     }
 }

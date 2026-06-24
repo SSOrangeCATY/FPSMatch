@@ -1,6 +1,6 @@
 package com.phasetranscrystal.fpsmatch.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
@@ -8,16 +8,16 @@ import java.util.Map;
 
 public class FPSMConfig {
     public static class Server {
-        public static ForgeConfigSpec.BooleanValue lock3PersonCamera;
-        public static ForgeConfigSpec.BooleanValue lockSpecKeyHandle;
-        public static ForgeConfigSpec.BooleanValue disableDefaultGlow;
-        public static ForgeConfigSpec.BooleanValue disableSpecGlowKey;
-        public static ForgeConfigSpec.BooleanValue disableRenderNameTag;
-        public static ForgeConfigSpec.BooleanValue disableRenderHitBox;
-        public static ForgeConfigSpec.BooleanValue disableRenderHeadShotHitBox;
-        public static ForgeConfigSpec.BooleanValue enableMapSelectionButtonForNonOps;
+        public static ModConfigSpec.BooleanValue lock3PersonCamera;
+        public static ModConfigSpec.BooleanValue lockSpecKeyHandle;
+        public static ModConfigSpec.BooleanValue disableDefaultGlow;
+        public static ModConfigSpec.BooleanValue disableSpecGlowKey;
+        public static ModConfigSpec.BooleanValue disableRenderNameTag;
+        public static ModConfigSpec.BooleanValue disableRenderHitBox;
+        public static ModConfigSpec.BooleanValue disableRenderHeadShotHitBox;
+        public static ModConfigSpec.BooleanValue enableMapSelectionButtonForNonOps;
 
-        public static void init(ForgeConfigSpec.Builder builder) {
+        public static void init(ModConfigSpec.Builder builder) {
             lock3PersonCamera = builder.comment(
                     "禁用第三人称"
             ).define("Lock3PersonCamera", true);
@@ -59,7 +59,7 @@ public class FPSMConfig {
 
     public static class Client{
 
-        private Client(ForgeConfigSpec.Builder builder) {
+        private Client(ModConfigSpec.Builder builder) {
         }
     }
 
@@ -67,31 +67,31 @@ public class FPSMConfig {
     public static class Common {
 
         // normal
-        public final ForgeConfigSpec.BooleanValue autoAdventureMode;
+        public final ModConfigSpec.BooleanValue autoAdventureMode;
 
-        public final ForgeConfigSpec.DoubleValue baseArmorPenetration;
-        public final ForgeConfigSpec.DoubleValue headshotMultiplier;
+        public final ModConfigSpec.DoubleValue baseArmorPenetration;
+        public final ModConfigSpec.DoubleValue headshotMultiplier;
 
         // drops
-        public final ForgeConfigSpec.IntValue mainWeaponCount;
-        public final ForgeConfigSpec.IntValue secondaryWeaponCount;
-        public final ForgeConfigSpec.IntValue thirdWeaponCount;
-        public final ForgeConfigSpec.IntValue throwableCount;
+        public final ModConfigSpec.IntValue mainWeaponCount;
+        public final ModConfigSpec.IntValue secondaryWeaponCount;
+        public final ModConfigSpec.IntValue thirdWeaponCount;
+        public final ModConfigSpec.IntValue throwableCount;
 
         // Flash Bomb
-        public final ForgeConfigSpec.IntValue flashBombRadius;
+        public final ModConfigSpec.IntValue flashBombRadius;
         // Grenade
-        public final ForgeConfigSpec.IntValue grenadeRadius;
-        public final ForgeConfigSpec.IntValue grenadeFuseTime;
-        public final ForgeConfigSpec.IntValue grenadeDamage;
+        public final ModConfigSpec.IntValue grenadeRadius;
+        public final ModConfigSpec.IntValue grenadeFuseTime;
+        public final ModConfigSpec.IntValue grenadeDamage;
         // Incendiary Grenade
-        public final ForgeConfigSpec.IntValue incendiaryGrenadeOutTime;
-        public final ForgeConfigSpec.IntValue incendiaryGrenadeLivingTime;
-        public final ForgeConfigSpec.IntValue incendiaryGrenadeDamage;
+        public final ModConfigSpec.IntValue incendiaryGrenadeOutTime;
+        public final ModConfigSpec.IntValue incendiaryGrenadeLivingTime;
+        public final ModConfigSpec.IntValue incendiaryGrenadeDamage;
         // SmokeShell
-        public final ForgeConfigSpec.IntValue smokeShellLivingTime;
+        public final ModConfigSpec.IntValue smokeShellLivingTime;
 
-        private Common(ForgeConfigSpec.Builder builder) {
+        private Common(ModConfigSpec.Builder builder) {
 
             builder.push("normal");
             autoAdventureMode = builder.comment(
@@ -187,22 +187,22 @@ public class FPSMConfig {
     }
 
     public static Client client;
-    public static ForgeConfigSpec clientSpec;
+    public static ModConfigSpec clientSpec;
     public static Common common;
-    public static ForgeConfigSpec commonSpec;
-    public static ForgeConfigSpec serverSpec;
+    public static ModConfigSpec commonSpec;
+    public static ModConfigSpec serverSpec;
 
     static {
-        final Pair<Client, ForgeConfigSpec> clientSpecPair = new ForgeConfigSpec.Builder().configure(Client::new);
+        final Pair<Client, ModConfigSpec> clientSpecPair = new ModConfigSpec.Builder().configure(Client::new);
         client = clientSpecPair.getLeft();
         clientSpec = clientSpecPair.getRight();
-        final Pair<Common,ForgeConfigSpec> commonSpecPair = new ForgeConfigSpec.Builder().configure(Common::new);
+        final Pair<Common,ModConfigSpec> commonSpecPair = new ModConfigSpec.Builder().configure(Common::new);
         common = commonSpecPair.getLeft();
         commonSpec = commonSpecPair.getRight();
     }
 
-    public static ForgeConfigSpec initServer(){
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+    public static ModConfigSpec initServer(){
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         Server.init(builder);
         serverSpec = builder.build();
         return serverSpec;

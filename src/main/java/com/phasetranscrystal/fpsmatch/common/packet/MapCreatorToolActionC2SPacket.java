@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -48,7 +48,7 @@ public record MapCreatorToolActionC2SPacket(
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) {
@@ -78,31 +78,31 @@ public record MapCreatorToolActionC2SPacket(
     private void createMap(ServerPlayer player, ItemStack stack) {
         String type = selectedType().trim();
         if (!FPSMCore.getInstance().checkGameType(type)) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_type"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_type"));
             return;
         }
 
         String mapName = draftMapName().trim();
         if (mapName.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_name"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_name"));
             return;
         }
 
         Optional<AreaData> areaData = createArea();
         if (areaData.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_area"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_area"));
             return;
         }
 
         if (FPSMCore.getInstance().isRegistered(type, mapName)) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.duplicate_map", mapName), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.duplicate_map", mapName));
             return;
         }
 
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = (ServerLevel) player.level();
         Function3<ServerLevel, String, AreaData, BaseMap> factory = FPSMCore.getInstance().getPreBuildGame(type);
         if (factory == null) {
-            player.displayClientMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_type"), false);
+            player.sendSystemMessage(Component.translatable("message.fpsm.map_creator_tool.invalid_type"));
             return;
         }
 
@@ -114,7 +114,7 @@ public record MapCreatorToolActionC2SPacket(
         MapCreatorTool.setBlockPos(stack, MapCreatorTool.BLOCK_POS_TAG_2, pos2());
         MapCreatorTool.setDraftMapName(stack, "");
 
-        player.displayClientMessage(Component.translatable("commands.fpsm.create.success", mapName), false);
+        player.sendSystemMessage(Component.translatable("commands.fpsm.create.success", mapName));
         FPSMatch.sendToPlayer(player, OpenMapCreatorToolScreenS2CPacket.fromStack(stack, FPSMCore.getInstance().getGameTypes()));
     }
 

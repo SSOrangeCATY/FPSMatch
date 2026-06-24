@@ -1,7 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.shop.functional;
 
 import com.phasetranscrystal.fpsmatch.common.event.register.RegisterListenerModuleEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class LMManager {
      * 该方法会触发 {@link RegisterListenerModuleEvent}，允许其他监听模块注册。
      */
     public LMManager() {
-        MinecraftForge.EVENT_BUS.post(new RegisterListenerModuleEvent(this));
+        NeoForge.EVENT_BUS.post(new RegisterListenerModuleEvent(this));
     }
 
     /**

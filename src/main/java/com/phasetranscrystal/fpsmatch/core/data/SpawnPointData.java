@@ -5,7 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -13,12 +13,12 @@ import java.util.Objects;
 
 public class SpawnPointData {
     public static final Codec<SpawnPointData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("Dimension").forGetter(spawnPointData -> spawnPointData.getDimension().location().toString()),
+            Codec.STRING.fieldOf("Dimension").forGetter(spawnPointData -> spawnPointData.getDimension().identifier().toString()),
             Vec3.CODEC.fieldOf("Position").forGetter(SpawnPointData::getPosition),
             Codec.FLOAT.fieldOf("Yaw").forGetter(SpawnPointData::getYaw),
             Codec.FLOAT.fieldOf("Pitch").forGetter(SpawnPointData::getPitch)
     ).apply(instance, (dimensionStr, position, yaw, pitch) -> {
-        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimensionStr));
+        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(dimensionStr));
         return new SpawnPointData(dimension, position, yaw, pitch);
     }));
 
@@ -84,6 +84,6 @@ public class SpawnPointData {
 
     @Override
     public String toString() {
-        return dimension.location().getPath() + " " + position.toString();
+        return dimension.identifier().getPath() + " " + position.toString();
     }
 }

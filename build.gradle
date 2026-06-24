@@ -22,8 +22,6 @@ base {
     archivesName = mod_id
 }
 
-def taczTweaksVersion = findProperty('tacztweak_version') ?: rootProject.findProperty('tacztweak_version') ?: '2.11.2'
-
 // Mojang ships Java 25 to end users in 26.2, so mods should target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
@@ -83,83 +81,20 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        name = 'Curse Maven'
-        url = "https://www.cursemaven.com"
-    }
-
-    maven {
-        name = 'IzzelAliz Maven'
-        url = 'https://maven.izzel.io/releases/'
-    }
-
-    maven {
-        name = "spigotmc-repo"
-        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
-    }
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/groups/public/"
-    }
-    maven {
-        name = "Modrinth"
-        url = "https://api.modrinth.com/maven"
-    }
-    maven {
-        name = "Mohist"
-        url = "https://maven.mohistmc.com/"
-    }
-    maven {
-        url "https://maven.latvian.dev/releases"
-        content {
-            includeGroup "dev.latvian.mods"
-            includeGroup "dev.latvian.apps"
-        }
-    }
-    maven {
-        url = "https://maven.architectury.dev"
-        content {
-            includeGroup "dev.architectury"
-        }
+        name = "NeoForge"
+        url = "https://maven.neoforged.net/releases"
     }
 
 }
 
 dependencies {
-    // Modern UI core framework
-    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")) {
-        exclude group: "org.apache.logging.log4j", module: "log4j-core"
-        exclude group: "org.apache.logging.log4j", module: "log4j-api"
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
-        exclude group: "com.google.code.findbugs", module: "jsr305"
-        exclude group: "org.jetbrains", module: "annotations"
-        exclude group: "com.ibm.icu", module: "icu4j"
-        exclude group: "it.unimi.dsi", module: "fastutil"
-    }
-    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:3.12.0")) {
-        exclude group: "org.apache.logging.log4j", module: "log4j-core"
-        exclude group: "org.apache.logging.log4j", module: "log4j-api"
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
-        exclude group: "com.google.code.findbugs", module: "jsr305"
-        exclude group: "org.jetbrains", module: "annotations"
-        exclude group: "com.ibm.icu", module: "icu4j"
-        exclude group: "it.unimi.dsi", module: "fastutil"
-    }
-    modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
-    modCompileOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
-    modCompileOnly "maven.modrinth:tacz-tweaks:${taczTweaksVersion}"
-    modCompileOnly "curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599"
-    modImplementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
-    modRuntimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"
-    modImplementation "maven.modrinth:cloth-config:${cloth_config_version}"
-    modCompileOnly('org.apache.commons:commons-math3:3.6.1');
+    compileOnly "com.tacz:tacz-mc26.2:${tacz_version}"
+    compileOnly "com.github.mcmodderanchor:simplebedrockmodel:2.4.4-neoforge-mc26.2"
+    localRuntime "com.github.mcmodderanchor:simplebedrockmodel:2.4.4-neoforge-mc26.2"
+    compileOnly('org.apache.commons:commons-math3:3.6.1');
 
-    modCompileOnly "org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT"
     // JetBrains annotations for @NotNull and other annotations
-    modCompileOnly "org.jetbrains:annotations:24.0.1"
-    modCompileOnly "com.mohistmc:mohistdev:1.20.1"
-    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modCompileOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
-    modCompileOnly("dev.architectury:architectury-forge:${architectury_version}")
+    compileOnly "org.jetbrains:annotations:24.0.1"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
@@ -172,6 +107,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_name               : mod_name,
             mod_license            : mod_license,
             mod_version            : mod_version,
+            tacz_version           : tacz_version,
             mod_authors            : mod_authors,
             mod_description        : mod_description
     ]

@@ -325,10 +325,10 @@ public class FPSMHelpManager {
                         .append(Component.literal("]").withStyle(ChatFormatting.GRAY));
             }
 
-            Style style = Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/fpsm help toggle " + node.hashCode()));
+            Style style = Style.EMPTY.withClickEvent(new ClickEvent.RunCommand("/fpsm help toggle " + node.hashCode()));
 
             if(node.hoverText != null){
-                style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, node.hoverText));
+                style = style.withHoverEvent(new HoverEvent.ShowText(node.hoverText));
             }
 
             return displayLine.withStyle(style);

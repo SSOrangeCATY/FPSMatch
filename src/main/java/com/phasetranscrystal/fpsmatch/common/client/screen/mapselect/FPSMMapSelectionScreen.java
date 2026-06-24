@@ -5,9 +5,10 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPa
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
@@ -77,19 +78,22 @@ public class FPSMMapSelectionScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        extractBackground(graphics, mouseX, mouseY, partialTick);
         renderMultiLayerBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, 24, 0xFFFFFFFF);
+        graphics.centeredText(font, title, width / 2, 24, 0xFFFFFFFF);
         List<MapRoomSummary> maps = maps();
         int count = maps.size();
-        graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.snapshot_count", count), width / 2, 48, 0xFFB8D4E3);
+        graphics.centeredText(font, Component.translatable("gui.fpsm.map_select.snapshot_count", count), width / 2, 48, 0xFFB8D4E3);
         renderList(graphics, maps, mouseX, mouseY);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             int clickedIndex = indexAt(mouseX, mouseY);
             if (clickedIndex >= 0) {
@@ -100,21 +104,21 @@ public class FPSMMapSelectionScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
         if (mouseY >= LIST_TOP && mouseY <= listBottom()) {
             scrollOffset = Mth.clamp(scrollOffset - (int) Math.signum(delta), 0, maxScrollOffset());
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
     }
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        minecraft.gui.setScreen(parent);
     }
 
     @Override
@@ -122,13 +126,13 @@ public class FPSMMapSelectionScreen extends Screen {
         return false;
     }
 
-    private void renderList(GuiGraphics graphics, List<MapRoomSummary> maps, int mouseX, int mouseY) {
+    private void renderList(GuiGraphicsExtractor graphics, List<MapRoomSummary> maps, int mouseX, int mouseY) {
         int left = listLeft();
         int right = listRight();
         int bottom = listBottom();
         graphics.fill(left - 6, LIST_TOP - 6, right + 6, bottom + 6, 0x77000000);
         if (maps.isEmpty()) {
-            graphics.drawCenteredString(font, Component.translatable("gui.fpsm.map_select.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
+            graphics.centeredText(font, Component.translatable("gui.fpsm.map_select.empty"), width / 2, LIST_TOP + 32, 0xFFAAAAAA);
             return;
         }
         int visibleRows = visibleRows();
@@ -142,14 +146,14 @@ public class FPSMMapSelectionScreen extends Screen {
             graphics.fill(left, rowTop, right, rowTop + ROW_HEIGHT, color);
             graphics.fill(left, rowTop, left + 3, rowTop + ROW_HEIGHT, statusColor(summary));
 
-            graphics.drawString(font, Component.literal(summary.displayName()), left + 10, rowTop + 7, 0xFFFFFFFF, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - 76, rowTop + 7, 0xFFE6F2FF, false);
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.status", statusText(summary)), left + 10, rowTop + 22, statusColor(summary), false);
+            graphics.text(font, Component.literal(summary.displayName()), left + 10, rowTop + 7, 0xFFFFFFFF, false);
+            graphics.text(font, Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayersText(summary)), right - 76, rowTop + 7, 0xFFE6F2FF, false);
+            graphics.text(font, Component.translatable("gui.fpsm.map_select.status", statusText(summary)), left + 10, rowTop + 22, statusColor(summary), false);
             Component gameTypeName = Component.translatable("fpsm.game_type." + summary.gameType());
             Component dimName = dimensionName(summary.dimension());
-            graphics.drawString(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName, dimName), left + 118, rowTop + 22, 0xFFB8D4E3, false);
+            graphics.text(font, Component.translatable("gui.fpsm.map_select.game_info", gameTypeName, dimName), left + 118, rowTop + 22, 0xFFB8D4E3, false);
             if (summary.currentPlayerJoined() || summary.currentPlayerSpectating()) {
-                graphics.drawString(font, Component.translatable("gui.fpsm.map_select.joined"), right - 48, rowTop + 22, 0xFF74E084, false);
+                graphics.text(font, Component.translatable("gui.fpsm.map_select.joined"), right - 48, rowTop + 22, 0xFF74E084, false);
             }
         }
     }
@@ -224,7 +228,7 @@ public class FPSMMapSelectionScreen extends Screen {
                 }
             }
         }
-        // 如果之前的选中地图已不在列表中，重置选择以防止跳转到错误地图
+        // 濡傛灉涔嬪墠鐨勯€変腑鍦板浘宸蹭笉鍦ㄥ垪琛ㄤ腑锛岄噸缃€夋嫨浠ラ槻姝㈣烦杞埌閿欒鍦板浘
         selectedIndex = -1;
         selectedGameType = null;
         selectedMapName = null;
@@ -255,7 +259,7 @@ public class FPSMMapSelectionScreen extends Screen {
     }
 
     private String maxPlayersText(MapRoomSummary summary) {
-        return summary.maxPlayers() < 0 ? "∞" : Integer.toString(summary.maxPlayers());
+        return summary.maxPlayers() < 0 ? "\\u221e" : Integer.toString(summary.maxPlayers());
     }
 
     private int listLeft() {
@@ -278,7 +282,7 @@ public class FPSMMapSelectionScreen extends Screen {
         return Math.max(0, maps().size() - visibleRows());
     }
 
-    private void renderMultiLayerBackground(GuiGraphics guiGraphics) {
+    private void renderMultiLayerBackground(GuiGraphicsExtractor guiGraphics) {
         guiGraphics.fill(2, 2, width + 2, height + 2, GUI_SHADOW_COLOR);
         guiGraphics.fill(0, 0, width, 1, GUI_OUTER_BORDER);
         guiGraphics.fill(0, height - 1, width, height, GUI_OUTER_BORDER);

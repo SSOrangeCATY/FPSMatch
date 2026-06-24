@@ -11,6 +11,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -90,7 +91,7 @@ public final class MapRoomQueryService {
                 map.getGameType(),
                 map.getMapName(),
                 map.getDisplayName(),
-                map.getServerLevel().dimension().location().toString(),
+                map.getServerLevel().dimension().identifier().toString(),
                 areaText(map.getMapArea().pos1(), map.getMapArea().pos2()),
                 map.isStart(),
                 map.isDebug(),
@@ -99,7 +100,7 @@ public final class MapRoomQueryService {
                 max,
                 joinedMap,
                 spectating,
-                viewer.hasPermissions(2)
+                FPSMUtil.hasPermissionLevel(viewer, 2)
         );
     }
 
@@ -121,7 +122,7 @@ public final class MapRoomQueryService {
         FPSMCore.getInstance().getServer().getPlayerList().getPlayers().stream()
                 .filter(player -> !player.getUUID().equals(viewer.getUUID()))
                 .filter(MapRoomQueryService::isAvailableInviteTarget)
-                .map(player -> new MapRoomPlayerInfo(player.getUUID(), player.getGameProfile().getName(), "", false, true))
+                .map(player -> new MapRoomPlayerInfo(player.getUUID(), player.getPlainTextName(), "", false, true))
                 .sorted(Comparator.comparing(MapRoomPlayerInfo::name))
                 .forEach(targets::add);
         return targets;
@@ -136,7 +137,7 @@ public final class MapRoomQueryService {
     }
 
     public static List<MapRoomSettingInfo> settings(ServerPlayer viewer, BaseMap map) {
-        boolean editable = viewer.hasPermissions(2);
+        boolean editable = FPSMUtil.hasPermissionLevel(viewer, 2);
         String gameType = map.getGameType();
         return map.settings().stream()
                 .map(setting -> settingInfo(setting, editable, gameType))
@@ -147,7 +148,7 @@ public final class MapRoomQueryService {
     private static MapRoomPlayerInfo playerInfo(ServerTeam team, PlayerData data) {
         return new MapRoomPlayerInfo(
                 data.getOwner(),
-                data.getPlayer().map(player -> player.getGameProfile().getName()).orElse(data.getOwner().toString()),
+                data.getPlayer().map(ServerPlayer::getPlainTextName).orElse(data.getOwner().toString()),
                 team.getName(),
                 team.isSpectator(),
                 data.getPlayer().isPresent()

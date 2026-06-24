@@ -126,9 +126,7 @@ public abstract class FPSMCapability<H> {
                 }
             }
 
-            write(codec().decode(JsonOps.INSTANCE, json).getOrThrow(false, e -> {
-                throw new DataPersistenceException("Error decoding data from JSON", e);
-            }).getFirst());
+            write(codec().decode(JsonOps.INSTANCE, json).getOrThrow(e -> new DataPersistenceException("Error decoding data from JSON", e)).getFirst());
         }
 
         default JsonElement toJson(T value) {
@@ -136,9 +134,7 @@ public abstract class FPSMCapability<H> {
                 return new JsonPrimitive("");
             }
 
-            return codec().encodeStart(JsonOps.INSTANCE, value).getOrThrow(false, e -> {
-                throw new DataPersistenceException("Error encoding data to JSON", e);
-            });
+            return codec().encodeStart(JsonOps.INSTANCE, value).getOrThrow(e -> new DataPersistenceException("Error encoding data to JSON", e));
         }
     }
 

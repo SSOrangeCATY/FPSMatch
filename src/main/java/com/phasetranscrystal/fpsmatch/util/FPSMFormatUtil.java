@@ -1,13 +1,10 @@
 package com.phasetranscrystal.fpsmatch.util;
 
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Locale;
@@ -26,7 +23,7 @@ public class FPSMFormatUtil {
      * @return 格式化后的英文名称
      */
     public static String en(ItemStack stack) {
-        String key = stack.getDescriptionId();
+        String key = stack.getItem().getDescriptionId();
         if (key.startsWith("item.")) key = key.substring(5);
         String last = key.substring(key.lastIndexOf('.') + 1);
         String[] t = last.split("_");
@@ -37,29 +34,15 @@ public class FPSMFormatUtil {
     }
 
     public static String i18n(ItemStack st) {
-        String unknown = I18n.exists("fpsm.unknown_weapon") ? I18n.get("fpsm.unknown_weapon") : "未知武器";
+        String unknown = Component.translatable("fpsm.unknown_weapon").getString();
         if (st == null || st.isEmpty()) return unknown;
         IGunProvider provider = GunCompatManager.findProvider(st);
         if (provider.isGun(st)) {
-            ResourceLocation gid = provider.getGunId(st);
-            String[] keys = new String[]{
-                    "item." + gid.getNamespace() + "." + gid.getPath(),
-                    "gun." + gid.getNamespace() + "." + gid.getPath(),
-                    gid.getNamespace() + "." + gid.getPath(),
-                    "tacz.gun." + gid.getPath(),
-                    "tacz." + gid.getPath()
-            };
-            for (String k : keys) if (I18n.exists(k)) return I18n.get(k);
-            return gid.getPath().toUpperCase(Locale.ROOT);
+            Identifier gid = provider.getGunId(st);
+            String hoverName = st.getHoverName().getString();
+            return hoverName.isBlank() ? gid.getPath().toUpperCase(Locale.ROOT) : hoverName;
         }
 
-        if(FPSMImpl.findLrtacticalMod()){
-            String i18n = LrtacticalCompat.i18n(st);
-            if(i18n != null) return i18n;
-        }
-
-        String desc = st.getDescriptionId();
-        if (I18n.exists(desc)) return I18n.get(desc);
         return st.getHoverName().getString();
     }
 }

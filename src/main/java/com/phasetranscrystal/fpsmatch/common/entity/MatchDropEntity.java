@@ -5,49 +5,51 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.gun.IGunProvider;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunDataDTO;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ItemSupplier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.item.ItemTossEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class MatchDropEntity extends Entity {
+@net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
+public class MatchDropEntity extends Entity implements ItemSupplier {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerDropItem(ItemTossEvent event){
-        if(event.getPlayer().level().isClientSide) return;
+        if(event.getPlayer().level().isClientSide()) return;
 
         ItemStack itemStack = event.getEntity().getItem();
         FPSMCore.getInstance().getMapByPlayer(event.getPlayer()).ifPresent(map->
@@ -95,9 +97,9 @@ public class MatchDropEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(DATA_TYPE, 3);
-        this.entityData.define(DATA_ITEM, ItemStack.EMPTY);
+    protected void defineSynchedData(SynchedEntityData.Builder entityData) {
+        entityData.define(DATA_TYPE, 3);
+        entityData.define(DATA_ITEM, ItemStack.EMPTY);
     }
 
     @Override
@@ -122,11 +124,6 @@ public class MatchDropEntity extends Entity {
             this.zo = this.getZ();
             Vec3 vec3 = this.getDeltaMovement();
             float f = this.getEyeHeight() - 0.11111111F;
-            net.minecraftforge.fluids.FluidType fluidType = this.getMaxHeightFluidType();
-            if (!fluidType.isAir() && !fluidType.isVanilla() && this.getFluidTypeHeight(fluidType) > (double)f){
-                this.setDeltaMovement(vec3.x * (double)0.99F, vec3.y + (double)(vec3.y < (double)0.06F ? 5.0E-4F : 0.0F), vec3.z * (double)0.99F);
-            }
-            else
             if (this.isInWater() && this.getFluidHeight(FluidTags.WATER) > (double)f) {
                 this.setUnderwaterMovement();
             } else if (this.isInLava() && this.getFluidHeight(FluidTags.LAVA) > (double)f) {
@@ -135,7 +132,7 @@ public class MatchDropEntity extends Entity {
                 this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.04D, 0.0D));
             }
 
-            if (this.level().isClientSide) {
+            if (this.level().isClientSide()) {
                 this.noPhysics = false;
             } else {
                 this.noPhysics = !this.level().noCollision(this, this.getBoundingBox().deflate(1.0E-7D));
@@ -162,11 +159,11 @@ public class MatchDropEntity extends Entity {
             }
 
 
-            this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
-            if (!this.level().isClientSide) {
+            this.needsSync = this.needsSync | this.updateFluidInteraction();
+            if (!this.level().isClientSide()) {
                 double d0 = this.getDeltaMovement().subtract(vec3).lengthSqr();
                 if (d0 > 0.01D) {
-                    this.hasImpulse = true;
+                    this.needsSync = true;
                 }
             }
 
@@ -179,7 +176,7 @@ public class MatchDropEntity extends Entity {
     }
 
     private void playLandSound(ItemStack itemStack) {
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             IGunProvider provider = GunCompatManager.findProvider(itemStack);
             if (provider.isGun(itemStack)) {
                 Optional<GunTabTypeEnum> type = provider.getGunData(itemStack).map(GunDataDTO::getGunTabType);
@@ -187,12 +184,7 @@ public class MatchDropEntity extends Entity {
                     this.playSound(FPSMSoundRegister.getGunDropSound(t));
                 });
             } else {
-                SoundEvent sound;
-                if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
-                    sound = FPSMSoundRegister.getKnifeDropSound();
-                }else{
-                    sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());
-                }
+                SoundEvent sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());
 
                 this.playSound(sound);
             }
@@ -200,8 +192,18 @@ public class MatchDropEntity extends Entity {
     }
 
 
-    protected @NotNull BlockPos getBlockPosBelowThatAffectsMyMovement() {
+    public @NotNull BlockPos getBlockPosBelowThatAffectsMyMovement() {
         return this.getOnPos(0.999999F);
+    }
+
+    @Override
+    protected double getDefaultGravity() {
+        return 0.04D;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+        return false;
     }
 
     private void setUnderwaterMovement() {
@@ -231,18 +233,18 @@ public class MatchDropEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag pCompound) {
-        this.setDataType(DropType.valueOf(pCompound.getString("DropType")));
+    protected void readAdditionalSaveData(ValueInput input) {
+        this.setDataType(DropType.valueOf(input.getStringOr("DropType", DropType.MISC.name())));
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag pCompound) {
-        pCompound.putString("DropType",this.getDropType().toString());
+    protected void addAdditionalSaveData(ValueOutput output) {
+        output.putString("DropType",this.getDropType().toString());
     }
 
     @Override
-    public @NotNull InteractionResult interact(@NotNull Player player, @NotNull InteractionHand hand) {
-        if(!this.level().isClientSide){
+    public @NotNull InteractionResult interact(@NotNull Player player, @NotNull InteractionHand hand, @NotNull Vec3 location) {
+        if(!this.level().isClientSide()){
             Inventory inventory = player.getInventory();
             List<ItemStack> items = FPSMUtil.searchInventoryForType(player.getInventory(), this.getDropType());
             ItemStack replace = this.getItem().copy();
@@ -282,7 +284,7 @@ public class MatchDropEntity extends Entity {
     }
 
     public void playerTouch(@NotNull Player pEntity) {
-        if (!this.level().isClientSide) {
+        if (!this.level().isClientSide()) {
             DropType type = this.getDropType();
 
             if(type == DropType.THROW && !type.canPickupThrowable(pEntity,this.getItem())) return;

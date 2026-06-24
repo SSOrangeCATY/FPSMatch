@@ -14,12 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Mirrors reload state changes from the spectated player to the local view.
  */
-@Mixin(LocalPlayer.class)
+@Mixin(value = LocalPlayer.class, remap = false)
 public abstract class MixinLocalPlayerSpectatorReload {
     private static boolean lastTargetReloading = false;
     private static int lastTargetId = -1;
 
-    @Inject(method = "tick", at = @At("TAIL"))
+    @Inject(method = "tick", at = @At("TAIL"), remap = false)
     private void fpsmatch$mirrorReload(CallbackInfo ci) {
         LocalPlayer self = (LocalPlayer) (Object) this;
         Player target = SpectatorView.getSpectatedPlayer(self);

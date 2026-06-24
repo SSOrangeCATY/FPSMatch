@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
@@ -20,7 +21,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
 
 import java.util.Random;
 
@@ -43,8 +43,8 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
+    protected void defineSynchedData(SynchedEntityData.Builder entityData) {
+        super.defineSynchedData(entityData);
         entityData.define(ITEM,new ItemStack(Items.BARRIER));
     }
 
@@ -60,7 +60,7 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
     }
 
     private void applyPlayerDamage(LivingEntity entity) {
-        entity.setSecondsOnFire(1);
+        entity.igniteForSeconds(1.0F);
         if(entity instanceof ServerPlayer player && !player.gameMode.isSurvival()){
             return;
         }
@@ -119,8 +119,8 @@ public class IncendiaryGrenadeEntity extends BaseProjectileLifeTimeEntity {
             double z = random.nextDouble(area.minZ, area.maxZ);
 
             DustColorTransitionOptions options = new DustColorTransitionOptions(
-                    new Vector3f(1, 0.25f, 0.25f),
-                    new Vector3f(1, 1f, 0.1F),
+                    ARGB.colorFromFloat(1.0F, 1.0F, 0.25F, 0.25F),
+                    ARGB.colorFromFloat(1.0F, 1.0F, 1.0F, 0.1F),
                     random.nextFloat() * 3f
             );
 

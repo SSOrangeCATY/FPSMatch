@@ -1,12 +1,7 @@
 package com.phasetranscrystal.fpsmatch.core.data;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -29,7 +24,7 @@ public class AreaData {
     public AreaData(@Nonnull BlockPos pos1,@Nonnull BlockPos pos2){
         this.pos1 = pos1;
         this.pos2 = pos2;
-        this.aabb = new AABB(pos1, pos2);
+        this.aabb = new AABB(Vec3.atLowerCornerOf(pos1), Vec3.atLowerCornerOf(pos2));
     }
 
     public BlockPos pos1() {
@@ -60,24 +55,4 @@ public class AreaData {
         return aabb;
     }
 
-    public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource) {
-        this.renderArea(poseStack, bufferSource, 0xFFFFFF00);
-    }
-
-    public void renderArea(PoseStack poseStack, MultiBufferSource bufferSource, int color) {
-        VertexConsumer vertexconsumer = bufferSource.getBuffer(RenderType.lines());
-        AABB aabb = aabb();
-        float red = ((color >> 16) & 0xFF) / 255.0F;
-        float green = ((color >> 8) & 0xFF) / 255.0F;
-        float blue = (color & 0xFF) / 255.0F;
-
-        LevelRenderer.renderLineBox(poseStack, vertexconsumer,
-                aabb.minX, aabb.minY, aabb.minZ,
-                aabb.maxX, aabb.maxY, aabb.maxZ,
-                red, green, blue, 1.0F,
-                Math.max(red * 0.55F, 0.1F),
-                Math.max(green * 0.55F, 0.1F),
-                Math.max(blue * 0.55F, 0.1F)
-        );
-    }
 }

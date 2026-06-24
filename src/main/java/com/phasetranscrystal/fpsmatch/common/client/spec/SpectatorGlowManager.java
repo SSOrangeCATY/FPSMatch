@@ -7,13 +7,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@OnlyIn(Dist.CLIENT)
 public class SpectatorGlowManager {
 
     private static final Set<LivingEntity> FAKE_GLOW_ENTITIES = new HashSet<>();
