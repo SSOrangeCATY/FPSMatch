@@ -228,7 +228,7 @@ public class FPSMMapSelectionScreen extends Screen {
                 }
             }
         }
-        // 濡傛灉涔嬪墠鐨勯€変腑鍦板浘宸蹭笉鍦ㄥ垪琛ㄤ腑锛岄噸缃€夋嫨浠ラ槻姝㈣烦杞埌閿欒鍦板浘
+        // 如果之前选中的地图已不在列表中，重置选择，避免跳转到错误地图
         selectedIndex = -1;
         selectedGameType = null;
         selectedMapName = null;

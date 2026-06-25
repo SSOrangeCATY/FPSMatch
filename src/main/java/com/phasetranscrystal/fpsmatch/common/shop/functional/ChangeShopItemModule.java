@@ -17,12 +17,16 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 
 /**
- * 鏀瑰彉鍟嗗簵鐗╁搧鐨勭洃鍚ā鍧椼€? * <p>
- * 璇ユā鍧楃敤浜庡湪鍟嗗簵妲戒綅鍙樻洿浜嬩欢涓姩鎬佷慨鏀规Ы浣嶇殑鐗╁搧鍜屼环鏍笺€? * 鏀寔鍦ㄨ喘涔版椂鏇挎崲鐗╁搧鍜屼环鏍硷紝骞跺湪閫€鍥炴椂鎭㈠榛樿璁剧疆銆? */
+ * 改变商店物品的监听模块。
+ * <p>
+ * 该模块用于在商店槽位变更事件中动态修改槽位的物品和价格。
+ * 支持在购买时替换物品和价格，并在退回时恢复默认设置。
+ */
 @net.neoforged.fml.common.EventBusSubscriber(modid = FPSMatch.MODID)
 public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemStack changedItem, int changedCost) implements ListenerModule {
     /**
-     * 璇ユā鍧楃殑缂栬В鐮佸櫒锛岀敤浜庡簭鍒楀寲鍜屽弽搴忓垪鍖栥€?     */
+     * 该模块的编解码器，用于序列化和反序列化。
+     */
     public static final Codec<ChangeShopItemModule> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ItemStack.CODEC.fieldOf("defaultItem").forGetter(ChangeShopItemModule::defaultItem),
             Codec.INT.fieldOf("defaultCost").forGetter(ChangeShopItemModule::defaultCost),
@@ -31,15 +35,20 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     ).apply(instance, ChangeShopItemModule::new));
 
     /**
-     * 娉ㄥ唽璇ユā鍧楀埌鐩戝惉妯″潡绠＄悊鍣ㄣ€?     */
+     * 注册该模块到监听模块管理器。
+     */
     public void read() {
         FPSMCore.getInstance().getListenerModuleManager().addListenerType(this);
     }
 
     /**
-     * 澶勭悊鍟嗗簵妲戒綅鍙樻洿浜嬩欢銆?     * <p>
-     * 濡傛灉妲戒綅宸茶喘涔颁笖涓嶇鍚堥€€鍥炴潯浠讹紝鍒欎笉鎵ц浠讳綍鎿嶄綔銆?     * 濡傛灉浜嬩欢鏍囧織涓烘锛屽垯灏嗘Ы浣嶇殑鐗╁搧鍜屼环鏍兼浛鎹负鏂拌缃€?     * 濡傛灉浜嬩欢鏍囧織涓鸿礋锛屽垯灏嗘Ы浣嶇殑鐗╁搧鍜屼环鏍兼仮澶嶄负榛樿璁剧疆銆?     *
-     * @param event 鍟嗗簵妲戒綅鍙樻洿浜嬩欢
+     * 处理商店槽位变更事件。
+     * <p>
+     * 如果槽位已购买且不符合退回条件，则不执行任何操作。
+     * 如果事件标志为正，则将槽位的物品和价格替换为新设置。
+     * 如果事件标志为负，则将槽位的物品和价格恢复为默认设置。
+     *
+     * @param event 商店槽位变更事件
      */
     @Override
     public void onChange(ShopSlotChangeEvent event) {
@@ -62,9 +71,12 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
         slot.setCost(defaultCost);
     }
     /**
-     * 鑾峰彇璇ユā鍧楃殑鍚嶇О銆?     * <p>
-     * 濡傛灉淇敼鍚庣殑鐗╁搧鏄灙姊帮紝鍒欎娇鐢ㄦ灙姊扮殑 ID 浣滀负鍚嶇О銆?     * 鍚﹀垯锛屼娇鐢ㄩ粯璁ょ墿鍝佺殑娉ㄥ唽鍚嶇О浣滀负鍚嶇О銆?     *
-     * @return 妯″潡鍚嶇О
+     * 获取该模块的名称。
+     * <p>
+     * 如果修改后的物品是枪械，则使用枪械的 ID 作为名称。
+     * 否则，使用默认物品的注册名称作为名称。
+     *
+     * @return 模块名称
      */
     @Override
     public String getName() {
@@ -79,7 +91,9 @@ public record ChangeShopItemModule(ItemStack defaultItem, int defaultCost, ItemS
     }
 
     /**
-     * 鑾峰彇璇ユā鍧楃殑浼樺厛绾с€?     * @return 妯″潡浼樺厛绾?     */
+     * 获取该模块的优先级。
+     * @return 模块优先级
+     */
     @Override
     public int getPriority() {
         return 1;

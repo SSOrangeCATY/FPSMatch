@@ -113,10 +113,10 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
         graphics.fill(left - 6, panelTop, right + 6, panelTop + 1, 0xFF666666);
         graphics.fill(left - 6, panelBottom - 1, right + 6, panelBottom, 0xFF666666);
 
-        // 瑁佸壀鍖哄煙
+        // 裁剪区域
         graphics.enableScissor(left - 8, panelTop + 2, right + 8, panelBottom - 2);
 
-        // 閲嶅畾浣嶆墍鏈夌粍浠跺苟娓叉煋鏍囩
+        // 重定位所有组件并渲染标签
         for (int i = 0; i < Math.min(valueFields.size(), detail.settings().size()); i++) {
             int targetY = rowBaseY.get(i) - scrollOffset * ROW_HEIGHT;
             boolean visible = targetY + ROW_HEIGHT > panelTop && targetY < panelBottom;
@@ -204,7 +204,7 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        // 灏嗘粴鍔ㄥ悗鍋忕Щ鐨勭偣鍑讳綅缃槧灏勫洖缁勪欢瀹為檯浣嶇疆
+        // 将滚动后的点击位置映射回组件实际位置
         return super.mouseClicked(event, doubleClick);
     }
 

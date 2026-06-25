@@ -122,7 +122,7 @@ public class FPSMEventHook {
     }
 
     //    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 杞Щ鍒版鏂楁ā寮忓唴
+    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 转移到死亡模式内
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
