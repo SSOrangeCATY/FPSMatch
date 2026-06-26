@@ -461,12 +461,14 @@ public class FPSMUtil {
     /**
      * 将物品添加到玩家库存
      */
-    public static void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
+    public static boolean addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
         if (itemStack.getItem() instanceof ArmorItem armorItem) {
             player.setItemSlot(armorItem.getEquipmentSlot(), itemStack);
+            return true;
         } else {
-            player.getInventory().add(fixGunItem(itemStack));
+            boolean accepted = player.getInventory().add(fixGunItem(itemStack));
             FPSMUtil.sortPlayerInventory(player);
+            return accepted && itemStack.isEmpty();
         }
     }
 

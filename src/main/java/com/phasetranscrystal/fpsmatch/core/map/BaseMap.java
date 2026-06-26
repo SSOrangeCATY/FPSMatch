@@ -658,7 +658,7 @@ public abstract class BaseMap {
     }
 
     public boolean canUseShop(ShopCapability cap, ServerPlayer player) {
-        return cap != null && player != null && cap.isInitialized();
+        return cap != null && player != null && player.isAlive() && cap.isInitialized();
     }
 
     /**

@@ -208,7 +208,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         for (UUID uuid : playersData.keySet()) {
             FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player->{
                 ShopData<T> shopData = this.getPlayerShopData(uuid);
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
             });
         }
     }
@@ -222,7 +222,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         if (playersData.containsKey(uuid)) {
             FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player->{
                 ShopData<T> shopData = this.getPlayerShopData(uuid);
-                FPSMatch.INSTANCE.send(PacketDistributor.ALL.noArg(), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
             });
         }
     }
@@ -569,6 +569,7 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param action 操作类型
      */
     public void handleButton(ServerPlayer serverPlayer, INamedType type, int index, ShopAction action) {
+        if (!serverPlayer.isAlive()) return;
         this.getPlayerShopData(serverPlayer.getUUID()).handleButton(serverPlayer, valueOf(type.name()), index, action);
         this.syncShopData(serverPlayer);
         this.syncShopMoneyData(serverPlayer);
