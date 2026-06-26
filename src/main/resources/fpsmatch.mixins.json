@@ -46,6 +46,7 @@
     "compat.spectate.tacz.MixinLocalPlayerSpectatorReload",
     "nametag.NameTagRenderMixin",
     "sound.SoundEngineMixin",
+    "spec.glow.MixinEntityClientOutline",
     "spec.glow.MixinKeyMappingBlockSpectatorOutlines",
     "spec.teammate.CameraInvokerMixin",
     "spec.teammate.KeyboardHandlerMixin"

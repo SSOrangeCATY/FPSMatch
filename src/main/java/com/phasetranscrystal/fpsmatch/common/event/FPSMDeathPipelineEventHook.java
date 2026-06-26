@@ -1,13 +1,13 @@
 package com.phasetranscrystal.fpsmatch.common.event;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
-import com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity;
-import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -23,8 +23,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -51,7 +54,7 @@ public class FPSMDeathPipelineEventHook {
     private static final Set<UUID> RECENTLY_KILLED = new HashSet<>();
 
     /**
-     * 本 tick END 需要结算的死亡上下文。
+     * 等待最终结算的死亡上下文。
      * 所有读写均发生在服务端主线程，使用普通 HashMap 即可。
      */
     private static final Map<UUID, PendingDeath> readyDeaths = new HashMap<>();
@@ -70,7 +73,7 @@ public class FPSMDeathPipelineEventHook {
      * 伤害入口：
      * <ul>
      *     <li>先转发为 {@link FPSMapEvent.PlayerEvent.HurtEvent} 供模式层改写/取消。</li>
-     *     <li>最终伤害值落定后，调用 {@link BaseMap#recordHurtData(ServerPlayer, net.minecraft.world.damagesource.DamageSource, float)} 记录伤害明细。</li>
+     *     <li>最终伤害值落定后，调用 {@link BaseMap#recordHurtData(ServerPlayer, DamageSource, float)} 记录伤害明细。</li>
      * </ul>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -171,11 +174,14 @@ public class FPSMDeathPipelineEventHook {
 
         if (FPSMCore.getInstance().getMapByPlayer(attacker).orElse(null) != map) return;
 
+        DamageSource source = deadPlayer.getLastDamageSource() != null
+                ? deadPlayer.getLastDamageSource()
+                : deadPlayer.damageSources().generic();
         ItemStack gunStack = event.getGunItemStack();
         // 即使 gunStack 不再是枪械（延迟击杀 / 攻击者切物品 / 枪械被丢弃），
-        // 本事件本身仍代表一次枪械击杀，必须继续走兜底，确保 CSGameMap.handleDeath() 被调用。
+        // 本事件本身仍代表一次枪械击杀，必须继续走兜底，确保地图 handleDeath() 被调用。
         boolean recognizedGun = GunCompatManager.isGun(gunStack);
-        ItemStack deathItem = recognizedGun ? gunStack : map.resolveDeathItem(attacker, deadPlayer.getLastDamageSource());
+        ItemStack deathItem = recognizedGun ? gunStack : map.resolveDeathItem(attacker, source);
 
         boolean passWall = false;
         boolean passSmoke = false;
@@ -205,9 +211,6 @@ public class FPSMDeathPipelineEventHook {
         readyDeaths.computeIfAbsent(deadPlayer.getUUID(), uuid -> {
             deadPlayer.setHealth(deadPlayer.getMaxHealth());
             RECENTLY_KILLED.add(deadPlayer.getUUID());
-            DamageSource source = deadPlayer.getLastDamageSource() != null
-                    ? deadPlayer.getLastDamageSource()
-                    : deadPlayer.damageSources().generic();
             DeathContext context = new DeathContext(
                     deadPlayer,
                     attacker,
@@ -231,11 +234,39 @@ public class FPSMDeathPipelineEventHook {
             return;
         }
 
-        if (readyDeaths.isEmpty() && pendingGunKills.isEmpty()) return;
-        readyDeaths.forEach((uuid, pending) -> finalizeDeath(pending.map(), pending.context()));
-        readyDeaths.clear();
-        pendingGunKills.clear();
-        RECENTLY_KILLED.clear();
+        if (readyDeaths.isEmpty()) {
+            if (!pendingGunKills.isEmpty()) {
+                pendingGunKills.clear();
+            }
+            RECENTLY_KILLED.clear();
+            return;
+        }
+
+        long now = FPSMCore.getInstance().getServer().overworld().getGameTime();
+        List<PendingDeath> dueDeaths = new ArrayList<>();
+        Iterator<Map.Entry<UUID, PendingDeath>> iterator = readyDeaths.entrySet().iterator();
+        while (iterator.hasNext()) {
+            PendingDeath pending = iterator.next().getValue();
+            if (!isDeathReadyForFinalization(pending.context().getCreatedTick(), now)) {
+                continue;
+            }
+
+            iterator.remove();
+            dueDeaths.add(pending);
+        }
+
+        for (PendingDeath pending : dueDeaths) {
+            finalizeDeath(pending.map(), pending.context());
+        }
+
+        if (readyDeaths.isEmpty()) {
+            pendingGunKills.clear();
+            RECENTLY_KILLED.clear();
+        }
+    }
+
+    static boolean isDeathReadyForFinalization(long createdTick, long currentTick) {
+        return DeathFinalizationTiming.isReady(createdTick, currentTick);
     }
 
     /**
@@ -296,8 +327,12 @@ public class FPSMDeathPipelineEventHook {
         context.setPassWall(gunKill.passWall());
         context.setPassSmoke(gunKill.passSmoke());
         context.setScopedKill(gunKill.scopedKill());
+
         if (context.getAttacker() == null) {
             context.setAttacker(gunKill.attacker());
+        }
+
+        if (!gunKill.deathItem().isEmpty()) {
             context.setDeathItem(gunKill.deathItem());
         }
     }

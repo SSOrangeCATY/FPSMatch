@@ -1,21 +1,19 @@
 package com.phasetranscrystal.fpsmatch.common.client.spec;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.OutlineBufferSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@Mod.EventBusSubscriber(modid = FPSMatch.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class PlayerOutlineRenderer {
+    public static final int NO_OUTLINE_COLOR = -1;
+
     private static final int TEAM_RED = 64;
     private static final int TEAM_GREEN = 160;
     private static final int TEAM_BLUE = 255;
@@ -25,54 +23,44 @@ public final class PlayerOutlineRenderer {
     private static final int SPECTATOR_RED = 255;
     private static final int SPECTATOR_GREEN = 220;
     private static final int SPECTATOR_BLUE = 64;
-    private static final int OUTLINE_ALPHA = 255;
-    private static boolean renderingOutline;
+
+    private static final int TEAM_COLOR = rgb(TEAM_RED, TEAM_GREEN, TEAM_BLUE);
+    private static final int ENEMY_COLOR = rgb(ENEMY_RED, ENEMY_GREEN, ENEMY_BLUE);
+    private static final int SPECTATOR_COLOR = rgb(SPECTATOR_RED, SPECTATOR_GREEN, SPECTATOR_BLUE);
 
     private PlayerOutlineRenderer() {
     }
 
-    @SubscribeEvent
-    public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
-        if (renderingOutline || !(event.getEntity() instanceof AbstractClientPlayer target)) return;
-        OutlineColor color = getOutlineColor(target);
-        if (color == null) return;
-
-        Minecraft minecraft = Minecraft.getInstance();
-        OutlineBufferSource outlineBufferSource = minecraft.renderBuffers().outlineBufferSource();
-        outlineBufferSource.setColor(color.red, color.green, color.blue, OUTLINE_ALPHA);
-
-        renderingOutline = true;
-        try {
-            event.getRenderer().render(target, target.getYRot(), event.getPartialTick(), event.getPoseStack(), outlineBufferSource, event.getPackedLight());
-            outlineBufferSource.endOutlineBatch();
-        } finally {
-            renderingOutline = false;
-        }
+    public static boolean shouldOutline(Entity target) {
+        return getOutlineColor(target) != NO_OUTLINE_COLOR;
     }
 
-    private static OutlineColor getOutlineColor(AbstractClientPlayer target) {
+    public static int getOutlineColor(Entity target) {
+        if (!(target instanceof Player player)) return NO_OUTLINE_COLOR;
+
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer localPlayer = minecraft.player;
-        if (localPlayer == null || target == localPlayer) return null;
+        if (localPlayer == null || player == localPlayer) return NO_OUTLINE_COLOR;
 
-        if (SpectatorGlowManager.shouldGlow(target)) {
-            return new OutlineColor(SPECTATOR_RED, SPECTATOR_GREEN, SPECTATOR_BLUE);
+        if (SpectatorGlowManager.shouldGlow(player)) {
+            return SPECTATOR_COLOR;
         }
 
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
         boolean localInNormalTeam = data.getCurrentClientTeam().map(ClientTeam::isNormal).orElse(false);
-        if (!localInNormalTeam) return null;
+        if (!localInNormalTeam) return NO_OUTLINE_COLOR;
 
-        boolean sameTeam = data.isSameTeam(localPlayer, target);
+        boolean sameTeam = data.isSameTeam(localPlayer, player);
         if (sameTeam && data.isTeamGlow()) {
-            return new OutlineColor(TEAM_RED, TEAM_GREEN, TEAM_BLUE);
+            return TEAM_COLOR;
         }
         if (!sameTeam && data.isEnemyGlow()) {
-            return new OutlineColor(ENEMY_RED, ENEMY_GREEN, ENEMY_BLUE);
+            return ENEMY_COLOR;
         }
-        return null;
+        return NO_OUTLINE_COLOR;
     }
 
-    private record OutlineColor(int red, int green, int blue) {
+    private static int rgb(int red, int green, int blue) {
+        return (red << 16) | (green << 8) | blue;
     }
 }

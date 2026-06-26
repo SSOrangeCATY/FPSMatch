@@ -12,22 +12,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PlayerOutlineRendererStructureTest {
 
     @Test
-    void playerOutlineDoesNotDependOnVanillaGlowingMixin() throws IOException {
+    void playerOutlineUsesVanillaGlowingMixin() throws IOException {
         String mixins = Files.readString(Path.of("src/main/resources/fpsmatch.mixins.json"));
 
-        assertFalse(mixins.contains("spec.glow.MixinEntityUnified"));
+        assertTrue(mixins.contains("spec.glow.MixinEntityClientOutline"));
     }
 
     @Test
-    void customPlayerOutlineRendererOwnsTeamAndEnemyGlowDecision() throws IOException {
+    void playerOutlineRendererOnlyOwnsTeamAndEnemyGlowDecision() throws IOException {
         Path rendererPath = Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/spec/PlayerOutlineRenderer.java");
         String renderer = Files.readString(rendererPath);
 
-        assertTrue(renderer.contains("RenderPlayerEvent.Post"));
         assertTrue(renderer.contains("data.isEnemyGlow()"));
         assertTrue(renderer.contains("data.isTeamGlow()"));
-        assertTrue(renderer.contains("event.getRenderer().render"));
-        assertTrue(renderer.contains("outlineBufferSource"));
+        assertTrue(renderer.contains("SpectatorGlowManager.shouldGlow"));
+        assertTrue(renderer.contains("getOutlineColor"));
+        assertFalse(renderer.contains("RenderPlayerEvent.Post"));
+        assertFalse(renderer.contains("event.getRenderer().render"));
+        assertFalse(renderer.contains("OutlineBufferSource"));
+        assertFalse(renderer.contains("outlineBufferSource"));
+    }
+
+    @Test
+    void clientOutlineMixinHooksVanillaGlowingAndTeamColor() throws IOException {
+        String mixin = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/mixin/spec/glow/MixinEntityClientOutline.java"));
+
+        assertTrue(mixin.contains("isCurrentlyGlowing"));
+        assertTrue(mixin.contains("getTeamColor"));
+        assertTrue(mixin.contains("PlayerOutlineRenderer.shouldOutline"));
+        assertTrue(mixin.contains("PlayerOutlineRenderer.getOutlineColor"));
     }
 
     @Test
