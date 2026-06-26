@@ -259,7 +259,7 @@ public class ShopSlot{
      * @return 是否可以购买
      */
     public boolean canBuy(int money) {
-        return money == -1 || (money >= cost && boughtCount < maxBuyCount);
+        return !locked && (money == -1 || (money >= cost && boughtCount < maxBuyCount));
     }
 
     /**
@@ -335,16 +335,19 @@ public class ShopSlot{
      * @return 购买后剩余金钱
      */
     public int buy(ServerPlayer player, int money) {
-        boughtCount++;
-
         ItemStack itemStack = process();
+        ItemStack obtainedItem = itemStack.copy();
         DropType type = DropType.getItemDropType(itemStack);
 
         checkAndHandleExistingItems(player, type);
 
-        NeoForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, itemStack));
+        boolean delivered = FPSMUtil.addItemToPlayerInventory(player, itemStack);
+        if (!delivered) {
+            FPSMUtil.playerDropMatchItem(player, itemStack);
+        }
 
-        FPSMUtil.addItemToPlayerInventory(player, itemStack);
+        NeoForge.EVENT_BUS.post(new PlayerObtainItemEvent(player, obtainedItem));
+        boughtCount++;
 
         return money == -1 ? money : money - cost;
     }

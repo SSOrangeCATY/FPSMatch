@@ -780,6 +780,23 @@ public class MapTeams {
         return mvpId;
     }
 
+    @Nullable
+    public UUID getRoundDamageMvp() {
+        UUID mvpId = null;
+        float highestDamage = 0;
+
+        for (ServerTeam team : getNormalTeams()) {
+            for (PlayerData data : team.getPlayersData()) {
+                float damage = data.getTempDamage();
+                if (mvpId == null || damage > highestDamage) {
+                    mvpId = data.getOwner();
+                    highestDamage = damage;
+                }
+            }
+        }
+        return highestDamage > 0 ? mvpId : null;
+    }
+
     /**
      * 获取游戏的 MVP 玩家数据。
      * <p>
@@ -853,17 +870,17 @@ public class MapTeams {
     public RawMVPData getRoundMvpPlayer(ServerTeam winnerTeam) {
         RawMVPData mvpId = null;
         int highestScore = 0;
-        UUID damageMvpId = this.getDamageMvp();
+        UUID damageMvpId = this.getRoundDamageMvp();
         if (!teams.containsValue(winnerTeam)) return null;
 
         if (isFirstRound()) {
             mvpId = this.getGameMvp(winnerTeam);
         } else {
             for (PlayerData data : winnerTeam.getPlayersData()) {
-                int kills = data.getKills() * 2;
-                int assists = data.getAssists();
+                int kills = data.getTempKills() * 2;
+                int assists = data.getTempAssists();
                 int score = kills + assists;
-                if (data.getOwner().equals(damageMvpId)) {
+                if (data.getOwner().equals(damageMvpId) && data.getTempDamage() > 0) {
                     score += 2;
                 }
 

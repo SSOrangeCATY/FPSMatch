@@ -447,13 +447,15 @@ public class FPSMUtil {
     /**
      * 将物品添加到玩家库存
      */
-    public static void addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
+    public static boolean addItemToPlayerInventory(ServerPlayer player, ItemStack itemStack) {
         Equippable equippable = itemStack.get(DataComponents.EQUIPPABLE);
         if (equippable != null && equippable.slot().getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
             player.setItemSlot(equippable.slot(), itemStack);
+            return true;
         } else {
-            player.getInventory().add(fixGunItem(itemStack));
+            boolean accepted = player.getInventory().add(fixGunItem(itemStack));
             FPSMUtil.sortPlayerInventory(player);
+            return accepted && itemStack.isEmpty();
         }
     }
 

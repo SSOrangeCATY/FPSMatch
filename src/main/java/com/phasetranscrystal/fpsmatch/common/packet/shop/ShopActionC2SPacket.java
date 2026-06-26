@@ -52,7 +52,7 @@ public class ShopActionC2SPacket {
                     cap = team.getCapabilityMap().get(ShopCapability.class).orElse(null);
                 }
                 ServerPlayer serverPlayer = ctx.get().getSender();
-                if (cap == null || serverPlayer == null || !cap.isInitialized()) {
+                if (cap == null || serverPlayer == null || !serverPlayer.isAlive() || !cap.isInitialized()) {
                     ctx.get().setPacketHandled(true);
                     return;
                 }

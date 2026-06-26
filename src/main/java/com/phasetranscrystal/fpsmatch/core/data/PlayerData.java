@@ -266,7 +266,7 @@ public class PlayerData {
     }
 
     public void setTempDamage(float tempDamage) {
-        this._damage = damage;
+        this._damage = tempDamage;
         markDirty();
     }
 
