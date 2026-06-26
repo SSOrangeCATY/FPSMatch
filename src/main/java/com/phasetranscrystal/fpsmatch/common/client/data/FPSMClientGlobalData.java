@@ -34,7 +34,7 @@ public class FPSMClientGlobalData {
     private final Map<String, List<ClientShopSlot>> clientShopData = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> playersMoney = new ConcurrentHashMap<>();
     private final Map<String, ClientTeam> clientTeamData = new ConcurrentHashMap<>();
-    private final Map<UUID, PlayerData> playerDataCache = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerTeamData> playerDataCache = new ConcurrentHashMap<>();
 
     private final DebugData debugData = new DebugData();
     private volatile boolean mapSelectionButtonVisible;
@@ -125,10 +125,11 @@ public class FPSMClientGlobalData {
      */
     public void updatePlayerTeamData(@NotNull String teamName, @NotNull UUID uuid,
                                      @NotNull PlayerData data) {
-        playerDataCache.put(uuid, data);
         ClientTeam targetTeam = clientTeamData.get(teamName);
         if (targetTeam == null) {
             if ("csdm".equals(teamName)) {
+                removePlayerFromAllTeams(uuid);
+                playerDataCache.put(uuid, new PlayerTeamData(teamName, data));
                 return;
             }
             FPSMatch.LOGGER.error("ClientGlobalData: Team {} does not exist", teamName);
@@ -139,6 +140,7 @@ public class FPSMClientGlobalData {
         removePlayerFromAllTeams(uuid);
 
         // 添加到新队伍
+        playerDataCache.remove(uuid);
         targetTeam.setPlayerData(uuid, data);
     }
 
@@ -151,17 +153,13 @@ public class FPSMClientGlobalData {
 
     @NotNull
     public Optional<PlayerTeamData> getPlayerTeamData(@NotNull UUID uuid) {
-        PlayerData cached = playerDataCache.get(uuid);
-        if (cached != null) {
-            return Optional.of(new PlayerTeamData("csdm", cached));
-        }
         for (Map.Entry<String, ClientTeam> entry : clientTeamData.entrySet()) {
             Optional<PlayerData> playerData = entry.getValue().getPlayerData(uuid);
             if (playerData.isPresent()) {
                 return Optional.of(new PlayerTeamData(entry.getKey(), playerData.get()));
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(playerDataCache.get(uuid));
     }
 
     @NotNull
