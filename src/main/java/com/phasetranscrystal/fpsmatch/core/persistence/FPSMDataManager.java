@@ -13,9 +13,16 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class FPSMDataManager {
+    private static final ExecutorService ASYNC_EXECUTOR = Executors.newFixedThreadPool(2, runnable -> {
+        Thread thread = new Thread(runnable, "FPSMatch Data IO");
+        thread.setDaemon(true);
+        return thread;
+    });
+
     private final Map<Class<?>, DataEntry<?>> registry = new HashMap<>();
     private final Path levelDataPath;
     private final Path globalDataPath;
@@ -55,7 +62,7 @@ public class FPSMDataManager {
 
     // 异步保存数据
     public <T> CompletableFuture<Void> saveDataAsync(T data, String fileName, boolean overwrite) {
-        return CompletableFuture.runAsync(() -> saveData(data, fileName, overwrite), Executors.newSingleThreadExecutor());
+        return CompletableFuture.runAsync(() -> saveData(data, fileName, overwrite), ASYNC_EXECUTOR);
     }
 
     // 同步读取数据
@@ -74,7 +81,7 @@ public class FPSMDataManager {
 
     // 异步读取数据
     public <T> CompletableFuture<T> readSpecificDataAsync(Class<T> clazz, String fileName) {
-        return CompletableFuture.supplyAsync(() -> readSpecificData(clazz, fileName), Executors.newSingleThreadExecutor());
+        return CompletableFuture.supplyAsync(() -> readSpecificData(clazz, fileName), ASYNC_EXECUTOR);
     }
 
     // 获取数据条目

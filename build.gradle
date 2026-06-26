@@ -95,6 +95,7 @@ dependencies {
 
     // JetBrains annotations for @NotNull and other annotations
     compileOnly "org.jetbrains:annotations:24.0.1"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
@@ -146,6 +147,10 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }
 
 idea {
