@@ -12,6 +12,9 @@ import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.matchinit.MatchPlayerSeed;
+import com.phasetranscrystal.fpsmatch.core.matchinit.MatchRosterBinder;
+import com.phasetranscrystal.fpsmatch.core.matchinit.MatchRosterPlan;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
@@ -33,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class MapTeams {
+public class MapTeams implements MatchRosterBinder {
     public record JoinTeamResult(Status status, @Nullable String teamName) {
         public enum Status {
             JOINED,
@@ -60,6 +63,8 @@ public class MapTeams {
     protected final ServerLevel level;
     protected final BaseMap map;
     private final Map<String, ServerTeam> teams = new HashMap<>();
+    private final Map<UUID, String> rosterTeamNamesById = new HashMap<>();
+    private final Map<UUID, String> reservedTeamNamesByPlayer = new HashMap<>();
     public final Map<UUID,Component> playerName = new HashMap<>();
 
     /**
@@ -236,6 +241,48 @@ public class MapTeams {
         if(isSpectator) team.setSpectator(true);
         this.teams.put(teamName, team);
         return team;
+    }
+
+    public void applyRosterPlan(MatchRosterPlan plan) {
+        Objects.requireNonNull(plan, "plan").applyTo(this);
+    }
+
+    @Override
+    public void ensureTeam(MatchRosterPlan.MatchRosterTeam team) {
+        Objects.requireNonNull(team, "team");
+        if ("spectator".equalsIgnoreCase(team.name().trim())) {
+            throw new IllegalArgumentException("Reserved team name: " + team.name());
+        }
+        ServerTeam serverTeam = this.teams.get(team.name());
+        if (serverTeam == null) {
+            serverTeam = this.addTeam(TeamData.of(team.name(), team.limit()));
+        } else if (serverTeam.isSpectator()) {
+            throw new IllegalArgumentException("Reserved team name: " + team.name());
+        }
+        this.rosterTeamNamesById.put(team.teamId(), serverTeam.getName());
+    }
+
+    @Override
+    public void reservePlayer(MatchRosterPlan.MatchRosterTeam team, MatchPlayerSeed player) {
+        Objects.requireNonNull(team, "team");
+        Objects.requireNonNull(player, "player");
+        ensureTeam(team);
+        String teamName = this.rosterTeamNamesById.getOrDefault(team.teamId(), team.name());
+        ServerTeam serverTeam = this.teams.get(teamName);
+        if (serverTeam == null) {
+            throw new IllegalStateException("Roster team is not available: " + team.name());
+        }
+        Component displayName = Component.literal(player.metadata().getOrDefault("displayName", player.playerId().toString()));
+        if (!serverTeam.reservePlayer(player.playerId(), displayName)) {
+            throw new IllegalStateException("Roster team is full: " + team.name());
+        }
+        this.reservedTeamNamesByPlayer.put(player.playerId(), teamName);
+        this.playerName.putIfAbsent(player.playerId(), displayName);
+    }
+
+    public Optional<String> getReservedTeamName(UUID player) {
+        Objects.requireNonNull(player, "player");
+        return Optional.ofNullable(this.reservedTeamNamesByPlayer.get(player));
     }
 
     /**
@@ -542,7 +589,7 @@ public class MapTeams {
     public JoinTeamResult joinTeam(String teamName, ServerPlayer player) {
         if (!checkTeam(teamName)) {
             return JoinTeamResult.of(JoinTeamResult.Status.TEAM_NOT_FOUND);
-        } else if (teamIsFull(teamName)) {
+        } else if (teamIsFullFor(teamName, player.getUUID())) {
             return JoinTeamResult.of(JoinTeamResult.Status.TEAM_FULL);
         } else {
             if (!this.playerJoin(player, teamName)) {
@@ -602,6 +649,12 @@ public class MapTeams {
             return false;
         }
         return team.getPlayerLimit() <= team.getPlayerList().size();
+    }
+
+    public boolean teamIsFullFor(String teamName, UUID player) {
+        ServerTeam team = teams.get(teamName);
+        if (team == null) return false;
+        return !team.canAccept(player);
     }
 
     /**

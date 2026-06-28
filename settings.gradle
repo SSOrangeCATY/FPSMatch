@@ -9,15 +9,3 @@ plugins {
 }
 
 rootProject.name = 'FPSMatch'
-
-includeBuild('porting/neotacz') {
-    dependencySubstitution {
-        substitute module('com.tacz:tacz-mc26.2') using project(':')
-    }
-}
-
-includeBuild('porting/simplebedrockmodel') {
-    dependencySubstitution {
-        substitute module('com.github.mcmodderanchor:simplebedrockmodel') using project(':')
-    }
-}

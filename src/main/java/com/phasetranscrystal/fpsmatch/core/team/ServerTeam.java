@@ -7,6 +7,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.matchinit.RosterCapacityPolicy;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -35,13 +36,29 @@ public final class ServerTeam extends BaseTeam {
     public boolean join(Player player) {
         if(!super.join(player)) return false;
         if(player.level().isClientSide()) return false;
+        UUID playerId = player.getUUID();
+        if (!canAccept(playerId)) return false;
         String name = player.getScoreboardName();
         if(!getPlayerTeam().getPlayers().contains(name)){
             player.level().getScoreboard().addPlayerToTeam(name, getPlayerTeam());
         }
-        players.put(player.getUUID(), new PlayerData(player,this.enableRounds));
+        players.computeIfAbsent(playerId, ignored -> new PlayerData(player,this.enableRounds));
         sync((ServerPlayer) player);
         return true;
+    }
+
+    public boolean reservePlayer(UUID uuid, Component displayName) {
+        Objects.requireNonNull(uuid, "uuid");
+        Objects.requireNonNull(displayName, "displayName");
+        if (hasPlayer(uuid)) return true;
+        if (!canAccept(uuid)) return false;
+        players.put(uuid, new PlayerData(uuid, displayName, this.enableRounds));
+        return true;
+    }
+
+    public boolean canAccept(UUID uuid) {
+        Objects.requireNonNull(uuid, "uuid");
+        return RosterCapacityPolicy.canAccept(getPlayerLimit(), getPlayerCount(), hasPlayer(uuid));
     }
 
     @Override

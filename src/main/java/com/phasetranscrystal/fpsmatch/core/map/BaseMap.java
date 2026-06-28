@@ -56,6 +56,7 @@ import java.util.function.Predicate;
 public abstract class BaseMap {
     public final String mapName;
     protected boolean isStart = false;
+    private final MatchLifecycleState lifecycleState = new MatchLifecycleState();
     private boolean isDebug = false;
     private final ServerLevel serverLevel;
     private final MapTeams mapTeams;
@@ -166,7 +167,18 @@ public abstract class BaseMap {
      * 开始游戏
      */
     public boolean start() {
-        return !NeoForge.EVENT_BUS.post(new FPSMapEvent.StartEvent(this)).isCanceled();
+        if (this.isStart) {
+            return true;
+        }
+        boolean eventAccepted = !NeoForge.EVENT_BUS.post(new FPSMapEvent.StartEvent(this)).isCanceled();
+        boolean prepared = eventAccepted && this.prepareStart();
+        boolean started = this.lifecycleState.acceptStart(eventAccepted, prepared);
+        this.isStart = this.lifecycleState.isStarted();
+        return started;
+    }
+
+    protected boolean prepareStart() {
+        return true;
     }
 
     ;
@@ -252,6 +264,8 @@ public abstract class BaseMap {
      */
     public void reset() {
         NeoForge.EVENT_BUS.post(new FPSMapEvent.ResetEvent(this));
+        this.lifecycleState.reset();
+        this.isStart = false;
     }
 
     ;
@@ -279,6 +293,10 @@ public abstract class BaseMap {
 
     public MapTeams.JoinTeamResult join(ServerPlayer player) {
         MapTeams mapTeams = this.getMapTeams();
+        Optional<String> reservedTeam = mapTeams.getReservedTeamName(player.getUUID());
+        if (reservedTeam.isPresent()) {
+            return this.join(reservedTeam.get(), player);
+        }
         List<ServerTeam> baseTeams = mapTeams.getNormalTeams();
         if (baseTeams.isEmpty()) return MapTeams.JoinTeamResult.of(MapTeams.JoinTeamResult.Status.NO_AVAILABLE_TEAM);
 
