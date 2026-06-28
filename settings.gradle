@@ -9,3 +9,21 @@ plugins {
 }
 
 rootProject.name = 'FPSMatch'
+
+def isStandaloneBuild = gradle.parent == null
+
+if (isStandaloneBuild && file('porting/neotacz').exists()) {
+    includeBuild('porting/neotacz') {
+        dependencySubstitution {
+            substitute module('com.tacz:tacz-mc26.2') using project(':')
+        }
+    }
+}
+
+if (isStandaloneBuild && file('porting/simplebedrockmodel').exists()) {
+    includeBuild('porting/simplebedrockmodel') {
+        dependencySubstitution {
+            substitute module('com.github.mcmodderanchor:simplebedrockmodel') using project(':')
+        }
+    }
+}
