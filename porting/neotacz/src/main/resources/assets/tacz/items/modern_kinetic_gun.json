@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "tacz:custom_item",
+    "base": "tacz:item/custom_item_base",
+    "renderer": "gun"
+  }
+}

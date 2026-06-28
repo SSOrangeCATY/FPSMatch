@@ -1,0 +1,177 @@
+{
+  // 指定枪械弹药
+  "ammo": "tacz:762x39",
+  // 弹容
+  "ammo_amount": 40,
+  // 扩容弹夹弹药总数
+  "extended_mag_ammo_amount": [
+    50,
+    60,
+    75
+  ],
+  // 枪栓类型：开膛待机（open_bolt）、闭膛待击（closed_bolt）、手动上膛（manual_action)
+  "bolt": "closed_bolt",
+  // 每分钟射出弹药量，最大不应超过 1200
+  "rpm": 630,
+  // 子弹实体属性
+  "bullet": {
+    // 寿命，单位秒
+    "life": 0.9,
+    // 用于霰弹，默认为 1，每发的伤害 / bullet_amount，每次射击扣除一发子弹
+    "bullet_amount": 1,
+    // 伤害
+    "damage": 10,
+    // 曳光弹间隔数量，没有此字段则不发射曳光弹
+    // 设置为 0 则是每发都是曳光弹
+    "tracer_count_interval": 0,
+    // 额外伤害的内容，为空则表示没有任何额外伤害计算内容
+    "extra_damage": {
+      // 护甲穿透率，默认为 0，也就是没有穿甲伤害
+      "armor_ignore": 0.3,
+      // 爆头伤害 x1.5
+      "head_shot_multiplier": 1.5,
+      // 距离-伤害分段常函数
+      "damage_adjust": [
+        {"distance": 36, "damage": 10},
+        {"distance": 64, "damage": 7},
+        // 如果你忘记写这个无穷，那么超过上述距离，我就认为是 0
+        {"distance": "infinite", "damage": 6}
+      ]
+    },
+    // 速度 m/s
+    "speed": 270,
+    // 重力
+    "gravity": 0.15,
+    // 击退效果
+    "knockback": 0,
+    // 阻力
+    "friction": 0.02,
+    // 点燃目标
+    "ignite": false,
+    // 点燃时间，默认为 2 秒，仅用于实体
+    "ignite_entity_time": 2,
+    // 穿透数
+    "pierce": 2,
+    // 是否爆炸，没有此字段时为 false
+    //"explosion": {
+    //  延时爆炸，单位：秒
+    //  "delay": 5
+    //  "radius": 5,
+    //  "damage": 5,
+    //  爆炸导致的击退，默认为 false，需要服务器也开启爆炸击退才能使用
+    //  "knockback": false
+    //}
+    "explosion": {
+      "explode": false,
+      "damage": 22,
+      "radius": 0.6,
+      "knockback": true,
+      "delay": 1
+    }
+  },
+  // 换弹相关
+  "reload": {
+    // magazine 是弹匣供弹，manual 是手动供弹
+    "type": "magazine",
+    // 弹匣供弹换弹时长（秒），到达此时间点，服务端就更新枪内子弹数量
+    "feed": {
+      // 空仓换弹
+      "empty": 2.95,
+      // 战术换弹
+      "tactical": 1.95
+    },
+    // 弹匣供弹总时长（秒），到达此时间点，枪械才可以进行开火、检视等行为。
+    "cooldown": {
+      // 空仓换弹
+      "empty": 3.69,
+      // 战术换弹
+      "tactical": 2.77
+    }
+  },
+  // 枪械抬起的动作时长，单位秒。
+  // 抬起动作完成后，枪械可以进行开火、检视等行为
+  "draw_time": 0.67,
+  // 收枪的动作时长，单位秒。
+  "put_away_time": 0.6,
+  // 瞄准时长，单位秒。
+  "aim_time": 0.17,
+  "sprint_time": 0.23,
+  // 拉栓上膛的时间，仅当枪栓类型为 manual_action 时有效
+  // "bolt_action_time": 0.9,
+  // 开火模式
+  "weight": 4.5,
+  "movement_speed": {
+    "base": 0.0,
+    "aim": -0.2,
+    "reload": 0
+  },
+  "crawl_recoil_multiplier": 0.2,
+  "fire_mode": [
+    // 全自动
+    "auto",
+    // 半自动
+    "semi"
+  ],
+  "recoil": {
+    "pitch": [
+      {"time": 0, "value": [0.6, 0.6]},
+      {"time": 0.25, "value": [0.6, 0.6]},
+      {"time": 0.65, "value": [-0.175, -0.175]},
+      {"time": 0.7, "value": [0, 0]}
+    ],
+    "yaw": [
+      {"time": 0, "value": [-0.375, 0.35]},
+      {"time": 0.25, "value": [-0.375, 0.35]},
+      {"time": 0.45, "value": [0, 0]}
+    ]
+  },
+  // 受伤晃动幅度修改，乘数，1 为原版晃动程度，0 为完全不晃动，默认为 0.05
+  "hurt_bob_tweak_multiplier": 0.05,
+  // 不准确度
+  "inaccuracy": {
+    // 站立射击散布
+    "stand": 4,
+    // 移动射击散布
+    "move": 4.55,
+    // 潜行射击散布
+    "sneak": 3.25,
+    // 趴下射击散布
+    "lie": 2,
+    // 瞄准射击时散布
+    "aim": 0.15
+  },
+  // 近战相关
+  "melee": {
+    // 枪械距离参数，用来延升近战攻击范围
+    // 会与刺刀等配件的距离做加和
+    "distance": 1,
+    // 使用时的冷却时间
+    "cooldown": 0.7,
+    // 默认近战数据，会被配件的数据替换掉
+    "default": {
+      // 动画类型：没有枪托的为 melee_push，有枪托的为 melee_stock
+      "animation_type": "melee_stock",
+      // 刺刀距离参数，枪械里还有个刺刀攻击距离参数，两者做加和
+      "distance": 1,
+      // 刺刀范围角度
+      "range_angle": 30,
+      // 伤害值
+      "damage": 4,
+      // 击退效果
+      "knockback": 0.6,
+      // 前摇时长，单位：秒
+      "prep": 0.1
+    }
+  },
+  // 开放的配件槽。未指定的槽位默认关闭。全部配件槽类型有:
+  // scope, stock, muzzle, grip, laser, extended_mag
+  "allow_attachment_types": [
+    "scope",
+    "stock",
+    "muzzle",
+    "extended_mag"
+  ],
+  // 专属的配件属性
+  "exclusive_attachments": {
+  }
+}

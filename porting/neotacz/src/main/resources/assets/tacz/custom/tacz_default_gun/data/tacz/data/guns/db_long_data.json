@@ -1,0 +1,99 @@
+{
+  "ammo": "tacz:12g",
+  "rpm": 100,
+  "bullet": {
+    "life": 0.5,
+    "bullet_amount": 10,
+    "damage": 30,
+    "tracer_count_interval": 0,
+    "extra_damage": {
+      "armor_ignore": 0.33,
+      "head_shot_multiplier": 1.2,
+      "damage_adjust": [
+        {"distance": 16, "damage": 30},
+        {"distance": 24, "damage": 25},
+        {"distance": "infinite", "damage": 15}
+      ]
+    },
+    "speed": 150,
+    "gravity": 0.15,
+    "knockback": 0.35,
+    "friction": 0.05,
+    "ignite": false,
+    "pierce": 1
+  },
+  "ammo_amount": 2,
+  "bolt": "open_bolt",
+  "reload": {
+    "type": "magazine",
+    "feed": {
+      "empty": 1.83,
+      "tactical": 1.23
+    },
+    "cooldown": {
+      "empty": 2.3,
+      "tactical": 1.6
+    }
+  },
+  "draw_time": 0.27,
+  "put_away_time": 0.23,
+  "aim_time": 0.18,
+  "sprint_time": 0.12,
+  "weight": 3.2,
+  "movement_speed": {
+    "base": 0.0,
+    "aim": 0.0,
+    "reload": 0.1
+  },
+  "crawl_recoil_multiplier": 0.5,
+  "fire_mode": [
+    "semi"
+  ],
+  "allow_attachment_types": [
+    "extended_mag"
+  ],
+  "recoil": {
+    "pitch": [
+      {"time": 0, "value": [3.25, 3.25]},
+      {"time": 0.125, "value": [3.25, 3.25]},
+      {"time": 0.4, "value": [-0.25, -0.25]},
+      {"time": 0.55, "value": [0, 0]}
+    ],
+    "yaw": [
+      {"time": 0, "value": [-1.5, -1.5]},
+      {"time": 0.1, "value": [-1.5, -1.5]},
+      {"time": 0.2, "value": [0.15, 0.15]},
+      {"time": 0.4, "value": [0, 0]}
+    ]
+  },
+  "inaccuracy": {
+    "stand": 3.25,
+    "move": 3.75,
+    "sneak": 3,
+    "lie": 3,
+    "aim": 2.25
+  },
+  // 近战相关
+  "melee": {
+    // 枪械距离参数，用来延升近战攻击范围
+    // 会与刺刀等配件的距离做加和
+    "distance": 1,
+    // 使用时的冷却时间
+    "cooldown": 0.6,
+    // 默认近战数据，会被配件的数据替换掉
+    "default": {
+      // 动画类型：没有枪托的为 melee_push，有枪托的为 melee_stock
+      "animation_type": "melee_stock",
+      // 刺刀距离参数，枪械里还有个刺刀攻击距离参数，两者做加和
+      "distance": 1,
+      // 刺刀范围角度
+      "range_angle": 30,
+      // 伤害值
+      "damage": 2,
+      // 击退效果
+      "knockback": 0.75,
+      // 前摇时长，单位：秒
+      "prep": 0.1
+    }
+  }
+}

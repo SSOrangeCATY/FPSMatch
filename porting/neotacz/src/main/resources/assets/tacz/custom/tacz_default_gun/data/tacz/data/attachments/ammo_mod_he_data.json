@@ -1,0 +1,27 @@
+{
+  "weight": 0.6,
+  "explosion": {
+    "explode": true
+  },
+  "armor_ignore": {
+    "multiplier": 0.5
+  },
+  "head_shot":{
+    "function": "y = 1"
+  },
+  "pierce": {
+    "function": "y = 1"
+  },
+  "rpm": {
+    "multiplier":0.85
+  },
+  "extended_mag_level": 1,
+  // 精度是加给霰弹枪的，
+  // 都玩高爆了，这点精度对普通武器来说用处已经不是很大了
+  "inaccuracy": {
+    "multiplier": 1
+  },
+  "aim_inaccuracy": {
+    "multiplier": 0.25
+  }
+}
