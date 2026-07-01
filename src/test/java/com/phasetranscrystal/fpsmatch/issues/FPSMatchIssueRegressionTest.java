@@ -76,4 +76,12 @@ class FPSMatchIssueRegressionTest {
         assertTrue(deathContext.contains("if (isSuicide()) {"));
         assertTrue(deathContext.contains("this.headShot = false;"));
     }
+
+    @Test
+    void soundEnginePlayMixinUsesReturnableCallback() throws IOException {
+        String soundMixin = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/mixin/sound/SoundEngineMixin.java"));
+
+        assertFalse(soundMixin.contains("onPlaySound(SoundInstance sound, CallbackInfo ci)"));
+        assertTrue(soundMixin.contains("onPlaySound(SoundInstance sound, CallbackInfoReturnable<SoundEngine.PlayResult> cir)"));
+    }
 }

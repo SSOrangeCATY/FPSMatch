@@ -27,13 +27,13 @@ public class SoundEngineMixin {
         cancellable = true,
         remap = false
     )
-    private void onPlaySound(SoundInstance sound, CallbackInfo ci) {
+    private void onPlaySound(SoundInstance sound, CallbackInfoReturnable<SoundEngine.PlayResult> cir) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         
         if (player != null && player.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS)) {
             if (!fPSMatch$isAllowedSound(sound)) {
-                ci.cancel();
+                cir.setReturnValue(SoundEngine.PlayResult.NOT_STARTED);
             }
         }
     }
