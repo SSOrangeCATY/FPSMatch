@@ -89,8 +89,10 @@ repositories {
 
 dependencies {
     compileOnly "com.tacz:tacz-mc26.2:${tacz_version}"
+    localRuntime "com.tacz:tacz-mc26.2:${tacz_version}"
     compileOnly "com.github.mcmodderanchor:simplebedrockmodel:2.4.4-neoforge-mc26.2"
     localRuntime "com.github.mcmodderanchor:simplebedrockmodel:2.4.4-neoforge-mc26.2"
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
     compileOnly('org.apache.commons:commons-math3:3.6.1');
 
     // JetBrains annotations for @NotNull and other annotations
