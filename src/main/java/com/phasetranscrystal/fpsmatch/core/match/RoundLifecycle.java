@@ -86,8 +86,11 @@ public class RoundLifecycle<W, R> {
             }
         }
         if (roundElapsedTicks >= roundTicks) {
-            finishRound(timeoutResult.get());
-            return;
+            RoundResult<W, R> result = timeoutResult.get();
+            if (result != null) {
+                finishRound(result);
+                return;
+            }
         }
         roundElapsedTicks++;
     }

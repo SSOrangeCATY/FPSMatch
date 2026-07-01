@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.match.RoundContext;
 import com.phasetranscrystal.fpsmatch.core.match.RoundLifecycle;
 import com.phasetranscrystal.fpsmatch.core.match.RoundResult;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 
@@ -89,6 +90,11 @@ public abstract class BaseRoundMap<W, R> extends BaseMap {
      */
     protected boolean shouldAdvanceRoundLifecycle() {
         return true;
+    }
+
+    public void handleRespawn(ServerPlayer player) {
+        this.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
+        this.teleportPlayerToReSpawnPoint(player);
     }
 
     /**

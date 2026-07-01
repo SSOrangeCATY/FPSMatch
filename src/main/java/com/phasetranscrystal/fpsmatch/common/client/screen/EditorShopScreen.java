@@ -28,7 +28,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = Math.max(0, (this.height - this.imageHeight) / 2);
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
-                .bounds(width / 2 - FPSMGuiTheme.BUTTON_LARGE_WIDTH / 2, height - 30,
+                .bounds(leftPos + imageWidth / 2 - FPSMGuiTheme.BUTTON_LARGE_WIDTH / 2, topPos + imageHeight - 30,
                         FPSMGuiTheme.BUTTON_LARGE_WIDTH, FPSMGuiTheme.BUTTON_HEIGHT)
                 .build());
     }

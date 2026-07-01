@@ -321,8 +321,10 @@ public class FPSMDeathPipelineEventHook {
     }
 
     private static void applyGunKillDetail(DeathContext context, GunKillDetail gunKill) {
+        ServerPlayer attacker = context.getAttacker() != null ? context.getAttacker() : gunKill.attacker();
+        boolean selfKill = attacker != null && attacker.getUUID().equals(context.getDeadPlayer().getUUID());
         context.setGunKill(true);
-        context.setHeadShot(gunKill.isHeadShot());
+        context.setHeadShot(gunKill.isHeadShot() && !selfKill);
         context.setGunBullet(gunKill.bullet());
         context.setPassWall(gunKill.passWall());
         context.setPassSmoke(gunKill.passSmoke());

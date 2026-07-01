@@ -86,6 +86,26 @@ class RoundLifecycleTest {
     }
 
     @Test
+    void nullTimeoutResultKeepsActiveRoundRunning() {
+        List<RoundResult<String, String>> results = new ArrayList<>();
+        RoundLifecycle<String, String> lifecycle = RoundLifecycle.<String, String>builder()
+                .waitingTicks(0)
+                .roundTicks(1)
+                .roundEndTicks(1)
+                .timeoutResult(() -> null)
+                .onRoundEnd(results::add)
+                .build();
+
+        lifecycle.tick();
+        lifecycle.tick();
+        lifecycle.tick();
+
+        assertEquals(RoundPhase.ACTIVE_ROUND, lifecycle.phase());
+        assertTrue(results.isEmpty());
+        assertEquals(3, lifecycle.roundElapsedTicks());
+    }
+
+    @Test
     void pauseBlocksWaitingAndRoundTimers() {
         RoundLifecycle<String, String> lifecycle = RoundLifecycle.<String, String>builder()
                 .waitingTicks(1)

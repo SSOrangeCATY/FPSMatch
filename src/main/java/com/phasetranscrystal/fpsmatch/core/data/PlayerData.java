@@ -37,7 +37,7 @@ public class PlayerData {
     private int _deaths = 0; // 本回合死亡
     private int _assists = 0; // 本回合助攻
     private float _damage = 0.0f; // 本回合伤害
-    private int _headshotKills = 0;
+    private int _headshotKills = 0; // 本回合爆头击杀
 
     //服务端独有字段
     private final Map<UUID, Damage> damageData = new HashMap<>(); // 伤害明细
@@ -142,6 +142,10 @@ public class PlayerData {
     public float getHeadshotRate() {
         int kills = this.kills + (enableRounds ? _kills : 0);
         return kills > 0 ? (float) getHeadshotKills() / kills : 0.0f;
+    }
+
+    public float getTempHeadshotRate() {
+        return _kills > 0 ? (float) _headshotKills / _kills : 0.0f;
     }
 
     //KD
@@ -316,6 +320,11 @@ public class PlayerData {
     public void setHeadshotKills(int headshotKills) {
         this.headshotKills = headshotKills;
         this._headshotKills = 0;
+        markDirty();
+    }
+
+    public void setTempHeadshotKills(int tempHeadshotKills) {
+        this._headshotKills = tempHeadshotKills;
         markDirty();
     }
 

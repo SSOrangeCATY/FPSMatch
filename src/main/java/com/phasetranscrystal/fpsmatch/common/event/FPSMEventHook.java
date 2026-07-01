@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.BaseRoundMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -129,8 +130,9 @@ public class FPSMEventHook {
             if (!map.isStart()) {
                 return;
             }
-            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
-            map.teleportPlayerToReSpawnPoint(player);
+            if (map instanceof BaseRoundMap<?, ?> roundMap) {
+                roundMap.handleRespawn(player);
+            }
         });
     }
 
