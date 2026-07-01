@@ -55,8 +55,15 @@ public final class DeathContext {
         return Optional.ofNullable(attacker);
     }
 
+    public boolean isSuicide() {
+        return attacker != null && attacker.getUUID().equals(deadPlayer.getUUID());
+    }
+
     public void setAttacker(@Nullable ServerPlayer attacker) {
         this.attacker = attacker;
+        if (isSuicide()) {
+            this.headShot = false;
+        }
     }
 
     public DamageSource getDamageSource() {
@@ -84,7 +91,7 @@ public final class DeathContext {
     }
 
     public void setHeadShot(boolean headShot) {
-        this.headShot = headShot;
+        this.headShot = headShot && !isSuicide();
     }
 
     public boolean isPassWall() {

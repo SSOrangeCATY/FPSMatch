@@ -13,35 +13,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EditorShopScreen extends AbstractContainerScreen<EditorShopContainer> {
-    private static final int SLOT_SIZE = 18;
-    // GUI阴影色
+    private static final int SLOT_SIZE = EditorShopContainer.SLOT_SIZE;
     private static final int GUI_SHADOW_COLOR = 0x80000000;
-    // GUI主背景色
     private static final int GUI_MAIN_BACKGROUND = 0xFF444444;
-    // GUI内层边框色
     private static final int GUI_INNER_BORDER = 0xFF666666;
-    // GUI外层边框色
     private static final int GUI_OUTER_BORDER = 0xFF222222;
-    // 插槽默认背景色
     private static final int SLOT_DEFAULT_BACKGROUND = 0xFF333333;
-    // 插槽默认边框色
     private static final int SLOT_DEFAULT_BORDER = 0xFF777777;
-    // 插槽悬停高亮色
     private static final int SLOT_HOVER_HIGHLIGHT = 0x80FFFFFF;
-    // 插槽悬停边框色
     private static final int SLOT_HOVER_BORDER = 0xFFFFFFFF;
-    // GUI内边距
     private static final int GUI_PADDING = 4;
 
     public EditorShopScreen(EditorShopContainer container, Inventory inv, Component title) {
         super(container, inv, Component.translatable("gui.fpsm.shop_editor.title"),
-                Math.max(176, 10 + Math.max(1, container.getCols()) * (SLOT_SIZE + 40)),
-                Math.max(166, 44 + Math.max(1, container.getRows()) * (SLOT_SIZE + 10)));
+                Math.max(176, container.getImageWidth()),
+                Math.max(166, container.getImageHeight()));
     }
 
     @Override
     protected void init() {
         super.init();
+        this.leftPos = (this.width - this.imageWidth) / 2;
+        this.topPos = Math.max(0, (this.height - this.imageHeight) / 2);
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
                 .bounds(width / 2 - 50, height - 30, 100, 20)
                 .build());
@@ -58,14 +51,13 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         renderShopSlotsBackground(guiGraphics);
     }
 
-    private int getSlotX(Slot slot){
+    private int getSlotX(Slot slot) {
         return slot.x - 1;
     }
 
-    private int getSlotY(Slot slot){
+    private int getSlotY(Slot slot) {
         return slot.y - 1;
     }
-
 
     private void renderGuiMultiLayerBackground(GuiGraphicsExtractor guiGraphics) {
         guiGraphics.fill(
@@ -74,32 +66,12 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
                 GUI_SHADOW_COLOR
         );
 
-        guiGraphics.fill(
-                leftPos, topPos,
-                leftPos + imageWidth, topPos + 1,
-                GUI_OUTER_BORDER
-        );
-        guiGraphics.fill(
-                leftPos, topPos + imageHeight - 1,
-                leftPos + imageWidth, topPos + imageHeight,
-                GUI_OUTER_BORDER
-        );
-        guiGraphics.fill(
-                leftPos, topPos + 1,
-                leftPos + 1, topPos + imageHeight - 1,
-                GUI_OUTER_BORDER
-        );
-        guiGraphics.fill(
-                leftPos + imageWidth - 1, topPos + 1,
-                leftPos + imageWidth, topPos + imageHeight - 1,
-                GUI_OUTER_BORDER
-        );
+        guiGraphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(leftPos, topPos + imageHeight - 1, leftPos + imageWidth, topPos + imageHeight, GUI_OUTER_BORDER);
+        guiGraphics.fill(leftPos, topPos + 1, leftPos + 1, topPos + imageHeight - 1, GUI_OUTER_BORDER);
+        guiGraphics.fill(leftPos + imageWidth - 1, topPos + 1, leftPos + imageWidth, topPos + imageHeight - 1, GUI_OUTER_BORDER);
 
-        guiGraphics.fill(
-                leftPos + 1, topPos + 1,
-                leftPos + imageWidth - 1, topPos + imageHeight - 1,
-                GUI_MAIN_BACKGROUND
-        );
+        guiGraphics.fill(leftPos + 1, topPos + 1, leftPos + imageWidth - 1, topPos + imageHeight - 1, GUI_MAIN_BACKGROUND);
 
         int innerBorderX1 = leftPos + 1 + GUI_PADDING;
         int innerBorderY1 = topPos + 1 + GUI_PADDING;
@@ -117,32 +89,11 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
             int slotRenderX = this.leftPos + getSlotX(shopSlot);
             int slotRenderY = this.topPos + getSlotY(shopSlot);
 
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY,
-                    slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE,
-                    SLOT_DEFAULT_BACKGROUND
-            );
-
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY,
-                    slotRenderX + SLOT_SIZE, slotRenderY + 1,
-                    SLOT_DEFAULT_BORDER
-            );
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY + SLOT_SIZE - 1,
-                    slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE,
-                    SLOT_DEFAULT_BORDER
-            );
-            guiGraphics.fill(
-                    slotRenderX, slotRenderY + 1,
-                    slotRenderX + 1, slotRenderY + SLOT_SIZE - 1,
-                    SLOT_DEFAULT_BORDER
-            );
-            guiGraphics.fill(
-                    slotRenderX + SLOT_SIZE - 1, slotRenderY + 1,
-                    slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE - 1,
-                    SLOT_DEFAULT_BORDER
-            );
+            guiGraphics.fill(slotRenderX, slotRenderY, slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE, SLOT_DEFAULT_BACKGROUND);
+            guiGraphics.fill(slotRenderX, slotRenderY, slotRenderX + SLOT_SIZE, slotRenderY + 1, SLOT_DEFAULT_BORDER);
+            guiGraphics.fill(slotRenderX, slotRenderY + SLOT_SIZE - 1, slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE, SLOT_DEFAULT_BORDER);
+            guiGraphics.fill(slotRenderX, slotRenderY + 1, slotRenderX + 1, slotRenderY + SLOT_SIZE - 1, SLOT_DEFAULT_BORDER);
+            guiGraphics.fill(slotRenderX + SLOT_SIZE - 1, slotRenderY + 1, slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE - 1, SLOT_DEFAULT_BORDER);
         }
     }
 
@@ -155,8 +106,11 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     }
 
     private void renderShopIdentity(GuiGraphicsExtractor guiGraphics) {
-        guiGraphics.centeredText(font, title, width / 2, 12, 0xFFFFFFFF);
-        guiGraphics.centeredText(font, Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()), width / 2, 26, 0xFFB8D4E3);
+        int centerX = leftPos + imageWidth / 2;
+        guiGraphics.centeredText(font, title, centerX, topPos + 12, 0xFFFFFFFF);
+        guiGraphics.centeredText(font,
+                Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()),
+                centerX, topPos + 26, 0xFFB8D4E3);
     }
 
     private void renderHoveredSlotHighlight(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
@@ -169,32 +123,11 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         int slotRenderX = this.leftPos + getSlotX(slot);
         int slotRenderY = this.topPos + getSlotY(slot);
 
-        guiGraphics.fill(
-                slotRenderX + 1, slotRenderY + 1,
-                slotRenderX + SLOT_SIZE - 1, slotRenderY + SLOT_SIZE - 1,
-                SLOT_HOVER_HIGHLIGHT
-        );
-
-        guiGraphics.fill(
-                slotRenderX, slotRenderY,
-                slotRenderX + SLOT_SIZE, slotRenderY + 1,
-                SLOT_HOVER_BORDER
-        );
-        guiGraphics.fill(
-                slotRenderX, slotRenderY + SLOT_SIZE - 1,
-                slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE,
-                SLOT_HOVER_BORDER
-        );
-        guiGraphics.fill(
-                slotRenderX, slotRenderY + 1,
-                slotRenderX + 1, slotRenderY + SLOT_SIZE - 1,
-                SLOT_HOVER_BORDER
-        );
-        guiGraphics.fill(
-                slotRenderX + SLOT_SIZE - 1, slotRenderY + 1,
-                slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE - 1,
-                SLOT_HOVER_BORDER
-        );
+        guiGraphics.fill(slotRenderX + 1, slotRenderY + 1, slotRenderX + SLOT_SIZE - 1, slotRenderY + SLOT_SIZE - 1, SLOT_HOVER_HIGHLIGHT);
+        guiGraphics.fill(slotRenderX, slotRenderY, slotRenderX + SLOT_SIZE, slotRenderY + 1, SLOT_HOVER_BORDER);
+        guiGraphics.fill(slotRenderX, slotRenderY + SLOT_SIZE - 1, slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE, SLOT_HOVER_BORDER);
+        guiGraphics.fill(slotRenderX, slotRenderY + 1, slotRenderX + 1, slotRenderY + SLOT_SIZE - 1, SLOT_HOVER_BORDER);
+        guiGraphics.fill(slotRenderX + SLOT_SIZE - 1, slotRenderY + 1, slotRenderX + SLOT_SIZE, slotRenderY + SLOT_SIZE - 1, SLOT_HOVER_BORDER);
     }
 
     private int getHoveredCustomSlotIndex(int mouseX, int mouseY) {
@@ -238,9 +171,8 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
                 .append(Component.literal(String.valueOf(hoveredShopSlot.getAmmoCount()))));
         tooltipComponents.add(Component.translatable("gui.shop.slot.tooltip.group_id")
                 .append(Component.literal(String.valueOf(hoveredShopSlot.getGroupId()))));
-        String listeners = hoveredShopSlot.getListenerNames().toString();
         tooltipComponents.add(Component.translatable("gui.shop.slot.tooltip.listeners")
-                .append(Component.literal(listeners)));
+                .append(Component.literal(hoveredShopSlot.getListenerNames().toString())));
         tooltipComponents.add(Component.literal("\n"));
         tooltipComponents.add(Component.translatable("gui.shop.slot.tooltip.edit_prompt"));
 

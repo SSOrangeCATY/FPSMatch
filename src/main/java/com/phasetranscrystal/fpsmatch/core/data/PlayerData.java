@@ -35,6 +35,7 @@ public class PlayerData {
     private int _deaths = 0; // 本回合死亡
     private int _assists = 0; // 本回合助攻
     private float _damage = 0.0f; // 本回合伤害
+    private int _headshotKills = 0;
 
     //服务端独有字段
     private final Map<UUID, Damage> damageData = new HashMap<>(); // 伤害明细
@@ -136,8 +137,8 @@ public class PlayerData {
 
     // 爆头率
     public float getHeadshotRate() {
-        int Kills = getKills();
-        return Kills > 0 ? (float) headshotKills / Kills : 0.0f;
+        int kills = this.kills + (enableRounds ? _kills : 0);
+        return kills > 0 ? (float) getHeadshotKills() / kills : 0.0f;
     }
 
     //KD
@@ -156,7 +157,11 @@ public class PlayerData {
     }
 
     public int getHeadshotKills() {
-        return headshotKills;
+        return headshotKills + (enableRounds ? _headshotKills : 0);
+    }
+
+    public int getTempHeadshotKills() {
+        return _headshotKills;
     }
 
     // 客户端生命值百分比（仅客户端访问）
@@ -296,12 +301,17 @@ public class PlayerData {
     }
 
     public void addHeadshotKill() {
-        this.headshotKills++;
+        if (enableRounds) {
+            _headshotKills++;
+        } else {
+            headshotKills++;
+        }
         markDirty();
     }
 
     public void setHeadshotKills(int headshotKills) {
         this.headshotKills = headshotKills;
+        this._headshotKills = 0;
         markDirty();
     }
 
@@ -365,12 +375,14 @@ public class PlayerData {
         this.deaths += _deaths;
         this.assists += _assists;
         this.damage += _damage;
+        this.headshotKills += _headshotKills;
         this.scores += (_kills * 2) + _assists; // 回合得分结算
 
         this._kills = 0;
         this._deaths = 0;
         this._assists = 0;
         this._damage = 0;
+        this._headshotKills = 0;
         this.damageData.clear();
 
         markDirty();
@@ -391,6 +403,7 @@ public class PlayerData {
         this._deaths = 0;
         this._assists = 0;
         this._damage = 0.0f;
+        this._headshotKills = 0;
 
         this.damageData.clear();
         markDirty();
@@ -414,7 +427,7 @@ public class PlayerData {
         copy.setDamage(this.getDamage());
         copy.setMvpCount(this.mvpCount);
         copy.setLiving(this.isLiving);
-        copy.setHeadshotKills(this.headshotKills);
+        copy.setHeadshotKills(this.getHeadshotKills());
         return copy;
     }
 
@@ -423,7 +436,7 @@ public class PlayerData {
         this.setDeaths(this.getDeaths() + other.getDeaths());
         this.setAssists(this.getAssists() + other.getAssists());
         this.setDamage(this.getDamage() + other.getDamage());
-        this.setHeadshotKills(this.headshotKills + other.headshotKills);
+        this.setHeadshotKills(this.getHeadshotKills() + other.getHeadshotKills());
     }
 
     // 客户端Tab栏展示用
@@ -446,7 +459,7 @@ public class PlayerData {
         info.put("Deaths", getDeaths());
         info.put("Assists", getAssists());
         info.put("Damage", getDamage());
-        info.put("headshotKills", headshotKills);
+        info.put("headshotKills", getHeadshotKills());
         info.put("mvpCount", mvpCount);
         info.put("hp", FPSMCore.initialized() ? healthPercentServer() : hp);
         return info;

@@ -4,18 +4,16 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.TriState;
 import net.minecraft.world.level.GameType;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
 
 import java.util.Optional;
 
@@ -62,11 +60,6 @@ public class FPSMEventHook {
         }
     }
 
-    /**
-     * 鐜╁鐧诲綍浜嬩欢澶勭悊
-     *
-     * @param event 鐜╁鐧诲綍浜嬩欢
-     */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -75,21 +68,14 @@ public class FPSMEventHook {
                 FPSMapEvent.PlayerEvent.LoggedInEvent loggedInEvent = new FPSMapEvent.PlayerEvent.LoggedInEvent(map, player);
                 NeoForge.EVENT_BUS.post(loggedInEvent);
             }, () -> {
-                if (FPSMConfig.common.autoAdventureMode.get()) {
-                    if (!player.isCreative()) {
-                        player.heal(player.getMaxHealth());
-                        player.setGameMode(GameType.ADVENTURE);
-                    }
+                if (FPSMConfig.common.autoAdventureMode.get() && !player.isCreative()) {
+                    player.heal(player.getMaxHealth());
+                    player.setGameMode(GameType.ADVENTURE);
                 }
             });
         }
     }
 
-    /**
-     * 鐜╁鐧诲嚭浜嬩欢澶勭悊
-     *
-     * @param event 鐜╁鐧诲嚭浜嬩欢
-     */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
@@ -121,8 +107,8 @@ public class FPSMEventHook {
                 });
     }
 
-    //    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 转移到死亡模式内
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
@@ -131,9 +117,8 @@ public class FPSMEventHook {
             if (!map.isStart()) {
                 return;
             }
-//            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
+            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
             map.teleportPlayerToReSpawnPoint(player);
         });
     }
-
 }
