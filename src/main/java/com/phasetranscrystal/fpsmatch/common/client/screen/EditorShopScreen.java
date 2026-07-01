@@ -14,12 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class EditorShopScreen extends AbstractContainerScreen<EditorShopContainer> {
-    private static final int SLOT_SIZE = 18;
-    private static final int LABEL_AREA_WIDTH = 90;
-    private static final int SLOT_SPACING_X = 76; // SLOT_SIZE + 4*d
-    private static final int SLOT_SPACING_Y = 28; // SLOT_SIZE + d
-    private static final int GRID_LEFT = 60;
-    private static final int GRID_TOP = 52;
+    private static final int SLOT_SIZE = EditorShopContainer.SLOT_SIZE;
+    private static final int SLOT_SPACING_Y = EditorShopContainer.SLOT_SPACING_Y;
 
     public EditorShopScreen(EditorShopContainer container, Inventory inv, Component title) {
         super(container, inv, Component.translatable("gui.fpsm.shop_editor.title"));
@@ -27,10 +23,10 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
 
     @Override
     protected void init() {
-        this.leftPos = 0;
-        this.topPos = 0;
-        this.imageWidth = this.width;
-        this.imageHeight = this.height;
+        this.imageWidth = menu.getImageWidth();
+        this.imageHeight = menu.getImageHeight();
+        this.leftPos = (this.width - this.imageWidth) / 2;
+        this.topPos = Math.max(0, (this.height - this.imageHeight) / 2);
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
                 .bounds(width / 2 - FPSMGuiTheme.BUTTON_LARGE_WIDTH / 2, height - 30,
                         FPSMGuiTheme.BUTTON_LARGE_WIDTH, FPSMGuiTheme.BUTTON_HEIGHT)
@@ -44,17 +40,14 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         this.renderBackground(guiGraphics);
-        this.imageWidth = this.width;
-        this.imageHeight = this.height;
-
         // 全屏背景
         guiGraphics.fill(0, 0, width, height, FPSMGuiTheme.BG_BASE);
 
         // 标题
-        guiGraphics.drawCenteredString(font, title, width / 2, 10, FPSMGuiTheme.TEXT_TITLE);
+        guiGraphics.drawCenteredString(font, title, leftPos + imageWidth / 2, topPos + 10, FPSMGuiTheme.TEXT_TITLE);
         guiGraphics.drawCenteredString(font,
                 Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName()),
-                width / 2, 24, FPSMGuiTheme.TEXT_SUB);
+                leftPos + imageWidth / 2, topPos + 24, FPSMGuiTheme.TEXT_SUB);
 
         // 分类标签 + 分隔线
         renderCategoryLabels(guiGraphics);
@@ -68,25 +61,21 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         int rowIndex = 0;
         for (Map.Entry<String, EditorShopContainer.TypeInfo> entry : types.entrySet()) {
             String typeName = entry.getKey();
-            int y = GRID_TOP + rowIndex * SLOT_SPACING_Y;
+            int y = topPos + menu.getGridTop() + rowIndex * SLOT_SPACING_Y;
 
             // 分类标签
             Component label = Component.translatable("fpsm.shop.title." + typeName);
             int labelWidth = font.width(label);
-            int labelX = GRID_LEFT - 12 - labelWidth;
+            int labelX = leftPos + menu.getGridLeft() - 12 - labelWidth;
             guiGraphics.drawString(font, label, labelX, y + 4, FPSMGuiTheme.TEXT_SUB);
 
             // 分隔线（分类行下方）
             int lineY = y + SLOT_SPACING_Y - 4;
-            guiGraphics.fill(GRID_LEFT - 8, lineY, GRID_LEFT + getMaxCols() * SLOT_SPACING_X, lineY + 1,
+            guiGraphics.fill(leftPos + menu.getGridLeft() - 8, lineY, leftPos + menu.getGridLeft() + menu.getGridWidth(), lineY + 1,
                     FPSMGuiTheme.BORDER_INNER);
 
             rowIndex++;
         }
-    }
-
-    private int getMaxCols() {
-        return menu.getCols();
     }
 
     private void renderShopSlots(GuiGraphics guiGraphics) {

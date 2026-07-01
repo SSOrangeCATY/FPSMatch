@@ -23,8 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class EditorShopContainer extends AbstractContainerMenu {
-    private static final int SLOT_SIZE = 18;
-    private static final int d = 10;
+    public static final int SLOT_SIZE = 18;
+    public static final int SLOT_GAP = 10;
+    public static final int SLOT_SPACING_X = SLOT_SIZE + 4 * SLOT_GAP;
+    public static final int SLOT_SPACING_Y = SLOT_SIZE + SLOT_GAP;
+    private static final int GRID_LEFT = 90;
+    private static final int GRID_TOP = 52;
     private static final int ID_MAX_LENGTH = 128;
 
     private int rows = 0;
@@ -65,8 +69,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
             this.allShopSlots.add(null);
         }
 
-        int slotSpan = SLOT_SIZE + 4 * d;
-        int start = 5;
         for (int row = 0; row < rows; row++) {
             List<String> typeNames = new ArrayList<>(types.keySet());
             String type = typeNames.get(row);
@@ -82,8 +84,8 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 SlotItemHandler customSlot = new SlotItemHandler(
                         itemStackHandler,
                         slotIndex,
-                        start + col * slotSpan,
-                        start + row * (SLOT_SIZE + d)
+                        getGridLeft() + col * SLOT_SPACING_X,
+                        getGridTop() + row * SLOT_SPACING_Y
                 );
                 this.addSlot(customSlot);
                 if (!slotItem.isEmpty()) {
@@ -117,8 +119,6 @@ public class EditorShopContainer extends AbstractContainerMenu {
             this.allShopSlots.add(null);
         }
 
-        int slotSpan = SLOT_SIZE + 4 * d;
-        int start = 5;
         for (int row = 0; row < rows; row++) {
             List<String> typeNames = new ArrayList<>(types.keySet());
             String type = typeNames.get(row);
@@ -140,8 +140,8 @@ public class EditorShopContainer extends AbstractContainerMenu {
                 SlotItemHandler customSlot = new SlotItemHandler(
                         itemStackHandler,
                         slotIndex,
-                        start + col * slotSpan,
-                        start + row * (SLOT_SIZE + d)
+                        getGridLeft() + col * SLOT_SPACING_X,
+                        getGridTop() + row * SLOT_SPACING_Y
                 );
                 this.addSlot(customSlot);
                 if (!slotItem.isEmpty()) {
@@ -169,6 +169,30 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     public int getRows() {
         return rows;
+    }
+
+    public int getGridLeft() {
+        return GRID_LEFT;
+    }
+
+    public int getGridTop() {
+        return GRID_TOP;
+    }
+
+    public int getGridWidth() {
+        return cols <= 0 ? 0 : (cols - 1) * SLOT_SPACING_X + SLOT_SIZE;
+    }
+
+    public int getGridHeight() {
+        return rows <= 0 ? 0 : (rows - 1) * SLOT_SPACING_Y + SLOT_SIZE;
+    }
+
+    public int getImageWidth() {
+        return getGridLeft() + getGridWidth();
+    }
+
+    public int getImageHeight() {
+        return getGridTop() + getGridHeight() + 36;
     }
 
     public String getGameType() {

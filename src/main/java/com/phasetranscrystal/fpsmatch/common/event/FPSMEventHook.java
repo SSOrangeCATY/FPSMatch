@@ -119,8 +119,8 @@ public class FPSMEventHook {
                 });
     }
 
-    //    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {//TODO 转移到死斗模式内
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
@@ -129,7 +129,7 @@ public class FPSMEventHook {
             if (!map.isStart()) {
                 return;
             }
-//            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
+            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
             map.teleportPlayerToReSpawnPoint(player);
         });
     }
