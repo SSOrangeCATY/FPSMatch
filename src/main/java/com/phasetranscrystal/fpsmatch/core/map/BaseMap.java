@@ -367,6 +367,11 @@ public abstract class BaseMap {
                 }));
     }
 
+    public void handleRespawn(ServerPlayer player) {
+        this.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
+        this.teleportPlayerToReSpawnPoint(player);
+    }
+
     public boolean teleportToPoint(ServerPlayer player, SpawnPointData data) {
         if (!Level.isInSpawnableBounds(data.getBlockPos())) return false;
         ServerLevel targetLevel = this.getServerLevel().getServer().getLevel(data.getDimension());

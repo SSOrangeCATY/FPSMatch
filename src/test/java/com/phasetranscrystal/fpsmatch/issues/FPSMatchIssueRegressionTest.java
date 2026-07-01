@@ -20,7 +20,42 @@ class FPSMatchIssueRegressionTest {
     }
 
     @Test
-    void headshotKillsUseRoundTempField() throws IOException {
+    void shopEditorSlotsUseSharedCenteredGridConstants() throws IOException {
+        String container = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/EditorShopContainer.java"));
+        String screen = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/EditorShopScreen.java"));
+
+        assertFalse(container.contains("int start = 5;"));
+        assertTrue(container.contains("getGridLeft() + col * SLOT_SPACING_X"));
+        assertTrue(container.contains("getGridTop() + row * SLOT_SPACING_Y"));
+        assertTrue(screen.contains("leftPos + imageWidth / 2"));
+        assertTrue(screen.contains("topPos + imageHeight - 30"));
+    }
+
+    @Test
+    void respawnEventIsRegisteredAndRestoresMapPlayerState() throws IOException {
+        String eventHook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMEventHook.java"));
+        String baseMap = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/map/BaseMap.java"));
+        String respawnHandler = eventHook.substring(eventHook.indexOf("onPlayerRespawnEvent"));
+
+        assertTrue(eventHook.contains("@SubscribeEvent(priority = EventPriority.LOWEST)\n    public static void onPlayerRespawnEvent"));
+        assertTrue(respawnHandler.contains("map.handleRespawn(player)"));
+        assertTrue(baseMap.contains("public void handleRespawn(ServerPlayer player)"));
+        String baseRespawn = baseMap.substring(baseMap.indexOf("public void handleRespawn"), baseMap.indexOf("public boolean teleportToPoint"));
+        assertTrue(baseRespawn.contains("data.setLiving(true)"));
+        assertTrue(baseRespawn.contains("teleportPlayerToReSpawnPoint(player)"));
+    }
+
+    @Test
+    void suicideGunKillCannotKeepHeadshotFlag() throws IOException {
+        String eventHook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMDeathPipelineEventHook.java"));
+        String finalizeDeath = eventHook.substring(eventHook.indexOf("private static void finalizeDeath"));
+
+        assertTrue(finalizeDeath.contains("boolean selfKill"));
+        assertTrue(finalizeDeath.contains("context.setHeadShot(gunKill.isHeadShot() && !selfKill);"));
+    }
+
+    @Test
+    void headshotKillsUseRoundTemporaryStorageWhenRoundsAreEnabled() throws IOException {
         String playerData = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/data/PlayerData.java"));
         String addHeadshotKill = playerData.substring(playerData.indexOf("public void addHeadshotKill"), playerData.indexOf("public void setHeadshotKills"));
         String saveRoundData = playerData.substring(playerData.indexOf("public void saveRoundData"), playerData.indexOf("public void reset()"));
@@ -40,27 +75,5 @@ class FPSMatchIssueRegressionTest {
         assertTrue(deathContext.contains("this.headShot = headShot && !isSuicide();"));
         assertTrue(deathContext.contains("if (isSuicide()) {"));
         assertTrue(deathContext.contains("this.headShot = false;"));
-    }
-
-    @Test
-    void respawnEventIsSubscribedAndRestoresLivingState() throws IOException {
-        String eventHook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMEventHook.java"));
-        String respawnHandler = eventHook.substring(eventHook.indexOf("public static void onPlayerRespawnEvent"));
-
-        assertTrue(eventHook.contains("@SubscribeEvent(priority = EventPriority.LOWEST)\n    public static void onPlayerRespawnEvent"));
-        assertTrue(respawnHandler.contains("data.setLiving(true)"));
-        assertFalse(respawnHandler.contains("TODO"));
-    }
-
-    @Test
-    void shopEditorSlotsUseCenteredGridOffsets() throws IOException {
-        String container = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/EditorShopContainer.java"));
-        String screen = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/EditorShopScreen.java"));
-
-        assertFalse(container.contains("int start = 5;"));
-        assertTrue(container.contains("getGridLeft() + col * SLOT_SPACING_X"));
-        assertTrue(container.contains("getGridTop() + row * SLOT_SPACING_Y"));
-        assertTrue(screen.contains("this.leftPos = (this.width - this.imageWidth) / 2;"));
-        assertFalse(screen.contains("this.imageWidth = this.width;"));
     }
 }

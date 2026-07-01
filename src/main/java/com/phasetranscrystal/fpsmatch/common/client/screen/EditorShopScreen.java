@@ -36,7 +36,7 @@ public class EditorShopScreen extends AbstractContainerScreen<EditorShopContaine
         this.leftPos = (this.width - this.imageWidth) / 2;
         this.topPos = Math.max(0, (this.height - this.imageHeight) / 2);
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
-                .bounds(width / 2 - 50, height - 30, 100, 20)
+                .bounds(leftPos + imageWidth / 2 - 50, topPos + imageHeight - 30, 100, 20)
                 .build());
     }
 

@@ -117,8 +117,7 @@ public class FPSMEventHook {
             if (!map.isStart()) {
                 return;
             }
-            map.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
-            map.teleportPlayerToReSpawnPoint(player);
+            map.handleRespawn(player);
         });
     }
 }

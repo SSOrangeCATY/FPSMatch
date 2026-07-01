@@ -235,8 +235,10 @@ public class FPSMDeathPipelineEventHook {
         // 合并枪械事件与 LivingDeathEvent 捕获到的击杀细节。
         GunKillDetail gunKill = pendingGunKills.remove(player.getUUID());
         if (gunKill != null) {
+            ServerPlayer attacker = context.getAttacker() != null ? context.getAttacker() : gunKill.attacker();
+            boolean selfKill = attacker != null && attacker.getUUID().equals(context.getDeadPlayer().getUUID());
             context.setGunKill(true);
-            context.setHeadShot(gunKill.isHeadShot());
+            context.setHeadShot(gunKill.isHeadShot() && !selfKill);
             context.setGunBullet(gunKill.bullet());
             context.setPassWall(gunKill.passWall());
             context.setPassSmoke(gunKill.passSmoke());

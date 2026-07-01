@@ -141,6 +141,10 @@ public class PlayerData {
         return kills > 0 ? (float) getHeadshotKills() / kills : 0.0f;
     }
 
+    public float getTempHeadshotRate() {
+        return _kills > 0 ? (float) _headshotKills / _kills : 0.0f;
+    }
+
     //KD
     public float getKD() {
         int Deaths = getDeaths();
@@ -312,6 +316,11 @@ public class PlayerData {
     public void setHeadshotKills(int headshotKills) {
         this.headshotKills = headshotKills;
         this._headshotKills = 0;
+        markDirty();
+    }
+
+    public void setTempHeadshotKills(int tempHeadshotKills) {
+        this._headshotKills = tempHeadshotKills;
         markDirty();
     }
 
