@@ -1,0 +1,4 @@
+[submodule "NeoTACZ"]
+	path = NeoTACZ
+	url = https://github.com/SHMBerBerder/neotacz
+	branch = 26.2

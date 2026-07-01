@@ -12,8 +12,8 @@ rootProject.name = 'FPSMatch'
 
 def isStandaloneBuild = gradle.parent == null
 
-if (isStandaloneBuild && file('porting/neotacz').exists()) {
-    includeBuild('porting/neotacz') {
+if (isStandaloneBuild && file('NeoTACZ').exists()) {
+    includeBuild('NeoTACZ') {
         dependencySubstitution {
             substitute module('com.tacz:tacz-mc26.2') using project(':')
         }

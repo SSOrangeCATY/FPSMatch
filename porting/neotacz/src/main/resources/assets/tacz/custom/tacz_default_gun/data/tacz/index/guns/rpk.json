@@ -1,9 +1,0 @@
-{
-  "name": "tacz.gun.rpk.name",
-  "display": "tacz:rpk_display",
-  "data": "tacz:rpk_data",
-  "tooltip": "tacz.gun.rpk.desc",
-  "type": "mg",
-  "item_type": "modern_kinetic",
-  "sort": 2
-}

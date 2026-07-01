@@ -1,7 +1,0 @@
-{
-  "name": "tacz.attachment.laser_nightstick",
-  "display": "tacz:laser_nightstick_display",
-  "data": "tacz:laser_nightstick_data",
-  "type": "laser",
-  "sort": 10
-}

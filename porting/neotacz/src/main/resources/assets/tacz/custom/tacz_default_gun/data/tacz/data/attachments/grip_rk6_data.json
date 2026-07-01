@@ -1,9 +1,0 @@
-{
-  "weight": 0.1,
-  "ads": {
-    "multiplier": 0.85
-  },
-  "inaccuracy": {
-    "multiplier": 0.88
-  }
-}

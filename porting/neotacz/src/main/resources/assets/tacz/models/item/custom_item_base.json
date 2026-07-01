@@ -1,7 +1,0 @@
-{
-  "gui_light": "front",
-  "textures": {
-    "particle": "minecraft:item/barrier"
-  },
-  "elements": []
-}
