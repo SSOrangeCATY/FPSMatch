@@ -29,10 +29,13 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
         boolean taczLoaded = FPSMImpl.findTacz();
 
         if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.DefaultAmmoMixin")) {
-            return !taczTweaksLoaded;
+            return taczLoaded && !taczTweaksLoaded;
         }
         if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.TweakAmmoMixin")) {
-            return taczTweaksLoaded;
+            return taczLoaded && taczTweaksLoaded;
+        }
+        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.LivingEntityIsDeadOrDyingMixin")) {
+            return taczLoaded;
         }
         if (mixinClassName.contains("compat.spectate.lrt")) {
             return FPSMImpl.findLrtacticalMod();
