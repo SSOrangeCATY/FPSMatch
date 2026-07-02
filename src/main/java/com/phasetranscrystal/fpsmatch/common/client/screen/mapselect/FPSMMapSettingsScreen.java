@@ -91,7 +91,6 @@ public class FPSMMapSettingsScreen extends Screen implements FPSMMapDetailChildS
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        extractBackground(graphics, mouseX, mouseY, partialTick);
         renderMultiLayerBackground(graphics);
 
         // 鏍囬

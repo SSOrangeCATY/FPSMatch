@@ -52,7 +52,6 @@ public class FPSMMapInviteScreen extends Screen implements FPSMMapDetailChildScr
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.centeredText(font, title, width / 2, 24, 0xFFFFFFFF);
         graphics.centeredText(font, Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()), width / 2, 48, 0xFFB8D4E3);
         int left = width / 2 - PANEL_WIDTH / 2;

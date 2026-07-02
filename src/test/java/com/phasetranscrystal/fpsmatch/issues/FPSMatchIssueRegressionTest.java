@@ -84,4 +84,30 @@ class FPSMatchIssueRegressionTest {
         assertFalse(soundMixin.contains("onPlaySound(SoundInstance sound, CallbackInfo ci)"));
         assertTrue(soundMixin.contains("onPlaySound(SoundInstance sound, CallbackInfoReturnable<SoundEngine.PlayResult> cir)"));
     }
+
+    @Test
+    void capabilityMapDoesNotRegisterPlainCapabilitiesAsEventListeners() throws IOException {
+        String capabilityMap = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/capability/CapabilityMap.java"));
+
+        assertFalse(capabilityMap.contains("NeoForge.EVENT_BUS.register(capability)"));
+        assertFalse(capabilityMap.contains("NeoForge.EVENT_BUS.unregister(cap)"));
+    }
+
+    @Test
+    void mapSelectionScreensDoNotRequestSecondBlurPass() throws IOException {
+        for (String path : java.util.List.of(
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapSelectionScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapDetailScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapManageScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapSettingsScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapShopScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapInviteScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapInvitationScreen.java",
+                "src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/FPSMTeamManageScreen.java"
+        )) {
+            String source = Files.readString(Path.of(path));
+
+            assertFalse(source.contains("extractBackground("), path);
+        }
+    }
 }

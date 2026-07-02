@@ -79,7 +79,6 @@ public class FPSMMapSelectionScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        extractBackground(graphics, mouseX, mouseY, partialTick);
         renderMultiLayerBackground(graphics);
         graphics.centeredText(font, title, width / 2, 24, 0xFFFFFFFF);
         List<MapRoomSummary> maps = maps();

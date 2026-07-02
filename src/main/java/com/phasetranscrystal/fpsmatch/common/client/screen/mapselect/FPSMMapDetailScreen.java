@@ -83,7 +83,6 @@ public class FPSMMapDetailScreen extends Screen implements FPSMMapDetailChildScr
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        extractBackground(graphics, mouseX, mouseY, partialTick);
         renderMultiLayerBackground(graphics);
 
         graphics.centeredText(font, title, width / 2, 12, 0xFFFFFFFF);

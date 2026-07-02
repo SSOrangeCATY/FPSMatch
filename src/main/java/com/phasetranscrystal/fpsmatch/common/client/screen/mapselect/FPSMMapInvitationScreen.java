@@ -42,7 +42,6 @@ public class FPSMMapInvitationScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        extractBackground(graphics, mouseX, mouseY, partialTick);
         int left = width / 2 - PANEL_WIDTH / 2;
         int top = height / 2 - PANEL_HEIGHT / 2;
         graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xDD101820);

@@ -13,7 +13,6 @@ import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.ExtraCodecs;
-import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -121,7 +120,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         Class<T> capabilityClass = (Class<T>) capability.getClass();
         if (!contains(capabilityClass)) {
             capabilities.put(capabilityClass, capability);
-            NeoForge.EVENT_BUS.register(capability);
             capability.init();
             return true;
         }
@@ -138,7 +136,6 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             if (cap.isImmutable()) return false;
             cap.destroy();
             capabilities.remove(capabilityClass);
-            NeoForge.EVENT_BUS.unregister(cap);
             return true;
         });
         return true;
