@@ -222,12 +222,14 @@ public class FPSMCore {
                 map.reset();
             }
         }));
+        com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.tick(getServer());
     }
 
     protected void clearData(){
         GAMES.clear();
         REGISTRY.clear();
         playerToMapCache.clear();
+        com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.clear();
     }
 
     public static void checkAndLeaveTeam(ServerPlayer player){

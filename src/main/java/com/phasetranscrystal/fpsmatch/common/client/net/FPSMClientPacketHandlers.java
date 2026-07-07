@@ -198,7 +198,11 @@ public final class FPSMClientPacketHandlers {
     public static void handleMapSelectionSnapshot(MapSelectionSnapshotS2CPacket packet) {
         FPSMClient.getGlobalData().setMapSelectionSnapshot(packet);
         FPSMClient.getGlobalData().setMapSelectionButtonVisible(packet.viewerOp() || packet.nonOpButtonEnabled());
-        FPSMMapSelectScreens.openSelection(packet);
+        if (packet.passive()) {
+            FPSMMapSelectScreens.applySelectionIfOpen(packet);
+        } else {
+            FPSMMapSelectScreens.openSelection(packet);
+        }
     }
 
     public static void handleMapSelectionAccess(MapSelectionAccessS2CPacket packet) {
@@ -207,7 +211,11 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleMapRoomDetail(MapRoomDetailS2CPacket packet) {
         FPSMClient.getGlobalData().setMapRoomDetail(packet.detail());
-        FPSMMapSelectScreens.openDetail(packet);
+        if (packet.passive()) {
+            FPSMMapSelectScreens.applyDetailIfOpen(packet.detail());
+        } else {
+            FPSMMapSelectScreens.openDetail(packet);
+        }
     }
 
     public static void handleMapRoomReadyState(MapRoomReadyStateS2CPacket packet) {

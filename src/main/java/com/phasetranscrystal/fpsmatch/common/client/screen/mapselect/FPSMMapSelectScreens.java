@@ -30,6 +30,29 @@ public final class FPSMMapSelectScreens {
         }
     }
 
+    /**
+     * 被动详情更新：仅当当前已打开详情/子界面时原地刷新，绝不强制打开界面。
+     * 用于订阅式广播，避免对局内玩家被弹出 GUI。
+     */
+    public static void applyDetailIfOpen(com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail detail) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof FPSMMapDetailScreen screen) {
+            screen.applyDetail(detail);
+        } else if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
+            screen.applyDetail(detail);
+        }
+    }
+
+    /**
+     * 被动列表更新：仅当当前已打开列表界面时原地刷新，绝不强制打开界面。
+     */
+    public static void applySelectionIfOpen(MapSelectionSnapshotS2CPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof FPSMMapSelectionScreen screen) {
+            screen.applySnapshot(packet);
+        }
+    }
+
     public static void openChild(Screen child) {
         Minecraft.getInstance().setScreen(child);
     }

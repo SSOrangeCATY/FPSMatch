@@ -31,6 +31,7 @@ public record OpenMapSelectionC2SPacket() {
                 return;
             }
             FPSMatch.sendToPlayer(player, new MapSelectionSnapshotS2CPacket(MapRoomQueryService.summaries(player), viewerOp, nonOpButtonEnabled));
+            com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.watchList(player.getUUID());
         });
         ctx.get().setPacketHandled(true);
     }

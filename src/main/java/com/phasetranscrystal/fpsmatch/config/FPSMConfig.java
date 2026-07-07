@@ -17,6 +17,10 @@ public class FPSMConfig {
         public static ForgeConfigSpec.BooleanValue disableRenderHeadShotHitBox;
         public static ForgeConfigSpec.BooleanValue enableMapSelectionButtonForNonOps;
 
+        public static ForgeConfigSpec.BooleanValue roomSyncPushEnabled;
+        public static ForgeConfigSpec.IntValue roomSyncIntervalTicks;
+        public static ForgeConfigSpec.IntValue roomSyncMaxWatchersPerRoom;
+
         public static void init(ForgeConfigSpec.Builder builder) {
             lock3PersonCamera = builder.comment(
                     "禁用第三人称"
@@ -53,6 +57,29 @@ public class FPSMConfig {
                     "允许非 OP 玩家在 ESC 暂停界面看到 FPSMatch 地图选择按钮",
                     "Allow non-OP players to see the FPSMatch map selection button in the ESC pause screen"
             ).define("EnableMapSelectionButtonForNonOps", true);
+
+            builder.comment(
+                    "房间/地图选择界面实时同步（订阅式事件驱动）",
+                    "Room / map-selection UI live sync (subscription-based, event-driven)"
+            ).push("roomSync");
+
+            roomSyncPushEnabled = builder.comment(
+                    "启用后：房间数据变化时主动向正在观看的客户端广播，实现准实时刷新；",
+                    "关闭后回退到旧的“打开/手动刷新才拉取一次”行为。",
+                    "When enabled, room changes are pushed to viewers for near-realtime UI; disabled falls back to legacy pull-on-open."
+            ).define("RoomSyncPushEnabled", true);
+
+            roomSyncIntervalTicks = builder.comment(
+                    "服务端合并/广播变更的间隔(tick)。越小越实时越耗带宽，20=每秒一次。",
+                    "Server dirty-scan / broadcast interval in ticks. Smaller = more realtime & more bandwidth."
+            ).defineInRange("RoomSyncIntervalTicks", 10, 1, 100);
+
+            roomSyncMaxWatchersPerRoom = builder.comment(
+                    "单个房间单次广播的最大接收者数量，防止大厅广播风暴。",
+                    "Max recipients per room per broadcast, to prevent lobby broadcast storms."
+            ).defineInRange("RoomSyncMaxWatchersPerRoom", 64, 1, 512);
+
+            builder.pop();
         }
 
     }

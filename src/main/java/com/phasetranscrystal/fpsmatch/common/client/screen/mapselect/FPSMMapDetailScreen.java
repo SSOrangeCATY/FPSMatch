@@ -218,6 +218,12 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
 
     @Override
     public void onClose() {
+        // 返回列表时重新订阅列表并刷新；若关闭到非地图界面则退订。
+        if (parent instanceof FPSMMapSelectionScreen) {
+            FPSMatch.sendToServer(new OpenMapSelectionC2SPacket());
+        } else {
+            FPSMatch.sendToServer(new com.phasetranscrystal.fpsmatch.common.packet.mapselect.CloseMapViewC2SPacket());
+        }
         minecraft.setScreen(parent);
     }
 

@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.phasetranscrystal.fpsmatch.common.item.MapCreatorTool;
 import com.phasetranscrystal.fpsmatch.common.item.tool.ToolInteractionAction;
 import com.phasetranscrystal.fpsmatch.common.packet.MapCreatorToolActionC2SPacket;
@@ -30,9 +31,10 @@ import java.util.List;
 public class MapCreatorToolScreen extends Screen {
     private static final int PANEL_WIDTH = 300;
     private static final int PANEL_HEIGHT = 226;
-    private static final int SCREEN_OVERLAY = 0x5A000000;
-    private static final int PANEL_BACKGROUND = 0xD0191D22;
-    private static final int PANEL_BORDER = 0xFF7DA3B8;
+    // 统一设计 Token：遮罩/面板/边框全部引用 FPSMGuiTheme（原青色边框改为主题中性边框）
+    private static final int SCREEN_OVERLAY = FPSMGuiTheme.BG_SHADOW;
+    private static final int PANEL_BACKGROUND = FPSMGuiTheme.BG_PANEL;
+    private static final int PANEL_BORDER = FPSMGuiTheme.BORDER_INNER;
 
     private List<String> availableTypes;
     private List<OpenMapCreatorToolScreenS2CPacket.MapEntry> maps;

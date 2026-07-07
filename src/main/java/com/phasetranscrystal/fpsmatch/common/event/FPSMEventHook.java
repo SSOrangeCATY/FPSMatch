@@ -92,6 +92,7 @@ public class FPSMEventHook {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.unwatch(player.getUUID());
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
             boolean leave = true;
             if (opt.isPresent()) {
