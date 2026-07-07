@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.compat.tacz;
 
 import com.phasetranscrystal.fpsmatch.common.event.*;
+import com.phasetranscrystal.fpsmatch.compat.PassThroughFlagResolver;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.tacz.guns.api.event.common.*;
 import net.minecraft.resources.ResourceLocation;
@@ -54,6 +55,7 @@ public class TACZGunEventBridge {
         LivingEntity dead = event.getKilledEntity();
         LivingEntity attacker = event.getAttacker();
         if (dead == null || attacker == null) return;
+        PassThroughFlagResolver.markSmokeIfNeeded(event.getBullet(), dead);
         ItemStack gunStack = findAttackerGunStack(attacker, event.getGunId());
         MinecraftForge.EVENT_BUS.post(new FPSMGunKillEvent(
                 attacker, dead, event.isHeadShot(), event.getBullet(), gunStack));
@@ -95,8 +97,9 @@ public class TACZGunEventBridge {
             hurtEntity = he;
         }
         if (hurtEntity == null) return;
+        PassThroughFlagResolver.markSmokeIfNeeded(event.getBullet(), hurtEntity);
         FPSMGunDamageEvent fpsmEvent = new FPSMGunDamageEvent(
-                event.getAttacker(), hurtEntity, event.getBaseAmount(), event.isHeadShot());
+                event.getAttacker(), hurtEntity, event.getBaseAmount(), event.isHeadShot(), event.getBullet());
         MinecraftForge.EVENT_BUS.post(fpsmEvent);
         event.setBaseAmount(fpsmEvent.getBaseAmount());
         event.setHeadshotMultiplier(fpsmEvent.getHeadshotMultiplier());

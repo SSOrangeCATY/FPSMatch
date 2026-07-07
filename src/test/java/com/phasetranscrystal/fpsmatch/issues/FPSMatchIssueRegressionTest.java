@@ -121,7 +121,9 @@ class FPSMatchIssueRegressionTest {
         assertTrue(eventHook.contains("isRecentGunHitFresh(deadPlayer.serverLevel().getGameTime(), recentGunHit)"));
         assertTrue(eventHook.contains("purgeExpiredRecentGunHits(now);"));
         assertTrue(eventHook.contains("private static void purgeExpiredRecentGunHits(long currentTick)"));
-        assertTrue(eventHook.contains("private record RecentGunHitDetail(boolean isHeadShot, ServerPlayer attacker, long createdTick)"));
+        assertTrue(eventHook.contains("private record RecentGunHitDetail(boolean isHeadShot, ServerPlayer attacker, long createdTick,"));
+        assertTrue(eventHook.contains("@Nullable Entity bullet, boolean passWall, boolean passSmoke,"));
+        assertTrue(eventHook.contains("boolean scopedKill)"));
         assertFalse(eventHook.contains("recentGunHits.clear();"));
     }
 }
