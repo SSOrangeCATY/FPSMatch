@@ -1,6 +1,7 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.phasetranscrystal.fpsmatch.common.packet.MatchConfigToolActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
@@ -17,17 +18,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class MatchConfigToolScreen extends Screen {
-    private static final int PANEL_BACKGROUND = 0xE0181C22;
-    private static final int PANEL_BORDER = 0xFF7DA3B8;
-    private static final int ROW_BACKGROUND = 0x80252B33;
-    private static final int ROW_HOVER = 0xA0344150;
-    private static final int TEXT_MAIN = 0xFFEAF2F6;
-    private static final int TEXT_SUB = 0xFF9EB2BD;
-    private static final int TEXT_DISABLED = 0xFF6F7D86;
+    // 统一设计 Token：颜色全部引用 FPSMGuiTheme，消除与主界面割裂的私有色板
+    private static final int PANEL_BACKGROUND = FPSMGuiTheme.BG_PANEL;
+    private static final int PANEL_BORDER = FPSMGuiTheme.BORDER_INNER;
+    private static final int ROW_BACKGROUND = FPSMGuiTheme.ROW_NORMAL;
+    private static final int ROW_HOVER = FPSMGuiTheme.ROW_HOVER;
+    private static final int TEXT_MAIN = FPSMGuiTheme.TEXT_BODY;
+    private static final int TEXT_SUB = FPSMGuiTheme.TEXT_SUB;
+    private static final int TEXT_DISABLED = FPSMGuiTheme.TEXT_DISABLED;
     private static final int ROW_HEIGHT = 25;
     private static final int TOP = 28;
     private static final int FIELD_WIDTH = 126;
-    private static final int BUTTON_HEIGHT = 20;
+    private static final int BUTTON_HEIGHT = FPSMGuiTheme.BUTTON_HEIGHT;
 
     private OpenMatchConfigToolScreenS2CPacket data;
     private final List<EditBox> valueFields = new ArrayList<>();

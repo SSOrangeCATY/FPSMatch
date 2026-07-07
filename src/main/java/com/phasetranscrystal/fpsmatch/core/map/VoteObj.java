@@ -15,12 +15,35 @@ public class VoteObj {
     private final Set<UUID> eligiblePlayers = new HashSet<>();
     private final Runnable onSuccess;
     private final Runnable onFailure;
+    private final TimeoutPolicy timeoutPolicy;
+    private final AbstentionPolicy abstentionPolicy;
     private VoteStatus status = VoteStatus.ONGOING;
     private boolean executed = false;
 
     // 投票状态枚举
     public enum VoteStatus {
         ONGOING, SUCCESS, FAILED
+    }
+
+    /**
+     * 投票超时结算策略。
+     *   {@link #FAIL} —— 超时一律判失败（历史默认行为）。
+     *   {@link #PASS_IF_MAJORITY} —— 超时时按“已投票玩家的严格多数”结算，避免多数赞成却因超时被否决。
+     *
+     */
+    public enum TimeoutPolicy {
+        FAIL, PASS_IF_MAJORITY
+    }
+
+    /**
+     * 弃权计票策略。
+     * 
+     *   {@link #COUNT_AS_NO} —— 弃权视为反对：门槛分母为全部在线有资格者（历史默认行为）。
+     *   {@link #IGNORE} —— 弃权忽略：超时结算时分母只算已投票人数。
+     * 
+     */
+    public enum AbstentionPolicy {
+        COUNT_AS_NO, IGNORE
     }
 
     /**
@@ -34,12 +57,25 @@ public class VoteObj {
      */
     public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
                    Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers) {
+        this(voteTitle, message, duration, requiredPercent, onSuccess, onFailure, eligiblePlayers,
+                TimeoutPolicy.FAIL, AbstentionPolicy.COUNT_AS_NO);
+    }
+
+    /**
+     * 带超时/弃权策略的完整构造。旧的 7 参构造会以 {@link TimeoutPolicy#FAIL} +
+     * {@link AbstentionPolicy#COUNT_AS_NO} 委托到此处，保证向后兼容。
+     */
+    public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
+                   Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
+                   TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy) {
         this.endVoteTimer = System.currentTimeMillis() + duration * 1000L;
         this.voteTitle = voteTitle;
         this.message = message;
         this.requiredPercent = Math.min(Math.max(requiredPercent, 0f), 1f); // 确保在0-1范围内
         this.onSuccess = onSuccess;
         this.onFailure = onFailure;
+        this.timeoutPolicy = timeoutPolicy == null ? TimeoutPolicy.FAIL : timeoutPolicy;
+        this.abstentionPolicy = abstentionPolicy == null ? AbstentionPolicy.COUNT_AS_NO : abstentionPolicy;
         this.eligiblePlayers.addAll(eligiblePlayers);
     }
 
@@ -84,40 +120,93 @@ public class VoteObj {
             return true; // 投票已结束或已执行回调
         }
 
-        int totalEligiblePlayers = getEligiblePlayerCount();
+        int eligibleOnline = getEligiblePlayerCount();
 
         // 检查是否有资格投票的玩家
-        if (totalEligiblePlayers == 0) {
+        if (eligibleOnline == 0) {
             status = VoteStatus.FAILED;
             executeCallback();
             return true;
         }
 
-        // 计算当前同意票比例
-        long agreeCount = voteResults.values().stream().filter(Boolean::booleanValue).count();
-        float currentRatio = (float) agreeCount / totalEligiblePlayers;
+        // 仅统计在线玩家的票，避免掉线者导致分子/分母口径不一致（历史上可能出现比例 > 1）
+        int agree = onlineAgreeCount();
+        int voted = onlineVotedCount();
 
-        // 检查是否所有有资格的玩家都已投票
-        boolean allVoted = voteResults.size() >= totalEligiblePlayers;
-
-        // 检查是否已达到通过比例
-        boolean passed = currentRatio >= requiredPercent;
-
-        // 如果所有玩家已投票或已达到通过比例，则结束投票
-        if (allVoted || passed) {
-            status = passed ? VoteStatus.SUCCESS : VoteStatus.FAILED;
+        // 提前通过：赞成票占“全部在线有资格者”的比例已达门槛，无论其余人如何投都已锁定通过
+        if ((float) agree / eligibleOnline >= requiredPercent) {
+            status = VoteStatus.SUCCESS;
             executeCallback();
             return true;
         }
 
-        // 检查是否超时
+        // 所有在线有资格者都投完但未达门槛 -> 失败
+        if (voted >= eligibleOnline) {
+            status = VoteStatus.FAILED;
+            executeCallback();
+            return true;
+        }
+
+        // 超时：按配置的超时/弃权策略结算
         if (System.currentTimeMillis() >= endVoteTimer) {
-            status = VoteStatus.FAILED;
+            status = resolveTimeout(agree, voted, eligibleOnline) ? VoteStatus.SUCCESS : VoteStatus.FAILED;
             executeCallback();
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * 超时结算：根据 {@link TimeoutPolicy} 与 {@link AbstentionPolicy} 判断是否通过。
+     */
+    private boolean resolveTimeout(int agree, int voted, int eligibleOnline) {
+        if (timeoutPolicy == TimeoutPolicy.PASS_IF_MAJORITY) {
+            int disagree = voted - agree;
+            return agree > disagree; // 已投票中的严格多数
+        }
+        // FAIL 策略：仍尊重弃权口径——IGNORE 时分母只算已投票人数
+        int denominator = abstentionPolicy == AbstentionPolicy.IGNORE ? voted : eligibleOnline;
+        return denominator > 0 && (float) agree / denominator >= requiredPercent;
+    }
+
+    private boolean isOnline(UUID player) {
+        return FPSMCore.getInstance().getPlayerByUUID(player).isPresent();
+    }
+
+    private int onlineAgreeCount() {
+        int count = 0;
+        for (Map.Entry<UUID, Boolean> entry : voteResults.entrySet()) {
+            if (Boolean.TRUE.equals(entry.getValue()) && isOnline(entry.getKey())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int onlineVotedCount() {
+        int count = 0;
+        for (UUID player : voteResults.keySet()) {
+            if (isOnline(player)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** 当前在线的同意票数（供投票 HUD 展示，口径与结算一致）。 */
+    public int getOnlineAgreeCount() {
+        return onlineAgreeCount();
+    }
+
+    /** 当前在线的反对票数。 */
+    public int getOnlineDisagreeCount() {
+        return onlineVotedCount() - onlineAgreeCount();
+    }
+
+    /** 当前在线的已投票人数。 */
+    public int getOnlineVotedCount() {
+        return onlineVotedCount();
     }
 
     /**
@@ -143,8 +232,7 @@ public class VoteObj {
             }
         } catch (Exception e) {
             // 记录回调执行异常，避免影响主线程
-            System.err.println("Vote callback execution failed: " + e.getMessage());
-            e.printStackTrace();
+            com.phasetranscrystal.fpsmatch.FPSMatch.LOGGER.error("Vote callback execution failed for '{}'", voteTitle, e);
         }
     }
 

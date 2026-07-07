@@ -31,6 +31,9 @@ public record MapRoomSettingsC2SPacket(String gameType, String mapName, String s
             }
             MapRoomActionService.Result result = MapRoomActionService.setSetting(player, gameType, mapName, settingName, value);
             MapRoomActionService.sendMessage(player, result);
+            if (result.success() && result.detail().isPresent()) {
+                com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
+            }
             result.detail().ifPresentOrElse(
                     detail -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(detail)),
                     () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(result.message(), !result.success()))

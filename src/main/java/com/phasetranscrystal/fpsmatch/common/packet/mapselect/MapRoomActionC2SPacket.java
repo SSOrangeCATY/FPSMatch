@@ -85,6 +85,9 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
                 case REQUEST_DETAIL -> throw new IllegalStateException("REQUEST_DETAIL handled before action dispatch");
             };
             MapRoomActionService.sendMessage(player, result);
+            if (result.success() && result.detail().isPresent() && action != Action.LEAVE) {
+                com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
+            }
             result.detail().ifPresentOrElse(
                     detail -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(detail)),
                     () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(result.message(), !result.success()))
@@ -95,7 +98,10 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
 
     private void sendDetail(ServerPlayer player) {
         MapRoomQueryService.findMap(gameType, mapName).ifPresentOrElse(
-                map -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(MapRoomQueryService.detail(player, map))),
+                map -> {
+                    FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(MapRoomQueryService.detail(player, map)));
+                    com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
+                },
                 () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable("gui.fpsm.map_select.action.map_not_found"), true))
         );
     }

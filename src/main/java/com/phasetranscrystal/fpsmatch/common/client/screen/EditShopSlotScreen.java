@@ -64,8 +64,8 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.priceField.setValue(String.valueOf(menu.getPrice()));
         this.priceField.setFilter(s -> s.matches("\\d*"));
         this.priceField.setResponder(s -> this.data.set(1, s.isEmpty() ? 0 : Integer.parseInt(s)));
-        this.priceField.setTextColor(0xFFE2E8F0);
-        this.priceField.setTextColorUneditable(0xFF8F9AA3);
+        this.priceField.setTextColor(FPSMGuiTheme.TEXT_BODY);
+        this.priceField.setTextColorUneditable(FPSMGuiTheme.TEXT_DISABLED);
         this.priceField.setBordered(true);
         this.priceField.setEditable(true);
         this.addRenderableWidget(this.priceField);
@@ -76,8 +76,8 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.groupField.setValue(String.valueOf(menu.getGroupId()));
         this.groupField.setFilter(s -> s.matches("-?\\d*"));
         this.groupField.setResponder(s -> data.set(2, s.isEmpty() ? -1 : Integer.parseInt(s)));
-        this.groupField.setTextColor(0xFFE2E8F0);
-        this.groupField.setTextColorUneditable(0xFF8F9AA3);
+        this.groupField.setTextColor(FPSMGuiTheme.TEXT_BODY);
+        this.groupField.setTextColorUneditable(FPSMGuiTheme.TEXT_DISABLED);
         this.groupField.setBordered(true);
         this.groupField.setEditable(true);
         this.addRenderableWidget(this.groupField);
@@ -96,8 +96,8 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         this.ammoField.setValue(String.valueOf(menu.getAmmo()));
         this.ammoField.setFilter(s -> s.matches("\\d*"));
         this.ammoField.setResponder(s -> data.set(0, s.isEmpty() ? 0 : Integer.parseInt(s)));
-        this.ammoField.setTextColor(0xFFE2E8F0);
-        this.ammoField.setTextColorUneditable(0xFF8F9AA3);
+        this.ammoField.setTextColor(FPSMGuiTheme.TEXT_BODY);
+        this.ammoField.setTextColorUneditable(FPSMGuiTheme.TEXT_DISABLED);
         this.ammoField.setBordered(true);
         this.ammoField.setEditable(true);
         this.addRenderableWidget(this.ammoField);

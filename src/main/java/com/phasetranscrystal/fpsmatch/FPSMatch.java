@@ -197,6 +197,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(OpenSpawnPointToolScreenS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpawnPointToolActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(OpenMapSelectionC2SPacket.class);
+        PACKET_REGISTER.registerPacket(CloseMapViewC2SPacket.class);
         PACKET_REGISTER.registerPacket(MapSelectionAccessS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapSelectionSnapshotS2CPacket.class);
         PACKET_REGISTER.registerPacket(MapRoomActionC2SPacket.class);

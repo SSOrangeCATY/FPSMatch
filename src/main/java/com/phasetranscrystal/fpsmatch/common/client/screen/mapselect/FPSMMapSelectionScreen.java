@@ -105,6 +105,7 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
 
     @Override
     public void onClose() {
+        FPSMatch.sendToServer(new com.phasetranscrystal.fpsmatch.common.packet.mapselect.CloseMapViewC2SPacket());
         minecraft.setScreen(parent);
     }
 

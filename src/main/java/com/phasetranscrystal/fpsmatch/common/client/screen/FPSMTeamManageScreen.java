@@ -129,8 +129,8 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     private int teamColor(String teamName) {
         return switch (teamName.toLowerCase(Locale.ROOT)) {
-            case "ct" -> 0xFF4080FF;
-            case "t" -> 0xFFFFC040;
+            case "ct" -> FPSMGuiTheme.TEAM_CT;
+            case "t" -> FPSMGuiTheme.TEAM_T;
             default -> FPSMGuiTheme.TEXT_SUB;
         };
     }

@@ -64,6 +64,12 @@ public final class FPSMGuiTheme {
     /** 在线绿（与等待中同色系） */
     public static final int ST_ONLINE = 0xFF74E084;
 
+    // ===== 队伍色 =====
+    /** 队伍色：CT 蓝 */
+    public static final int TEAM_CT = 0xFF4080FF;
+    /** 队伍色：T 金 */
+    public static final int TEAM_T = 0xFFFFC040;
+
     // ===== 强调色 =====
     /** 品牌蓝（选中条、主按钮） */
     public static final int ACCENT_PRIMARY = 0xFF4A9EFF;
