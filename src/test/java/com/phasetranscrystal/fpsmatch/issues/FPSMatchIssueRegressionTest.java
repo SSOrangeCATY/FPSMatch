@@ -54,8 +54,10 @@ class FPSMatchIssueRegressionTest {
 
     @Test
     void respawnEventIsRegisteredAndRestoresMapPlayerState() throws IOException {
-        String eventHook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMEventHook.java"));
-        String baseRoundMap = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/map/BaseRoundMap.java"));
+        String eventHook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMEventHook.java"))
+                .replace("\r\n", "\n");
+        String baseRoundMap = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/map/BaseRoundMap.java"))
+                .replace("\r\n", "\n");
         String respawnHandler = eventHook.substring(eventHook.indexOf("onPlayerRespawnEvent"));
 
         assertTrue(eventHook.contains("@SubscribeEvent(priority = EventPriority.LOWEST)\n    public static void onPlayerRespawnEvent"));
@@ -73,7 +75,7 @@ class FPSMatchIssueRegressionTest {
         String applyGunKillDetail = eventHook.substring(eventHook.indexOf("private static void applyGunKillDetail"));
 
         assertTrue(applyGunKillDetail.contains("boolean selfKill"));
-        assertTrue(applyGunKillDetail.contains("context.setHeadShot(gunKill.isHeadShot() && !selfKill);"));
+        assertTrue(applyGunKillDetail.contains("context.setHeadShot((context.isHeadShot() || gunKill.isHeadShot()) && !selfKill);"));
     }
 
     @Test
@@ -98,5 +100,28 @@ class FPSMatchIssueRegressionTest {
         assertTrue(deathContext.contains("this.headShot = headShot && !isSuicide();"));
         assertTrue(deathContext.contains("if (isSuicide()) {"));
         assertTrue(deathContext.contains("this.headShot = false;"));
+    }
+
+    @Test
+    void taczHeadshotDamageFallbackSurvivesDelayedDeathPipeline() throws IOException {
+        String eventHook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMDeathPipelineEventHook.java"));
+
+        assertTrue(eventHook.contains("private static final long RECENT_GUN_HIT_MATCH_WINDOW_TICKS = 5L;"));
+        assertTrue(eventHook.contains("private static final long RECENT_GUN_HIT_RETENTION_TICKS = 20L;"));
+        assertTrue(eventHook.contains("private static final Map<UUID, RecentGunHitDetail> recentGunHits"));
+        assertTrue(eventHook.contains("public static void onGunDamage(FPSMGunDamageEvent event)"));
+        assertTrue(eventHook.contains("recentGunHits.put(hurt.getUUID(), new RecentGunHitDetail("));
+        assertTrue(eventHook.contains("applyRecentGunHitDetail(context, recentGunHits.get(player.getUUID()))"));
+        assertTrue(eventHook.contains("resolveGunKillHeadShot(deadPlayer, event.isHeadShot(), attacker)"));
+        assertTrue(eventHook.contains("context.setHeadShot((context.isHeadShot() || gunKill.isHeadShot()) && !selfKill);"));
+        assertTrue(eventHook.contains("RecentGunHitDetail recentGunHit = recentGunHits.remove(player.getUUID())"));
+        assertTrue(eventHook.contains("context.setAttacker(recentGunHit.attacker());"));
+        assertTrue(eventHook.contains("if (attacker != null && !attacker.getUUID().equals(recentGunHit.attacker().getUUID()))"));
+        assertTrue(eventHook.contains("return isRecentGunHitFresh(context.getCreatedTick(), recentGunHit)"));
+        assertTrue(eventHook.contains("isRecentGunHitFresh(deadPlayer.serverLevel().getGameTime(), recentGunHit)"));
+        assertTrue(eventHook.contains("purgeExpiredRecentGunHits(now);"));
+        assertTrue(eventHook.contains("private static void purgeExpiredRecentGunHits(long currentTick)"));
+        assertTrue(eventHook.contains("private record RecentGunHitDetail(boolean isHeadShot, ServerPlayer attacker, long createdTick)"));
+        assertFalse(eventHook.contains("recentGunHits.clear();"));
     }
 }
