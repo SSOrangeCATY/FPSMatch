@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -47,11 +48,11 @@ public final class PlayerOutlineRenderer {
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
         Optional<ClientTeam> localTeam = data.getCurrentClientTeam();
         if (localTeam.map(ClientTeam::isNormal).orElse(false)) {
-            return isNormalMatchPlayer(data, player);
+            return isCurrentMatchPlayer(data, player);
         }
         return localPlayer.isSpectator()
                 && localTeam.map(ClientTeam::isSpectator).orElse(false)
-                && isNormalMatchPlayer(data, player);
+                && isCurrentMatchPlayer(data, player);
     }
 
     public static int getOutlineColor(Entity target) {
@@ -69,7 +70,7 @@ public final class PlayerOutlineRenderer {
         boolean localInNormalTeam = data.getCurrentClientTeam().map(ClientTeam::isNormal).orElse(false);
         if (!localInNormalTeam) return NO_OUTLINE_COLOR;
 
-        boolean sameTeam = data.isSameTeam(localPlayer, player);
+        boolean sameTeam = isSameVisibleTeam(data, localPlayer, player);
         if (sameTeam && data.isTeamGlow()) {
             return TEAM_COLOR;
         }
@@ -77,6 +78,40 @@ public final class PlayerOutlineRenderer {
             return ENEMY_COLOR;
         }
         return NO_OUTLINE_COLOR;
+    }
+
+    private static boolean isSameVisibleTeam(FPSMClientGlobalData data, LocalPlayer localPlayer, Player player) {
+        return isSameCurrentMatchScoreboardTeam(data, localPlayer, player)
+                .orElseGet(() -> data.isSameTeam(localPlayer, player));
+    }
+
+    private static Optional<Boolean> isSameCurrentMatchScoreboardTeam(FPSMClientGlobalData data, Player localPlayer, Player player) {
+        Team localTeam = localPlayer.getTeam();
+        Team targetTeam = player.getTeam();
+        if (localTeam == null || targetTeam == null) {
+            return Optional.empty();
+        }
+        if (!isCurrentMatchScoreboardTeam(data, localTeam) || !isCurrentMatchScoreboardTeam(data, targetTeam)) {
+            return Optional.empty();
+        }
+        return Optional.of(localTeam.getName().equals(targetTeam.getName()));
+    }
+
+    private static boolean isCurrentMatchPlayer(FPSMClientGlobalData data, Player player) {
+        return isCurrentMatchScoreboardPlayer(data, player) || isNormalMatchPlayer(data, player);
+    }
+
+    private static boolean isCurrentMatchScoreboardPlayer(FPSMClientGlobalData data, Player player) {
+        Team team = player.getTeam();
+        return team != null && isCurrentMatchScoreboardTeam(data, team);
+    }
+
+    private static boolean isCurrentMatchScoreboardTeam(FPSMClientGlobalData data, Team team) {
+        if (!data.isInMap() || !data.isInGame()) {
+            return false;
+        }
+        String prefix = data.getCurrentGameType() + "_" + data.getCurrentMap() + "_";
+        return team.getName().startsWith(prefix);
     }
 
     private static boolean isNormalMatchPlayer(FPSMClientGlobalData data, Player player) {

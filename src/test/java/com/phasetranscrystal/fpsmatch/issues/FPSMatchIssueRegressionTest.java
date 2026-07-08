@@ -30,6 +30,16 @@ class FPSMatchIssueRegressionTest {
     }
 
     @Test
+    void addTeamPacketDoesNotIgnoreSameNameFromDifferentMap() throws IOException {
+        String handlers = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/net/FPSMClientPacketHandlers.java"));
+
+        assertFalse(handlers.contains("if (data.getTeamByName(packet.teamData().name()).isPresent()) return;"));
+        assertTrue(handlers.contains("existingTeamMatchesPacket"));
+        assertTrue(handlers.contains("team.gameType.equals(packet.gameType()) && team.mapName.equals(packet.mapName())"));
+        assertTrue(handlers.contains("if (existingTeam.filter(team -> existingTeamMatchesPacket(team, packet)).isPresent()) return;"));
+    }
+
+    @Test
     void asyncPersistenceUsesSharedExecutorInsteadOfPerCallThreadPools() throws IOException {
         String dataManager = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/persistence/FPSMDataManager.java"));
 

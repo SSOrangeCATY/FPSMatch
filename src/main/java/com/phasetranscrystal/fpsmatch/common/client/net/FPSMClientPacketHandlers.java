@@ -156,10 +156,15 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleAddTeam(FPSMAddTeamS2CPacket packet) {
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
-        if (data.getTeamByName(packet.teamData().name()).isPresent()) return;
+        Optional<ClientTeam> existingTeam = data.getTeamByName(packet.teamData().name());
+        if (existingTeam.filter(team -> existingTeamMatchesPacket(team, packet)).isPresent()) return;
         ClientTeam team = new ClientTeam(packet.gameType(), packet.mapName(), packet.teamData());
         team.setColor(RenderUtil.color(packet.color()));
         data.addTeam(team);
+    }
+
+    private static boolean existingTeamMatchesPacket(ClientTeam team, FPSMAddTeamS2CPacket packet) {
+        return team.gameType.equals(packet.gameType()) && team.mapName.equals(packet.mapName());
     }
 
     public static void handleTeamCapabilities(TeamCapabilitiesS2CPacket packet) {

@@ -28,6 +28,9 @@ class PlayerOutlineRendererStructureTest {
         assertTrue(renderer.contains("SpectatorGlowManager.shouldGlow"));
         assertTrue(renderer.contains("getOutlineColor"));
         assertTrue(renderer.contains("controlsOutline"));
+        assertTrue(renderer.contains("isCurrentMatchScoreboardPlayer"));
+        assertTrue(renderer.contains("isSameCurrentMatchScoreboardTeam"));
+        assertTrue(renderer.contains("data.getCurrentGameType() + \"_\" + data.getCurrentMap() + \"_\""));
         assertTrue(renderer.contains("isNormalMatchPlayer"));
         assertFalse(renderer.contains("RenderPlayerEvent.Post"));
         assertFalse(renderer.contains("event.getRenderer().render"));

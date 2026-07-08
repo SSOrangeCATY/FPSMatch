@@ -359,7 +359,20 @@ public class FPSMDeathPipelineEventHook {
         }
 
         return isRecentGunHitFresh(context.getCreatedTick(), recentGunHit)
-                && (context.isGunKill() || GunCompatManager.isGun(context.getDeathItem()) || recentGunHit.isHeadShot());
+                && (isDeathSourceFromRecentGunHit(context, recentGunHit)
+                || context.isGunKill()
+                || GunCompatManager.isGun(context.getDeathItem())
+                || recentGunHit.isHeadShot());
+    }
+
+    private static boolean isDeathSourceFromRecentGunHit(DeathContext context, RecentGunHitDetail recentGunHit) {
+        Entity bullet = recentGunHit.bullet();
+        if (bullet == null) {
+            return false;
+        }
+
+        Entity directEntity = context.getDamageSource().getDirectEntity();
+        return directEntity != null && directEntity.getUUID().equals(bullet.getUUID());
     }
 
     private static boolean isRecentGunHitFresh(long currentTick, RecentGunHitDetail recentGunHit) {
