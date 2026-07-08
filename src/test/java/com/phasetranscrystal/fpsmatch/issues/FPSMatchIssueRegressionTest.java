@@ -136,4 +136,13 @@ class FPSMatchIssueRegressionTest {
         assertTrue(eventHook.contains("boolean scopedKill)"));
         assertFalse(eventHook.contains("recentGunHits.clear();"));
     }
+
+    @Test
+    void taczHudTextureLookupAvoidsDistExecutorSafeReferentCrash() throws IOException {
+        String provider = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/compat/tacz/TACZGunProvider.java"));
+
+        assertFalse(provider.contains("DistExecutor.safeCallWhenOn(Dist.CLIENT"));
+        assertTrue(provider.contains("FMLEnvironment.dist != Dist.CLIENT"));
+        assertTrue(provider.contains("GunSpecUtils.getGunHUDTexture(stack)"));
+    }
 }

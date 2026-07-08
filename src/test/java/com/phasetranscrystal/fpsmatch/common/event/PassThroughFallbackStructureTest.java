@@ -59,4 +59,19 @@ class PassThroughFallbackStructureTest {
         assertTrue(hook.contains("Entity directEntity = context.getDamageSource().getDirectEntity();"));
         assertTrue(hook.contains("directEntity != null && directEntity.getUUID().equals(bullet.getUUID())"));
     }
+
+    @Test
+    void recentGunHitIconFlagsCanDriveFallbackWithoutHeadshot() throws IOException {
+        String hook = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMDeathPipelineEventHook.java"));
+        String iconSignal = hook.substring(
+                hook.indexOf("private static boolean hasDeathIconSignal"),
+                hook.indexOf("private static boolean isDeathSourceFromRecentGunHit")
+        );
+
+        assertTrue(hook.contains("|| hasDeathIconSignal(recentGunHit)"));
+        assertTrue(iconSignal.contains("recentGunHit.isHeadShot()"));
+        assertTrue(iconSignal.contains("recentGunHit.passWall()"));
+        assertTrue(iconSignal.contains("recentGunHit.passSmoke()"));
+        assertTrue(iconSignal.contains("recentGunHit.scopedKill()"));
+    }
 }

@@ -8,7 +8,7 @@ import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import java.util.Optional;
 
@@ -144,9 +144,9 @@ public class TACZGunProvider implements IGunProvider {
     public ResourceLocation getGunHUDTexture(ItemStack stack) {
         if (!isGun(stack)) return null;
         // 客户端专用逻辑通过 DistExecutor 分发，避免在专用服务器上加载 client-only 的 TACZ 渲染类
-        return DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> () ->
-                com.phasetranscrystal.fpsmatch.compat.tacz.client.util.GunSpecUtils.getGunHUDTexture(stack)
-        );
+        // Client-only texture lookup; avoid DistExecutor safe referent validation here.
+        if (FMLEnvironment.dist != Dist.CLIENT) return null;
+        return com.phasetranscrystal.fpsmatch.compat.tacz.client.util.GunSpecUtils.getGunHUDTexture(stack);
     }
 
     // ========== 枪械 ID 设置 ==========

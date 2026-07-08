@@ -362,7 +362,14 @@ public class FPSMDeathPipelineEventHook {
                 && (isDeathSourceFromRecentGunHit(context, recentGunHit)
                 || context.isGunKill()
                 || GunCompatManager.isGun(context.getDeathItem())
-                || recentGunHit.isHeadShot());
+                || hasDeathIconSignal(recentGunHit));
+    }
+
+    private static boolean hasDeathIconSignal(RecentGunHitDetail recentGunHit) {
+        return recentGunHit.isHeadShot()
+                || recentGunHit.passWall()
+                || recentGunHit.passSmoke()
+                || recentGunHit.scopedKill();
     }
 
     private static boolean isDeathSourceFromRecentGunHit(DeathContext context, RecentGunHitDetail recentGunHit) {
