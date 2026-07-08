@@ -27,6 +27,8 @@ class PlayerOutlineRendererStructureTest {
         assertTrue(renderer.contains("data.isTeamGlow()"));
         assertTrue(renderer.contains("SpectatorGlowManager.shouldGlow"));
         assertTrue(renderer.contains("getOutlineColor"));
+        assertTrue(renderer.contains("controlsOutline"));
+        assertTrue(renderer.contains("isNormalMatchPlayer"));
         assertFalse(renderer.contains("RenderPlayerEvent.Post"));
         assertFalse(renderer.contains("event.getRenderer().render"));
         assertFalse(renderer.contains("OutlineBufferSource"));
@@ -40,7 +42,9 @@ class PlayerOutlineRendererStructureTest {
         assertTrue(mixin.contains("isCurrentlyGlowing"));
         assertTrue(mixin.contains("getTeamColor"));
         assertTrue(mixin.contains("PlayerOutlineRenderer.shouldOutline"));
+        assertTrue(mixin.contains("PlayerOutlineRenderer.controlsOutline"));
         assertTrue(mixin.contains("PlayerOutlineRenderer.getOutlineColor"));
+        assertTrue(mixin.contains("cir.setReturnValue(PlayerOutlineRenderer.shouldOutline(entity));"));
     }
 
     @Test

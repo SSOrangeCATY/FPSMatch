@@ -12,8 +12,9 @@ public abstract class MixinEntityClientOutline {
 
     @Inject(method = "isCurrentlyGlowing", at = @At("HEAD"), cancellable = true)
     private void fpsmatch$useClientOutlineDecision(CallbackInfoReturnable<Boolean> cir) {
-        if (PlayerOutlineRenderer.shouldOutline((Entity) (Object) this)) {
-            cir.setReturnValue(true);
+        Entity entity = (Entity) (Object) this;
+        if (PlayerOutlineRenderer.controlsOutline(entity)) {
+            cir.setReturnValue(PlayerOutlineRenderer.shouldOutline(entity));
         }
     }
 

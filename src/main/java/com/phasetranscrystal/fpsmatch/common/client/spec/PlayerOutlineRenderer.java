@@ -10,6 +10,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.Optional;
+
 @OnlyIn(Dist.CLIENT)
 public final class PlayerOutlineRenderer {
     public static final int NO_OUTLINE_COLOR = -1;
@@ -35,6 +37,23 @@ public final class PlayerOutlineRenderer {
         return getOutlineColor(target) != NO_OUTLINE_COLOR;
     }
 
+    public static boolean controlsOutline(Entity target) {
+        if (!(target instanceof Player player)) return false;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer localPlayer = minecraft.player;
+        if (localPlayer == null || player == localPlayer) return false;
+
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        Optional<ClientTeam> localTeam = data.getCurrentClientTeam();
+        if (localTeam.map(ClientTeam::isNormal).orElse(false)) {
+            return isNormalMatchPlayer(data, player);
+        }
+        return localPlayer.isSpectator()
+                && localTeam.map(ClientTeam::isSpectator).orElse(false)
+                && isNormalMatchPlayer(data, player);
+    }
+
     public static int getOutlineColor(Entity target) {
         if (!(target instanceof Player player)) return NO_OUTLINE_COLOR;
 
@@ -58,6 +77,13 @@ public final class PlayerOutlineRenderer {
             return ENEMY_COLOR;
         }
         return NO_OUTLINE_COLOR;
+    }
+
+    private static boolean isNormalMatchPlayer(FPSMClientGlobalData data, Player player) {
+        return data.getPlayerTeamName(player.getUUID())
+                .flatMap(data::getTeamByName)
+                .map(ClientTeam::isNormal)
+                .orElse(false);
     }
 
     private static int rgb(int red, int green, int blue) {
