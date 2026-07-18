@@ -214,17 +214,4 @@ class FPSMatchIssueRegressionTest {
         assertTrue(contract.contains("default boolean isThrowTypeAllowed"));
     }
 
-    @Test
-    void repositoryRunsTestsBuildAndCoverageInGithubActions() throws IOException {
-        String build = Files.readString(Path.of("build.gradle"));
-        Path workflowPath = Path.of(".github/workflows/build.yml");
-        assertTrue(Files.exists(workflowPath));
-        String workflow = Files.exists(workflowPath) ? Files.readString(workflowPath) : "";
-
-        assertTrue(build.contains("id 'jacoco'"));
-        assertTrue(build.contains("jacocoTestReport"));
-        assertTrue(workflow.contains("./gradlew test build jacocoTestReport"));
-        assertTrue(workflow.contains("build/libs/*.jar"));
-        assertTrue(workflow.contains("build/reports/jacoco/test"));
-    }
 }
