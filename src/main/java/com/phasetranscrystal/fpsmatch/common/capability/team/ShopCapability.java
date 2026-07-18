@@ -313,7 +313,11 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      */
     public void syncShopMoneyData() {
         if (isInitialized()) {
-            shop.syncShopMoneyData();
+            if (team instanceof ServerTeam serverTeam) {
+                shop.syncShopMoneyData(serverTeam.getOnline());
+            } else {
+                shop.syncShopMoneyData();
+            }
         }
     }
 

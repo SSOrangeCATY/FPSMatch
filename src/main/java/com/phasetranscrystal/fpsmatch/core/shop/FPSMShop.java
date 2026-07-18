@@ -213,6 +213,17 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         }
     }
 
+    /** Sends this team's economy to viewers that are already in this team. */
+    public void syncShopMoneyData(Collection<ServerPlayer> viewers) {
+        for (ServerPlayer viewer : viewers) {
+            for (UUID uuid : playersData.keySet()) {
+                ShopData<T> shopData = this.getPlayerShopData(uuid);
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> viewer),
+                        new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
+            }
+        }
+    }
+
     /**
      * 同步指定玩家的金钱数据到客户端。
      *
