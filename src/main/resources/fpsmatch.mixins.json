@@ -20,6 +20,8 @@
     "ammo.ModernKineticGunItemMixin",
     "ammo.TweakAmmoMixin",
     "collisiobox.MixinRenderHeadShotAABB",
+    "compat.forge.ResourceLocationDefaultNamespaceCompatMixin",
+    "compat.forge.ResourceLocationFactoriesCompatMixin",
     "compat.spectate.lrt.MixinLrtBaseAnimationStateContext",
     "compat.spectate.lrt.MixinLrtClientEventsHandler",
     "compat.spectate.tacz.CameraSetupEventMixin",

@@ -489,5 +489,19 @@
   "gui.fpsm.map_select.action.ready.spectator": "旁观者无法准备",
   "gui.fpsm.map_select.action.switch_team.success.self": "已切换至队伍 %s",
   "gui.fpsm.map_select.action.switch_team.success.other": "已将 %s 移动至队伍 %s",
-  "gui.fpsm.map_select.action.switch_team.failed": "更换队伍失败"
+  "gui.fpsm.map_select.action.switch_team.failed": "更换队伍失败",
+  "gui.fpsm.minimap.tactical.title": "战术地图",
+  "gui.fpsm.minimap.tactical.automatic": "自动楼层",
+  "gui.fpsm.minimap.tactical.manual": "手动楼层",
+  "gui.fpsm.minimap.tactical.follow_player": "跟随玩家",
+  "gui.fpsm.minimap.tactical.filters": "标记筛选",
+  "gui.fpsm.minimap.tactical.legend": "图例",
+  "gui.fpsm.minimap.tactical.none": "无",
+  "gui.fpsm.minimap.tactical.fit_floor": "适配楼层",
+  "gui.fpsm.minimap.tactical.fit_all": "适配整图",
+  "gui.fpsm.minimap.tactical.close": "关闭",
+  "gui.fpsm.minimap.tactical.region_detail": "区域详情",
+  "gui.fpsm.minimap.tactical.region_semantic": "类型：%s",
+  "gui.fpsm.minimap.tactical.region_tags": "标签：%s",
+  "gui.fpsm.minimap.tactical.region_reference": "玩法引用：%s"
 }

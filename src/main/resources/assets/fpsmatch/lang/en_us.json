@@ -500,5 +500,19 @@
   "gui.fpsm.map_select.debug.reset": "Reset",
   "gui.fpsm.map_select.debug.new_round": "New Round",
   "gui.fpsm.map_select.debug.cleanup": "Cleanup",
-  "gui.fpsm.map_select.debug.switch": "Debug"
+  "gui.fpsm.map_select.debug.switch": "Debug",
+  "gui.fpsm.minimap.tactical.title": "Tactical Map",
+  "gui.fpsm.minimap.tactical.automatic": "Automatic floor",
+  "gui.fpsm.minimap.tactical.manual": "Manual floor",
+  "gui.fpsm.minimap.tactical.follow_player": "Follow player",
+  "gui.fpsm.minimap.tactical.filters": "Marker filters",
+  "gui.fpsm.minimap.tactical.legend": "Legend",
+  "gui.fpsm.minimap.tactical.none": "None",
+  "gui.fpsm.minimap.tactical.fit_floor": "Fit floor",
+  "gui.fpsm.minimap.tactical.fit_all": "Fit all",
+  "gui.fpsm.minimap.tactical.close": "Close",
+  "gui.fpsm.minimap.tactical.region_detail": "Region details",
+  "gui.fpsm.minimap.tactical.region_semantic": "Type: %s",
+  "gui.fpsm.minimap.tactical.region_tags": "Tags: %s",
+  "gui.fpsm.minimap.tactical.region_reference": "Gameplay: %s"
 }

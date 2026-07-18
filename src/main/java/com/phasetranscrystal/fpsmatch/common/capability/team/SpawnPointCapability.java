@@ -11,6 +11,8 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.AreaDataRegionProjection;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.WorldAxisAlignedBounds;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
@@ -86,6 +88,13 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
 
     public List<SpawnPointData> getSpawnPointsData() {
         return spawnPointsData;
+    }
+
+    /**
+     * Pure minimap spawn envelope for this team. Empty when no spawn points configured.
+     */
+    public Optional<WorldAxisAlignedBounds> minimapSpawnEnvelope() {
+        return AreaDataRegionProjection.spawnEnvelope(List.copyOf(spawnPointsData));
     }
 
     public boolean removeSpawnPointData(@Nonnull SpawnPointData data) {

@@ -863,12 +863,16 @@ public class MapTeams {
     }
 
     public boolean isSameTeam(Player p1, Player p2){
-        if ("csdm".equals(map.getGameType())) {
-            return false;
-        }
         Optional<ServerTeam> t1 = getTeamByPlayer(p1);
         Optional<ServerTeam> t2 = getTeamByPlayer(p2);
-        return t1.isPresent() && t1.equals(t2);
+        if (t1.isEmpty() || t2.isEmpty()) {
+            return false;
+        }
+        // Spectator / observer teams never count as combat teammates.
+        if ("spectator".equals(t1.get().getName()) || "spectator".equals(t2.get().getName())) {
+            return false;
+        }
+        return t1.equals(t2);
     }
 
     /**

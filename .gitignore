@@ -132,3 +132,6 @@ run/
 wiki/
 wiki-publish/
 .wiki/
+
+# Local porting and decompilation workspace
+/porting/

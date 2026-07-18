@@ -3,20 +3,24 @@ package com.phasetranscrystal.fpsmatch.core.capability;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.persistence.DataPersistenceException;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.util.ExtraCodecs;
 import net.minecraftforge.common.MinecraftForge;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,6 +28,7 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
 public class CapabilityMap<H, T extends FPSMCapability<H>> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CapabilityMap.class);
 
     public static <C extends MapCapability> Optional<C> getMapCapability(BaseMap map, final Class<C> capability) {
         return map.getCapabilityMap().get(capability);
@@ -58,6 +63,9 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     private final Map<Class<? extends T>, T> capabilities = new ConcurrentHashMap<>();
+    private final Map<Class<? extends T>, PendingAddition<T>> pendingAdditions =
+            new ConcurrentHashMap<>();
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
 
     private final H holder;
 
@@ -73,7 +81,7 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             try {
                 cap.tick();
             } catch (Exception e) {
-                FPSMatch.LOGGER.error("Error ticking capability {} on holder {}", cap.getClass().getSimpleName(), this.holder, e);
+                LOGGER.error("Error ticking capability {} on holder {}", cap.getClass().getSimpleName(), this.holder, e);
             }
         }
     }
@@ -85,10 +93,52 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @return 是否添加成功
      */
     public final <C extends T> boolean add(Class<C> capabilityClass) {
-        if(contains(capabilityClass)){
-            return FPSMCapabilityManager.getRawFactory(capabilityClass).map(FPSMCapability.Factory::isOriginal).orElse(false);
+        lockLifecycleInterruptibly();
+        try {
+            if (capabilities.get(capabilityClass) != null) {
+                return FPSMCapabilityManager.getRawFactory(capabilityClass)
+                        .map(FPSMCapability.Factory::isOriginal)
+                        .orElse(false);
+            }
+            return addWithLifecycleLock(capabilityClass);
+        } finally {
+            lifecycleLock.unlock();
         }
-        return FPSMCapabilityManager.createInstance(this.getHolder(), capabilityClass).map(this::addDirectly).orElse(false);
+    }
+
+    private <C extends T> boolean addWithLifecycleLock(Class<C> capabilityClass) {
+        PendingAddition<T> pending = new PendingAddition<>();
+        PendingAddition<T> active = pendingAdditions.putIfAbsent(capabilityClass, pending);
+        if (active != null) {
+            awaitPending(active);
+            return false;
+        }
+        try {
+            T published = capabilities.get(capabilityClass);
+            if (published != null) {
+                pending.completion.complete(Optional.of(published));
+                return false;
+            }
+            if (isCancelled(pending)) {
+                pending.completion.complete(Optional.empty());
+                return false;
+            }
+            Optional<C> candidate = FPSMCapabilityManager.createInstance(
+                    this.getHolder(), capabilityClass
+            );
+            if (candidate.isEmpty()) {
+                pending.completion.complete(Optional.empty());
+                return false;
+            }
+            return initializeAndPublish(capabilityClass, candidate.orElseThrow(), pending);
+        } catch (RuntimeException | Error failure) {
+            if (!pending.completion.isDone()) {
+                pending.completion.completeExceptionally(failure);
+            }
+            throw failure;
+        } finally {
+            pendingAdditions.remove(capabilityClass, pending);
+        }
     }
 
     public final boolean add(T capability) {
@@ -119,13 +169,186 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      */
     private boolean addDirectly(T capability) {
         Class<T> capabilityClass = (Class<T>) capability.getClass();
-        if (!contains(capabilityClass)) {
-            capabilities.put(capabilityClass, capability);
-            MinecraftForge.EVENT_BUS.register(capability);
-            capability.init();
-            return true;
+        lockLifecycleInterruptibly();
+        try {
+            return addDirectlyWithLifecycleLock(capabilityClass, capability);
+        } finally {
+            lifecycleLock.unlock();
         }
+    }
+
+    private boolean addDirectlyWithLifecycleLock(
+            Class<T> capabilityClass,
+            T capability
+    ) {
+        PendingAddition<T> pending = new PendingAddition<>();
+        PendingAddition<T> active = pendingAdditions.putIfAbsent(capabilityClass, pending);
+        if (active != null) {
+            awaitPending(active);
+            return false;
+        }
+        try {
+            T published = capabilities.get(capabilityClass);
+            if (published != null) {
+                pending.completion.complete(Optional.of(published));
+                return false;
+            }
+            return initializeAndPublish(capabilityClass, capability, pending);
+        } catch (RuntimeException | Error failure) {
+            if (!pending.completion.isDone()) {
+                pending.completion.completeExceptionally(failure);
+            }
+            throw failure;
+        } finally {
+            pendingAdditions.remove(capabilityClass, pending);
+        }
+    }
+
+    private boolean initializeAndPublish(
+            Class<? extends T> capabilityClass,
+            T capability,
+            PendingAddition<T> pending
+    ) {
+        if (isCancelled(pending)) {
+            pending.completion.complete(Optional.empty());
+            return false;
+        }
+
+        boolean initializationStarted = false;
+        boolean registrationAttempted = false;
+        try {
+            initializationStarted = true;
+            capability.init();
+            if (isCancelled(pending)) {
+                initializationStarted = false;
+                capability.destroy();
+                pending.completion.complete(Optional.empty());
+                return false;
+            }
+            registrationAttempted = true;
+            MinecraftForge.EVENT_BUS.register(capability);
+        } catch (RuntimeException | Error failure) {
+            rollbackFailedAddition(
+                    capability,
+                    initializationStarted,
+                    registrationAttempted,
+                    failure
+            );
+            pending.completion.completeExceptionally(failure);
+            throw failure;
+        }
+
+        T existing;
+        synchronized (pending) {
+            if (pending.cancelled) {
+                existing = null;
+            } else {
+                existing = capabilities.putIfAbsent(capabilityClass, capability);
+                if (existing == null) {
+                    pending.completion.complete(Optional.of(capability));
+                    return true;
+                }
+            }
+        }
+
+        try {
+            discardInitializedAddition(capability);
+        } catch (RuntimeException | Error failure) {
+            pending.completion.completeExceptionally(failure);
+            throw failure;
+        }
+        pending.completion.complete(Optional.ofNullable(existing));
         return false;
+    }
+
+    private void discardInitializedAddition(T capability) {
+        Throwable cleanupFailure = null;
+        try {
+            MinecraftForge.EVENT_BUS.unregister(capability);
+        } catch (RuntimeException | Error failure) {
+            cleanupFailure = failure;
+        }
+        try {
+            capability.destroy();
+        } catch (RuntimeException | Error failure) {
+            if (cleanupFailure == null) {
+                cleanupFailure = failure;
+            } else {
+                cleanupFailure.addSuppressed(failure);
+            }
+        }
+        if (cleanupFailure instanceof RuntimeException runtimeFailure) {
+            throw runtimeFailure;
+        }
+        if (cleanupFailure instanceof Error error) {
+            throw error;
+        }
+    }
+
+    private boolean isCancelled(PendingAddition<T> pending) {
+        synchronized (pending) {
+            return pending.cancelled;
+        }
+    }
+
+    private Optional<T> awaitPending(PendingAddition<T> pending) {
+        if (pending.ownerThread == Thread.currentThread()) {
+            throw new IllegalStateException(
+                    "Capability factory/init cannot recursively create the same capability type"
+            );
+        }
+        try {
+            return pending.completion.get();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while waiting for capability initialization",
+                    interrupted
+            );
+        } catch (ExecutionException failure) {
+            Throwable cause = failure.getCause();
+            if (cause instanceof RuntimeException runtimeFailure) {
+                throw runtimeFailure;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new IllegalStateException("Capability initialization failed", cause);
+        }
+    }
+
+    private void lockLifecycleInterruptibly() {
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while waiting for capability lifecycle",
+                    interrupted
+            );
+        }
+    }
+
+    private void rollbackFailedAddition(
+            T capability,
+            boolean initializationStarted,
+            boolean registrationAttempted,
+            Throwable failure
+    ) {
+        if (registrationAttempted) {
+            try {
+                MinecraftForge.EVENT_BUS.unregister(capability);
+            } catch (RuntimeException | Error rollbackFailure) {
+                failure.addSuppressed(rollbackFailure);
+            }
+        }
+        if (initializationStarted) {
+            try {
+                capability.destroy();
+            } catch (RuntimeException | Error rollbackFailure) {
+                failure.addSuppressed(rollbackFailure);
+            }
+        }
     }
 
     /**
@@ -134,14 +357,62 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
      * @param capabilityClass 能力类型
      */
     public final <C extends T> boolean remove(Class<C> capabilityClass) {
-        get(capabilityClass).map(cap -> {
-            if (cap.isImmutable()) return false;
-            cap.destroy();
-            capabilities.remove(capabilityClass);
-            MinecraftForge.EVENT_BUS.unregister(cap);
+        PendingAddition<T> pending = pendingAdditions.get(capabilityClass);
+        boolean cancelled = false;
+        if (pending != null) {
+            synchronized (pending) {
+                if (!pending.completion.isDone()) {
+                    pending.cancelled = true;
+                    cancelled = true;
+                }
+            }
+        }
+
+        C capability = (C) capabilities.get(capabilityClass);
+        if (capability == null) {
+            return cancelled;
+        }
+        lifecycleLock.lock();
+        try {
+            capability = (C) capabilities.get(capabilityClass);
+            if (capability == null) {
+                return cancelled;
+            }
+            if (capability.isImmutable()) {
+                return false;
+            }
+            if (!capabilities.remove(capabilityClass, capability)) {
+                return cancelled;
+            }
+            destroyAndUnregister(capability);
             return true;
-        });
-        return true;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private void destroyAndUnregister(T capability) {
+        Throwable cleanupFailure = null;
+        try {
+            capability.destroy();
+        } catch (RuntimeException | Error failure) {
+            cleanupFailure = failure;
+        }
+        try {
+            MinecraftForge.EVENT_BUS.unregister(capability);
+        } catch (RuntimeException | Error failure) {
+            if (cleanupFailure == null) {
+                cleanupFailure = failure;
+            } else {
+                cleanupFailure.addSuppressed(failure);
+            }
+        }
+        if (cleanupFailure instanceof RuntimeException runtimeFailure) {
+            throw runtimeFailure;
+        }
+        if (cleanupFailure instanceof Error error) {
+            throw error;
+        }
     }
 
     /**
@@ -166,11 +437,8 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
             return existing;
         }
 
-        if (add(capabilityClass)) {
-            return get(capabilityClass);
-        }
-
-        return Optional.empty();
+        add(capabilityClass);
+        return get(capabilityClass);
     }
 
     /**
@@ -284,31 +552,108 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public void clear() {
-        capabilities.keySet().forEach(this::remove);
+        Set<Class<? extends T>> classes = new HashSet<>(pendingAdditions.keySet());
+        classes.addAll(capabilities.keySet());
+        classes.forEach(this::remove);
     }
 
     public void write(String className, JsonElement data) {
-        FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType())
-                .ifPresent(clazz -> {
-                    this.get(clazz).ifPresentOrElse(capability -> {
-                                if (capability instanceof FPSMCapability.Savable<?> savable && !data.isJsonNull()) {
-                                    try {
-                                        savable.decode(data);
-                                    } catch (Exception e) {
-                                        FPSMatch.LOGGER.error("Error while write capability", e);
-                                    }
-                                }
-                            }, () -> {
-                                this.add(clazz);
-                            }
-                    );
-                });
+        lockLifecycleInterruptibly();
+        try {
+            FPSMCapabilityManager.getRegisteredCapabilityClassByFormated(className, getCapabilityType())
+                    .ifPresent(clazz -> {
+                        this.get(clazz).ifPresentOrElse(capability -> {
+                                    decodePublishedCapability(clazz, data);
+                                }, () -> restoreCapability(clazz, data)
+                        );
+                    });
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private void restoreCapability(Class<? extends T> capabilityClass, JsonElement data) {
+        PendingAddition<T> pending = new PendingAddition<>();
+        PendingAddition<T> active = pendingAdditions.putIfAbsent(capabilityClass, pending);
+        if (active != null) {
+            awaitPending(active);
+            decodePublishedCapability(capabilityClass, data);
+            return;
+        }
+        try {
+            T published = capabilities.get(capabilityClass);
+            if (published != null) {
+                decodePublishedCapability(capabilityClass, data);
+                pending.completion.complete(Optional.ofNullable(
+                        capabilities.get(capabilityClass)
+                ));
+                return;
+            }
+            if (isCancelled(pending)) {
+                pending.completion.complete(Optional.empty());
+                return;
+            }
+            Optional<? extends T> candidate = FPSMCapabilityManager.createInstance(
+                    this.getHolder(), capabilityClass
+            );
+            if (candidate.isEmpty()) {
+                pending.completion.complete(Optional.empty());
+                return;
+            }
+            T capability = candidate.orElseThrow();
+            if (!decodeCapability(capability, data)) {
+                pending.completion.complete(Optional.empty());
+                return;
+            }
+            initializeAndPublish(capabilityClass, capability, pending);
+        } catch (RuntimeException | Error failure) {
+            if (!pending.completion.isDone()) {
+                pending.completion.completeExceptionally(failure);
+            }
+            throw failure;
+        } finally {
+            pendingAdditions.remove(capabilityClass, pending);
+        }
+    }
+
+    private void decodePublishedCapability(
+            Class<? extends T> capabilityClass,
+            JsonElement data
+    ) {
+        capabilities.computeIfPresent(capabilityClass, (ignored, capability) -> {
+            decodeCapability(capability, data);
+            return capability;
+        });
+    }
+
+    private boolean decodeCapability(T capability, JsonElement data) {
+        if (!(capability instanceof FPSMCapability.Savable<?> savable)) {
+            return true;
+        }
+        if (data.isJsonNull()
+                || (data.isJsonPrimitive()
+                && data.getAsJsonPrimitive().isString()
+                && data.getAsString().isEmpty())) {
+            return false;
+        }
+        try {
+            savable.decode(data);
+            return true;
+        } catch (Exception failure) {
+            LOGGER.error("Error while write capability", failure);
+            return false;
+        }
     }
 
     public <D, C extends FPSMCapability<H> & FPSMCapability.Savable<D>> void write(Class<C> clazz, D data) {
-        get((Class<T>) clazz).ifPresent(cap -> {
-            ((FPSMCapability.Savable<D>) cap).write(data);
-        });
+        lockLifecycleInterruptibly();
+        try {
+            get((Class<T>) clazz).ifPresent(cap -> {
+                ((FPSMCapability.Savable<D>) cap).write(data);
+            });
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     public void write(Wrapper wrapper) {
@@ -320,31 +665,41 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
     }
 
     public Wrapper getData() {
-        Map<String, JsonElement> map = new HashMap<>();
+        lockLifecycleInterruptibly();
+        try {
+            Map<String, JsonElement> map = new HashMap<>();
 
-        for (Map.Entry<Class<? extends T>, T> entry : capabilities.entrySet()) {
-            String key = entry.getKey().getSimpleName();
-            T capability = entry.getValue();
+            for (Map.Entry<Class<? extends T>, T> entry : capabilities.entrySet()) {
+                String key = entry.getKey().getSimpleName();
+                T capability = entry.getValue();
 
-            if (capability instanceof FPSMCapability.Savable<?> savable) {
-                try {
-                    map.put(key, savable.toJson());
-                } catch (Exception e) {
-                    FPSMatch.LOGGER.error("Failed to serialize capability: {}", key, e);
+                if (capability instanceof FPSMCapability.Savable<?> savable) {
+                    try {
+                        map.put(key, savable.toJson());
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to serialize capability: {}", key, e);
+                        map.put(key, new JsonPrimitive(""));
+                    }
+                } else {
                     map.put(key, new JsonPrimitive(""));
                 }
-            } else {
-                map.put(key, new JsonPrimitive(""));
             }
-        }
 
-        return new Wrapper(map);
+            return new Wrapper(map);
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     public record Wrapper(Map<String, JsonElement> data) {
-        public static Codec<Map<String, JsonElement>> DATA_CODEC = Codec.unboundedMap(Codec.STRING, ExtraCodecs.JSON);
-        public static Codec<Wrapper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.unboundedMap(Codec.STRING, ExtraCodecs.JSON).fieldOf("capabilities").forGetter(Wrapper::data)
+        private static final Codec<JsonElement> JSON_CODEC = Codec.PASSTHROUGH.xmap(
+                dynamic -> dynamic.convert(JsonOps.INSTANCE).getValue(),
+                value -> new Dynamic<>(JsonOps.INSTANCE, value)
+        );
+        public static final Codec<Map<String, JsonElement>> DATA_CODEC =
+                Codec.unboundedMap(Codec.STRING, JSON_CODEC);
+        public static final Codec<Wrapper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                DATA_CODEC.fieldOf("capabilities").forGetter(Wrapper::data)
         ).apply(instance, Wrapper::new));
 
         public JsonElement encode(){
@@ -372,6 +727,12 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
                 return new Wrapper(data);
             }
         }
+    }
+
+    private static final class PendingAddition<C> {
+        private final CompletableFuture<Optional<C>> completion = new CompletableFuture<>();
+        private final Thread ownerThread = Thread.currentThread();
+        private boolean cancelled;
     }
 
 

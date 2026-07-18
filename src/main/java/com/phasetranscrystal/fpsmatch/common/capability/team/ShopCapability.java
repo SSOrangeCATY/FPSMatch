@@ -17,6 +17,8 @@ import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.AreaDataRegionProjection;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.WorldAxisAlignedBounds;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.INamedType;
@@ -249,6 +251,13 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      */
     public Optional<FPSMShop<?>> getShopSafe() {
         return isInitialized() ? Optional.of(shop) : Optional.empty();
+    }
+
+    /**
+     * Pure minimap shop region union for this team. Empty when shop is missing or has no areas.
+     */
+    public Optional<WorldAxisAlignedBounds> minimapShopBounds() {
+        return getShopSafe().flatMap(s -> AreaDataRegionProjection.shopUnion(s.getAreas()));
     }
 
     /**

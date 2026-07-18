@@ -3,6 +3,8 @@ package com.phasetranscrystal.fpsmatch.common.packet.register;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 import java.lang.reflect.Method;
@@ -10,8 +12,11 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -21,6 +26,7 @@ public class NetworkPacketRegister {
     private final AtomicInteger idCounter = new AtomicInteger(0);
     private final SimpleChannel channel;
     private final ResourceLocation name;
+    private final RegistrationSink registrationSink;
 
     public NetworkPacketRegister(ResourceLocation channel,String version) {
         this(channel,() -> version,version::equals,version::equals);
@@ -34,10 +40,28 @@ public class NetworkPacketRegister {
                 clientAcceptedVersions,
                 serverAcceptedVersions
         );
+        this.registrationSink = this::registerWithForge;
+    }
+
+    NetworkPacketRegister(RegistrationSink registrationSink) {
+        this.name = null;
+        this.channel = null;
+        this.registrationSink = Objects.requireNonNull(
+                registrationSink, "registrationSink"
+        );
     }
 
     @SuppressWarnings("unchecked")
     public <T> void registerPacket(Class<T> packetClass) {
+        registerPacketInternal(packetClass, null);
+    }
+
+    public <T> void registerPacket(Class<T> packetClass, NetworkDirection direction) {
+        registerPacketInternal(packetClass, Objects.requireNonNull(direction, "direction"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> void registerPacketInternal(Class<T> packetClass, NetworkDirection direction) {
         try {
             // 检查 encode
             Method encode = packetClass.getMethod("encode", packetClass, FriendlyByteBuf.class);
@@ -58,36 +82,61 @@ public class NetworkPacketRegister {
             Method handle = packetClass.getMethod("handle", Supplier.class);
 
             // 注册 Packet
-            channel.messageBuilder(packetClass, idCounter.getAndIncrement())
-                    .encoder((packet, buf) -> {
+            int messageId = idCounter.getAndIncrement();
+            registrationSink.register(
+                    messageId,
+                    packetClass,
+                    direction,
+                    (packet, buf) -> {
                         try {
                             encode.invoke(null, packet, buf);
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to encode packet", e);
                         }
-                    })
-                    .decoder(buf -> {
+                    },
+                    buf -> {
                         try {
-                            return (T) decode.invoke(null, buf);
+                            return decode.invoke(null, buf);
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to decode packet", e);
                         }
-                    })
-                    .consumerNetworkThread((packet, ctx) -> {
+                    },
+                    (packet, ctx) -> {
                         try {
                             handle.invoke(packet, ctx);
                         } catch (Exception e) {
                             throw new RuntimeException("Failed to handle packet", e);
                         }
-                    })
-                    .add();
+                    }
+            );
             // LOGGER.info("{} registered", packetClass.getSimpleName());
 
-            CACHED.computeIfAbsent(this, k -> new ArrayList<>()).add(packetClass);
+            if (channel != null) {
+                CACHED.computeIfAbsent(this, k -> new ArrayList<>()).add(packetClass);
+            }
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Packet class " + packetClass.getName() +
                     " is missing required methods (encode/decode/handle)", e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void registerWithForge(
+            int messageId,
+            Class<?> packetClass,
+            NetworkDirection direction,
+            BiConsumer<Object, FriendlyByteBuf> encoder,
+            Function<FriendlyByteBuf, Object> decoder,
+            BiConsumer<Object, Supplier<NetworkEvent.Context>> consumer
+    ) {
+        Class<Object> typedPacketClass = (Class<Object>) packetClass;
+        SimpleChannel.MessageBuilder<Object> builder = direction == null
+                ? channel.messageBuilder(typedPacketClass, messageId)
+                : channel.messageBuilder(typedPacketClass, messageId, direction);
+        builder.encoder(encoder)
+                .decoder(decoder)
+                .consumerNetworkThread(consumer)
+                .add();
     }
 
     public SimpleChannel getChannel() {
@@ -108,5 +157,17 @@ public class NetworkPacketRegister {
         }
 
         throw new RuntimeException("Failed to find channel for " + clazz.getName());
+    }
+
+    @FunctionalInterface
+    interface RegistrationSink {
+        void register(
+                int messageId,
+                Class<?> packetClass,
+                NetworkDirection direction,
+                BiConsumer<Object, FriendlyByteBuf> encoder,
+                Function<FriendlyByteBuf, Object> decoder,
+                BiConsumer<Object, Supplier<NetworkEvent.Context>> consumer
+        );
     }
 }

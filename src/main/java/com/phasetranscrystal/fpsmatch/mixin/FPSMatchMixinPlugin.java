@@ -1,6 +1,8 @@
 package com.phasetranscrystal.fpsmatch.mixin;
 
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.mixin.compat.forge.Ldlib2ForgeCompatibility;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -25,6 +27,14 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        Boolean forgeCompatibilityDecision = Ldlib2ForgeCompatibility.decisionFor(
+                mixinClassName,
+                FMLLoader.versionInfo().forgeVersion()
+        );
+        if (forgeCompatibilityDecision != null) {
+            return forgeCompatibilityDecision;
+        }
+
         boolean taczTweaksLoaded = FPSMImpl.findTaczTweaks();
         boolean taczLoaded = FPSMImpl.findTacz();
 
@@ -60,6 +70,11 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+        if (Ldlib2ForgeCompatibility.INITIAL_FACTORIES_MIXIN.equals(mixinClassName)) {
+            Ldlib2ForgeCompatibility.applyInitialFactories(targetClass);
+        } else if (Ldlib2ForgeCompatibility.DEFAULT_NAMESPACE_FACTORY_MIXIN.equals(mixinClassName)) {
+            Ldlib2ForgeCompatibility.applyDefaultNamespaceFactory(targetClass);
+        }
     }
 
     @Override

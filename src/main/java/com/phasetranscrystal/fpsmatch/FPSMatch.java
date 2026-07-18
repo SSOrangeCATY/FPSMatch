@@ -11,6 +11,11 @@ import com.phasetranscrystal.fpsmatch.common.packet.attribute.BulletproofArmorAt
 import com.phasetranscrystal.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.*;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketRegistration;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketLifecycle;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketSender;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.ForgeMinimapServerLifecycleEventSource;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.ForgeMinimapServerRuntimeRegistration;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
@@ -25,6 +30,7 @@ import com.phasetranscrystal.fpsmatch.compat.cloth.FPSMenuIntegration;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -46,6 +52,8 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
 
 /*
     <FPSMatch>
@@ -69,7 +77,7 @@ public class FPSMatch {
 
     public static final String MODID = "fpsmatch";
     public static final Logger LOGGER = LoggerFactory.getLogger("FPSMatch");
-    private static final String PROTOCOL_VERSION = "1.3.0";
+    private static final String PROTOCOL_VERSION = "1.4.0";
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation("fpsmatch", "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
     public static final String DEBUG_SYS_PROP = "fpsm.debug";
@@ -82,6 +90,12 @@ public class FPSMatch {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onRegisterPackets);
         modEventBus.addListener(this::onEnqueue);
+        ForgeMinimapServerLifecycleEventSource minimapServerEvents =
+                new ForgeMinimapServerLifecycleEventSource(
+                        MinecraftForge.EVENT_BUS
+                );
+        MinimapPacketLifecycle.bindServer(minimapServerEvents);
+        ForgeMinimapServerRuntimeRegistration.install(minimapServerEvents);
         MinecraftForge.EVENT_BUS.register(this);
         VanillaGuiRegister.CONTAINERS.register(modEventBus);
         FPSMItemRegister.ITEMS.register(modEventBus);
@@ -208,6 +222,7 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageResultS2CPacket.class);
+        MinimapPacketRegistration.register(PACKET_REGISTER);
 
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
@@ -226,6 +241,15 @@ public class FPSMatch {
 
     public static <M> void sendToServer(M message){
         NetworkPacketRegister.getChannelFromCache(message.getClass()).sendToServer(message);
+    }
+
+    public static int sendMinimapToServer(
+            UUID frameId,
+            MinimapWireMessage message
+    ) {
+        return MinimapPacketSender.sendC2S(
+                frameId, message, FPSMatch::sendToServer
+        );
     }
 
     @SubscribeEvent
