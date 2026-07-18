@@ -31,6 +31,13 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache")
 }
 
+sourceSets.main.java {
+    exclude 'com/phasetranscrystal/fpsmatch/common/client/minimap/MinimapClientLifecycleEvents.java'
+    exclude 'com/phasetranscrystal/fpsmatch/common/client/minimap/render/ForgeMinimapClientSettings.java'
+    exclude 'com/phasetranscrystal/fpsmatch/common/client/minimap/render/MinecraftGuiGraphicsMinimapDrawTarget.java'
+    exclude 'com/phasetranscrystal/fpsmatch/common/minimap/server/ForgeMinimapServerConfigView.java'
+}
+
 neoForge {
     version = project.neo_version
 
@@ -84,6 +91,10 @@ repositories {
         name = "NeoForge"
         url = "https://maven.neoforged.net/releases"
     }
+    maven {
+        name = "LowDragMC"
+        url = "https://maven.firstdark.dev/snapshots"
+    }
 
 }
 
@@ -92,12 +103,33 @@ dependencies {
     localRuntime "com.tacz:tacz-mc26.2:${tacz_version}"
     compileOnly "com.github.mcmodderanchor:simplebedrockmodel:2.4.4-neoforge-mc26.2"
     localRuntime "com.github.mcmodderanchor:simplebedrockmodel:2.4.4-neoforge-mc26.2"
+    compileOnly("com.lowdragmc.ldlib2:ldlib2-neoforge-26.2:26.2.2.29") {
+        exclude group: "net.neoforged", module: "neoforge"
+    }
+    localRuntime("com.lowdragmc.ldlib2:ldlib2-neoforge-26.2:26.2.2.29") {
+        exclude group: "net.neoforged", module: "neoforge"
+    }
+    implementation "io.github.erdtman:java-json-canonicalization:1.1"
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
     compileOnly('org.apache.commons:commons-math3:3.6.1');
 
     // JetBrains annotations for @NotNull and other annotations
     compileOnly "org.jetbrains:annotations:24.0.1"
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testImplementation "com.google.code.gson:gson:2.14.0"
+    testImplementation "com.mojang:datafixerupper:10.0.21"
+    testImplementation("net.java.dev.jna:jna:5.17.0") {
+        version { strictly "5.17.0" }
+    }
+    testImplementation("net.java.dev.jna:jna-platform:5.17.0") {
+        version { strictly "5.17.0" }
+    }
+    testCompileOnly files(layout.buildDirectory.file(
+            "moddev/artifacts/minecraft-patched-${neo_version}-merged.jar"
+    ))
+    testRuntimeOnly files(layout.buildDirectory.file(
+            "moddev/artifacts/minecraft-patched-${neo_version}-merged.jar"
+    ))
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
@@ -124,6 +156,14 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 }
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
+
+sourceSets {
+    performanceAcceptance {
+        java.srcDir 'src/performanceAcceptance/java'
+        compileClasspath = sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath = output + compileClasspath
+    }
+}
 
 jar {
     manifest.attributes([
@@ -156,6 +196,24 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
+}
+
+tasks.register('headlessPerformanceAcceptance', JavaExec) {
+    group = 'verification'
+    description = 'Runs the headless minimap standard/stress performance gate and writes JSON evidence.'
+    dependsOn tasks.named('performanceAcceptanceClasses')
+    classpath = sourceSets.performanceAcceptance.runtimeClasspath
+    mainClass = 'com.phasetranscrystal.fpsmatch.performance.MinimapHeadlessPerformanceAcceptance'
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    jvmArgs '-XX:+UseG1GC', '-Djava.awt.headless=true'
+    systemProperty 'minimapPerformanceProfile', providers.gradleProperty(
+            'minimapPerformanceProfile'
+    ).getOrElse('formal')
+    systemProperty 'minimapPerformanceReport', layout.buildDirectory.file(
+            'reports/minimap-performance/headless.json'
+    ).get().asFile.absolutePath
 }
 
 idea {

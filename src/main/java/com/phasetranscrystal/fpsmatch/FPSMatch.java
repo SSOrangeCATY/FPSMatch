@@ -53,6 +53,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageActionC2SPack
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageResultS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.sync.FPSMatchMinimapGameTests;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorSyncNetwork;
 import com.phasetranscrystal.fpsmatch.compat.tacz.TACZBootstrap;
@@ -87,6 +88,7 @@ public class FPSMatch {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onRegisterPackets);
         modEventBus.addListener(PACKET_REGISTER::registerPayloadHandlers);
+        modEventBus.addListener(FPSMatchMinimapGameTests::register);
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             modEventBus.addListener(FPSMClient::onRegisterKeyMappings);
             modEventBus.addListener(FPSMClient::onClientSetup);
