@@ -4,7 +4,6 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
@@ -33,7 +32,9 @@ public class FPSMSoundPlayC2SPacket {
             ServerPlayer player = ctx.get().getSender();
             if(player == null) return;
             FPSMSoundPlayS2CPacket packet = new FPSMSoundPlayS2CPacket(location);
-            FPSMCore.getInstance().getMapByPlayer(player).ifPresentOrElse(map -> {
+            var mapOpt = FPSMCore.getInstance().getMapByPlayer(player);
+            if (mapOpt.isEmpty()) return;
+            mapOpt.ifPresent(map -> {
                 if (playToTeam) {
                     map.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
                         map.sendPacketToTeamPlayer(team,packet,false);
@@ -41,14 +42,6 @@ public class FPSMSoundPlayC2SPacket {
                 }else{
                     map.sendPacketToAllPlayer(packet);
                 }
-            },()->{
-                MinecraftServer server = player.level().getServer();
-                if(server == null) return;
-                server.getPlayerList().getPlayers().forEach(
-                        p->{
-                            FPSMatch.sendToPlayer(p,packet);
-                        }
-                );
             });
         });
         ctx.get().setPacketHandled(true);

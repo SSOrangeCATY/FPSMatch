@@ -13,6 +13,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public interface IThrowEntityAble {
+    default boolean isValidThrowType(com.phasetranscrystal.fpsmatch.common.item.BaseThrowAbleItem.ThrowType type) {
+        return type != null;
+    }
 
     default void shoot(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy){
             ItemStack itemstack = pPlayer.getItemInHand(pHand);

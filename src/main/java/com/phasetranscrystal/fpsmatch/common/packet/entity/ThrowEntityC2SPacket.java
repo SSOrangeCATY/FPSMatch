@@ -20,9 +20,9 @@ public class ThrowEntityC2SPacket {
     }
 
     public static ThrowEntityC2SPacket decode(FriendlyByteBuf buf) {
-        return new ThrowEntityC2SPacket(
-                BaseThrowAbleItem.ThrowType.values()[buf.readInt()]
-        );
+        int ordinal = buf.readInt();
+        if (ordinal < 0 || ordinal >= BaseThrowAbleItem.ThrowType.values().length) return new ThrowEntityC2SPacket(null);
+        return new ThrowEntityC2SPacket(BaseThrowAbleItem.ThrowType.values()[ordinal]);
     }
 
     public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
@@ -32,9 +32,10 @@ public class ThrowEntityC2SPacket {
                 ctx.get().setPacketHandled(true);
                 return;
             }
-            if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof IThrowEntityAble throwEntityAble) {
+            if (type == null) return;
+            if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof IThrowEntityAble throwEntityAble && throwEntityAble.isValidThrowType(type)) {
                 throwEntityAble.shoot(player, player.level(), InteractionHand.MAIN_HAND, type.velocity(), type.inaccuracy());
-            } else if (player.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof IThrowEntityAble throwEntityAble) {
+            } else if (player.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof IThrowEntityAble throwEntityAble && throwEntityAble.isValidThrowType(type)) {
                 throwEntityAble.shoot(player, player.level(), InteractionHand.OFF_HAND, type.velocity(), type.inaccuracy());
             }
         });
