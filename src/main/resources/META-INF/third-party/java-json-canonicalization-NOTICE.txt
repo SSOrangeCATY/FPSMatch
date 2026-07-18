@@ -1,0 +1,6 @@
+java-json-canonicalization 1.1
+Copyright 2006-2018 WebPKI.org (http://webpki.org)
+
+FPSMatch uses org.erdtman.jcs.NumberToJSON for RFC 8785 / ECMAScript
+number serialization. The dependency is distributed under the Apache
+License, Version 2.0. See java-json-canonicalization-LICENSE.txt.

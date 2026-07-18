@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "ui": "fpsmatch.minimap.editor",
+  "widgets": [
+    "fpsmatch.minimap.editor.canvas",
+    "fpsmatch.minimap.editor.toolbar",
+    "fpsmatch.minimap.editor.layer_panel",
+    "fpsmatch.minimap.editor.properties",
+    "fpsmatch.minimap.editor.floor_strip",
+    "fpsmatch.minimap.editor.status_bar"
+  ]
+}

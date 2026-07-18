@@ -18,6 +18,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
@@ -25,6 +26,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 
 import java.util.*;
 
@@ -46,6 +48,7 @@ public class FPSMClient {
         event.register(CustomHudKey.KEY);
         event.register(SwitchPreviousItemKey.KEY);
         event.register(ClearRenderableAreasKey.KEY);
+        event.register(MinimapTacticalKey.KEY);
     }
 
     @SubscribeEvent
@@ -59,6 +62,15 @@ public class FPSMClient {
     public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
         event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"flash_bomb_hud", FlashBombHud.INSTANCE);
         event.registerBelowAll("hud_manager", FPSMGameHudManager.INSTANCE);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterClientReloadListeners(
+            RegisterClientReloadListenersEvent event
+    ) {
+        event.registerReloadListener((ResourceManagerReloadListener) manager ->
+                FPSMGameHudManager.INSTANCE.onMinimapResourceReload()
+        );
     }
 
     @SubscribeEvent

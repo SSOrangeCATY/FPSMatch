@@ -14,6 +14,8 @@ import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.AreaDataRegionProjection;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.BombSiteDefinition;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
@@ -78,6 +80,14 @@ public class DemolitionModeCapability extends MapCapability implements FPSMCapab
      */
     public List<AreaData> getBombAreaData() {
         return this.data.getBombAreaData();
+    }
+
+    /**
+     * Stable bomb sites for minimap/region providers.
+     * Migrates anonymous {@link AreaData} list to site_1..site_N without inferring A/B labels.
+     */
+    public List<BombSiteDefinition> getBombSites() {
+        return AreaDataRegionProjection.bombSites(getBombAreaData());
     }
 
     /**

@@ -113,6 +113,14 @@ public final class FPSMClientPacketHandlers {
         FPSMClient.getGlobalData().setCurrentMap(packet.getMapName());
         FPSMClient.getGlobalData().setTeamGlow(packet.isTeamGlow());
         FPSMClient.getGlobalData().setEnemyGlow(packet.isEnemyGlow());
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level != null) {
+            FPSMClientPacketRegistrar.probeMatchHud(
+                    packet.getGameType(),
+                    packet.getMapName(),
+                    minecraft.level.dimension().location().toString()
+            );
+        }
     }
 
     public static void handleStatsReset(FPSMatchStatsResetS2CPacket packet) {

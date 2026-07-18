@@ -1,5 +1,14 @@
 package com.phasetranscrystal.fpsmatch.common.client.net;
 
+import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.ClientMinimapBootstrap;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.ClientMinimapServices;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.cache.MinimapDiskCache;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.tactical.MinimapClientScreens;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.tactical.TacticalMapController;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.ui.ldlib2.Ldlib2TacticalScreenOpener;
+import com.phasetranscrystal.fpsmatch.common.client.key.MinimapTacticalKey;
 import com.phasetranscrystal.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.AddPointDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.ClientPacketRegistry;
@@ -28,11 +37,33 @@ import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPack
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageResultS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketLifecycle;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketSender;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapS2CDispatcher;
+import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapS2CPacket;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.core.minimap.model.MapKey;
+import com.phasetranscrystal.fpsmatch.core.minimap.model.NamespacedId;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.MinimapWireMessage;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireIdentity;
 import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorInspectPackets;
 import com.phasetranscrystal.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraft.client.Minecraft;
+
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 public final class FPSMClientPacketRegistrar {
     private static boolean registered;
+    private static ClientMinimapServices minimapServices;
 
     private FPSMClientPacketRegistrar() {
     }
@@ -42,6 +73,35 @@ public final class FPSMClientPacketRegistrar {
             return;
         }
         registered = true;
+        ForgeMinimapClientLifecycleEventSource minimapEvents =
+                new ForgeMinimapClientLifecycleEventSource(
+                        MinecraftForge.EVENT_BUS
+                );
+        MinimapPacketLifecycle.bindClient(minimapEvents);
+        long cacheBytes = FPSMConfig.client.minimapCacheMiB.get().longValue()
+                * 1024L * 1024L;
+        minimapServices = installMinimap(
+                new MinimapDiskCache(
+                        minimapCacheRoot(FMLLoader.getGamePath()), cacheBytes
+                ),
+                FPSMatch::sendToServer,
+                System::currentTimeMillis,
+                UUID::randomUUID,
+                minimapEvents,
+                MinimapS2CPacket::installDispatcher
+        );
+        FPSMGameHudManager.INSTANCE.installMinimap(minimapServices);
+        TacticalMapController tacticalController = new TacticalMapController(
+                minimapServices.runtime()
+        );
+        MinimapClientScreens screens = new MinimapClientScreens(
+                tacticalController,
+                minimapServices.subscriptions(),
+                new Ldlib2TacticalScreenOpener(
+                        FPSMGameHudManager.INSTANCE::minimapHudPresentation
+                )
+        );
+        MinimapTacticalKey.install(screens);
 
         ClientPacketRegistry.register(OpenMapCreatorToolScreenS2CPacket.class, FPSMClientPacketHandlers::handleOpenMapCreatorToolScreen);
         ClientPacketRegistry.register(OpenMatchConfigToolScreenS2CPacket.class, FPSMClientPacketHandlers::handleOpenMatchConfigToolScreen);
@@ -72,5 +132,68 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(TeamManageResultS2CPacket.class, FPSMClientPacketHandlers::handleTeamManageResult);
         ClientPacketRegistry.register(SpectatorInspectPackets.S2CWatchedPlayerInspectPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerInspect);
         ClientPacketRegistry.register(SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerLrtAttack);
+    }
+
+    static ClientMinimapServices installMinimap(
+            MinimapDiskCache diskCache,
+            Consumer<? super MinimapC2SPacket> transport,
+            LongSupplier nowMillis,
+            Supplier<UUID> requestIds,
+            ClientMinimapBootstrap.EventSource events,
+            Consumer<MinimapS2CDispatcher> dispatcherInstaller
+    ) {
+        ClientMinimapServices services = ClientMinimapServices.create(
+                diskCache,
+                message -> sendMinimap(message, requestIds, transport),
+                nowMillis,
+                requestIds
+        );
+        new ClientMinimapBootstrap(services, dispatcherInstaller).install(events);
+        return services;
+    }
+
+    static Path minimapCacheRoot(Path gamePath) {
+        return gamePath.resolve("fpsmatch").resolve("cache").resolve("minimap");
+    }
+
+    private static void sendMinimap(
+            MinimapWireMessage message,
+            Supplier<UUID> frameIds,
+            Consumer<? super MinimapC2SPacket> transport
+    ) {
+        MinimapPacketSender.sendC2S(frameIds.get(), message, transport);
+    }
+
+    public static ClientMinimapServices minimapServices() {
+        return minimapServices;
+    }
+
+    static Optional<UUID> probeMatchHud(
+            ClientMinimapServices services,
+            String gameType,
+            String mapName,
+            String dimension
+    ) {
+        try {
+            return Objects.requireNonNull(services, "services")
+                    .subscriptions()
+                    .enterMatch(new WireIdentity.MapTarget(
+                            new MapKey(gameType, mapName),
+                            NamespacedId.parse(dimension)
+                    ));
+        } catch (IllegalArgumentException invalidTarget) {
+            return Optional.empty();
+        }
+    }
+
+    static void probeMatchHud(
+            String gameType,
+            String mapName,
+            String dimension
+    ) {
+        ClientMinimapServices services = minimapServices;
+        if (services != null) {
+            probeMatchHud(services, gameType, mapName, dimension);
+        }
     }
 }

@@ -12,6 +12,8 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.AreaDataRegionProjection;
+import com.phasetranscrystal.fpsmatch.core.minimap.region.WorldAxisAlignedBounds;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
@@ -683,6 +685,13 @@ public abstract class BaseMap {
      */
     public AreaData getMapArea() {
         return mapArea;
+    }
+
+    /**
+     * Pure minimap map-boundary box. Empty when map area is unset.
+     */
+    public Optional<WorldAxisAlignedBounds> minimapMapBoundary() {
+        return AreaDataRegionProjection.mapBoundary(mapArea);
     }
 
     public void setMapArea(AreaData mapArea) {
