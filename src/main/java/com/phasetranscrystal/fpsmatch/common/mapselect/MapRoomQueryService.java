@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class MapRoomQueryService {
     private MapRoomQueryService() {
@@ -141,6 +142,20 @@ public final class MapRoomQueryService {
 
     private static boolean isAvailableInviteTarget(ServerPlayer player) {
         return FPSMCore.getInstance().getMapByPlayerWithSpec(player).isEmpty();
+    }
+
+    public static long computeInviteTargetSignature(BaseMap map) {
+        if (!canInviteInto(map) || FPSMCore.getInstance().getServer() == null) {
+            return 0L;
+        }
+        return FPSMCore.getInstance().getServer().getPlayerList().getPlayers().stream()
+                .filter(MapRoomQueryService::isAvailableInviteTarget)
+                .map(ServerPlayer::getUUID)
+                .sorted()
+                .reduce(0xcbf29ce484222325L,
+                        (hash, uuid) -> ((hash ^ uuid.getMostSignificantBits()) * 0x100000001b3L
+                                ^ uuid.getLeastSignificantBits()) * 0x100000001b3L,
+                        (left, right) -> (left ^ right) * 0x100000001b3L);
     }
 
     public static List<MapRoomSettingInfo> settings(ServerPlayer viewer, BaseMap map) {

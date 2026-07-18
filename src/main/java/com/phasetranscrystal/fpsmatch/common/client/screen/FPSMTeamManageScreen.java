@@ -100,10 +100,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     }
 
     private void buildTeamButtons(int centerX) {
-        List<MapRoomTeamInfo> teams = detail.teams().stream()
-                .filter(t -> !t.spectator())
-                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
-                .toList();
+        List<MapRoomTeamInfo> teams = displayedTeams();
         if (teams.isEmpty()) return;
 
         int total = teams.size();
@@ -140,13 +137,9 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
         int bottom = height - LIST_BOTTOM_OFFSET - (hasAdminPanel() ? ADMIN_PANEL_HEIGHT : 0);
 
         List<MapRoomPlayerInfo> allPlayers = detail.players();
-        List<MapRoomTeamInfo> normalTeams = detail.teams().stream()
-                .filter(t -> !t.spectator())
-                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
-                .toList();
+        List<MapRoomTeamInfo> normalTeams = displayedTeams();
 
         for (MapRoomPlayerInfo player : allPlayers) {
-            if (isSpectator(player)) continue;
             Button kick = createSmallButton(Component.translatable("gui.fpsm.map_select.kick"), left + PANEL_WIDTH - 78, 0,
                     b -> sendAction(MapRoomActionC2SPacket.Action.KICK, player.uuid()));
             kick.active = detail.summary().currentPlayerOp();
@@ -197,7 +190,6 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
             MapRoomPlayerInfo player = findPlayer(selectedPlayer);
             if (player != null) {
                 List<String> otherTeams = detail.teams().stream()
-                        .filter(t -> !t.spectator())
                         .map(MapRoomTeamInfo::name)
                         .filter(n -> !n.equals(selectedPlayerTeam))
                         .sorted()
@@ -343,6 +335,9 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
         if (list != null && detail.summary().currentPlayerOp()) {
             int index = list.indexAt(mouseX, mouseY);
             if (index >= 0) {
@@ -353,7 +348,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     @Override
@@ -471,7 +466,6 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     private int visiblePlayerIndex(MapRoomPlayerInfo player) {
         int idx = 0;
         for (MapRoomPlayerInfo p : detail.players()) {
-            if (isSpectator(p)) continue;
             if (p.uuid().equals(player.uuid())) return idx;
             idx++;
         }
@@ -479,10 +473,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     }
 
     private boolean isHeaderIndex(int listIndex) {
-        List<MapRoomTeamInfo> normalTeams = detail.teams().stream()
-                .filter(t -> !t.spectator())
-                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
-                .toList();
+        List<MapRoomTeamInfo> normalTeams = displayedTeams();
         int pos = 0;
         for (MapRoomTeamInfo team : normalTeams) {
             if (pos == listIndex) return true;
@@ -493,10 +484,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     }
 
     private MapRoomPlayerInfo playerAtIndex(int listIndex) {
-        List<MapRoomTeamInfo> normalTeams = detail.teams().stream()
-                .filter(t -> !t.spectator())
-                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
-                .toList();
+        List<MapRoomTeamInfo> normalTeams = displayedTeams();
         int pos = 0;
         for (MapRoomTeamInfo team : normalTeams) {
             if (pos == listIndex) return null;
@@ -523,5 +511,11 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
                 .filter(p -> !isSpectator(p))
                 .filter(p -> isReady(p.uuid()))
                 .count();
+    }
+
+    private List<MapRoomTeamInfo> displayedTeams() {
+        return detail.teams().stream()
+                .sorted(Comparator.comparing(MapRoomTeamInfo::spectator).thenComparing(MapRoomTeamInfo::name))
+                .toList();
     }
 }

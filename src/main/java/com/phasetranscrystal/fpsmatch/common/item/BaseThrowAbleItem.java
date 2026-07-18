@@ -22,6 +22,7 @@ import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
+import java.util.EnumSet;
 
 public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
     private int tickCount = 0;
@@ -117,6 +118,11 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
     }
 
     @Override
+    public boolean isThrowTypeAllowed(ThrowType type) {
+        return type != null && EnumSet.allOf(ThrowType.class).contains(type);
+    }
+
+    @Override
     public SoundEvent getThrowVoice() {
         return this.voice == null ? IThrowEntityAble.super.getThrowVoice() : this.voice.get();
     }
@@ -139,6 +145,11 @@ public class BaseThrowAbleItem extends Item implements IThrowEntityAble {
         }
         public float inaccuracy() {
             return inaccuracy;
+        }
+
+        public static ThrowType fromNetworkOrdinal(int ordinal) {
+            ThrowType[] values = values();
+            return ordinal >= 0 && ordinal < values.length ? values[ordinal] : null;
         }
     }
 

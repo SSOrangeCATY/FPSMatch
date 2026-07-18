@@ -1,0 +1,28 @@
+name: Build FPSMatch
+
+on:
+  push:
+    branches: [master, 26.2]
+  pull_request:
+    branches: [master, 26.2]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Test, build, and report coverage
+        run: ./gradlew test build jacocoTestReport --no-daemon
+      - name: Upload verification artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fpsmatch-verification
+          path: |
+            build/libs/*.jar
+            build/reports/jacoco/test
+            build/test-results/test

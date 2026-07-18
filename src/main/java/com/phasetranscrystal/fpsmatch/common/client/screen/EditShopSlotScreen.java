@@ -26,6 +26,8 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     private static final int SLOT_SIZE = 18;
     private static final int PANEL_WIDTH = 250;
     private static final int PANEL_HEIGHT = 200;
+    private static final int FORM_FIRST_ROW_Y = 38;
+    private static final int FORM_ROW_HEIGHT = 30;
 
     private EditBox ammoField;
     private boolean isAmmoFieldAdded = false;
@@ -48,17 +50,18 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
         super.init();
 
         int centerX = this.leftPos + this.imageWidth / 2;
-        int startY = this.topPos + 38;
+        int nextRow = FORM_FIRST_ROW_Y;
 
         // 物品槽位区域（居中上方）
         // 槽位已经在 container 中注册，这里不需要额外处理
 
         if (menu.isGun()) {
-            createAmmoField(startY);
+            createAmmoField(this.topPos + nextRow);
+            nextRow += FORM_ROW_HEIGHT;
         }
 
         // 价格输入框
-        int fieldY = startY + 56;
+        int fieldY = this.topPos + nextRow;
         this.priceField = new EditBox(this.font, centerX - 60, fieldY, 50, 16,
                 Component.translatable("gui.fpsm.price"));
         this.priceField.setValue(String.valueOf(menu.getPrice()));
@@ -165,25 +168,33 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int pMouseX, int pMouseY) {
         // 标题
-        guiGraphics.drawString(font, this.title, this.leftPos + 8, this.topPos + 10, FPSMGuiTheme.TEXT_TITLE, false);
+        guiGraphics.drawString(font, this.title, 8, 10, FPSMGuiTheme.TEXT_TITLE, false);
 
         // 物品标签
         guiGraphics.drawString(font, Component.translatable("gui.fpsm.shop_editor.item_label"),
-                this.leftPos + 8, this.topPos + 22, FPSMGuiTheme.TEXT_MUTED, false);
+                8, 22, FPSMGuiTheme.TEXT_MUTED, false);
 
         // 输入框标签
         if (menu.isGun() && ammoField != null) {
             guiGraphics.drawString(font, Component.translatable("gui.fpsm.dummy_ammo"),
-                    ammoField.getX(), ammoField.getY() - 11, FPSMGuiTheme.TEXT_SUB, false);
+                    fieldLabelX(ammoField), fieldLabelY(ammoField), FPSMGuiTheme.TEXT_SUB, false);
         }
         if (priceField != null) {
             guiGraphics.drawString(font, Component.translatable("gui.fpsm.price"),
-                    priceField.getX(), priceField.getY() - 11, FPSMGuiTheme.TEXT_SUB, false);
+                    fieldLabelX(priceField), fieldLabelY(priceField), FPSMGuiTheme.TEXT_SUB, false);
         }
         if (groupField != null) {
             guiGraphics.drawString(font, Component.translatable("gui.fpsm.group"),
-                    groupField.getX(), groupField.getY() - 11, FPSMGuiTheme.TEXT_SUB, false);
+                    fieldLabelX(groupField), fieldLabelY(groupField), FPSMGuiTheme.TEXT_SUB, false);
         }
+    }
+
+    private int fieldLabelX(EditBox field) {
+        return field.getX() - this.leftPos;
+    }
+
+    private int fieldLabelY(EditBox field) {
+        return field.getY() - this.topPos - 11;
     }
 
     @Override
@@ -196,8 +207,7 @@ public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu
             }
         } else {
             if (this.ammoField == null) {
-                int startY = this.topPos + 38;
-                createAmmoField(startY);
+                createAmmoField(this.topPos + FORM_FIRST_ROW_Y);
             } else if (!this.isAmmoFieldAdded) {
                 this.addRenderableWidget(this.ammoField);
                 this.isAmmoFieldAdded = true;

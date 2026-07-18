@@ -145,4 +145,86 @@ class FPSMatchIssueRegressionTest {
         assertTrue(provider.contains("FMLEnvironment.dist != Dist.CLIENT"));
         assertTrue(provider.contains("GunSpecUtils.getGunHUDTexture(stack)"));
     }
+
+    @Test
+    void persistenceRootsFollowTheActiveGameDirectory() throws IOException {
+        String dataManager = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/persistence/FPSMDataManager.java"));
+        String configManager = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/persistence/ConfigManager.java"));
+
+        assertTrue(dataManager.contains("FMLLoader.getGamePath()"));
+        assertTrue(configManager.contains("FMLLoader.getGamePath()"));
+        assertFalse(dataManager.toLowerCase().contains("curseforge"));
+        assertFalse(configManager.toLowerCase().contains("curseforge"));
+    }
+
+    @Test
+    void teamManagementIncludesSpectatorsAndLetsButtonsHandleClicksFirst() throws IOException {
+        String screen = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/FPSMTeamManageScreen.java"));
+        String mouseClicked = screen.substring(screen.indexOf("public boolean mouseClicked"), screen.indexOf("public boolean mouseScrolled"));
+
+        assertTrue(screen.contains("private List<MapRoomTeamInfo> displayedTeams()"));
+        assertTrue(screen.contains("return detail.teams().stream()"));
+        assertFalse(screen.contains("if (isSpectator(player)) continue;"));
+        assertFalse(screen.contains(".filter(t -> !t.spectator())\n                        .map(MapRoomTeamInfo::name)"));
+        assertTrue(mouseClicked.indexOf("super.mouseClicked") < mouseClicked.indexOf("list.indexAt"));
+    }
+
+    @Test
+    void watchedRoomSignatureTracksInviteTargets() throws IOException {
+        String sync = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/mapselect/MapRoomSyncManager.java"));
+
+        assertTrue(sync.contains("MapRoomQueryService.computeInviteTargetSignature(map)"));
+        assertTrue(sync.contains("sig = mix(sig, MapRoomQueryService.computeInviteTargetSignature(map));"));
+    }
+
+    @Test
+    void shopSlotEditorUsesLocalLabelsAndPredictableOptionalRows() throws IOException {
+        String screen = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/EditShopSlotScreen.java"));
+        String labels = screen.substring(screen.indexOf("protected void renderLabels"), screen.indexOf("public void render("));
+
+        assertTrue(screen.contains("FORM_FIRST_ROW_Y"));
+        assertTrue(screen.contains("int nextRow = FORM_FIRST_ROW_Y;"));
+        assertTrue(screen.contains("nextRow += FORM_ROW_HEIGHT;"));
+        assertTrue(labels.contains("fieldLabelY(ammoField)"));
+        assertTrue(labels.contains("fieldLabelY(priceField)"));
+        assertTrue(labels.contains("fieldLabelY(groupField)"));
+        assertFalse(labels.contains("this.leftPos +"));
+        assertFalse(labels.contains("this.topPos +"));
+        assertFalse(labels.contains("ammoField.getX(), ammoField.getY()"));
+    }
+
+    @Test
+    void clientSoundRequestsStayInsideTheCurrentMapAndAreRateLimited() throws IOException {
+        String packet = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/packet/FPSMSoundPlayC2SPacket.java"));
+
+        assertTrue(packet.contains("SoundRequestPolicy.allow(player.getUUID(), location, now)"));
+        assertTrue(packet.contains("FPSMCore.getInstance().getMapByPlayer(player).ifPresent(map ->"));
+        assertFalse(packet.contains("ifPresentOrElse"));
+        assertFalse(packet.contains("server.getPlayerList().getPlayers()"));
+    }
+
+    @Test
+    void throwableRequestsRejectInvalidOrdinalsAndRequireItemApproval() throws IOException {
+        String packet = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/packet/entity/ThrowEntityC2SPacket.java"));
+        String contract = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/core/item/IThrowEntityAble.java"));
+
+        assertTrue(packet.contains("ThrowType.fromNetworkOrdinal(buf.readVarInt())"));
+        assertTrue(packet.contains("throwEntityAble.isThrowTypeAllowed(type)"));
+        assertFalse(packet.contains("ThrowType.values()[buf.readInt()]"));
+        assertTrue(contract.contains("default boolean isThrowTypeAllowed"));
+    }
+
+    @Test
+    void repositoryRunsTestsBuildAndCoverageInGithubActions() throws IOException {
+        String build = Files.readString(Path.of("build.gradle"));
+        Path workflowPath = Path.of(".github/workflows/build.yml");
+        assertTrue(Files.exists(workflowPath));
+        String workflow = Files.exists(workflowPath) ? Files.readString(workflowPath) : "";
+
+        assertTrue(build.contains("id 'jacoco'"));
+        assertTrue(build.contains("jacocoTestReport"));
+        assertTrue(workflow.contains("./gradlew test build jacocoTestReport"));
+        assertTrue(workflow.contains("build/libs/*.jar"));
+        assertTrue(workflow.contains("build/reports/jacoco/test"));
+    }
 }

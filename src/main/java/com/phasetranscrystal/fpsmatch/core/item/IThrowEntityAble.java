@@ -1,5 +1,6 @@
 package com.phasetranscrystal.fpsmatch.core.item;
 
+import com.phasetranscrystal.fpsmatch.common.item.BaseThrowAbleItem;
 import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -13,6 +14,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public interface IThrowEntityAble {
+
+    default boolean isThrowTypeAllowed(BaseThrowAbleItem.ThrowType type) {
+        return false;
+    }
 
     default void shoot(Player pPlayer, Level pLevel, InteractionHand pHand, float velocity, float inaccuracy){
             ItemStack itemstack = pPlayer.getItemInHand(pHand);

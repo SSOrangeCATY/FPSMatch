@@ -208,6 +208,7 @@ public final class MapRoomSyncManager {
             Object value = setting.get();
             sig = mix(sig, value == null ? 0 : value.hashCode());
         }
+        sig = mix(sig, MapRoomQueryService.computeInviteTargetSignature(map));
         return sig;
     }
 
