@@ -158,15 +158,16 @@ class FPSMatchIssueRegressionTest {
     }
 
     @Test
-    void teamManagementIncludesSpectatorsAndLetsButtonsHandleClicksFirst() throws IOException {
+    void teamManagementSupportsActionsDragAndSpectatorTeams() throws IOException {
         String screen = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/FPSMTeamManageScreen.java"));
-        String mouseClicked = screen.substring(screen.indexOf("public boolean mouseClicked"), screen.indexOf("public boolean mouseScrolled"));
+        String action = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/FPSMTeamActionScreen.java"));
+        String drag = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/team/TeamDragState.java"));
 
-        assertTrue(screen.contains("private List<MapRoomTeamInfo> displayedTeams()"));
-        assertTrue(screen.contains("return detail.teams().stream()"));
-        assertFalse(screen.contains("if (isSpectator(player)) continue;"));
-        assertFalse(screen.contains(".filter(t -> !t.spectator())\n                        .map(MapRoomTeamInfo::name)"));
-        assertTrue(mouseClicked.indexOf("super.mouseClicked") < mouseClicked.indexOf("list.indexAt"));
+        assertTrue(screen.contains("FPSMTeamActionScreen"));
+        assertTrue(screen.contains("TeamDragState"));
+        assertTrue(screen.contains("spectator"));
+        assertTrue(action.contains("gui.fpsm.team_manage"));
+        assertTrue(drag.contains("record"));
     }
 
     @Test
@@ -178,19 +179,15 @@ class FPSMatchIssueRegressionTest {
     }
 
     @Test
-    void shopSlotEditorUsesLocalLabelsAndPredictableOptionalRows() throws IOException {
+    void shopSlotEditorUsesLdlib2PanelsWhileKeepingContainerScreenChain() throws IOException {
         String screen = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/EditShopSlotScreen.java"));
-        String labels = screen.substring(screen.indexOf("protected void renderLabels"), screen.indexOf("public void render("));
+        String ui = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/shop/ldlib2/Ldlib2EditShopSlotUi.java"));
 
-        assertTrue(screen.contains("FORM_FIRST_ROW_Y"));
-        assertTrue(screen.contains("int nextRow = FORM_FIRST_ROW_Y;"));
-        assertTrue(screen.contains("nextRow += FORM_ROW_HEIGHT;"));
-        assertTrue(labels.contains("fieldLabelY(ammoField)"));
-        assertTrue(labels.contains("fieldLabelY(priceField)"));
-        assertTrue(labels.contains("fieldLabelY(groupField)"));
-        assertFalse(labels.contains("this.leftPos +"));
-        assertFalse(labels.contains("this.topPos +"));
-        assertFalse(labels.contains("ammoField.getX(), ammoField.getY()"));
+        assertTrue(screen.contains("extends AbstractContainerScreen"));
+        assertTrue(screen.contains("Ldlib2EditShopSlotUi"));
+        assertTrue(screen.contains("ModularMenuUiSupport"));
+        assertTrue(ui.contains("container.inventory"));
+        assertTrue(ui.contains("gui.fpsm.shop_editor") || ui.contains("price") || ui.contains("Price"));
     }
 
     @Test

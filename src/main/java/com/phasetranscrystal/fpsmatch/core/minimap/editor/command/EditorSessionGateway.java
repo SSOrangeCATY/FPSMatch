@@ -16,4 +16,12 @@ public interface EditorSessionGateway {
     RebaseResult rebase(UUID sessionId, UUID actorId, Sha256 expectedBaseHash, boolean authorized);
 
     void publish(UUID sessionId, UUID actorId, Sha256 draftRootHash, boolean authorized);
+
+    /**
+     * True when a server-side publish was dispatched and the client is waiting for PublishResult.
+     * Sync/local gateways return false.
+     */
+    default boolean isPublishInFlight() {
+        return false;
+    }
 }

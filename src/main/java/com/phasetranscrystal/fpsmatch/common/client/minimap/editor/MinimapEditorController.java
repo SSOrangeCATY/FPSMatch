@@ -257,7 +257,8 @@ public final class MinimapEditorController implements AutoCloseable {
             }
             gateway.publish(sessionId, actorId, lastKnownRootHash, serverAuthorized);
             dirty = false;
-            status = EditorStatus.READY;
+            // Server publish is async; keep PUBLISHING until completePublish().
+            status = gateway.isPublishInFlight() ? EditorStatus.PUBLISHING : EditorStatus.READY;
         } catch (RuntimeException exception) {
             // Preserve author intent: failed publish leaves work pending.
             dirty = true;
@@ -266,6 +267,22 @@ public final class MinimapEditorController implements AutoCloseable {
                 dirty = true;
             }
             throw exception;
+        }
+    }
+
+    /**
+     * Completes an async server publish after {@code PublishResult} arrives.
+     */
+    public void completePublish(boolean committed, String detail) {
+        if (closed) {
+            return;
+        }
+        if (committed) {
+            dirty = false;
+            status = EditorStatus.READY;
+        } else {
+            dirty = true;
+            status = EditorStatus.ERROR;
         }
     }
 

@@ -17,6 +17,7 @@ import com.phasetranscrystal.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
 import com.phasetranscrystal.fpsmatch.core.minimap.model.RuntimeFloor;
 import com.phasetranscrystal.fpsmatch.core.minimap.model.RuntimeManifest;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.MarkerWireMessage;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.EditorWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.PublishWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.RuntimeWireMessage;
@@ -53,6 +54,10 @@ public final class ClientMinimapS2CDispatcher implements MinimapS2CDispatcher {
     private final Map<UUID, PendingEntryRequest> pendingEntryRequests = new HashMap<>();
     private final Set<RecoveryKey> recoveryRequests = new HashSet<>();
     private ScopeListener scopeListener = ScopeListener.NONE;
+    private java.util.function.Consumer<EditorWireMessage.EditorSession> editorSessionListener = session -> {
+    };
+    private java.util.function.Consumer<PublishWireMessage.PublishResult> publishResultListener = result -> {
+    };
 
     public ClientMinimapS2CDispatcher(
             ClientMinimapRuntime runtime,
@@ -98,6 +103,28 @@ public final class ClientMinimapS2CDispatcher implements MinimapS2CDispatcher {
         this.scopeListener = Objects.requireNonNull(scopeListener, "scopeListener");
     }
 
+    public synchronized void setEditorSessionListener(
+            java.util.function.Consumer<EditorWireMessage.EditorSession> listener
+    ) {
+        this.editorSessionListener = Objects.requireNonNull(listener, "listener");
+    }
+
+    public synchronized void clearEditorSessionListener() {
+        this.editorSessionListener = session -> {
+        };
+    }
+
+    public synchronized void setPublishResultListener(
+            java.util.function.Consumer<PublishWireMessage.PublishResult> listener
+    ) {
+        this.publishResultListener = Objects.requireNonNull(listener, "listener");
+    }
+
+    public synchronized void clearPublishResultListener() {
+        this.publishResultListener = result -> {
+        };
+    }
+
     @Override
     public synchronized void dispatch(MinimapWireMessage message) {
         Objects.requireNonNull(message, "message");
@@ -112,6 +139,10 @@ public final class ClientMinimapS2CDispatcher implements MinimapS2CDispatcher {
                 dispatchMarkerReset(reset);
             } else if (message instanceof MarkerWireMessage.Delta delta) {
                 dispatchMarkerDelta(delta);
+            } else if (message instanceof EditorWireMessage.EditorSession session) {
+                editorSessionListener.accept(session);
+            } else if (message instanceof PublishWireMessage.PublishResult publishResult) {
+                publishResultListener.accept(publishResult);
             } else if (message instanceof PublishWireMessage.ErrorMessage error) {
                 dispatchError(error);
             }
@@ -128,6 +159,10 @@ public final class ClientMinimapS2CDispatcher implements MinimapS2CDispatcher {
         resetAccumulator.clear();
         markerStore.clear();
         syncManager.clearTransientState();
+        editorSessionListener = session -> {
+        };
+        publishResultListener = result -> {
+        };
     }
 
     public synchronized boolean hasActiveScope(WireIdentity.Scope scope) {

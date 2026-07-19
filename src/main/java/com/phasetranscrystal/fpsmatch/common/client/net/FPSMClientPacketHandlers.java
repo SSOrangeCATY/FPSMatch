@@ -241,6 +241,9 @@ public final class FPSMClientPacketHandlers {
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
         FPSMClient.getGlobalData().setMapRoomToast(packet);
+        if (minecraft.screen instanceof com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen screen) {
+            screen.applyToast();
+        }
         if (minecraft.player != null) {
             minecraft.player.displayClientMessage(packet.message(), packet.error());
         }

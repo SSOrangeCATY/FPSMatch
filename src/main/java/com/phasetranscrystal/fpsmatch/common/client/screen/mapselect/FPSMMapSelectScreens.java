@@ -3,6 +3,7 @@ package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
@@ -12,21 +13,25 @@ public final class FPSMMapSelectScreens {
 
     public static void openSelection(MapSelectionSnapshotS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapSelectionScreen screen) {
+        if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
             screen.applySnapshot(packet);
         } else {
-            minecraft.setScreen(new FPSMMapSelectionScreen(packet, minecraft.screen));
+            minecraft.setScreen(new Ldlib2MapSelectionScreen(packet, minecraft.screen));
         }
     }
 
     public static void openDetail(MapRoomDetailS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapDetailScreen screen) {
-            screen.applyDetail(packet.detail());
-        } else if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
+        if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
             screen.applyDetail(packet.detail());
         } else {
-            minecraft.setScreen(new FPSMMapDetailScreen(packet.detail(), minecraft.screen));
+            minecraft.setScreen(new Ldlib2MapSelectionScreen(
+                    new MapSelectionSnapshotS2CPacket(java.util.List.of(packet.detail().summary()),
+                            packet.detail().summary().currentPlayerOp(), true),
+                    minecraft.screen));
+            if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
+                screen.applyDetail(packet.detail());
+            }
         }
     }
 
@@ -36,9 +41,7 @@ public final class FPSMMapSelectScreens {
      */
     public static void applyDetailIfOpen(com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail detail) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapDetailScreen screen) {
-            screen.applyDetail(detail);
-        } else if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
+        if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
             screen.applyDetail(detail);
         }
     }
@@ -48,7 +51,7 @@ public final class FPSMMapSelectScreens {
      */
     public static void applySelectionIfOpen(MapSelectionSnapshotS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapSelectionScreen screen) {
+        if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
             screen.applySnapshot(packet);
         }
     }

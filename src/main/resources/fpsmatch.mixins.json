@@ -51,7 +51,9 @@
     "spec.glow.MixinEntityClientOutline",
     "spec.glow.MixinKeyMappingBlockSpectatorOutlines",
     "spec.teammate.CameraInvokerMixin",
-    "spec.teammate.KeyboardHandlerMixin"
+    "spec.teammate.KeyboardHandlerMixin",
+    "spec.teammate.MouseHandlerMixin",
+    "spec.teammate.CameraRestrictedSpectatorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

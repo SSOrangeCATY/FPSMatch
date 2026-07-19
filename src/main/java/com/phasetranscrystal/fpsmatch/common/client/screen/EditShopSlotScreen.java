@@ -1,261 +1,69 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen;
 
-import com.phasetranscrystal.fpsmatch.FPSMatch;
-import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
-import com.phasetranscrystal.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.phasetranscrystal.fpsmatch.common.client.screen.ldlib2.ModularMenuUiSupport;
+import com.phasetranscrystal.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditShopSlotUi;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.SimpleContainerData;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+/**
+ * Thin Forge menu adapter.
+ * LDLib2 owns custom panels and slot visuals; AbstractContainerScreen keeps the standard
+ * render/mouse chain for inventory, carried stack and menu sync.
+ */
+public final class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu> {
+    private ModularUI modularUI;
 
-public class EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu> {
-    private final ContainerData data;
-    private static final int SLOT_SIZE = 18;
-    private static final int PANEL_WIDTH = 250;
-    private static final int PANEL_HEIGHT = 200;
-    private static final int FORM_FIRST_ROW_Y = 38;
-    private static final int FORM_ROW_HEIGHT = 30;
-
-    private EditBox ammoField;
-    private boolean isAmmoFieldAdded = false;
-    private EditBox priceField;
-    private EditBox groupField;
-
-    public EditShopSlotScreen(EditShopSlotMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, Component.translatable("gui.fpsm.edit_shop_slot.title"));
-        this.imageWidth = PANEL_WIDTH;
-        this.imageHeight = PANEL_HEIGHT;
-        this.data = new SimpleContainerData(3);
-        int dataCount = Math.min(this.menu.getData().getCount(), 3);
-        for (int i = 0; i < dataCount; i++) {
-            data.set(i, this.menu.getData().get(i));
-        }
+    public EditShopSlotScreen(EditShopSlotMenu menu, Inventory inv, Component title) {
+        super(menu, inv, Component.translatable("gui.fpsm.edit_shop_slot.title"));
+        imageWidth = 360;
+        imageHeight = 250;
     }
 
     @Override
     protected void init() {
+        modularUI = Ldlib2EditShopSlotUi.create(menu, this::onClose);
+        modularUI.setScreenAndInit(this);
+        ModularMenuUiSupport.attach(modularUI, menu);
+        imageWidth = Math.max(1, Math.round(modularUI.getWidth()));
+        imageHeight = Math.max(1, Math.round(modularUI.getHeight()));
         super.init();
-
-        int centerX = this.leftPos + this.imageWidth / 2;
-        int nextRow = FORM_FIRST_ROW_Y;
-
-        // 物品槽位区域（居中上方）
-        // 槽位已经在 container 中注册，这里不需要额外处理
-
-        if (menu.isGun()) {
-            createAmmoField(this.topPos + nextRow);
-            nextRow += FORM_ROW_HEIGHT;
-        }
-
-        // 价格输入框
-        int fieldY = this.topPos + nextRow;
-        this.priceField = new EditBox(this.font, centerX - 60, fieldY, 50, 16,
-                Component.translatable("gui.fpsm.price"));
-        this.priceField.setValue(String.valueOf(menu.getPrice()));
-        this.priceField.setFilter(s -> s.matches("\\d*"));
-        this.priceField.setResponder(s -> this.data.set(1, s.isEmpty() ? 0 : Integer.parseInt(s)));
-        this.priceField.setTextColor(FPSMGuiTheme.TEXT_BODY);
-        this.priceField.setTextColorUneditable(FPSMGuiTheme.TEXT_DISABLED);
-        this.priceField.setBordered(true);
-        this.priceField.setEditable(true);
-        this.addRenderableWidget(this.priceField);
-
-        // 组ID输入框
-        this.groupField = new EditBox(this.font, centerX + 20, fieldY, 50, 16,
-                Component.translatable("gui.fpsm.group"));
-        this.groupField.setValue(String.valueOf(menu.getGroupId()));
-        this.groupField.setFilter(s -> s.matches("-?\\d*"));
-        this.groupField.setResponder(s -> data.set(2, s.isEmpty() ? -1 : Integer.parseInt(s)));
-        this.groupField.setTextColor(FPSMGuiTheme.TEXT_BODY);
-        this.groupField.setTextColorUneditable(FPSMGuiTheme.TEXT_DISABLED);
-        this.groupField.setBordered(true);
-        this.groupField.setEditable(true);
-        this.addRenderableWidget(this.groupField);
-
-        // 保存按钮
-        this.addRenderableWidget(Button.builder(
-                Component.translatable("gui.fpsm.shop_editor.save_button"), button -> onSaveButtonClick())
-                .bounds(centerX - 55, this.topPos + PANEL_HEIGHT - 28, 110, 20)
-                .build());
-    }
-
-    private void createAmmoField(int startY) {
-        int centerX = this.leftPos + this.imageWidth / 2;
-        this.ammoField = new EditBox(this.font, centerX - 60, startY + 38, 50, 16,
-                Component.translatable("gui.fpsm.dummy_ammo"));
-        this.ammoField.setValue(String.valueOf(menu.getAmmo()));
-        this.ammoField.setFilter(s -> s.matches("\\d*"));
-        this.ammoField.setResponder(s -> data.set(0, s.isEmpty() ? 0 : Integer.parseInt(s)));
-        this.ammoField.setTextColor(FPSMGuiTheme.TEXT_BODY);
-        this.ammoField.setTextColorUneditable(FPSMGuiTheme.TEXT_DISABLED);
-        this.ammoField.setBordered(true);
-        this.ammoField.setEditable(true);
-        this.addRenderableWidget(this.ammoField);
-        this.isAmmoFieldAdded = true;
+        addRenderableWidget(modularUI.getWidget());
+        setFocused(modularUI.getWidget());
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256) {
-            openShopEditor();
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    private void onSaveButtonClick() {
-        FPSMatch.INSTANCE.sendToServer(new SaveSlotDataC2SPacket(this.data));
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player != null) {
-            openShopEditor();
-        }
-    }
-
-    private void openShopEditor() {
-        FPSMatch.INSTANCE.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
+    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
     }
 
     @Override
-    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        this.renderBackground(guiGraphics);
-
-        int panelX = this.leftPos;
-        int panelY = this.topPos;
-
-        // 面板背景
-        guiGraphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, FPSMGuiTheme.BG_BASE);
-        // 外边框
-        drawBorder(guiGraphics, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, FPSMGuiTheme.BORDER_OUTER);
-        // 内边框
-        drawBorder(guiGraphics, panelX + 2, panelY + 2, PANEL_WIDTH - 4, PANEL_HEIGHT - 4, FPSMGuiTheme.BORDER_INNER);
-
-        // 标题区域分隔线
-        guiGraphics.fill(panelX + 4, panelY + 32, panelX + PANEL_WIDTH - 4, panelY + 33, FPSMGuiTheme.BORDER_INNER);
-
-        // 槽位背景
-        renderSlotBackground(guiGraphics);
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
     }
 
-    private void drawBorder(GuiGraphics g, int x, int y, int w, int h, int color) {
-        g.fill(x, y, x + w, y + 1, color);
-        g.fill(x, y + h - 1, x + w, y + h, color);
-        g.fill(x, y + 1, x + 1, y + h - 1, color);
-        g.fill(x + w - 1, y + 1, x + w, y + h - 1, color);
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (modularUI != null) {
+            ModularMenuUiSupport.syncSlotPositions(menu);
+        }
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderSlotBackground(GuiGraphics guiGraphics) {
-        for (Slot slot : menu.slots) {
-            int sx = this.leftPos + slot.x - 1;
-            int sy = this.topPos + slot.y - 1;
-            guiGraphics.fill(sx, sy, sx + SLOT_SIZE, sy + SLOT_SIZE, FPSMGuiTheme.BG_PANEL);
-            drawBorder(guiGraphics, sx, sy, SLOT_SIZE, SLOT_SIZE, FPSMGuiTheme.BORDER_INNER);
+    @Override
+    public void containerTick() {
+        super.containerTick();
+        if (modularUI != null) {
+            modularUI.tick();
         }
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int pMouseX, int pMouseY) {
-        // 标题
-        guiGraphics.drawString(font, this.title, 8, 10, FPSMGuiTheme.TEXT_TITLE, false);
-
-        // 物品标签
-        guiGraphics.drawString(font, Component.translatable("gui.fpsm.shop_editor.item_label"),
-                8, 22, FPSMGuiTheme.TEXT_MUTED, false);
-
-        // 输入框标签
-        if (menu.isGun() && ammoField != null) {
-            guiGraphics.drawString(font, Component.translatable("gui.fpsm.dummy_ammo"),
-                    fieldLabelX(ammoField), fieldLabelY(ammoField), FPSMGuiTheme.TEXT_SUB, false);
+    public void removed() {
+        if (modularUI != null) {
+            modularUI.onRemoved();
+            modularUI = null;
         }
-        if (priceField != null) {
-            guiGraphics.drawString(font, Component.translatable("gui.fpsm.price"),
-                    fieldLabelX(priceField), fieldLabelY(priceField), FPSMGuiTheme.TEXT_SUB, false);
-        }
-        if (groupField != null) {
-            guiGraphics.drawString(font, Component.translatable("gui.fpsm.group"),
-                    fieldLabelX(groupField), fieldLabelY(groupField), FPSMGuiTheme.TEXT_SUB, false);
-        }
-    }
-
-    private int fieldLabelX(EditBox field) {
-        return field.getX() - this.leftPos;
-    }
-
-    private int fieldLabelY(EditBox field) {
-        return field.getY() - this.topPos - 11;
-    }
-
-    @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 动态管理弹药输入框
-        if (!menu.isGun()) {
-            if (this.isAmmoFieldAdded && this.ammoField != null) {
-                this.removeWidget(this.ammoField);
-                this.isAmmoFieldAdded = false;
-            }
-        } else {
-            if (this.ammoField == null) {
-                createAmmoField(this.topPos + FORM_FIRST_ROW_Y);
-            } else if (!this.isAmmoFieldAdded) {
-                this.addRenderableWidget(this.ammoField);
-                this.isAmmoFieldAdded = true;
-            }
-        }
-
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        renderHoveredSlotHighlight(guiGraphics, mouseX, mouseY);
-        renderCustomTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    private void renderHoveredSlotHighlight(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        for (Slot slot : menu.slots) {
-            int sx = this.leftPos + slot.x - 1;
-            int sy = this.topPos + slot.y - 1;
-            if (mouseX >= sx && mouseX < sx + SLOT_SIZE && mouseY >= sy && mouseY < sy + SLOT_SIZE) {
-                guiGraphics.fill(sx + 1, sy + 1, sx + SLOT_SIZE - 1, sy + SLOT_SIZE - 1, 0x40FFFFFF);
-                drawBorder(guiGraphics, sx, sy, SLOT_SIZE, SLOT_SIZE, FPSMGuiTheme.ACCENT_PRIMARY);
-                break;
-            }
-        }
-    }
-
-    @Override
-    protected void renderTooltip(@NotNull GuiGraphics pGuiGraphics, int pX, int pY) {
-        // 使用自定义 tooltip
-    }
-
-    private void renderCustomTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        if (!this.menu.getCarried().isEmpty()) return;
-        if (this.hoveredSlot == null || !this.hoveredSlot.hasItem()) return;
-
-        ItemStack itemstack = this.hoveredSlot.getItem();
-        List<Component> components = this.getTooltipFromContainerItem(itemstack);
-
-        // 槽位0显示监听器信息
-        if (hoveredSlot.index == 0) {
-            List<String> lms = menu.getListeners();
-            if (!lms.isEmpty()) {
-                components.add(Component.literal(""));
-                components.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-                components.add(Component.translatable("gui.fpsm.listener").append(": ").withStyle(ChatFormatting.DARK_AQUA));
-                for (String lm : lms) {
-                    components.add(Component.literal("  " + lm).withStyle(ChatFormatting.GRAY));
-                }
-                components.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
-            }
-        }
-        guiGraphics.renderComponentTooltip(this.font, components, mouseX, mouseY);
+        super.removed();
     }
 }

@@ -2,7 +2,10 @@ package com.phasetranscrystal.fpsmatch.mixin.spec.teammate;
 
 import com.phasetranscrystal.fpsmatch.common.client.spec.SpecKeyHandler;
 import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateState;
-import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateMode;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectatorSwitchDirection;
+import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectatorSwitchC2SPacket;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -20,14 +23,19 @@ public class KeyboardHandlerMixin {
     private void onKeyPress(long window, int keyCode, int scanCode, int action, int modifiers, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.gameMode == null) return;
-        if (!SpectateState.isAttach()) return;
+        if (!SpectateState.isRestricted()) return;
         if (mc.gameMode.getPlayerMode() != GameType.SPECTATOR) return;
         if (mc.screen instanceof ChatScreen) return;
         if (action != GLFW.GLFW_PRESS && action != GLFW.GLFW_REPEAT) return;
         boolean allowEscape = keyCode == GLFW.GLFW_KEY_ESCAPE;
         boolean allowTeamSwitch = SpecKeyHandler.switchKeyMatches(keyCode, scanCode);
+        if (keyCode == GLFW.GLFW_KEY_SPACE && action == GLFW.GLFW_PRESS && (SpectateState.get() == SpectateMode.TEAMMATE || SpectateState.get() == SpectateMode.ATTACH)) {
+            FPSMatch.sendToServer(new SpectatorSwitchC2SPacket(SpectatorSwitchDirection.NEXT));
+            ci.cancel();
+            return;
+        }
 
-        if (!(allowEscape || allowTeamSwitch) && FPSMConfig.Server.lockSpecKeyHandle.get()) {
+        if (!(allowEscape || allowTeamSwitch)) {
             ci.cancel();
         }
     }

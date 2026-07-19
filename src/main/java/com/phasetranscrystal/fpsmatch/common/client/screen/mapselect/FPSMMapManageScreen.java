@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.ui.ldlib2.editor.MinimapEditorScreens;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -69,8 +70,8 @@ public class FPSMMapManageScreen extends FPSMMapScreenBase implements FPSMMapDet
         cleanupButton.active = op;
         switchButton.active = op;
 
-        // 第二行：设置 / 编辑商店
-        int secondTotal = 2;
+        // 第二行：设置 / 编辑商店 / 编辑小地图
+        int secondTotal = 3;
         int[] secondXs = new int[secondTotal];
         for (int i = 0; i < secondTotal; i++) {
             secondXs[i] = buttonX(centerX, bw, gap, i, secondTotal);
@@ -79,8 +80,11 @@ public class FPSMMapManageScreen extends FPSMMapScreenBase implements FPSMMapDet
                 button -> FPSMMapSelectScreens.openChild(new FPSMMapSettingsScreen(detail, this))));
         Button shopButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_detail.edit_shop"), secondXs[1], SECOND_ROW_Y,
                 button -> FPSMMapSelectScreens.openChild(new FPSMMapShopScreen(detail, this))));
+        Button minimapButton = addRenderableWidget(createMediumButton(Component.translatable("gui.fpsm.map_detail.edit_minimap"), secondXs[2], SECOND_ROW_Y,
+                button -> MinimapEditorScreens.open(detail, this)));
         settingsButton.active = op;
         shopButton.active = op && !detail.editableShops().isEmpty();
+        minimapButton.active = op;
 
         addRenderableWidget(createBackButton(button -> onClose()));
     }

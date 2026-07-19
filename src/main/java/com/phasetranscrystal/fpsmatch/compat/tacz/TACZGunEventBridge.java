@@ -38,6 +38,7 @@ public class TACZGunEventBridge {
     @SubscribeEvent
     public static void onGunReload(GunReloadEvent event) {
         if (event.getLogicalSide() != LogicalSide.SERVER) return;
+        if (event.isCanceled()) return;
         LivingEntity entity = event.getEntity();
         MinecraftForge.EVENT_BUS.post(new FPSMGunReloadEvent(entity, event.getGunItemStack()));
     }

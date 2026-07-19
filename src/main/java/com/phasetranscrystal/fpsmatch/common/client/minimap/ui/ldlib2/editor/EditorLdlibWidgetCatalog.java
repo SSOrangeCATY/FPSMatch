@@ -6,6 +6,13 @@ import java.util.Objects;
 import java.util.Set;
 
 public final class EditorLdlibWidgetCatalog {
+    public static final String CANVAS = "fpsmatch.minimap.editor.canvas";
+    public static final String TOOLBAR = "fpsmatch.minimap.editor.toolbar";
+    public static final String LAYER_PANEL = "fpsmatch.minimap.editor.layer_panel";
+    public static final String PROPERTIES = "fpsmatch.minimap.editor.properties";
+    public static final String FLOOR_STRIP = "fpsmatch.minimap.editor.floor_strip";
+    public static final String STATUS_BAR = "fpsmatch.minimap.editor.status_bar";
+
     private final Set<String> ids;
 
     private EditorLdlibWidgetCatalog(Set<String> ids) {
@@ -14,12 +21,12 @@ public final class EditorLdlibWidgetCatalog {
 
     public static EditorLdlibWidgetCatalog defaultCatalog() {
         return new EditorLdlibWidgetCatalog(new LinkedHashSet<>(List.of(
-                "fpsmatch.minimap.editor.canvas",
-                "fpsmatch.minimap.editor.toolbar",
-                "fpsmatch.minimap.editor.layer_panel",
-                "fpsmatch.minimap.editor.properties",
-                "fpsmatch.minimap.editor.floor_strip",
-                "fpsmatch.minimap.editor.status_bar"
+                CANVAS,
+                TOOLBAR,
+                LAYER_PANEL,
+                PROPERTIES,
+                FLOOR_STRIP,
+                STATUS_BAR
         )));
     }
 

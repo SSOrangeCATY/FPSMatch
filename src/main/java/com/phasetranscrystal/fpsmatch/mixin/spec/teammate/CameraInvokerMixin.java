@@ -9,4 +9,7 @@ public interface CameraInvokerMixin {
 
     @Invoker("setPosition")
     void invokeSetPosition(double x, double y, double z);
+
+    @Invoker("setRotation")
+    void invokeSetRotation(float yaw, float pitch);
 }

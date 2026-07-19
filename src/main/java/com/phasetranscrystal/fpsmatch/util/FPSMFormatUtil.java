@@ -37,7 +37,7 @@ public class FPSMFormatUtil {
     }
 
     public static String i18n(ItemStack st) {
-        String unknown = I18n.exists("fpsm.unknown_weapon") ? I18n.get("fpsm.unknown_weapon") : "未知武器";
+        String unknown = I18n.get("fpsm.unknown_weapon");
         if (st == null || st.isEmpty()) return unknown;
         IGunProvider provider = GunCompatManager.findProvider(st);
         if (provider.isGun(st)) {

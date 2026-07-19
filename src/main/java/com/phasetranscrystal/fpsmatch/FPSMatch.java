@@ -22,6 +22,8 @@ import com.phasetranscrystal.fpsmatch.common.entity.EntityRegister;
 import com.phasetranscrystal.fpsmatch.common.gamerule.FPSMatchRule;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectatorSwitchC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.*;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.*;
@@ -196,6 +198,8 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(FPSMAddTeamS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamCapabilitiesS2CPacket.class);
         PACKET_REGISTER.registerPacket(SpectateModeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(SpectatorTargetS2CPacket.class);
+        PACKET_REGISTER.registerPacket(SpectatorSwitchC2SPacket.class);
         PACKET_REGISTER.registerPacket(FPSMInventorySelectedS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamChatMessageC2SPacket.class);
         PACKET_REGISTER.registerPacket(AddAreaDataS2CPacket.class);

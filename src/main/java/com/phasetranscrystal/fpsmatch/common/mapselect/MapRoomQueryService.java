@@ -121,14 +121,14 @@ public final class MapRoomQueryService {
 
     public static List<MapRoomPlayerInfo> availableInviteTargets(ServerPlayer viewer, BaseMap map) {
         List<MapRoomPlayerInfo> targets = new ArrayList<>();
-        if (!map.checkGameHasPlayer(viewer) && !map.checkSpecHasPlayer(viewer)) {
+        if (viewer != null && !map.checkGameHasPlayer(viewer) && !map.checkSpecHasPlayer(viewer)) {
             return targets;
         }
         if (!canInviteInto(map)) {
             return targets;
         }
         FPSMCore.getInstance().getServer().getPlayerList().getPlayers().stream()
-                .filter(player -> !player.getUUID().equals(viewer.getUUID()))
+                .filter(player -> viewer == null || !player.getUUID().equals(viewer.getUUID()))
                 .filter(MapRoomQueryService::isAvailableInviteTarget)
                 .map(player -> new MapRoomPlayerInfo(player.getUUID(), player.getGameProfile().getName(), "", false, true, false))
                 .sorted(Comparator.comparing(MapRoomPlayerInfo::name))

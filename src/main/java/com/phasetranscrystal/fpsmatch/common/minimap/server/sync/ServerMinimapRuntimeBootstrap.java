@@ -33,7 +33,7 @@ public final class ServerMinimapRuntimeBootstrap {
         installed = true;
         handlerInstaller.accept(new MinimapC2SRequestHandler(
                 (actorId, message) -> hasActiveRuntime(),
-                (actorId, message) -> false,
+                this::allowEditor,
                 this::dispatch
         ));
         events.bind(this::start, this::logout, this::stop);
@@ -52,6 +52,10 @@ public final class ServerMinimapRuntimeBootstrap {
         if (active != null) {
             active.dispatch(actorId, message);
         }
+    }
+
+    private synchronized boolean allowEditor(UUID actorId, MinimapWireMessage message) {
+        return active != null && active.allowEditor(actorId, message);
     }
 
     private synchronized boolean hasActiveRuntime() {
@@ -100,6 +104,13 @@ public final class ServerMinimapRuntimeBootstrap {
         void onPlayerLogout(UUID actorId);
 
         default void tick(long nowTick) {
+        }
+
+        /**
+         * Fail closed by default. Runtime factories that own editor sessions override this.
+         */
+        default boolean allowEditor(UUID actorId, MinimapWireMessage message) {
+            return false;
         }
 
         @Override

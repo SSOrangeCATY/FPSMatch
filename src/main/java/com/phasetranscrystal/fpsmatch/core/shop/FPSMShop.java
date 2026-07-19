@@ -12,6 +12,7 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
 import com.phasetranscrystal.fpsmatch.util.PreviewColorUtil;
@@ -205,11 +206,17 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * 遍历所有玩家的商店数据，并通过网络包发送金钱信息。
      */
     public void syncShopMoneyData() {
-        for (UUID uuid : playersData.keySet()) {
-            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player->{
+        for (ServerPlayer recipient : FPSMCore.getInstance().getServer().getPlayerList().getPlayers()) {
+            Optional<ServerTeam> recipientTeam = FPSMCore.getInstance().getMapByPlayer(recipient)
+                    .flatMap(map -> map.getMapTeams().getTeamByPlayer(recipient));
+            if (recipientTeam.isEmpty()) continue;
+            for (UUID uuid : playersData.keySet()) {
+                if (FPSMCore.getInstance().getMapByPlayer(uuid)
+                        .flatMap(map -> map.getMapTeams().getTeamByPlayer(uuid))
+                        .filter(recipientTeam.get()::equals).isEmpty()) continue;
                 ShopData<T> shopData = this.getPlayerShopData(uuid);
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
-            });
+                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> recipient), new ShopMoneyS2CPacket(uuid, shopData.getMoney()));
+            }
         }
     }
 

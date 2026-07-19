@@ -9,6 +9,8 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomActionC2SPa
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomTeamInfo;
+import com.phasetranscrystal.fpsmatch.common.client.screen.team.TeamActionModel;
+import com.phasetranscrystal.fpsmatch.common.client.screen.team.TeamDragState;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -26,13 +28,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 队伍管理界面。
- * <p>
- * 顶部显示队伍按钮，玩家可点击切换自己的队伍（队伍已满则禁用）。
- * 中部按队伍分组展示玩家静态头像、名称与准备状态。
- * 管理员可选中玩家后在底部面板将其移动至其他队伍或踢出。
- * 底部提供准备/取消准备、地图管理（管理员）与返回详情页入口。
- */
+ * 闃熶紞绠＄悊鐣岄潰銆? * <p>
+ * 椤堕儴鏄剧ず闃熶紞鎸夐挳锛岀帺瀹跺彲鐐瑰嚮鍒囨崲鑷繁鐨勯槦浼嶏紙闃熶紞宸叉弧鍒欑鐢級銆? * 涓儴鎸夐槦浼嶅垎缁勫睍绀虹帺瀹堕潤鎬佸ご鍍忋€佸悕绉颁笌鍑嗗鐘舵€併€? * 绠＄悊鍛樺彲閫変腑鐜╁鍚庡湪搴曢儴闈㈡澘灏嗗叾绉诲姩鑷冲叾浠栭槦浼嶆垨韪㈠嚭銆? * 搴曢儴鎻愪緵鍑嗗/鍙栨秷鍑嗗銆佸湴鍥剧鐞嗭紙绠＄悊鍛橈級涓庤繑鍥炶鎯呴〉鍏ュ彛銆? */
 public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDetailChildScreen {
     private static final int TEAM_BUTTON_Y = 74;
     private static final int LIST_TOP = 104;
@@ -55,6 +52,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     private ScrollableList list;
     private UUID selectedPlayer;
     private String selectedPlayerTeam;
+    private final TeamDragState dragState = new TeamDragState();
 
     public FPSMTeamManageScreen(MapRoomDetail detail, Screen parent) {
         super(Component.translatable("gui.fpsm.team_manage.title"));
@@ -64,10 +62,15 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     @Override
     public void applyDetail(MapRoomDetail detail) {
+        this.dragState.cancel();
         this.detail = detail;
         this.syncedReadyPlayers.clear();
         this.syncedReadyPlayers.addAll(detail.readyPlayers());
         this.syncedCountdownSeconds = detail.summary().readyCountdownSeconds();
+        if (selectedPlayer != null && detail.players().stream().noneMatch(player -> player.uuid().equals(selectedPlayer))) {
+            selectedPlayer = null;
+            selectedPlayerTeam = null;
+        }
         this.rebuildWidgets();
     }
 
@@ -100,7 +103,10 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     }
 
     private void buildTeamButtons(int centerX) {
-        List<MapRoomTeamInfo> teams = displayedTeams();
+        List<MapRoomTeamInfo> teams = detail.teams().stream()
+                .filter(t -> !t.spectator())
+                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
+                .toList();
         if (teams.isEmpty()) return;
 
         int total = teams.size();
@@ -137,9 +143,13 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
         int bottom = height - LIST_BOTTOM_OFFSET - (hasAdminPanel() ? ADMIN_PANEL_HEIGHT : 0);
 
         List<MapRoomPlayerInfo> allPlayers = detail.players();
-        List<MapRoomTeamInfo> normalTeams = displayedTeams();
+        List<MapRoomTeamInfo> normalTeams = detail.teams().stream()
+                .filter(t -> !t.spectator())
+                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
+                .toList();
 
         for (MapRoomPlayerInfo player : allPlayers) {
+            if (isSpectator(player)) continue;
             Button kick = createSmallButton(Component.translatable("gui.fpsm.map_select.kick"), left + PANEL_WIDTH - 78, 0,
                     b -> sendAction(MapRoomActionC2SPacket.Action.KICK, player.uuid()));
             kick.active = detail.summary().currentPlayerOp();
@@ -190,6 +200,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
             MapRoomPlayerInfo player = findPlayer(selectedPlayer);
             if (player != null) {
                 List<String> otherTeams = detail.teams().stream()
+                        .filter(t -> !t.spectator())
                         .map(MapRoomTeamInfo::name)
                         .filter(n -> !n.equals(selectedPlayerTeam))
                         .sorted()
@@ -244,11 +255,21 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        // 在队伍按钮顶部绘制队伍色条，标识当前/可用/禁用状态
         for (Button btn : teamButtons) {
-            int color = teamColor(btn.getMessage().getString());
-            int barColor = btn.active ? color : FPSMGuiTheme.TEXT_DISABLED;
+            String teamName = detail.teams().stream()
+                    .filter(team -> team.name().equalsIgnoreCase(btn.getMessage().getString()))
+                    .map(MapRoomTeamInfo::name)
+                    .findFirst()
+                    .orElse(btn.getMessage().getString().toLowerCase(Locale.ROOT));
+            int color = teamColor(teamName);
+            boolean dragHover = dragState.active() && dragState.moved()
+                    && teamName.equalsIgnoreCase(String.valueOf(dragState.hoverTeam()));
+            int barColor = dragHover ? FPSMGuiTheme.ACCENT_PRIMARY
+                    : (btn.active ? color : FPSMGuiTheme.TEXT_DISABLED);
             graphics.fill(btn.getX(), btn.getY(), btn.getX() + btn.getWidth(), btn.getY() + 2, barColor);
+            if (dragHover) {
+                graphics.fill(btn.getX(), btn.getY() + 2, btn.getX() + btn.getWidth(), btn.getY() + btn.getHeight(), 0x3322A0F0);
+            }
         }
     }
 
@@ -283,7 +304,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
         graphics.fill(left, rowTop, left + PANEL_WIDTH, rowTop + ROW_HEIGHT, FPSMGuiTheme.BG_PANEL);
         graphics.fill(left, rowTop, left + 3, rowTop + ROW_HEIGHT, teamColor(team.name()));
         Component name = Component.literal(team.name().toUpperCase()).withStyle(net.minecraft.ChatFormatting.BOLD);
-        Component count = Component.literal(team.currentPlayers() + "/" + (team.playerLimit() < 0 ? "∞" : team.playerLimit()));
+        Component count = Component.literal(team.currentPlayers() + "/" + (team.playerLimit() < 0 ? "?" : team.playerLimit()));
         drawClippedString(graphics, name, left + 8, rowTop + 8, FPSMGuiTheme.TEXT_TITLE, PANEL_WIDTH - 84);
         graphics.drawString(font, count, left + PANEL_WIDTH - font.width(count) - 10, rowTop + 8, team.isFull() ? FPSMGuiTheme.TEXT_WARNING : FPSMGuiTheme.TEXT_SUB, false);
     }
@@ -335,20 +356,82 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 1 && list != null) {
+            MapRoomPlayerInfo player = playerAtIndex(list.indexAt(mouseX, mouseY));
+            if (player != null && canActOnPlayer(player)) {
+                minecraft.setScreen(new FPSMTeamActionScreen(detail, this, player));
+                return true;
+            }
+        }
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
-        if (list != null && detail.summary().currentPlayerOp()) {
+        if (list != null) {
             int index = list.indexAt(mouseX, mouseY);
             if (index >= 0) {
                 MapRoomPlayerInfo player = playerAtIndex(index);
                 if (player != null && !isHeaderIndex(index)) {
-                    selectPlayer(player);
+                    if (canActOnPlayer(player)) {
+                        selectPlayer(player);
+                        dragState.begin(player.uuid(), player.teamName(), mouseX, mouseY);
+                    }
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (dragState.active() && button == 0) {
+            dragState.update(mouseX, mouseY, teamAt(mouseX, mouseY));
+            refreshDragTargets();
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0 && dragState.active()) {
+            dragState.update(mouseX, mouseY, teamAt(mouseX, mouseY));
+            dragState.release().ifPresent(drop -> {
+                if (TeamActionModel.canDropTo(detail, drop.player(), drop.targetTeam())) {
+                    sendAction(MapRoomActionC2SPacket.Action.SWITCH_TEAM, drop.player(), drop.targetTeam());
+                }
+            });
+            refreshDragTargets();
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private void refreshDragTargets() {
+        UUID dragPlayer = dragState.active() ? dragState.player() : null;
+        List<String> available = dragPlayer == null
+                ? List.of()
+                : TeamActionModel.availableTargetTeams(detail, dragPlayer);
+        String selfTeam = selfTeamName();
+        for (Button button : teamButtons) {
+            String teamName = detail.teams().stream()
+                    .filter(team -> team.name().equalsIgnoreCase(button.getMessage().getString()))
+                    .map(MapRoomTeamInfo::name)
+                    .findFirst()
+                    .orElse(button.getMessage().getString().toLowerCase(Locale.ROOT));
+            if (dragState.active() && dragState.moved()) {
+                boolean droppable = available.contains(teamName);
+                button.active = droppable;
+            } else {
+                boolean current = teamName.equals(selfTeam);
+                boolean full = detail.teams().stream()
+                        .filter(team -> team.name().equals(teamName))
+                        .findFirst()
+                        .map(MapRoomTeamInfo::isFull)
+                        .orElse(true);
+                button.active = !current && !full && canSwitchTeam();
+            }
+        }
     }
 
     @Override
@@ -416,6 +499,25 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(action, detail.summary().gameType(), detail.summary().mapName(), target, data));
     }
 
+    private boolean canActOnPlayer(MapRoomPlayerInfo player) {
+        if (minecraft.player == null || player.spectator()) return false;
+        return detail.summary().currentPlayerOp() || player.uuid().equals(minecraft.player.getUUID());
+    }
+
+    private String teamAt(double mouseX, double mouseY) {
+        for (Button button : teamButtons) {
+            if (button.visible && mouseX >= button.getX() && mouseX < button.getX() + button.getWidth()
+                    && mouseY >= button.getY() && mouseY < button.getY() + button.getHeight()) {
+                String name = button.getMessage().getString();
+                return detail.teams().stream()
+                        .filter(team -> team.name().equalsIgnoreCase(name))
+                        .map(MapRoomTeamInfo::name)
+                        .findFirst().orElse(null);
+            }
+        }
+        return null;
+    }
+
     private void updateReadyButton() {
         if (readyButton == null || minecraft.player == null) return;
         boolean joined = detail.summary().currentPlayerJoined() || detail.summary().currentPlayerSpectating();
@@ -433,8 +535,12 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
 
     private boolean isSpectator(MapRoomPlayerInfo player) {
         return detail.teams().stream()
-                .filter(MapRoomTeamInfo::spectator)
+                .filter(t -> t.spectator())
                 .anyMatch(t -> t.name().equals(player.teamName()));
+    }
+
+    private boolean isSpectatorTeam(String teamName) {
+        return detail.teams().stream().filter(MapRoomTeamInfo::spectator).anyMatch(t -> t.name().equals(teamName));
     }
 
     private String selfTeamName() {
@@ -466,6 +572,7 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     private int visiblePlayerIndex(MapRoomPlayerInfo player) {
         int idx = 0;
         for (MapRoomPlayerInfo p : detail.players()) {
+            if (isSpectator(p)) continue;
             if (p.uuid().equals(player.uuid())) return idx;
             idx++;
         }
@@ -473,7 +580,10 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     }
 
     private boolean isHeaderIndex(int listIndex) {
-        List<MapRoomTeamInfo> normalTeams = displayedTeams();
+        List<MapRoomTeamInfo> normalTeams = detail.teams().stream()
+                .filter(t -> !t.spectator())
+                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
+                .toList();
         int pos = 0;
         for (MapRoomTeamInfo team : normalTeams) {
             if (pos == listIndex) return true;
@@ -484,7 +594,10 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
     }
 
     private MapRoomPlayerInfo playerAtIndex(int listIndex) {
-        List<MapRoomTeamInfo> normalTeams = displayedTeams();
+        List<MapRoomTeamInfo> normalTeams = detail.teams().stream()
+                .filter(t -> !t.spectator())
+                .sorted(Comparator.comparing(MapRoomTeamInfo::name))
+                .toList();
         int pos = 0;
         for (MapRoomTeamInfo team : normalTeams) {
             if (pos == listIndex) return null;
@@ -511,11 +624,5 @@ public class FPSMTeamManageScreen extends FPSMMapScreenBase implements FPSMMapDe
                 .filter(p -> !isSpectator(p))
                 .filter(p -> isReady(p.uuid()))
                 .count();
-    }
-
-    private List<MapRoomTeamInfo> displayedTeams() {
-        return detail.teams().stream()
-                .sorted(Comparator.comparing(MapRoomTeamInfo::spectator).thenComparing(MapRoomTeamInfo::name))
-                .toList();
     }
 }

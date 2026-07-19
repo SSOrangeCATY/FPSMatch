@@ -8,10 +8,20 @@ import com.phasetranscrystal.fpsmatch.core.minimap.marker.MarkerSnapshot;
 import com.phasetranscrystal.fpsmatch.core.minimap.marker.MarkerStreamManager;
 import com.phasetranscrystal.fpsmatch.core.minimap.marker.MarkerStreamUpdate;
 import com.phasetranscrystal.fpsmatch.core.minimap.model.ContainerPath;
+import com.phasetranscrystal.fpsmatch.core.minimap.model.Sha256;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.EditorSession;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.EditorSessionManager;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.ServerEditorPublishService;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.MinimapAction;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.MinimapPermissionPolicy;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.SessionAccessException;
+import com.phasetranscrystal.fpsmatch.core.minimap.format.Sha256Digest;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.EditorWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.MarkerWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.PublishWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.RuntimeWireMessage;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireEditor;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireIdentity;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireMarker;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireStatus;
@@ -39,6 +49,9 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
     private final IntSupplier markerHz;
     private final Map<SubscriptionKey, Subscription> subscriptions = new HashMap<>();
     private final Map<UUID, MarkerStreamManager> markerStreams = new HashMap<>();
+    private final EditorSessionManager editorSessions;
+    private final MinimapPermissionPolicy editorPermissions;
+    private final ServerEditorPublishService editorPublish;
     private Map<UUID, Subscription> markerSubscriptionSnapshot;
 
     public ServerMinimapRuntimeRouter(
@@ -68,6 +81,32 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             Supplier<UUID> transferIds,
             IntSupplier markerHz
     ) {
+        this(resolver, markerResolver, sender, transferIds, markerHz, null, null, null);
+    }
+
+    public ServerMinimapRuntimeRouter(
+            RuntimeResolver resolver,
+            MarkerResolver markerResolver,
+            Sender sender,
+            Supplier<UUID> transferIds,
+            IntSupplier markerHz,
+            EditorSessionManager editorSessions,
+            MinimapPermissionPolicy editorPermissions
+    ) {
+        this(resolver, markerResolver, sender, transferIds, markerHz,
+                editorSessions, editorPermissions, null);
+    }
+
+    public ServerMinimapRuntimeRouter(
+            RuntimeResolver resolver,
+            MarkerResolver markerResolver,
+            Sender sender,
+            Supplier<UUID> transferIds,
+            IntSupplier markerHz,
+            EditorSessionManager editorSessions,
+            MinimapPermissionPolicy editorPermissions,
+            ServerEditorPublishService editorPublish
+    ) {
         this.resolver = Objects.requireNonNull(resolver, "resolver");
         this.markerResolver = Objects.requireNonNull(
                 markerResolver, "markerResolver"
@@ -75,6 +114,9 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
         this.sender = Objects.requireNonNull(sender, "sender");
         this.transferIds = Objects.requireNonNull(transferIds, "transferIds");
         this.markerHz = Objects.requireNonNull(markerHz, "markerHz");
+        this.editorSessions = editorSessions;
+        this.editorPermissions = editorPermissions;
+        this.editorPublish = editorPublish;
     }
 
     @Override
@@ -89,6 +131,218 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             requestEntries(actorId, request);
         } else if (message instanceof RuntimeWireMessage.RequestMarkerReset request) {
             requestMarkerReset(actorId, request);
+        } else if (message instanceof EditorWireMessage.EditorOpen open) {
+            openEditor(actorId, open);
+        } else if (message instanceof EditorWireMessage.EditorClose close) {
+            closeEditor(actorId, close);
+        } else if (message instanceof EditorWireMessage.SaveDraft save) {
+            saveDraft(actorId, save);
+        } else if (message instanceof PublishWireMessage.ReservePublish reserve) {
+            reservePublish(actorId, reserve);
+        }
+    }
+
+    private void reservePublish(UUID actorId, PublishWireMessage.ReservePublish reserve) {
+        if (editorPublish == null) {
+            return;
+        }
+        editorPublish.publishEmpty(actorId, reserve);
+    }
+
+    public boolean allowEditor(UUID actorId, MinimapWireMessage message) {
+        Objects.requireNonNull(actorId, "actorId");
+        Objects.requireNonNull(message, "message");
+        if (editorSessions == null || editorPermissions == null) {
+            return false;
+        }
+        try {
+            if (message instanceof EditorWireMessage.EditorOpen open) {
+                return editorPermissions.mayPerform(
+                        actorId,
+                        open.target().mapKey(),
+                        MinimapAction.OPEN_EDITOR
+                ).orElse(false);
+            }
+            if (message instanceof EditorWireMessage.EditorClose close) {
+                WireIdentity.EditorContext context = close.context();
+                editorSessions.authorize(
+                        actorId,
+                        context.sessionId(),
+                        context.binding().target().mapKey(),
+                        context.binding().target().dimension(),
+                        context.binding().documentId(),
+                        context.draftId(),
+                        context.baseRevision(),
+                        close.closeMode() == WireEditor.CloseMode.DISCARD_DRAFT
+                                ? MinimapAction.DISCARD_DRAFT
+                                : MinimapAction.FORCE_CLOSE_SESSION
+                );
+                return true;
+            }
+            if (message instanceof EditorWireMessage.SaveDraft save) {
+                WireIdentity.EditorContext context = save.context();
+                editorSessions.authorize(
+                        actorId,
+                        context.sessionId(),
+                        context.binding().target().mapKey(),
+                        context.binding().target().dimension(),
+                        context.binding().documentId(),
+                        context.draftId(),
+                        context.baseRevision(),
+                        MinimapAction.SAVE_DRAFT
+                );
+                return true;
+            }
+            if (message instanceof PublishWireMessage.ReservePublish reserve) {
+                WireIdentity.EditorContext context = reserve.context();
+                editorSessions.authorize(
+                        actorId,
+                        context.sessionId(),
+                        context.binding().target().mapKey(),
+                        context.binding().target().dimension(),
+                        context.binding().documentId(),
+                        context.draftId(),
+                        context.baseRevision(),
+                        MinimapAction.RESERVE_PUBLISH
+                );
+                return true;
+            }
+            return false;
+        } catch (RuntimeException rejected) {
+            return false;
+        }
+    }
+
+    private void openEditor(UUID actorId, EditorWireMessage.EditorOpen open) {
+        if (editorSessions == null || editorPermissions == null) {
+            return;
+        }
+        try {
+            UUID draftId = transferIds.get();
+            EditorSession session = editorSessions.open(
+                    actorId,
+                    open.target().mapKey(),
+                    open.target().dimension(),
+                    open.documentId(),
+                    draftId,
+                    open.expectedRevision()
+            );
+            Sha256 empty = Sha256Digest.of(new byte[0]);
+            WireIdentity.EditorContext context = new WireIdentity.EditorContext(
+                    open.lease(),
+                    new WireIdentity.DocumentBinding(open.target(), open.documentId()),
+                    session.sessionId(),
+                    session.draftId(),
+                    session.baseRevision(),
+                    empty,
+                    empty,
+                    0L
+            );
+            sender.send(actorId, new EditorWireMessage.EditorSession(
+                    open.requestId(),
+                    context,
+                    session.expiresAt().toEpochMilli(),
+                    WireEditor.SourceAvailability.NONE
+            ));
+        } catch (SessionAccessException denied) {
+            sender.send(actorId, new PublishWireMessage.ErrorMessage(
+                    Optional.of(open.requestId()),
+                    Optional.of(open.lease()),
+                    Optional.of(new WireIdentity.DocumentBinding(
+                            open.target(), open.documentId()
+                    )),
+                    Optional.of(open.opcode().code()),
+                    new WireStatus.ErrorInfo(
+                            denied.errorCode().code(),
+                            WireStatus.RetryDisposition.DO_NOT_RETRY,
+                            denied.getMessage() == null ? "editor open denied" : denied.getMessage()
+                    )
+            ));
+        }
+    }
+
+    private void closeEditor(UUID actorId, EditorWireMessage.EditorClose close) {
+        if (editorSessions == null) {
+            return;
+        }
+        WireIdentity.EditorContext context = close.context();
+        try {
+            editorSessions.authorize(
+                    actorId,
+                    context.sessionId(),
+                    context.binding().target().mapKey(),
+                    context.binding().target().dimension(),
+                    context.binding().documentId(),
+                    context.draftId(),
+                    context.baseRevision(),
+                    close.closeMode() == WireEditor.CloseMode.DISCARD_DRAFT
+                            ? MinimapAction.DISCARD_DRAFT
+                            : MinimapAction.FORCE_CLOSE_SESSION
+            );
+            editorSessions.invalidateActor(actorId);
+            sender.send(actorId, new EditorWireMessage.EditorAck(
+                    close.requestId(),
+                    context,
+                    new WireEditor.Closed(close.closeMode())
+            ));
+        } catch (SessionAccessException denied) {
+            sender.send(actorId, new PublishWireMessage.ErrorMessage(
+                    Optional.of(close.requestId()),
+                    Optional.of(context.lease()),
+                    Optional.of(context.binding()),
+                    Optional.of(close.opcode().code()),
+                    new WireStatus.ErrorInfo(
+                            denied.errorCode().code(),
+                            WireStatus.RetryDisposition.REOPEN_SESSION,
+                            denied.getMessage() == null ? "editor close denied" : denied.getMessage()
+                    )
+            ));
+        }
+    }
+
+    private void saveDraft(UUID actorId, EditorWireMessage.SaveDraft save) {
+        if (editorSessions == null) {
+            return;
+        }
+        WireIdentity.EditorContext context = save.context();
+        try {
+            EditorSession session = editorSessions.authorize(
+                    actorId,
+                    context.sessionId(),
+                    context.binding().target().mapKey(),
+                    context.binding().target().dimension(),
+                    context.binding().documentId(),
+                    context.draftId(),
+                    context.baseRevision(),
+                    MinimapAction.SAVE_DRAFT
+            );
+            WireIdentity.EditorContext ackContext = new WireIdentity.EditorContext(
+                    context.lease(),
+                    context.binding(),
+                    session.sessionId(),
+                    session.draftId(),
+                    session.baseRevision(),
+                    context.baseSourceHash(),
+                    save.expectedRootHash(),
+                    save.expectedAckCursor()
+            );
+            sender.send(actorId, new EditorWireMessage.EditorAck(
+                    save.requestId(),
+                    ackContext,
+                    new WireEditor.DraftSaved(save.compact())
+            ));
+        } catch (SessionAccessException denied) {
+            sender.send(actorId, new PublishWireMessage.ErrorMessage(
+                    Optional.of(save.requestId()),
+                    Optional.of(context.lease()),
+                    Optional.of(context.binding()),
+                    Optional.of(save.opcode().code()),
+                    new WireStatus.ErrorInfo(
+                            denied.errorCode().code(),
+                            WireStatus.RetryDisposition.REOPEN_SESSION,
+                            denied.getMessage() == null ? "editor save denied" : denied.getMessage()
+                    )
+            ));
         }
     }
 
@@ -98,6 +352,9 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             invalidateMarkerSubscriptionSnapshot();
         }
         markerStreams.remove(actorId);
+        if (editorSessions != null) {
+            editorSessions.invalidateActor(actorId);
+        }
     }
 
     public synchronized void tick(long nowTick) {

@@ -33,7 +33,7 @@ public final class MinimapCapability extends MapCapability
                 new Factory<>() {
                     @Override
                     public boolean isOriginal() {
-                        return false;
+                        return true;
                     }
 
                     @Override

@@ -1,5 +1,10 @@
 package com.phasetranscrystal.fpsmatch.common.minimap.server.sync;
 
+import com.phasetranscrystal.fpsmatch.common.minimap.server.DefaultMinimapPermissionPolicy;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.EditorSessionManager;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.ServerEditorPublishService;
+import com.phasetranscrystal.fpsmatch.common.minimap.server.MinimapPermissionPolicy;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.minimap.extension.MinimapExtensionRegistry;
 import com.phasetranscrystal.fpsmatch.core.minimap.extension.MarkerPresentation;
 import com.phasetranscrystal.fpsmatch.core.minimap.marker.MarkerCandidate;
@@ -13,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireIdentity;
 
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -70,6 +76,21 @@ public final class ServerMinimapRuntimeFactory<S> {
                         server, actorId, target
                 )
         );
+        MinimapPermissionPolicy editorPermissions =
+                DefaultMinimapPermissionPolicy.onlinePlayers(
+                        ServerMinimapRuntimeFactory::editorPermissionLevel
+                );
+        EditorSessionManager editorSessions = new EditorSessionManager(
+                editorPermissions,
+                () -> editorSessionIdleTtl(),
+                Clock.systemUTC()
+        );
+        ServerEditorPublishService editorPublish = new ServerEditorPublishService(
+                repository,
+                editorSessions,
+                editorPermissions,
+                (actorId, message) -> access.send(server, actorId, message)
+        );
         ServerMinimapRuntimeRouter router = new ServerMinimapRuntimeRouter(
                 (actorId, target) -> access.resolveAuthority(server, actorId, target)
                         .flatMap(authority -> authority.revision() == 0L
@@ -88,7 +109,10 @@ public final class ServerMinimapRuntimeFactory<S> {
                 ServerMinimapRuntimeFactory::resolveMarkers,
                 (actorId, message) -> access.send(server, actorId, message),
                 transferIds,
-                markerHz
+                markerHz,
+                editorSessions,
+                editorPermissions,
+                editorPublish
         );
         return new ActiveRuntime(router);
     }
@@ -143,6 +167,25 @@ public final class ServerMinimapRuntimeFactory<S> {
         }
     }
 
+
+    private static int editorPermissionLevel() {
+        try {
+            return FPSMConfig.Server.minimapEditorPermissionLevel.get();
+        } catch (Throwable unavailable) {
+            return 2;
+        }
+    }
+
+    private static java.time.Duration editorSessionIdleTtl() {
+        try {
+            return java.time.Duration.ofMinutes(
+                    FPSMConfig.Server.minimapEditorSessionTtlMinutes.get()
+            );
+        } catch (Throwable unavailable) {
+            return java.time.Duration.ofMinutes(10);
+        }
+    }
+
     public interface ServerAccess<S> {
         Path repositoryRoot(S server);
 
@@ -183,6 +226,11 @@ public final class ServerMinimapRuntimeFactory<S> {
             if (!closed) {
                 router.tick(nowTick);
             }
+        }
+
+        @Override
+        public synchronized boolean allowEditor(UUID actorId, MinimapWireMessage message) {
+            return !closed && router.allowEditor(actorId, message);
         }
 
         @Override

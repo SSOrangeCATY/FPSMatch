@@ -37,6 +37,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.team.TeamCapabilitiesS2CPack
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamManageResultS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerLeaveS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketLifecycle;
 import com.phasetranscrystal.fpsmatch.common.packet.minimap.MinimapPacketSender;
@@ -130,6 +131,7 @@ public final class FPSMClientPacketRegistrar {
         ClientPacketRegistry.register(MapRoomToastS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomToast);
         ClientPacketRegistry.register(MapRoomInvitationS2CPacket.class, FPSMClientPacketHandlers::handleMapRoomInvitation);
         ClientPacketRegistry.register(TeamManageResultS2CPacket.class, FPSMClientPacketHandlers::handleTeamManageResult);
+        ClientPacketRegistry.register(SpectatorTargetS2CPacket.class, SpectatorTargetClientHandler::handle);
         ClientPacketRegistry.register(SpectatorInspectPackets.S2CWatchedPlayerInspectPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerInspect);
         ClientPacketRegistry.register(SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket.class, SpectatorClientPacketHandlers::handleWatchedPlayerLrtAttack);
     }

@@ -9,6 +9,8 @@ import com.phasetranscrystal.fpsmatch.common.client.minimap.sync.MinimapClientSy
 import com.phasetranscrystal.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.phasetranscrystal.fpsmatch.core.minimap.marker.ClientMarkerStore;
 import com.phasetranscrystal.fpsmatch.core.minimap.model.ContainerPath;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.EditorWireMessage;
+import com.phasetranscrystal.fpsmatch.core.minimap.wire.PublishWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.RuntimeWireMessage;
 import com.phasetranscrystal.fpsmatch.core.minimap.wire.WireIdentity;
@@ -232,5 +234,29 @@ public final class ClientMinimapServices {
 
     public Optional<RuntimeEntryStore.ActiveRuntime> activeRuntime() {
         return dispatcher.activeRuntime();
+    }
+
+    public void attachEditorSessionListener(
+            java.util.function.Consumer<EditorWireMessage.EditorSession> listener
+    ) {
+        dispatcher.setEditorSessionListener(listener);
+    }
+
+    public void clearEditorSessionListener() {
+        dispatcher.clearEditorSessionListener();
+    }
+
+    public void attachPublishResultListener(
+            java.util.function.Consumer<PublishWireMessage.PublishResult> listener
+    ) {
+        dispatcher.setPublishResultListener(listener);
+    }
+
+    public void clearPublishResultListener() {
+        dispatcher.clearPublishResultListener();
+    }
+
+    public void send(MinimapWireMessage message) {
+        sender.accept(Objects.requireNonNull(message, "message"));
     }
 }
