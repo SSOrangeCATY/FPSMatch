@@ -2,6 +2,7 @@ package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2;
 
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.math.Size;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
@@ -25,6 +26,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
@@ -80,7 +82,6 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
         parts.filterWaiting().setOnClick(event -> setStateFilter("waiting"));
         parts.filterRunning().setOnClick(event -> setStateFilter("running"));
         parts.filterOpen().setOnClick(event -> setStateFilter("open"));
-        bindRequiredWidgets();
         refreshList();
         refreshDetail();
         refreshActionState();
@@ -91,6 +92,8 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
     @Override
     public void init() {
         super.init();
+        // Element IDs are registered only after ModularUI.setScreenAndInit (super.init).
+        bindRequiredWidgets();
         applyResponsiveLayout();
     }
 
@@ -135,6 +138,18 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics) {
+        // ModularUIScreen leaves the world undimmed; map select needs a readable backdrop.
+        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(graphics);
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -432,7 +447,7 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
 
         List<Button> actionButtons = List.of(detail, join, leave, manage, refresh, close);
         List<Button> filterButtonList = List.of(filterAll, filterWaiting, filterRunning, filterOpen);
-        Parts parts = new Parts(ModularUI.of(UI.of(root)), roomList, detailPanel, detailLabel, playerList,
+        Parts parts = new Parts(ModularUI.of(UI.of(root, screenSize -> Size.of(screenSize.getWidth(), screenSize.getHeight()))), roomList, detailPanel, detailLabel, playerList,
                 search, filters, actions, toast, actionButtons, filterButtonList, refresh, close, detail, join, leave, manage,
                 filterAll, filterWaiting, filterRunning, filterOpen);
         roomList.setItemUIProvider((UIElementProvider<MapRoomSummary>) summary -> {

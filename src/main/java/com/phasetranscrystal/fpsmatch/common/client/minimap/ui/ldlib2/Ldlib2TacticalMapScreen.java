@@ -85,12 +85,13 @@ public final class Ldlib2TacticalMapScreen extends ModularUIScreen {
         this.floorLabels = parts.floorLabels();
         parts.closeTrigger().bind(this::onClose);
         parts.regionTrigger().bind(this::selectRegion);
-        bindRequiredWidgets();
     }
 
     @Override
     public void init() {
         super.init();
+        // Element IDs are registered only after ModularUI.setScreenAndInit (super.init).
+        bindRequiredWidgets();
         resizeController();
         refreshFrame();
     }
@@ -127,6 +128,7 @@ public final class Ldlib2TacticalMapScreen extends ModularUIScreen {
     @Override
     public void removed() {
         releaseTacticalLease();
+        modularUI.onRemoved();
         super.removed();
     }
 

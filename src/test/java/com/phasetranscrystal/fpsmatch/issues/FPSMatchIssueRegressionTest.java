@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,7 +75,10 @@ class FPSMatchIssueRegressionTest {
         assertTrue(respawnHandler.contains("map instanceof BaseRoundMap<?, ?> roundMap"));
         assertTrue(respawnHandler.contains("roundMap.handleRespawn(player)"));
         assertTrue(baseRoundMap.contains("public void handleRespawn(ServerPlayer player)"));
-        String baseRespawn = baseRoundMap.substring(baseRoundMap.indexOf("public void handleRespawn"), baseRoundMap.indexOf("/**\n     * 重新创建 lifecycle"));
+        int handleRespawn = baseRoundMap.indexOf("public void handleRespawn");
+        int rebuildLifecycle = baseRoundMap.indexOf("protected void rebuildRoundLifecycle");
+        assertTrue(handleRespawn >= 0 && rebuildLifecycle > handleRespawn);
+        String baseRespawn = baseRoundMap.substring(handleRespawn, rebuildLifecycle);
         assertTrue(baseRespawn.contains("data.setLiving(true)"));
         assertTrue(baseRespawn.contains("teleportPlayerToReSpawnPoint(player)"));
     }
@@ -209,6 +213,62 @@ class FPSMatchIssueRegressionTest {
         assertTrue(packet.contains("throwEntityAble.isThrowTypeAllowed(type)"));
         assertFalse(packet.contains("ThrowType.values()[buf.readInt()]"));
         assertTrue(contract.contains("default boolean isThrowTypeAllowed"));
+    }
+
+    @Test
+    void pauseMapButtonOpensClientScreenBeforeServerReply() throws IOException {
+        String events = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/FPSMClientEvents.java"));
+        String screens = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapSelectScreens.java"));
+        String ldlib2 = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/ldlib2/Ldlib2MapSelectionScreen.java"));
+        String tactical = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/minimap/ui/ldlib2/Ldlib2TacticalMapScreen.java"));
+
+        assertTrue(events.contains("requestOpenMapSelectionFromPause"));
+        assertTrue(events.contains("openMapSelectionFromPause"));
+        assertTrue(events.contains("OpenMapSelectionC2SPacket"));
+        assertTrue(events.contains("MouseButtonPressed.Pre"));
+        assertTrue(events.contains("minecraft.execute"));
+        assertFalse(events.contains("openSelectionClassic"));
+        int openMethod = events.indexOf("static void openMapSelectionFromPause");
+        assertTrue(openMethod >= 0);
+        String openBody = events.substring(openMethod);
+        int ldlib2Open = openBody.indexOf("openSelection(snapshot, null)");
+        int packetAfterOpen = openBody.indexOf("OpenMapSelectionC2SPacket()", ldlib2Open);
+        assertTrue(ldlib2Open >= 0);
+        assertTrue(packetAfterOpen > ldlib2Open);
+        assertFalse(screens.contains("openSelectionClassic"));
+        assertFalse(screens.contains("falling back to classic screen"));
+        assertTrue(screens.contains("new Ldlib2MapSelectionScreen"));
+        assertTrue(screens.contains("Failed to open LDLib2 map selection UI"));
+        assertTrue(ldlib2.contains("extends ModularUIScreen"));
+        assertTrue(ldlib2.contains("ModularUI.of(UI.of(root"));
+        assertTrue(ldlib2.contains("renderBackground"));
+        assertTrue(ldlib2.contains("modularUI.onRemoved()"));
+        // IDs are registered only in ModularUI.setScreenAndInit; validate after super.init().
+        assertTrue(ldlib2.contains("super.init();"));
+        int mapInit = ldlib2.indexOf("public void init()");
+        int mapBind = ldlib2.indexOf("bindRequiredWidgets()", mapInit);
+        int mapCtorBind = ldlib2.indexOf("bindRequiredWidgets()");
+        assertTrue(mapInit >= 0 && mapBind > mapInit);
+        assertEquals(mapBind, mapCtorBind);
+        int tacInit = tactical.indexOf("public void init()");
+        int tacBind = tactical.indexOf("bindRequiredWidgets()", tacInit);
+        int tacFirstBind = tactical.indexOf("bindRequiredWidgets()");
+        assertTrue(tacInit >= 0 && tacBind > tacInit);
+        assertEquals(tacBind, tacFirstBind);
+    }
+
+    @Test
+    void restrictedSpectatorInputDoesNotBlockMenusOrTacticalMapKey() throws IOException {
+        String mouse = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/mixin/spec/teammate/MouseHandlerMixin.java"));
+        String keyboard = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/mixin/spec/teammate/KeyboardHandlerMixin.java"));
+
+        assertTrue(mouse.contains("mc.screen != null"));
+        assertTrue(mouse.contains("!SpectateState.isRestricted()"));
+        assertFalse(mouse.contains("mc.screen instanceof ChatScreen"));
+        assertTrue(keyboard.contains("mc.screen != null"));
+        assertTrue(keyboard.contains("MinimapTacticalKey.KEY.matches"));
+        assertTrue(keyboard.contains("allowTacticalMap"));
+        assertFalse(keyboard.contains("mc.screen instanceof ChatScreen"));
     }
 
 }
