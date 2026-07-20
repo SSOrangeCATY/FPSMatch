@@ -233,7 +233,7 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleMapRoomReadyState(MapRoomReadyStateS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen screen) {
+        if (minecraft.screen instanceof com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen screen) {
             screen.applyReadyState(packet.gameType(), packet.mapName(), packet.countdownSeconds(), packet.readyPlayers());
         }
     }

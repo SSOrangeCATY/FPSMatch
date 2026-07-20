@@ -1,7 +1,15 @@
 package com.phasetranscrystal.fpsmatch.common.client.screen.mapselect;
 
 import com.mojang.logging.LogUtils;
+import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamActionScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapDetailScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapInvitationScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapInviteScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapManageScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
+import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
@@ -13,7 +21,7 @@ import org.slf4j.Logger;
 
 /**
  * Map-room UI router.
- * Product open path always uses LDLib2 ModularUIScreen via {@link Ldlib2MapSelectionScreen}.
+ * Product open path always uses LDLib2 ModularUI screens.
  */
 public final class FPSMMapSelectScreens {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -53,19 +61,62 @@ public final class FPSMMapSelectScreens {
         }
     }
 
+    /**
+     * Active detail open: navigate to the dedicated detail page from the room list.
+     * Only already-open child pages (detail/manage/team/settings/...) are refreshed in place.
+     * The list browser implements {@link FPSMMapDetailChildScreen} for passive preview updates and
+     * must NOT swallow active REQUEST_DETAIL responses.
+     */
     public static void openDetail(MapRoomDetailS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
+        Screen current = minecraft.screen;
+
+        if (current instanceof Ldlib2MapDetailScreen screen) {
             screen.applyDetail(packet.detail());
             return;
         }
-        openSelection(new MapSelectionSnapshotS2CPacket(
-                java.util.List.of(packet.detail().summary()),
-                packet.detail().summary().currentPlayerOp(),
-                true));
-        if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
+        if (current instanceof Ldlib2MapManageScreen screen) {
             screen.applyDetail(packet.detail());
+            return;
         }
+        if (current instanceof Ldlib2TeamManageScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+        if (current instanceof FPSMTeamActionScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+        if (current instanceof Ldlib2MapInviteScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+        if (current instanceof Ldlib2MapSettingsScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+        if (current instanceof Ldlib2MapShopScreen screen) {
+            screen.applyDetail(packet.detail());
+            return;
+        }
+
+        if (current instanceof Ldlib2MapSelectionScreen list) {
+            list.applyDetail(packet.detail());
+            if (list.consumePendingManageOpen()) {
+                openChild(new Ldlib2MapManageScreen(packet.detail(), list));
+                return;
+            }
+            if (list.consumePendingTeamOpen()) {
+                if (!"csdm".equalsIgnoreCase(packet.detail().summary().gameType())) {
+                    openChild(new Ldlib2TeamManageScreen(packet.detail(), list));
+                }
+                return;
+            }
+            openChild(new Ldlib2MapDetailScreen(packet.detail(), list));
+            return;
+        }
+
+        openChild(new Ldlib2MapDetailScreen(packet.detail(), sanitizeParent(current)));
     }
 
     /**
@@ -94,10 +145,10 @@ public final class FPSMMapSelectScreens {
 
     public static void openInvitation(MapRoomInvitationS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof FPSMMapInvitationScreen screen) {
-            minecraft.setScreen(new FPSMMapInvitationScreen(packet, screen.parentScreen()));
+        if (minecraft.screen instanceof Ldlib2MapInvitationScreen screen) {
+            minecraft.setScreen(new Ldlib2MapInvitationScreen(packet, screen.parentScreen()));
         } else {
-            minecraft.setScreen(new FPSMMapInvitationScreen(packet, minecraft.screen));
+            minecraft.setScreen(new Ldlib2MapInvitationScreen(packet, minecraft.screen));
         }
     }
 

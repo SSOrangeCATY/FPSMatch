@@ -317,6 +317,8 @@
   "gui.fpsm.map_select.detail.title": "FPSMatch Map Detail",
   "gui.fpsm.map_select.snapshot_count": "Available maps: %s",
   "gui.fpsm.map_select.empty": "No maps are currently available",
+  "gui.fpsm.map_select.preview.none": "Select a room to preview details",
+  "gui.fpsm.map_select.preview.open_detail": "Click Detail to open the full room page",
   "gui.fpsm.map_select.detail": "Details",
   "gui.fpsm.map_select.join": "Enter Lobby",
   "gui.fpsm.map_select.leave": "Leave",

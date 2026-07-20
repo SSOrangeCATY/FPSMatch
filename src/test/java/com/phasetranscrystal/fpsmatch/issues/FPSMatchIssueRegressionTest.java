@@ -271,4 +271,33 @@ class FPSMatchIssueRegressionTest {
         assertFalse(keyboard.contains("mc.screen instanceof ChatScreen"));
     }
 
+    @Test
+    void openDetailNavigatesToSecondaryPagesFromListBrowser() throws IOException {
+        String screens = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/FPSMMapSelectScreens.java"));
+        String ldlib2 = Files.readString(Path.of("src/main/java/com/phasetranscrystal/fpsmatch/common/client/screen/mapselect/ldlib2/Ldlib2MapSelectionScreen.java"));
+
+        assertTrue(screens.contains("openChild(new Ldlib2MapDetailScreen"));
+        assertTrue(screens.contains("openChild(new Ldlib2MapManageScreen"));
+        assertTrue(screens.contains("openChild(new Ldlib2TeamManageScreen"));
+        assertTrue(screens.contains("consumePendingManageOpen"));
+        assertTrue(screens.contains("consumePendingTeamOpen"));
+        // Product path must not open classic map-room child screens.
+        assertFalse(screens.contains("openChild(new FPSMMapDetailScreen"));
+        assertFalse(screens.contains("openChild(new FPSMMapManageScreen"));
+        assertFalse(screens.contains("openChild(new FPSMTeamManageScreen"));
+        // List browser must not swallow active detail responses as in-place-only updates.
+        int openDetail = screens.indexOf("public static void openDetail");
+        assertTrue(openDetail >= 0);
+        String body = screens.substring(openDetail, openDetail + 2200);
+        assertTrue(body.contains("Ldlib2MapSelectionScreen list"));
+        assertTrue(body.contains("Ldlib2MapDetailScreen"));
+        assertFalse(body.contains("if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {\n            screen.applyDetail(packet.detail());\n            return;\n        }"));
+
+        assertTrue(ldlib2.contains("openMapManage"));
+        assertTrue(ldlib2.contains("requestDetailFor(PendingOpen.MANAGE)"));
+        assertTrue(ldlib2.contains("requestDetailFor(PendingOpen.TEAM)"));
+        assertTrue(ldlib2.contains("pendingOpen = PendingOpen.NONE"));
+        assertTrue(ldlib2.contains("new Ldlib2MapManageScreen"));
+        assertTrue(ldlib2.contains("new Ldlib2TeamManageScreen"));
+    }
 }

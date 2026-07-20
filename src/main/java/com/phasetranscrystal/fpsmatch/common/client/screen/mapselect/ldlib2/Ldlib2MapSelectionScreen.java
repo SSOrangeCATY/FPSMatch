@@ -14,7 +14,6 @@ import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.screen.FPSMTeamManageScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
 import com.phasetranscrystal.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
@@ -53,6 +52,13 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
     private MapRoomSummary selected;
     private String query = "";
     private String stateFilter = "all";
+    private PendingOpen pendingOpen = PendingOpen.NONE;
+
+    private enum PendingOpen {
+        NONE,
+        MANAGE,
+        TEAM
+    }
 
     public Ldlib2MapSelectionScreen(MapSelectionSnapshotS2CPacket snapshot, Screen parent) {
         this(build(snapshot), snapshot, parent);
@@ -77,7 +83,7 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
         parts.detail().setOnClick(event -> requestDetail());
         parts.join().setOnClick(event -> joinOrOpenManage());
         parts.leave().setOnClick(event -> leave());
-        parts.manage().setOnClick(event -> openTeamManage());
+        parts.manage().setOnClick(event -> openMapManage());
         parts.filterAll().setOnClick(event -> setStateFilter("all"));
         parts.filterWaiting().setOnClick(event -> setStateFilter("waiting"));
         parts.filterRunning().setOnClick(event -> setStateFilter("running"));
@@ -169,17 +175,24 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
     private void refreshDetail() {
         if (selected == null && detail == null) {
             detailPanel.setVisible(true);
-            detailLabel.setValue(Component.translatable("gui.fpsm.map_select.empty"));
+            detailLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.none"));
             playerList.setItems(List.of());
+            playerList.refreshVisibleItems();
             return;
         }
         MapRoomSummary summary = detail == null ? selected : detail.summary();
-        String text = summary.displayName() + "\n" + summary.gameType().toUpperCase(java.util.Locale.ROOT) + " / " + summary.mapName()
-                + "\n" + Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayers(summary)).getString();
+        StringBuilder text = new StringBuilder();
+        text.append(summary.displayName()).append('\n');
+        text.append(summary.gameType().toUpperCase(java.util.Locale.ROOT)).append(" / ").append(summary.mapName()).append('\n');
+        text.append(Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), maxPlayers(summary)).getString()).append('\n');
+        text.append(statusText(summary).getString());
         if (detail != null) {
-            text += "\n" + Component.translatable("gui.fpsm.map_select.players.title").getString() + ": " + detail.players().size();
+            text.append('\n').append(Component.translatable("gui.fpsm.map_select.players.title").getString())
+                    .append(": ").append(detail.players().size());
+        } else {
+            text.append('\n').append(Component.translatable("gui.fpsm.map_select.preview.open_detail").getString());
         }
-        detailLabel.setValue(Component.literal(text));
+        detailLabel.setValue(Component.literal(text.toString()));
         playerList.setItems(detail == null ? List.of() : detail.players());
         playerList.refreshVisibleItems();
     }
@@ -194,17 +207,41 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
         place(roomList, layout.roomList(), originX, originY, 8);
         place(detailPanel, layout.detail(), originX, originY, 8);
         place(actions, layout.actions(), originX, originY, 4);
+        // search lives on root; filter chips live inside the filters panel (local coordinates).
         if (layout.compact()) {
             search.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                    .left(originX + 8).top(originY + layout.filters().y() + 7)
-                    .width(Math.max(120, layout.filters().width() - 16)).height(24));
-            layoutActionsCompact();
+                    .left(originX + layout.filters().x() + 8)
+                    .top(originY + layout.filters().y() + 6)
+                    .width(Math.max(120, layout.filters().width() - 16))
+                    .height(22));
+            int chipWidth = Math.max(70, (layout.filters().width() - 40) / 4);
+            for (int i = 0; i < filterButtons.size(); i++) {
+                int index = i;
+                filterButtons.get(i).layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                        .left(8 + index * (chipWidth + 6))
+                        .top(30)
+                        .width(chipWidth)
+                        .height(20));
+            }
+            layoutActionsCompact(layout.actions().width());
         } else {
+            int searchWidth = Math.max(180, Math.min(280, layout.filters().width() / 3));
             search.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                     .left(originX + layout.filters().x() + 8)
                     .top(originY + layout.filters().y() + 8)
-                    .width(Math.max(120, layout.filters().width() - 16)).height(24));
-            layoutActionsDesktop();
+                    .width(searchWidth)
+                    .height(24));
+            int chipWidth = 84;
+            int chipStart = searchWidth + 16;
+            for (int i = 0; i < filterButtons.size(); i++) {
+                int index = i;
+                filterButtons.get(i).layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                        .left(chipStart + index * (chipWidth + 8))
+                        .top(8)
+                        .width(chipWidth)
+                        .height(24));
+            }
+            layoutActionsDesktop(layout.actions().width());
         }
     }
 
@@ -216,36 +253,76 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
                 .height(Math.max(1, rect.height() - inset * 2)));
     }
 
-    private void layoutActionsDesktop() {
-        int width = 88;
-        int gap = 6;
-        for (int i = 0; i < actionButtons.size(); i++) {
+    private void layoutActionsDesktop(int barWidth) {
+        int buttonWidth = 88;
+        int gap = 8;
+        int count = actionButtons.size();
+        int total = count * buttonWidth + Math.max(0, count - 1) * gap;
+        int start = Math.max(8, (barWidth - total) / 2);
+        for (int i = 0; i < count; i++) {
             int index = i;
+            int left = start + index * (buttonWidth + gap);
             actionButtons.get(i).layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                    .left(8 + index * (width + gap)).top(5).width(width).height(24));
+                    .left(left).top(8).width(buttonWidth).height(24));
         }
     }
 
-    private void layoutActionsCompact() {
+    private void layoutActionsCompact(int barWidth) {
         int columns = 3;
+        int buttonWidth = Math.max(86, (barWidth - 24) / columns);
+        int gap = 6;
         for (int i = 0; i < actionButtons.size(); i++) {
             int index = i;
+            int col = index % columns;
+            int row = index / columns;
             actionButtons.get(i).layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                    .left(6 + (index % columns) * 96).top(3 + (index / columns) * 25).width(90).height(22));
+                    .left(8 + col * (buttonWidth + gap))
+                    .top(6 + row * 28)
+                    .width(buttonWidth)
+                    .height(24));
         }
     }
 
     private void select(MapRoomSummary summary) {
         selected = summary;
         detail = null;
+        pendingOpen = PendingOpen.NONE;
         refreshDetail();
         refreshActionState();
     }
 
     private void requestDetail() {
-        if (selected == null) return;
+        if (selected == null) {
+            return;
+        }
+        pendingOpen = PendingOpen.NONE;
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
                 selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
+    }
+
+    private void requestDetailFor(PendingOpen next) {
+        if (selected == null) {
+            return;
+        }
+        pendingOpen = next;
+        FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
+                selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
+    }
+
+    public boolean consumePendingManageOpen() {
+        if (pendingOpen != PendingOpen.MANAGE) {
+            return false;
+        }
+        pendingOpen = PendingOpen.NONE;
+        return true;
+    }
+
+    public boolean consumePendingTeamOpen() {
+        if (pendingOpen != PendingOpen.TEAM) {
+            return false;
+        }
+        pendingOpen = PendingOpen.NONE;
+        return true;
     }
 
     private void leave() {
@@ -260,13 +337,27 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
     }
 
     private void joinOrOpenManage() {
-        if (detail != null && currentPlayerJoined()) {
-            openTeamManage();
+        if (selected == null) {
             return;
         }
-        if (selected == null) return;
+        MapRoomSummary summary = summaryFor(selected);
+        if (summary == null) {
+            return;
+        }
+        boolean joined = summary.currentPlayerJoined() || summary.currentPlayerSpectating();
+        if (joined) {
+            // Free-for-all has no team lobby; non-FFA opens team management.
+            if (!"csdm".equalsIgnoreCase(summary.gameType())) {
+                openTeamManage();
+            }
+            return;
+        }
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.JOIN,
-                selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
+                summary.gameType(), summary.mapName(), new UUID(0L, 0L)));
+        // After joining a team-based room, open lobby once detail is ready.
+        if (!"csdm".equalsIgnoreCase(summary.gameType())) {
+            requestDetailFor(PendingOpen.TEAM);
+        }
     }
 
     private boolean matchesQuery(MapRoomSummary summary) {
@@ -312,13 +403,17 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
         boolean joined = summary != null && (summary.currentPlayerJoined() || summary.currentPlayerSpectating());
         boolean canJoin = hasSelection && !joined && !summary.full()
                 && (!summary.started() || summary.allowJoinInProgress());
-        boolean canManage = hasSelection && joined && snapshot.viewerOp()
-                && !"csdm".equalsIgnoreCase(summary.gameType());
+        // Map manage is room-admin tooling (settings/shop/minimap/debug), not team lobby.
+        // Allow OP viewers even if not currently joined; do not exclude free-for-all maps.
+        boolean canMapManage = hasSelection && (snapshot.viewerOp()
+                || (summary != null && summary.currentPlayerOp()));
+        // Team lobby entry only for non-FFA rooms after join (join button doubles as team manage).
+        boolean canTeamLobby = joined && !"csdm".equalsIgnoreCase(summary.gameType());
         // detail, join, leave, manage, refresh, close
         actionButtons.get(0).setActive(hasSelection);
-        actionButtons.get(1).setActive(canJoin || (joined && detail != null));
+        actionButtons.get(1).setActive(canJoin || canTeamLobby);
         actionButtons.get(2).setActive(joined);
-        actionButtons.get(3).setActive(canManage && detail != null);
+        actionButtons.get(3).setActive(canMapManage);
         actionButtons.get(4).setActive(true);
         actionButtons.get(5).setActive(true);
     }
@@ -343,9 +438,29 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
     }
 
     private void openTeamManage() {
-        if (detail != null && !"csdm".equals(detail.summary().gameType())) {
-            FPSMMapSelectScreens.openChild(new FPSMTeamManageScreen(detail, this));
+        if (selected == null) {
+            return;
         }
+        MapRoomSummary summary = summaryFor(selected);
+        if (summary != null && "csdm".equalsIgnoreCase(summary.gameType())) {
+            return;
+        }
+        if (detail != null && sameRoom(detail.summary(), selected) && !"csdm".equalsIgnoreCase(detail.summary().gameType())) {
+            FPSMMapSelectScreens.openChild(new Ldlib2TeamManageScreen(detail, this));
+            return;
+        }
+        requestDetailFor(PendingOpen.TEAM);
+    }
+
+    private void openMapManage() {
+        if (selected == null) {
+            return;
+        }
+        if (detail != null && sameRoom(detail.summary(), selected)) {
+            FPSMMapSelectScreens.openChild(new Ldlib2MapManageScreen(detail, this));
+            return;
+        }
+        requestDetailFor(PendingOpen.MANAGE);
     }
 
     private MapRoomSummary summaryFor(MapRoomSummary source) {
@@ -386,11 +501,11 @@ public final class Ldlib2MapSelectionScreen extends ModularUIScreen implements F
         detailPanel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(350).top(68).width(260).height(220));
         FPSMLdlib2Theme.panel(detailPanel);
         Label detailLabel = label("fpsmatch.map_selection.detail.text", Component.translatable("gui.fpsm.map_select.empty"));
-        detailLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(12).right(12).top(12).height(86));
+        detailLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(12).right(12).top(12).height(120));
         FPSMLdlib2Theme.body(detailLabel);
         VirtualScrollerView<MapRoomPlayerInfo> playerList = new VirtualScrollerView<>();
         playerList.setId(MapSelectionWidgetCatalog.PLAYERS);
-        playerList.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(12).right(12).top(104).bottom(12));
+        playerList.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(12).right(12).top(138).bottom(12));
         FPSMLdlib2Theme.elevated(playerList);
         playerList.virtualScrollerViewStyle(style -> style.estimatedItemHeight(24).overscanPixels(48));
         playerList.setItemUIProvider(info -> {

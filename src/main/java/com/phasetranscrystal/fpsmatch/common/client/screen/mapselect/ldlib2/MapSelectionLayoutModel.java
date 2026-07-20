@@ -27,34 +27,32 @@ public record MapSelectionLayoutModel(
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("screen dimensions must be positive");
         }
-        int headerHeight = Math.min(54, Math.max(42, height / 8));
-        int actionHeight = width < 620 ? 58 : Math.min(40, Math.max(32, height / 10));
-        int contentTop = headerHeight;
-        int contentHeight = Math.max(1, height - headerHeight - actionHeight);
-        if (width < 620) {
-            int filterHeight = 38;
-            int workspaceHeight = Math.max(2, contentHeight - filterHeight);
-            int listHeight = Math.max(1, workspaceHeight * 52 / 100);
-            int detailHeight = Math.max(1, workspaceHeight - listHeight);
+        int headerHeight = Math.min(36, Math.max(28, height / 16));
+        int actionHeight = width < 720 ? 66 : 42;
+        int toolbarHeight = width < 720 ? 58 : 40;
+        int contentTop = headerHeight + toolbarHeight;
+        int contentHeight = Math.max(1, height - contentTop - actionHeight);
+        if (width < 720) {
+            int listHeight = Math.max(1, contentHeight * 55 / 100);
+            int detailHeight = Math.max(1, contentHeight - listHeight);
             return new MapSelectionLayoutModel(
                     new Rect(0, 0, width, headerHeight),
-                    new Rect(0, contentTop, width, filterHeight),
-                    new Rect(0, contentTop + filterHeight, width, listHeight),
-                    new Rect(0, contentTop + filterHeight + listHeight, width, detailHeight),
-                    new Rect(0, contentTop + filterHeight + listHeight, width, detailHeight),
+                    new Rect(0, headerHeight, width, toolbarHeight),
+                    new Rect(0, contentTop, width, listHeight),
+                    new Rect(0, contentTop + listHeight, width, detailHeight),
+                    new Rect(0, contentTop + listHeight, width, detailHeight),
                     new Rect(0, height - actionHeight, width, actionHeight),
                     true
             );
         }
-        int filterWidth = Math.max(150, Math.min(210, width / 5));
-        int detailWidth = Math.max(220, Math.min(310, width / 3));
-        int listWidth = Math.max(1, width - filterWidth - detailWidth);
+        int detailWidth = Math.max(240, Math.min(340, width * 36 / 100));
+        int listWidth = Math.max(1, width - detailWidth);
         return new MapSelectionLayoutModel(
                 new Rect(0, 0, width, headerHeight),
-                new Rect(0, contentTop, filterWidth, contentHeight),
-                new Rect(filterWidth, contentTop, listWidth, contentHeight),
-                new Rect(filterWidth + listWidth, contentTop, detailWidth, contentHeight),
-                new Rect(filterWidth + listWidth, contentTop, detailWidth, contentHeight),
+                new Rect(0, headerHeight, width, toolbarHeight),
+                new Rect(0, contentTop, listWidth, contentHeight),
+                new Rect(listWidth, contentTop, detailWidth, contentHeight),
+                new Rect(listWidth, contentTop, detailWidth, contentHeight),
                 new Rect(0, height - actionHeight, width, actionHeight),
                 false
         );

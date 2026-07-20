@@ -317,6 +317,8 @@
   "gui.fpsm.map_select.detail.title": "FPSMatch 地图详情",
   "gui.fpsm.map_select.snapshot_count": "可用地图：%s",
   "gui.fpsm.map_select.empty": "当前没有可用地图",
+  "gui.fpsm.map_select.preview.none": "选择房间以预览详情",
+  "gui.fpsm.map_select.preview.open_detail": "点击「详情」进入完整房间页面",
   "gui.fpsm.map_select.detail": "详情",
   "gui.fpsm.map_select.join": "进入大厅",
   "gui.fpsm.map_select.leave": "离开",
