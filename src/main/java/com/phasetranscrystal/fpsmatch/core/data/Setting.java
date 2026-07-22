@@ -25,6 +25,8 @@ import java.util.function.Function;
  * @param <T> 配置值的类型，必须与指定的 Codec 兼容。
  */
 public class Setting<T> {
+    public static final String DEFAULT_CATEGORY = "default";
+
     /**
      * 用于序列化和反序列化配置值的编解码器。
      */
@@ -36,6 +38,9 @@ public class Setting<T> {
      * 配置项的名称，用于标识配置项。
      */
     private final String configName;
+
+    /** Stable suffix used to group this setting in configuration UIs. */
+    private final String category;
 
     /**
      * 当前配置值。
@@ -52,7 +57,12 @@ public class Setting<T> {
      * @param defaultValue 配置项的默认值。
      */
     public Setting(String configName, Codec<T> codec, T defaultValue) {
+        this(DEFAULT_CATEGORY, configName, codec, defaultValue);
+    }
+
+    public Setting(String category, String configName, Codec<T> codec, T defaultValue) {
         this.configName = configName;
+        this.category = normalizeCategory(category);
         this.codec = codec;
         this.value = defaultValue;
         this.defaultValue = defaultValue;
@@ -67,7 +77,13 @@ public class Setting<T> {
      * @param defaultValue 配置项的默认值。
      */
     public Setting(String configName, Codec<T> codec, T defaultValue, Function<String, T> parser) {
+        this(DEFAULT_CATEGORY, configName, codec, defaultValue, parser);
+    }
+
+    public Setting(String category, String configName, Codec<T> codec, T defaultValue,
+                   Function<String, T> parser) {
         this.configName = configName;
+        this.category = normalizeCategory(category);
         this.codec = codec;
         this.value = defaultValue;
         this.defaultValue = defaultValue;
@@ -114,6 +130,17 @@ public class Setting<T> {
      */
     public String getConfigName() {
         return configName;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public static String normalizeCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return DEFAULT_CATEGORY;
+        }
+        return category.trim();
     }
 
     /**
@@ -175,7 +202,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Integer> of(String configName, int defaultValue) {
-        return new Setting<>(configName, Codec.INT, defaultValue, Integer::parseInt);
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<Integer> of(String category, String configName, int defaultValue) {
+        return new Setting<>(category, configName, Codec.INT, defaultValue, Integer::parseInt);
     }
 
     /**
@@ -186,7 +217,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Long> of(String configName, long defaultValue) {
-        return new Setting<>(configName, Codec.LONG, defaultValue, Long::parseLong);
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<Long> of(String category, String configName, long defaultValue) {
+        return new Setting<>(category, configName, Codec.LONG, defaultValue, Long::parseLong);
     }
 
     /**
@@ -197,7 +232,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Float> of(String configName, float defaultValue) {
-        return new Setting<>(configName, Codec.FLOAT, defaultValue, Float::parseFloat);
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<Float> of(String category, String configName, float defaultValue) {
+        return new Setting<>(category, configName, Codec.FLOAT, defaultValue, Float::parseFloat);
     }
 
     /**
@@ -208,7 +247,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Double> of(String configName, double defaultValue) {
-        return new Setting<>(configName, Codec.DOUBLE, defaultValue, Double::parseDouble);
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<Double> of(String category, String configName, double defaultValue) {
+        return new Setting<>(category, configName, Codec.DOUBLE, defaultValue, Double::parseDouble);
     }
 
     /**
@@ -219,7 +262,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Byte> of(String configName, byte defaultValue) {
-        return new Setting<>(configName, Codec.BYTE, defaultValue, Byte::parseByte);
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<Byte> of(String category, String configName, byte defaultValue) {
+        return new Setting<>(category, configName, Codec.BYTE, defaultValue, Byte::parseByte);
     }
 
     /**
@@ -230,7 +277,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<Boolean> of(String configName, boolean defaultValue) {
-        return new Setting<>(configName, Codec.BOOL, defaultValue, value -> {
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<Boolean> of(String category, String configName, boolean defaultValue) {
+        return new Setting<>(category, configName, Codec.BOOL, defaultValue, value -> {
             if ("true".equalsIgnoreCase(value)) {
                 return true;
             }
@@ -249,7 +300,11 @@ public class Setting<T> {
      * @return 配置项实例。
      */
     public static Setting<String> of(String configName, String defaultValue) {
-        return new Setting<>(configName, Codec.STRING, defaultValue,(str)->str);
+        return of(DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public static Setting<String> of(String category, String configName, String defaultValue) {
+        return new Setting<>(category, configName, Codec.STRING, defaultValue, str -> str);
     }
 
     public void reset() {

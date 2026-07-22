@@ -702,11 +702,18 @@ public class MapTeams {
      * @param player 玩家UUID
      */
     public void leaveTeam(UUID player) {
-        this.teams.values().stream()
-                .filter(t->t.hasPlayer(player)).toList()
-                .forEach(t->t.delPlayer(player));
+        boolean removed = false;
+        for (ServerTeam team : this.teams.values()) {
+            if (team.hasPlayer(player)) {
+                team.delPlayer(player);
+                removed = true;
+            }
+        }
         this.playerName.remove(player);
         FPSMCore.getInstance().unbindPlayerFromMap(player, this.map);
+        if (removed) {
+            syncToAll(new TeamPlayerLeaveS2CPacket(player));
+        }
     }
 
     /**

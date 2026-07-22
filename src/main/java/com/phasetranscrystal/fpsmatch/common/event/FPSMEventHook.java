@@ -69,7 +69,7 @@ public class FPSMEventHook {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedInEvent(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
+            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
             opt.ifPresentOrElse(map -> {
                 FPSMapEvent.PlayerEvent.LoggedInEvent loggedInEvent = new FPSMapEvent.PlayerEvent.LoggedInEvent(map, player);
                 MinecraftForge.EVENT_BUS.post(loggedInEvent);
@@ -93,12 +93,17 @@ public class FPSMEventHook {
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             com.phasetranscrystal.fpsmatch.common.mapselect.MapRoomSyncManager.unwatch(player.getUUID());
-            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayer(player);
+            Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
             boolean leave = true;
             if (opt.isPresent()) {
                 BaseMap map = opt.get();
                 FPSMapEvent.PlayerEvent.LoggedOutEvent loggedOutEvent = new FPSMapEvent.PlayerEvent.LoggedOutEvent(map, player);
                 if (MinecraftForge.EVENT_BUS.post(loggedOutEvent)) {
+                    leave = false;
+                } else if (map.isStart()) {
+                    // Keep the PlayerData reservation and name for a reconnect, while
+                    // removing the disconnecting entity from the active scoreboard team.
+                    map.handlePlayerDisconnect(player);
                     leave = false;
                 }
             }
@@ -114,11 +119,15 @@ public class FPSMEventHook {
         BaseMap map = event.getMap();
         ServerPlayer player = event.getPlayer();
         map.getMapTeams().getTeamByPlayer(player)
-                .flatMap(team -> team.getPlayerData(player.getUUID()))
-                .ifPresent(playerData -> {
-                    playerData.setLiving(false);
-                    player.setGameMode(GameType.SPECTATOR);
-                });
+                .ifPresent(team -> team.getPlayerData(player.getUUID()).ifPresent(playerData -> {
+                        player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
+                        playerData.setLiving(false);
+                        player.setGameMode(GameType.SPECTATOR);
+                        map.pullGameInfo(player);
+                        map.getMapTeams().sync(player);
+                        team.syncCapabilities(player);
+                        map.getMapTeams().broadcast();
+                    }));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

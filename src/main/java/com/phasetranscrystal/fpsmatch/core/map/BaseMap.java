@@ -71,12 +71,12 @@ public abstract class BaseMap {
 
     private final List<Setting<?>> settings = new LinkedList<>();
 
-    protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
-    protected final Setting<Boolean> allowJoinInProgress = this.addSetting("allowJoinInProgress", true);
-    protected final Setting<Boolean> teammateGlow = this.addSetting("teammateGlow", false);
-    protected final Setting<Boolean> enemyGlow = this.addSetting("enemyGlow", false);
-    protected final Setting<Boolean> hideEnemyNameTag = this.addSetting("hideEnemyNameTag", true);
-    protected final Setting<String> displayName = this.addSetting("displayName", "");
+    protected final Setting<Float> minAssistDamageRatio = this.addSetting("player", "minAssistDamageRatio", 0.25f);
+    protected final Setting<Boolean> allowJoinInProgress = this.addSetting("player", "allowJoinInProgress", true);
+    protected final Setting<Boolean> teammateGlow = this.addSetting("player", "teammateGlow", false);
+    protected final Setting<Boolean> enemyGlow = this.addSetting("player", "enemyGlow", false);
+    protected final Setting<Boolean> hideEnemyNameTag = this.addSetting("player", "hideEnemyNameTag", true);
+    protected final Setting<String> displayName = this.addSetting("map", "displayName", "");
     /**
      * 地图图标贴图资源路径。
      * <p>
@@ -86,21 +86,21 @@ public abstract class BaseMap {
      * 该值通过 MapRoomDetail.iconTexture() 专用字段下发到客户端，
      * 不混入 settings 列表展示（避免重复），但存储走 Setting 通道以获得持久化与编辑能力。
      */
-    protected final Setting<String> iconTexture = this.addSetting("iconTexture", "");
+    protected final Setting<String> iconTexture = this.addSetting("map", "iconTexture", "");
     /**
      * 地图背景贴图资源路径（详情页大图）。
      * <p>
      * 用法同 {@link #iconTexture}，留空则客户端使用色块兜底渲染。
      */
-    protected final Setting<String> backgroundTexture = this.addSetting("backgroundTexture", "");
+    protected final Setting<String> backgroundTexture = this.addSetting("map", "backgroundTexture", "");
 
     private final CapabilityMap<BaseMap, MapCapability> capabilities;
 
     // 通用倒计时配置（大厅控制器使用）
-    protected final Setting<Boolean> autoStart = this.addSetting("autoStart", false);
-    protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
-    protected final Setting<Boolean> readyStartEnabled = this.addSetting("readyStartEnabled", true);
-    protected final Setting<Integer> readyStartTime = this.addSetting("readyStartTime", 200);
+    protected final Setting<Boolean> autoStart = this.addSetting("match", "autoStart", false);
+    protected final Setting<Integer> autoStartTime = this.addSetting("match", "autoStartTime", 6000);
+    protected final Setting<Boolean> readyStartEnabled = this.addSetting("match", "readyStartEnabled", true);
+    protected final Setting<Integer> readyStartTime = this.addSetting("match", "readyStartTime", 200);
 
     private final MapLobbyController lobby = new MapLobbyController(this);
 
@@ -270,7 +270,7 @@ public abstract class BaseMap {
 
     protected void clearOfflinePlayersBeforeStart() {
         boolean changed = false;
-        for (ServerTeam team : getMapTeams().getNormalTeams()) {
+        for (ServerTeam team : getMapTeams().getTeamsWithSpectator()) {
             List<UUID> toRemove = new ArrayList<>();
             for (PlayerData data : team.getPlayersData()) {
                 if (data.getPlayer().isEmpty()) {
@@ -286,6 +286,26 @@ public abstract class BaseMap {
         if (changed) {
             clearReadyPlayers();
         }
+    }
+
+    /**
+     * Marks a disconnected player as temporarily inactive without deleting the
+     * reservation needed to restore the player on the next login.
+     */
+    public void handlePlayerDisconnect(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        // Use the player overload so the spectator reservation is handled as well as
+        // normal teams; UUID lookup intentionally excludes the spectator team.
+        getMapTeams().getTeamByPlayer(player)
+                .flatMap(team -> team.getPlayerData(player.getUUID()))
+                .ifPresent(data -> {
+                    data.setLiving(false);
+                    setReady(player.getUUID(), false);
+                    player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+                });
+        getMapTeams().broadcast();
     }
 
     /**
@@ -917,7 +937,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<Integer> addSetting(String configName, int defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<Integer> addSetting(String category, String configName, int defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     /**
@@ -928,7 +952,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<Long> addSetting(String configName, long defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<Long> addSetting(String category, String configName, long defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     /**
@@ -939,7 +967,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<Float> addSetting(String configName, float defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<Float> addSetting(String category, String configName, float defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     /**
@@ -950,7 +982,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<Double> addSetting(String configName, double defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<Double> addSetting(String category, String configName, double defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     /**
@@ -961,7 +997,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<Byte> addSetting(String configName, byte defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<Byte> addSetting(String category, String configName, byte defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     /**
@@ -972,7 +1012,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<Boolean> addSetting(String configName, boolean defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<Boolean> addSetting(String category, String configName, boolean defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     /**
@@ -983,7 +1027,11 @@ public abstract class BaseMap {
      * @return 添加的配置项。
      */
     public Setting<String> addSetting(String configName, String defaultValue) {
-        return addSetting(Setting.of(configName, defaultValue));
+        return addSetting(Setting.DEFAULT_CATEGORY, configName, defaultValue);
+    }
+
+    public Setting<String> addSetting(String category, String configName, String defaultValue) {
+        return addSetting(Setting.of(category, configName, defaultValue));
     }
 
     public Optional<Setting<?>> findSetting(String settingName) {

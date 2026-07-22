@@ -163,14 +163,14 @@ public final class MapRoomQueryService {
         String gameType = map.getGameType();
         return map.settings().stream()
                 .map(setting -> settingInfo(setting, editable, gameType))
-                .sorted(Comparator.comparing(MapRoomSettingInfo::name))
                 .toList();
     }
 
     private static MapRoomPlayerInfo playerInfo(ServerTeam team, PlayerData data, BaseMap map) {
         return new MapRoomPlayerInfo(
                 data.getOwner(),
-                data.getPlayer().map(player -> player.getGameProfile().getName()).orElse(data.getOwner().toString()),
+                data.getPlayer().map(player -> player.getGameProfile().getName())
+                        .orElseGet(() -> data.name().getString()),
                 team.getName(),
                 team.isSpectator(),
                 data.getPlayer().isPresent(),
@@ -190,11 +190,62 @@ public final class MapRoomQueryService {
                 .toList();
     }
 
-    private static MapRoomSettingInfo settingInfo(Setting<?> setting, boolean editable, String gameType) {
+    static MapRoomSettingInfo settingInfo(Setting<?> setting, boolean editable, String gameType) {
         String configName = setting.getConfigName();
-        String translationKey = "setting." + gameType + "." + configName;
-        MapRoomSettingInfo.SettingType type = setting.get() instanceof Boolean ? MapRoomSettingInfo.SettingType.BOOLEAN : MapRoomSettingInfo.SettingType.OTHER;
-        return new MapRoomSettingInfo(configName, setting.toString(), String.valueOf(setting.getDefaultValue()), editable, translationKey, type);
+        String translationScope = isBaseSetting(configName) ? "base" : gameType;
+        String translationKey = "setting." + translationScope + "." + configName;
+        Object value = setting.get();
+        Object defaultValue = setting.getDefaultValue();
+        MapRoomSettingInfo.SettingType type;
+        if (value instanceof Boolean) {
+            type = MapRoomSettingInfo.SettingType.BOOLEAN;
+        } else if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
+            type = MapRoomSettingInfo.SettingType.INTEGER;
+        } else if (value instanceof Float || value instanceof Double) {
+            type = MapRoomSettingInfo.SettingType.DECIMAL;
+        } else if (value instanceof String) {
+            type = MapRoomSettingInfo.SettingType.STRING;
+        } else {
+            type = MapRoomSettingInfo.SettingType.OTHER;
+        }
+
+        NumericPresentation numeric = value instanceof Number number
+                ? numericPresentation(configName, number.doubleValue(), defaultValue)
+                : NumericPresentation.none();
+        return new MapRoomSettingInfo(configName, setting.toString(), String.valueOf(defaultValue), editable,
+                translationKey, type, translationKey + ".desc", numeric.slider(),
+                numeric.min(), numeric.max(), numeric.step(), setting.getCategory());
+    }
+
+    private static boolean isBaseSetting(String name) {
+        return switch (name) {
+            case "minAssistDamageRatio", "allowJoinInProgress", "teammateGlow", "enemyGlow",
+                    "hideEnemyNameTag", "displayName", "iconTexture", "backgroundTexture",
+                    "autoStart", "autoStartTime", "readyStartEnabled", "readyStartTime" -> true;
+            default -> false;
+        };
+    }
+
+    private static NumericPresentation numericPresentation(String name, double value, Object defaultValue) {
+        if ("minAssistDamageRatio".equals(name)) {
+            return new NumericPresentation(true, 0.0, 1.0, 0.01);
+        }
+        double defaultNumber = defaultValue instanceof Number number ? number.doubleValue() : value;
+        double magnitude = Math.max(Math.abs(value), Math.abs(defaultNumber));
+        if (!Double.isFinite(magnitude) || magnitude > 100.0) {
+            return NumericPresentation.none();
+        }
+        double extent = Math.max(1.0, Math.ceil(magnitude * 2.0));
+        double min = Math.min(value, defaultNumber) < 0.0 ? -extent : 0.0;
+        double max = extent;
+        double step = value == Math.rint(value) && defaultNumber == Math.rint(defaultNumber) ? 1.0 : 0.01;
+        return new NumericPresentation(max > min, min, max, step);
+    }
+
+    private record NumericPresentation(boolean slider, double min, double max, double step) {
+        private static NumericPresentation none() {
+            return new NumericPresentation(false, 0.0, 0.0, 1.0);
+        }
     }
 
     private static String areaText(BlockPos from, BlockPos to) {

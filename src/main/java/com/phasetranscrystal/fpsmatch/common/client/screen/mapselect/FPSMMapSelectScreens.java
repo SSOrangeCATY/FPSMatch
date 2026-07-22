@@ -62,10 +62,8 @@ public final class FPSMMapSelectScreens {
     }
 
     /**
-     * Active detail open: navigate to the dedicated detail page from the room list.
-     * Only already-open child pages (detail/manage/team/settings/...) are refreshed in place.
-     * The list browser implements {@link FPSMMapDetailChildScreen} for passive preview updates and
-     * must NOT swallow active REQUEST_DETAIL responses.
+     * Active detail update: the room browser keeps the selected room in its right-hand preview.
+     * Explicit management/team transitions still open their dedicated child pages.
      */
     public static void openDetail(MapRoomDetailS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -112,7 +110,6 @@ public final class FPSMMapSelectScreens {
                 }
                 return;
             }
-            openChild(new Ldlib2MapDetailScreen(packet.detail(), list));
             return;
         }
 

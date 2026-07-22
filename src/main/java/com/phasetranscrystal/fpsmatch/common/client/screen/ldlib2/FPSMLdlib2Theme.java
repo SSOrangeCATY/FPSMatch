@@ -2,13 +2,17 @@ package com.phasetranscrystal.fpsmatch.common.client.screen.ldlib2;
 
 import com.lowdragmc.lowdraglib2.gui.texture.ColorBorderTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.Icons;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
 import net.minecraft.network.chat.Component;
 
 /** Shared visual language for FPSMatch LDLib2 work surfaces. */
@@ -26,6 +30,11 @@ public final class FPSMLdlib2Theme {
     public static final int TEXT = 0xFFF2F5F7;
     public static final int MUTED = 0xFF9AA7B3;
     public static final int DISABLED = 0xFF65717D;
+    public static final int SETTINGS_CATEGORY = 0xFF2A3641;
+    public static final int SETTINGS_ENTRY = 0xFF111820;
+    public static final int SETTINGS_CATEGORY_TEXT = 0xFFE4ECF2;
+    public static final int SETTINGS_ENTRY_TEXT = 0xFFBAC5CE;
+    public static final int HOLD_ACTION_PROGRESS = 0xFFEA6262;
 
     private FPSMLdlib2Theme() {
     }
@@ -44,6 +53,34 @@ public final class FPSMLdlib2Theme {
 
     public static void elevated(UIElement element) {
         element.style(style -> style.background(panelTexture(ELEVATED, BORDER)));
+    }
+
+    public static void settingsCategory(UIElement element) {
+        element.style(style -> style.background(panelTexture(SETTINGS_CATEGORY, 0xFF465361)));
+    }
+
+    public static void settingsEntry(UIElement element) {
+        element.style(style -> style.background(panelTexture(SETTINGS_ENTRY, 0xFF242E38)));
+    }
+
+    public static void settingsCategoryToggle(Toggle toggle) {
+        toggle.style(style -> style.background(panelTexture(SETTINGS_ENTRY, 0xFF242E38)));
+        toggle.toggleStyle(style -> style
+                .baseTexture(panelTexture(SETTINGS_ENTRY, 0xFF242E38))
+                .hoverTexture(panelTexture(0xFF202B35, BORDER))
+                .unmarkTexture(panelTexture(0xFF0D1319, BORDER))
+                .markTexture(IGuiTexture.group(
+                        panelTexture(ACCENT_DARK, ACCENT), Icons.CHECK_SPRITE)));
+        toggle.toggleLabel(label -> label.textStyle(style -> style
+                .fontSize(7).textColor(SETTINGS_ENTRY_TEXT).textShadow(false)));
+    }
+
+    public static void settingsScroller(ScrollerView scroller) {
+        scroller.style(style -> style.background(new ColorRectTexture(0xFF0F151C)));
+        scroller.viewPort(element -> element.style(style ->
+                style.background(new ColorRectTexture(0xFF0F151C))));
+        scroller.viewContainer(element -> element.style(style ->
+                style.background(new ColorRectTexture(0xFF0F151C))));
     }
 
     public static void title(Label label) {
@@ -75,6 +112,16 @@ public final class FPSMLdlib2Theme {
                 .errorColor(DANGER)
                 .placeholder(placeholder)
                 .focusOverlay(new ColorBorderTexture(1, ACCENT)));
+    }
+
+    public static void selector(Selector<?> selector) {
+        selector.style(style -> style.background(panelTexture(0xFF10161D, BORDER)));
+        selector.dialog.style(style -> style.background(panelTexture(SURFACE, BORDER)));
+        selector.selectorStyle(style -> style
+                .focusOverlay(new ColorBorderTexture(1, ACCENT))
+                .maxItemCount(6)
+                .showOverlay(true)
+                .closeAfterSelect(true));
     }
 
     public static void button(Button button, ButtonKind kind) {
@@ -113,6 +160,18 @@ public final class FPSMLdlib2Theme {
                 .hoverTexture(panelTexture(hover, kind == ButtonKind.PRIMARY ? ACCENT : BORDER))
                 .pressedTexture(panelTexture(pressed, ACCENT_DARK)));
         button.textStyle(style -> style.fontSize(9).textColor(text).textShadow(false));
+    }
+
+    public static void holdActionButton(Button button, boolean active) {
+        if (!active) {
+            button(button, ButtonKind.QUIET);
+            return;
+        }
+        button.buttonStyle(style -> style
+                .baseTexture(panelTexture(0xFF5B3035, 0xFF774149))
+                .hoverTexture(panelTexture(0xFF71383D, DANGER))
+                .pressedTexture(panelTexture(0xFF71383D, DANGER)));
+        button.textStyle(style -> style.fontSize(9).textColor(TEXT).textShadow(false));
     }
 
     public static void roomRow(Button button, int statusColor, boolean selected) {

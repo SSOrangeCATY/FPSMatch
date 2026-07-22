@@ -18,11 +18,11 @@ public final class TeamActionModel {
             return List.of();
         }
         MapRoomPlayerInfo source = findPlayer(detail, player);
-        if (source == null || source.spectator()) {
+        if (source == null || !source.online()) {
             return List.of();
         }
         return detail.teams().stream()
-                .filter(team -> !team.spectator())
+                .filter(team -> !team.spectator() || detail.summary().currentPlayerOp())
                 .filter(team -> !team.name().equals(source.teamName()))
                 .filter(team -> !team.isFull())
                 .map(MapRoomTeamInfo::name)
@@ -39,7 +39,7 @@ public final class TeamActionModel {
             return false;
         }
         MapRoomPlayerInfo target = findPlayer(detail, player);
-        return target != null && !target.spectator();
+        return target != null && target.online() && !target.spectator();
     }
 
     private static boolean canSwitchInRoom(MapRoomDetail detail) {

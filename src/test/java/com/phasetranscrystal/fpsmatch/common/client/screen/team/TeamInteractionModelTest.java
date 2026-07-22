@@ -41,10 +41,11 @@ class TeamInteractionModelTest {
     }
 
     @Test
-    void teamActionsExcludeSpectatorFullAndSameTeams() {
+    void operatorTeamActionsIncludeSpectatorButExcludeFullAndSameTeams() {
         MapRoomDetail detail = detail(false);
 
-        assertEquals(List.of("blue"), TeamActionModel.availableTargetTeams(detail, PLAYER));
+        assertEquals(List.of("blue", "spectator"), TeamActionModel.availableTargetTeams(detail, PLAYER));
+        assertTrue(TeamActionModel.canDropTo(detail, PLAYER, "spectator"));
         assertTrue(TeamActionModel.canKick(detail, PLAYER));
         assertFalse(TeamActionModel.canKick(detail, UUID.fromString("00000000-0000-0000-0000-000000000099")));
     }

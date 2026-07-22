@@ -224,6 +224,11 @@ class FPSMatchIssueRegressionTest {
 
         assertTrue(events.contains("requestOpenMapSelectionFromPause"));
         assertTrue(events.contains("openMapSelectionFromPause"));
+        assertTrue(events.contains("RegisterClientCommandsEvent"));
+        assertTrue(events.contains("Commands.literal(\"fpsmmap\")"));
+        int commandRegistration = events.indexOf("Commands.literal(\"fpsmmap\")");
+        int sharedOpenRequest = events.indexOf("requestOpenMapSelectionFromPause()", commandRegistration);
+        assertTrue(sharedOpenRequest > commandRegistration);
         assertTrue(events.contains("OpenMapSelectionC2SPacket"));
         assertTrue(events.contains("MouseButtonPressed.Pre"));
         assertTrue(events.contains("minecraft.execute"));

@@ -10,13 +10,16 @@ import com.phasetranscrystal.fpsmatch.common.packet.mapselect.MapSelectionSnapsh
 import com.phasetranscrystal.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
@@ -37,6 +40,23 @@ public class FPSMClientEvents
     private static int mapSelectionButtonHeight;
     private static boolean pendingOpenMapSelection;
 
+    /**
+     * Client-side shortcut for the same deferred open path used by the pause-menu button.
+     */
+    @SubscribeEvent
+    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("fpsmmap")
+                .executes(context -> {
+                    if (!FPSMClient.getGlobalData().isMapSelectionButtonVisible()) {
+                        context.getSource().sendFailure(Component.translatable(
+                                "gui.fpsm.map_select.action.no_permission"));
+                        return 0;
+                    }
+                    requestOpenMapSelectionFromPause();
+                    return 1;
+                }));
+    }
+
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
         if (!(event.getScreen() instanceof PauseScreen)) {
@@ -47,15 +67,42 @@ public class FPSMClientEvents
             mapSelectionButton = null;
             return;
         }
-        mapSelectionButtonX = event.getScreen().width / 2 - 102;
-        mapSelectionButtonY = event.getScreen().height - 52;
-        mapSelectionButtonWidth = 204;
-        mapSelectionButtonHeight = 20;
+        int screenWidth = event.getScreen().width;
+        int screenHeight = event.getScreen().height;
+        List<AbstractWidget> pauseMenuWidgets = event.getListenersList().stream()
+                .filter(AbstractWidget.class::isInstance)
+                .map(AbstractWidget.class::cast)
+                .filter(widget -> isCenteredPauseMenuWidget(widget, screenWidth))
+                .toList();
+        int menuTop = pauseMenuWidgets.stream()
+                .mapToInt(AbstractWidget::getY)
+                .min()
+                .orElse(Math.max(0, screenHeight / 4));
+        int menuBottom = pauseMenuWidgets.stream()
+                .filter(Button.class::isInstance)
+                .mapToInt(widget -> widget.getY() + widget.getHeight())
+                .max()
+                .orElse(menuTop);
+        PauseMenuLayoutModel.Placement placement = PauseMenuLayoutModel.belowMenu(
+                screenWidth, screenHeight, menuTop, menuBottom);
+        if (placement.menuShiftUp() > 0) {
+            pauseMenuWidgets.forEach(widget -> widget.setY(widget.getY() - placement.menuShiftUp()));
+        }
+        mapSelectionButtonX = placement.x();
+        mapSelectionButtonY = placement.y();
+        mapSelectionButtonWidth = placement.width();
+        mapSelectionButtonHeight = placement.height();
         mapSelectionButton = Button.builder(Component.translatable("gui.fpsm.map_select.open"), button -> requestOpenMapSelectionFromPause())
                 .pos(mapSelectionButtonX, mapSelectionButtonY)
                 .size(mapSelectionButtonWidth, mapSelectionButtonHeight)
                 .build();
         event.addListener(mapSelectionButton);
+    }
+
+    private static boolean isCenteredPauseMenuWidget(AbstractWidget widget, int screenWidth) {
+        int screenCenter = screenWidth / 2;
+        int widgetCenter = widget.getX() + widget.getWidth() / 2;
+        return Math.abs(widgetCenter - screenCenter) <= 110;
     }
 
     /**
