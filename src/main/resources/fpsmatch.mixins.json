@@ -4,9 +4,9 @@
   "mixinextras": {
     "minVersion": "0.5.0"
   },
-  "package": "com.phasetranscrystal.fpsmatch.mixin",
+  "package": "com.ptcrys.fpsmatch.mixin",
   "compatibilityLevel": "JAVA_8",
-  "plugin": "com.phasetranscrystal.fpsmatch.mixin.FPSMatchMixinPlugin",
+  "plugin": "com.ptcrys.fpsmatch.mixin.FPSMatchMixinPlugin",
   "refmap": "fpsmatch.refmap.json",
   "mixins": [
     "ItemDropSoundMixin",

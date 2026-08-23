@@ -72,7 +72,7 @@ TaCZ 在 `mods.toml` 中是可选依赖，但 FPSMatch 的主要玩法目标明�
 源码中的基础地图类是：
 
 ```text
-com.phasetranscrystal.fpsmatch.core.map.BaseMap
+map.core.com.ptcrys.fpsmatch.BaseMap
 ```
 
 地图会在服务器 tick 中持续执行逻辑，并负责处理玩家加入、离开、死亡、回合、胜利、重置和客户端同步。

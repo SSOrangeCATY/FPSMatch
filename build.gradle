@@ -5,35 +5,27 @@ plugins {
     id 'maven-publish'
 }
 
+// Project identity
 group = mod_group_id
-version = minecraft_version + "-" + mod_version + "-" + getFileVersion()
-
-def getFileVersion() {
-    if (project.isSnapshot) {
-        def date = new Date().format('yyyyMMdd-HHmm')
-        return "forge-snapshot-${date}"
-    } else {
-        return project.file_version
-    }
-}
+version = "${minecraft_version}-${mod_version}-${file_version}"
+def isRelease = file_version != "forge-snapshot"
 
 base {
     archivesName = mod_id
 }
 
-def taczTweaksVersion = findProperty('tacztweak_version') ?: rootProject.findProperty('tacztweak_version') ?: '2.11.2'
-
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
 }
 
-
+// Minecraft development environment
 legacyForge {
     version = "${minecraft_version}-${forge_version}"
 
     parchment {
-        mappingsVersion = project.mapping_version
-        minecraftVersion = project.mapping_mc_version
+        minecraftVersion = mapping_mc_version
+        mappingsVersion = mapping_version
     }
 
     validateAccessTransformers = true
@@ -41,30 +33,29 @@ legacyForge {
     runs {
         configureEach {
             gameDirectory = project.file('run')
-
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.DEBUG
-
         }
 
         client {
             client()
             systemProperty 'mixin.env.remapRefMap', 'true'
-            systemProperty 'mixin.env.refMapRemappingFile', "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
-            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            systemProperty 'mixin.env.refMapRemappingFile',
+                    "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
             systemProperty 'forge.enabledGameTestNamespaces', mod_id
         }
 
         server {
             server()
             systemProperty 'mixin.env.remapRefMap', 'true'
-            systemProperty 'mixin.env.refMapRemappingFile', "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
+            systemProperty 'mixin.env.refMapRemappingFile',
+                    "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
             systemProperty 'forge.enabledGameTestNamespaces', mod_id
             programArgument '--nogui'
         }
 
         gameTestServer {
-            type = "gameTestServer"
+            type = 'gameTestServer'
             gameDirectory = project.file('build/run-gametest')
             systemProperty 'forge.enabledGameTestNamespaces', mod_id
         }
@@ -72,17 +63,20 @@ legacyForge {
         data {
             data()
             gameDirectory = project.file('run-data')
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+            programArguments.addAll(
+                    '--mod', mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources').absolutePath,
+                    '--existing', file('src/main/resources').absolutePath
+            )
         }
     }
-
 
     mods {
         "${mod_id}" {
             sourceSet sourceSets.main
         }
     }
-
 }
 
 mixin {
@@ -90,348 +84,108 @@ mixin {
     config "${mod_id}.mixins.json"
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-def ldlib2Directory = layout.buildDirectory.dir('ldlib2')
-def ldlib2ApiArtifact = ldlib2Directory.map { it.file(ldlib2_api_jar) }
-def ldlib2RuntimeArtifact = ldlib2Directory.map { it.file(ldlib2_runtime_jar) }
-
-def artifactSha256 = { File file ->
-    def digest = java.security.MessageDigest.getInstance('SHA-256')
-    file.withInputStream { input ->
-        byte[] buffer = new byte[8192]
-        int read
-        while ((read = input.read(buffer)) >= 0) {
-            if (read > 0) {
-                digest.update(buffer, 0, read)
-            }
-        }
-    }
-    digest.digest().encodeHex().toString()
-}
-
-def verifyPinnedArtifact = { File file, String expectedSha256 ->
-    String actualSha256 = artifactSha256(file)
-    if (actualSha256 != expectedSha256) {
-        throw new GradleException(
-                "Pinned artifact hash mismatch for ${file.name}: " +
-                        "expected ${expectedSha256}, got ${actualSha256}"
-        )
-    }
-}
-
-tasks.register('prepareLdlib2Artifacts') {
-    inputs.properties([
-            releaseTag    : ldlib2_release_tag,
-            releaseCommit : ldlib2_release_commit,
-            apiUrl        : ldlib2_api_url,
-            apiSha256     : ldlib2_api_sha256,
-            runtimeUrl    : ldlib2_runtime_url,
-            runtimeSha256 : ldlib2_runtime_sha256
-    ])
-    outputs.files(ldlib2ApiArtifact, ldlib2RuntimeArtifact)
-
-    doLast {
-        [
-                [target: ldlib2ApiArtifact.get().asFile,
-                 url: ldlib2_api_url, sha256: ldlib2_api_sha256],
-                [target: ldlib2RuntimeArtifact.get().asFile,
-                 url: ldlib2_runtime_url, sha256: ldlib2_runtime_sha256]
-        ].each { artifact ->
-            File target = artifact.target
-            if (target.isFile()) {
-                verifyPinnedArtifact(target, artifact.sha256)
-                return
-            }
-            target.parentFile.mkdirs()
-            File temporary = new File(
-                    target.parentFile,
-                    "${target.name}.${UUID.randomUUID()}.download"
-            )
-            def connection = new URI(artifact.url).toURL().openConnection()
-            connection.setConnectTimeout(30_000)
-            connection.setReadTimeout(120_000)
-            connection.setRequestProperty('User-Agent', 'FPSMatch-Gradle')
-            connection.inputStream.withCloseable { input ->
-                temporary.withOutputStream { output ->
-                    input.transferTo(output)
-                }
-            }
-            verifyPinnedArtifact(temporary, artifact.sha256)
-            try {
-                java.nio.file.Files.move(
-                        temporary.toPath(),
-                        target.toPath(),
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE
-                )
-            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
-                java.nio.file.Files.move(temporary.toPath(), target.toPath())
-            }
-        }
-    }
-}
-
-tasks.register('verifyLdlib2ReleaseArtifacts') {
-    dependsOn tasks.named('prepareLdlib2Artifacts')
-
-    doLast {
-        verifyPinnedArtifact(
-                ldlib2ApiArtifact.get().asFile,
-                ldlib2_api_sha256
-        )
-        verifyPinnedArtifact(
-                ldlib2RuntimeArtifact.get().asFile,
-                ldlib2_runtime_sha256
-        )
-    }
-}
-
-sourceSets {
-    ldlib2Probe {
-        java.srcDir 'src/ldlib2Probe/java'
-        compileClasspath = sourceSets.main.compileClasspath
-        runtimeClasspath = output + compileClasspath
-    }
-    performanceAcceptance {
-        java.srcDir 'src/performanceAcceptance/java'
-        compileClasspath = sourceSets.main.output + sourceSets.main.compileClasspath
-        runtimeClasspath = output + compileClasspath
-    }
-}
-
-tasks.named('compileLdlib2ProbeJava').configure {
-    dependsOn tasks.named('verifyLdlib2ReleaseArtifacts')
-}
-
-tasks.register('verifyLdlib2Classpath') {
-    dependsOn tasks.named('verifyLdlib2ReleaseArtifacts')
-    dependsOn tasks.named('compileLdlib2ProbeJava')
-
-    doLast {
-        List<File> ldlib2RuntimeJars = sourceSets.main.runtimeClasspath.files.findAll {
-            it.name.startsWith('ldlib2-forge-') && it.name.endsWith('.jar')
-        }.toList()
-        if (ldlib2RuntimeJars*.name != [ldlib2_runtime_jar]) {
-            throw new GradleException(
-                    "Runtime must contain exactly ${ldlib2_runtime_jar}; got " +
-                            ldlib2RuntimeJars*.name
-            )
-        }
-        if (sourceSets.main.runtimeClasspath.files.any {
-            it.name == ldlib2_api_jar
-        }) {
-            throw new GradleException(
-                    "LDLib2 ordinary API jar must not be on the runtime classpath"
-            )
-        }
-        if (!configurations.modRuntimeOnly.dependencies.any {
-            it.group == 'maven.modrinth'
-                    && it.name == 'kotlin-for-forge'
-                    && it.version == kotlin_forge_version
-        }) {
-            throw new GradleException(
-                    "KotlinForForge ${kotlin_forge_version} runtime is required"
-            )
-        }
-    }
-}
-
-tasks.named('check').configure {
-    dependsOn tasks.named('verifyLdlib2Classpath')
-}
-
-def prepareFPSMatchGameTestStructures = tasks.register(
-        'prepareFPSMatchGameTestStructures',
-        Copy
-) {
-    from('src/main/resources/data/fpsmatch/gameteststructures')
-    into(layout.buildDirectory.dir('run-gametest/gameteststructures'))
-    include('**/*.snbt')
-}
-
-tasks.named('prepareGameTestServerRun') {
-    dependsOn prepareFPSMatchGameTestStructures
-}
-
-tasks.configureEach {
-    if (name in [
-            'prepareClientRun',
-            'prepareServerRun',
-            'prepareGameTestServerRun'
-    ]) {
-        dependsOn tasks.named('createMinecraftArtifacts')
-        dependsOn tasks.named('verifyLdlib2Classpath')
-    }
-}
-
+// Dependency repositories
 repositories {
-    flatDir {
-        name = 'PinnedLdlib2Release'
-        dirs(ldlib2Directory)
-    }
-    mavenLocal()
     mavenCentral()
+
     maven {
-        name = 'Curse Maven'
-        url = "https://www.cursemaven.com"
+        name = 'PtcrysMaven'
+        url = uri('https://maven.ptcrys.net/releases')
     }
 
     maven {
-        name = 'IzzelAliz Maven'
-        url = 'https://maven.izzel.io/releases/'
-    }
-
-    maven {
-        name = "spigotmc-repo"
-        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+        name = 'CurseMaven'
+        url = 'https://www.cursemaven.com'
+        content { includeGroup 'curse.maven' }
     }
     maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/groups/public/"
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
     }
     maven {
-        name = "Modrinth"
-        url = "https://api.modrinth.com/maven"
+        name = 'SpigotMC'
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+        content { includeGroup 'org.spigotmc' }
     }
     maven {
-        name = "Mohist"
-        url = "https://maven.mohistmc.com/"
+        name = 'MohistMC'
+        url = 'https://maven.mohistmc.com/'
+        content { includeGroup 'com.mohistmc' }
     }
     maven {
-        url "https://maven.latvian.dev/releases"
+        name = 'LatvianDev'
+        url = 'https://maven.latvian.dev/releases'
         content {
-            includeGroup "dev.latvian.mods"
-            includeGroup "dev.latvian.apps"
+            includeGroup 'dev.latvian.mods'
+            includeGroup 'dev.latvian.apps'
         }
     }
     maven {
-        url = "https://maven.architectury.dev"
-        content {
-            includeGroup "dev.architectury"
-        }
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev'
+        content { includeGroup 'dev.architectury' }
     }
 
+    maven {
+        name 'IzzelAliz Maven'
+        url 'https://maven.izzel.io/releases/'
+    }
+}
+
+// Dependencies
+def withoutMinecraftLibraries = { dependency ->
+    dependency.exclude group: 'org.apache.logging.log4j'
+    dependency.exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    dependency.exclude group: 'org.jetbrains', module: 'annotations'
+    dependency.exclude group: 'com.ibm.icu', module: 'icu4j'
+    dependency.exclude group: 'it.unimi.dsi', module: 'fastutil'
 }
 
 dependencies {
-    def ldlib2Coordinates =
-            'pinned.ldlib2:ldlib2-forge-1.20.1:2.2.27+forge.1.20.1'
-    modCompileOnly(ldlib2Coordinates) {
-        transitive = false
-    }
-    modRuntimeOnly(ldlib2Coordinates) {
-        transitive = false
-        artifact {
-            classifier = 'all'
-            type = 'jar'
-            extension = 'jar'
-        }
-    }
-    // Modern UI core framework
-    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")) {
-        exclude group: "org.apache.logging.log4j", module: "log4j-core"
-        exclude group: "org.apache.logging.log4j", module: "log4j-api"
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
-        exclude group: "com.google.code.findbugs", module: "jsr305"
-        exclude group: "org.jetbrains", module: "annotations"
-        exclude group: "com.ibm.icu", module: "icu4j"
-        exclude group: "it.unimi.dsi", module: "fastutil"
-    }
-//    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")) {
-    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:3.12.0")) {
-        exclude group: "org.apache.logging.log4j", module: "log4j-core"
-        exclude group: "org.apache.logging.log4j", module: "log4j-api"
-        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
-        exclude group: "com.google.code.findbugs", module: "jsr305"
-        exclude group: "org.jetbrains", module: "annotations"
-        exclude group: "com.ibm.icu", module: "icu4j"
-        exclude group: "it.unimi.dsi", module: "fastutil"
-    }
+    implementation('com.lowdragmc:ldlib2-forge:2.2.27+1.20.1')
+
+    withoutMinecraftLibraries(additionalRuntimeClasspath(
+            implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")))
+    withoutMinecraftLibraries(additionalRuntimeClasspath(
+            implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")))
     modImplementation "icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}"
-    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
-    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.3"))
-    // RFC 8785 delegates only ECMAScript-compatible double formatting to this Apache-2.0 library.
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}"))
     jarJar(implementation("io.github.erdtman:java-json-canonicalization")) {
         version {
-            strictly "[1.1]"
-            prefer "1.1"
+            strictly "[${json_canonicalization_version}]"
+            prefer json_canonicalization_version
         }
     }
+    annotationProcessor "org.spongepowered:mixin:${mixin_processor_version}:processor"
+
     modCompileOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
-    // Keep standalone dev runs able to exercise TACZ-specific ammo/death-icon paths.
     modRuntimeOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
-    modCompileOnly "maven.modrinth:tacz-tweaks:${taczTweaksVersion}"
-    modCompileOnly "curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599"
+    modCompileOnly "maven.modrinth:tacz-tweaks:${tacztweak_version}"
+    modCompileOnly "maven.modrinth:lr-tactical:${lrtactical_version}"
     modImplementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
     modRuntimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"
     modImplementation "maven.modrinth:cloth-config:${cloth_config_version}"
-    modCompileOnly('org.apache.commons:commons-math3:3.6.1');
-
-    modCompileOnly "org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT"
-    // JetBrains annotations for @NotNull and other annotations
-    modCompileOnly "org.jetbrains:annotations:24.0.1"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
-    testImplementation "org.ow2.asm:asm-tree:9.7"
-    // Match the Minecraft 1.20.1 runtime classpath for standalone Codec tests.
-    testImplementation "com.google.code.gson:gson:2.10"
-    testImplementation "com.mojang:datafixerupper:6.0.8"
-    testImplementation("com.mojang:authlib:4.0.43") {
-        version { strictly "4.0.43" }
-    }
-    testImplementation("io.netty:netty-buffer:4.1.82.Final") {
-        version { strictly "4.1.82.Final" }
-    }
-    testImplementation("io.netty:netty-codec:4.1.82.Final") {
-        version { strictly "4.1.82.Final" }
-    }
-    testImplementation("io.netty:netty-transport-classes-epoll:4.1.82.Final") {
-        version { strictly "4.1.82.Final" }
-    }
-    testImplementation("com.mojang:brigadier:1.1.8") {
-        version { strictly "1.1.8" }
-    }
-    // Minecraft 1.20.1 runtime vector types used by ExtraCodecs.
-    testImplementation("org.joml:joml:1.10.5") {
-        version { strictly "1.10.5" }
-    }
-    testImplementation "net.minecraftforge:fmlcore:${minecraft_version}-${forge_version}"
-    testImplementation "net.minecraftforge:javafmllanguage:${minecraft_version}-${forge_version}"
-    testImplementation "com.electronwill.night-config:core:3.6.4"
-    // Minecraft 1.20.1 supplies JNA 5.12.1; compile against it without bundling a second copy.
-    compileOnly("net.java.dev.jna:jna:5.12.1") {
-        version { strictly "5.12.1" }
-    }
-    compileOnly("net.java.dev.jna:jna-platform:5.12.1") {
-        version { strictly "5.12.1" }
-    }
-    testImplementation("net.java.dev.jna:jna:5.12.1") {
-        version { strictly "5.12.1" }
-    }
-    testImplementation("net.java.dev.jna:jna-platform:5.12.1") {
-        version { strictly "5.12.1" }
-    }
-    testCompileOnly files(layout.buildDirectory.file(
-            "moddev/artifacts/forge-${minecraft_version}-${forge_version}-merged.jar"
-    ))
-    testRuntimeOnly files(layout.buildDirectory.file(
-            "moddev/artifacts/forge-${minecraft_version}-${forge_version}-merged.jar"
-    ))
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-    modCompileOnly "com.mohistmc:mohistdev:1.20.1"
-    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modCompileOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
-    modCompileOnly("dev.architectury:architectury-forge:${architectury_version}")
-    //implementation fileTree(dir: 'libs', include: '**/*.jar')
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    modCompileOnly "org.apache.commons:commons-math3:3.6.1"
+    modCompileOnly "org.spigotmc:spigot-api:${spigot_api_version}"
+    modCompileOnly "org.jetbrains:annotations:${jetbrains_annotations_version}"
+    modCompileOnly "com.mohistmc:mohistdev:${mohistdev_version}"
+    modCompileOnly "dev.latvian.mods:kubejs-forge:${kubejs_version}"
+    modCompileOnly "dev.latvian.mods:rhino-forge:${rhino_version}"
+    modCompileOnly "dev.architectury:architectury-forge:${architectury_version}"
 }
 
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [
+// Generated resources and packaging
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def metadata = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             forge_version          : forge_version,
             forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
+            ldlib2_version_range   : ldlib2_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -439,97 +193,68 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_authors            : mod_authors,
             mod_description        : mod_description
     ]
-    inputs.properties replaceProperties
-    expand replaceProperties
-    from "src/main/templates"
-    into "build/generated/sources/modMetadata"
+    inputs.properties metadata
+    expand metadata
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/resources/modMetadata')
 }
-sourceSets.main.resources.srcDir generateModMetadata
+
+sourceSets {
+    main.resources {
+        srcDir 'src/generated/resources'
+        srcDir generateModMetadata
+    }
+    performanceAcceptance {
+        java.srcDir 'src/performanceAcceptance/java'
+        compileClasspath = sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath = output + compileClasspath
+    }
+}
 legacyForge.ideSyncTask generateModMetadata
 
-jar {
-    manifest.attributes([
-            "MixinConfigs": "${mod_id}.mixins.json"
-    ])
+tasks.named('jar', Jar) {
+    manifest.attributes('MixinConfigs': "${mod_id}.mixins.json")
 }
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    archiveClassifier = 'sources'
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            groupId = mod_group_id
-            artifactId = mod_id
-            version = mod_version
-
-            artifact sourcesJar
-        }
-    }
-}
-
-tasks.named('createMinecraftArtifacts').configure {
-    def java21Executable = javaToolchains.launcherFor {
+tasks.named('createMinecraftArtifacts') {
+    def java21 = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(21)
     }.map { it.executablePath.asFile.absolutePath }
-    toolsJavaExecutable.set(java21Executable)
-    javaExecutable.set(java21Executable)
+    toolsJavaExecutable.set(java21)
+    javaExecutable.set(java21)
 }
+
 
 tasks.withType(JavaCompile).configureEach {
-    dependsOn tasks.named('verifyLdlib2ReleaseArtifacts')
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.encoding = 'UTF-8'
 }
 
-tasks.withType(Test).configureEach {
-    dependsOn tasks.named('createMinecraftArtifacts')
-    useJUnitPlatform()
-}
-
-tasks.register('headlessClientAcceptance', Test) {
-    group = 'verification'
-    description = 'Runs minimap client, editor, import, bake, and render-intent acceptance without graphics hardware.'
-    dependsOn tasks.named('testClasses')
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
-    systemProperty 'java.awt.headless', 'true'
-    filter {
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.common.client.minimap.*'
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.core.minimap.editor.*'
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.core.minimap.editor.EditorWorldBakeScenarioTest'
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.core.minimap.editor.importing.PngImportWorkflowTest'
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.core.minimap.model.LayerCompositionContractTest'
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.core.minimap.view.MinimapViewportModelTest'
-        includeTestsMatching 'com.phasetranscrystal.fpsmatch.core.minimap.format.RuntimeMapCompilerTest'
+// Maven publication
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
     }
-}
-
-def minimapPerformanceProfile = providers.gradleProperty(
-        'minimapPerformanceProfile'
-).getOrElse('formal')
-
-tasks.register('headlessPerformanceAcceptance', JavaExec) {
-    group = 'verification'
-    description = 'Runs the headless minimap standard/stress performance gate and writes JSON evidence.'
-    dependsOn tasks.named('performanceAcceptanceClasses')
-    classpath = sourceSets.performanceAcceptance.runtimeClasspath
-    mainClass = 'com.phasetranscrystal.fpsmatch.performance.MinimapHeadlessPerformanceAcceptance'
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(17)
+    repositories {
+        if (isRelease) {
+            maven {
+                name = "PtcrysReleases"
+                url = uri("https://maven.ptcrys.net/releases")
+                credentials {
+                    username = project.findProperty('ptcrysUsername')
+                    password = project.findProperty('ptcrysPassword')
+                }
+            }
+        } else {
+            maven {
+                name = "PtcrysSnapshots"
+                url = uri("https://maven.ptcrys.net/snapshots")
+                credentials {
+                    username = project.findProperty('ptcrysUsername')
+                    password = project.findProperty('ptcrysPassword')
+                }
+            }
+        }
     }
-    jvmArgs '-XX:+UseG1GC', '-Djava.awt.headless=true'
-    if (minimapPerformanceProfile == 'calibration') {
-        jvmArgs '-Xms512m', '-Xmx1G'
-    } else {
-        jvmArgs '-Xms4G', '-Xmx4G'
-    }
-    systemProperty 'minimapPerformanceProfile', minimapPerformanceProfile
-    systemProperty 'minimapPerformanceReport',
-            layout.buildDirectory.file('reports/minimap-performance/headless.json')
-                    .get().asFile.absolutePath
 }

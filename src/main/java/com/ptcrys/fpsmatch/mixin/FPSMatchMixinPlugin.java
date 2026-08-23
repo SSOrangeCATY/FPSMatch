@@ -1,0 +1,83 @@
+package com.ptcrys.fpsmatch.mixin;
+
+import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
+import com.ptcrys.fpsmatch.mixin.compat.forge.Ldlib2ForgeCompatibility;
+import net.minecraftforge.fml.loading.FMLLoader;
+import org.objectweb.asm.tree.ClassNode;
+import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
+import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Conditional mixin loader for FPSMatch.
+ * Only loads compatibility mixins when target mods are present.
+ */
+public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
+
+    @Override
+    public void onLoad(String mixinPackage) {
+    }
+
+    @Override
+    public String getRefMapperConfig() {
+        return null;
+    }
+
+    @Override
+    public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        Boolean forgeCompatibilityDecision = Ldlib2ForgeCompatibility.decisionFor(
+                mixinClassName,
+                FMLLoader.versionInfo().forgeVersion()
+        );
+        if (forgeCompatibilityDecision != null) {
+            return forgeCompatibilityDecision;
+        }
+
+        boolean taczTweaksLoaded = FPSMImpl.findTaczTweaks();
+        boolean taczLoaded = FPSMImpl.findTacz();
+
+        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.DefaultAmmoMixin")) {
+            return taczLoaded && !taczTweaksLoaded;
+        }
+        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.TweakAmmoMixin")) {
+            return taczLoaded && taczTweaksLoaded;
+        }
+        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.LivingEntityIsDeadOrDyingMixin")) {
+            return taczLoaded;
+        }
+        if (mixinClassName.contains("compat.spectate.lrt")) {
+            return FPSMImpl.findLrtacticalMod();
+        }
+        if (mixinClassName.contains("compat.spectate.tacz") || mixinClassName.contains("mixin.ammo.")) {
+            return taczLoaded;
+        }
+        if (mixinClassName.contains("collisiobox.MixinRenderHeadShotAABB")) {
+            return taczLoaded;
+        }
+        return true;
+    }
+
+    @Override
+    public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {
+    }
+
+    @Override
+    public List<String> getMixins() {
+        return null;
+    }
+
+    @Override
+    public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+        if (Ldlib2ForgeCompatibility.INITIAL_FACTORIES_MIXIN.equals(mixinClassName)) {
+            Ldlib2ForgeCompatibility.applyInitialFactories(targetClass);
+        } else if (Ldlib2ForgeCompatibility.DEFAULT_NAMESPACE_FACTORY_MIXIN.equals(mixinClassName)) {
+            Ldlib2ForgeCompatibility.applyDefaultNamespaceFactory(targetClass);
+        }
+    }
+
+    @Override
+    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+    }
+}
