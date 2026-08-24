@@ -1,7 +1,6 @@
 package com.ptcrys.fpsmatch.common.client.minimap.tactical;
 
 import com.ptcrys.fpsmatch.common.client.minimap.render.MinimapFrame;
-import com.ptcrys.fpsmatch.core.minimap.model.CanvasPoint;
 import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.RegionGeometry;
@@ -40,8 +39,8 @@ public record TacticalMapPresentation(
         if (floorId == null) {
             return Optional.empty();
         }
-        CanvasPoint point =
-                new CanvasPoint(
+        com.ptcrys.fpsmatch.core.minimap.model.CanvasPoint point =
+                new com.ptcrys.fpsmatch.core.minimap.model.CanvasPoint(
                         canvasX, canvasY
                 );
         return regions.stream()

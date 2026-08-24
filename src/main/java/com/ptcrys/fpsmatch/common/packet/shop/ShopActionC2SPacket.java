@@ -1,10 +1,8 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.shop.INamedType;
-import com.ptcrys.fpsmatch.core.shop.ShopAction;
-import com.ptcrys.fpsmatch.core.shop.UnknownShopType;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.shop.*;
@@ -12,16 +10,21 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.Optional;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class ShopActionC2SPacket {
+    private static final Map<UUID, Object> PLAYER_LOCKS = new ConcurrentHashMap<>();
+    public final long requestId;
     public final String name;
     public final INamedType type;
     public final int index;
     public final int action;
 
-    public ShopActionC2SPacket(String mapName, INamedType type, int index, ShopAction action){
+    public ShopActionC2SPacket(long requestId, String mapName, INamedType type, int index, ShopAction action){
+        this.requestId = requestId;
         this.name = mapName;
         this.type = type;
         this.index = index;
@@ -30,44 +33,100 @@ public class ShopActionC2SPacket {
 
 
     public static void encode(ShopActionC2SPacket packet, FriendlyByteBuf buf) {
+        buf.writeLong(packet.requestId);
         buf.writeUtf(packet.name);
         buf.writeUtf(packet.type.name());
         buf.writeInt(packet.index);
-        buf.writeInt(packet.action);
+        buf.writeVarInt(packet.action);
     }
 
     public static ShopActionC2SPacket decode(FriendlyByteBuf buf) {
-        int actionOrdinal = buf.readInt();
-        if (actionOrdinal < 0 || actionOrdinal >= ShopAction.values().length) {
-            // 拒绝畸形/恶意客户端，避免 decode 阶段越界崩溃导致连接断开
-            throw new IllegalArgumentException("Invalid ShopAction ordinal: " + actionOrdinal);
-        }
         return new ShopActionC2SPacket(
+                buf.readLong(),
                 buf.readUtf(),
                 new UnknownShopType(buf.readUtf()),
                 buf.readInt(),
-                ShopAction.values()[actionOrdinal]
+                buf.readVarInt()
         );
+    }
+
+    private ShopActionC2SPacket(long requestId, String mapName, INamedType type, int index, int action) {
+        this.requestId = requestId;
+        this.name = mapName;
+        this.type = type;
+        this.index = index;
+        this.action = action;
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            Optional<BaseMap> map = FPSMCore.getInstance().getMapByName(name);
-            if(map.isPresent()){
-                BaseTeam team = map.get().getMapTeams().getTeamByPlayer(ctx.get().getSender()).orElse(null);
-                ShopCapability cap = null;
-                if (team != null) {
-                    cap = team.getCapabilityMap().get(ShopCapability.class).orElse(null);
-                }
-                ServerPlayer serverPlayer = ctx.get().getSender();
-                if (!map.get().canUseShop(cap, serverPlayer)) {
-                    ctx.get().setPacketHandled(true);
-                    return;
-                }
-                cap.getShop().handleButton(serverPlayer, this.type, this.index,ShopAction.values()[this.action]);
+            ServerPlayer serverPlayer = ctx.get().getSender();
+            if (serverPlayer == null) {
+                return;
+            }
+            Object playerLock = PLAYER_LOCKS.computeIfAbsent(
+                    serverPlayer.getUUID(), ignored -> new Object()
+            );
+            synchronized (playerLock) {
+                handleAuthorized(serverPlayer);
             }
         });
         ctx.get().setPacketHandled(true);
+    }
+
+    private void handleAuthorized(ServerPlayer serverPlayer) {
+        ShopAction decodedAction = action >= 0 && action < ShopAction.values().length
+                ? ShopAction.values()[action]
+                : null;
+        ShopActionResult result;
+        try {
+            ShopActionResultS2CPacket replay = ShopActionReplayLedger.find(
+                    serverPlayer.getUUID(), requestId
+            );
+            if (replay != null) {
+                FPSMatch.sendToPlayer(serverPlayer, replay);
+                return;
+            }
+            result = ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
+            if (requestId >= 0 && index >= 0 && type != null && type.name() != null
+                    && !type.name().isBlank() && decodedAction != null) {
+                BaseMap map = FPSMCore.getInstance().getMapByPlayer(serverPlayer).orElse(null);
+                BaseTeam team = map == null ? null
+                        : map.getMapTeams().getTeamByPlayer(serverPlayer).orElse(null);
+                ShopCapability cap = team == null ? null
+                        : team.getCapabilityMap().get(ShopCapability.class).orElse(null);
+                if (map == null || cap == null || cap.getShop() == null) {
+                    result = ShopActionResult.failure(ShopActionResult.Code.SHOP_UNAVAILABLE);
+                } else if (!map.canUseShop(cap, serverPlayer)) {
+                    result = ShopActionResult.failure(ShopActionResult.Code.NOT_ALLOWED);
+                } else {
+                    result = cap.getShop().handleButton(
+                            serverPlayer, type, index, decodedAction
+                    );
+                }
+            }
+        } catch (RuntimeException failure) {
+            FPSMatch.LOGGER.error("Shop action request {} failed", requestId, failure);
+            result = ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
+        }
+        sendResult(serverPlayer, decodedAction, result);
+    }
+
+    private void sendResult(
+            ServerPlayer serverPlayer,
+            ShopAction decodedAction,
+            ShopActionResult result
+    ) {
+        ShopActionResultS2CPacket response = new ShopActionResultS2CPacket(
+                requestId,
+                type == null || type.name() == null ? "" : type.name(),
+                index,
+                decodedAction == null ? ShopAction.BUY : decodedAction,
+                result
+        );
+        FPSMatch.sendToPlayer(serverPlayer, ShopActionReplayLedger.record(
+                serverPlayer.getUUID(), response
+        ));
     }
 
 }

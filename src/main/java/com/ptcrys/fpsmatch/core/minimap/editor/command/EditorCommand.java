@@ -4,18 +4,36 @@ import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.util.Objects;
 
-public record EditorCommand(
-        long sequence,
-        Sha256 baseRootHash,
-        Sha256 resultingRootHash,
-        EditorOperation operation
-) {
+public record EditorCommand(long sequence, Sha256 previousRoot, EditorEdit edit) {
     public EditorCommand {
         if (sequence <= 0) {
             throw new IllegalArgumentException("Command sequence must be positive");
         }
-        Objects.requireNonNull(baseRootHash, "baseRootHash");
-        Objects.requireNonNull(resultingRootHash, "resultingRootHash");
-        Objects.requireNonNull(operation, "operation");
+        Objects.requireNonNull(previousRoot, "previousRoot");
+        Objects.requireNonNull(edit, "edit");
+    }
+
+    public byte[] descriptorBytes() {
+        return EditorCommandHasher.descriptorBytes(edit);
+    }
+
+    public Sha256 payloadHash() {
+        return EditorCommandHasher.payloadHash(edit);
+    }
+
+    public Sha256 rootHash() {
+        return EditorCommandHasher.nextRoot(previousRoot, sequence, payloadHash());
+    }
+
+    public Sha256 previousRootHash() {
+        return previousRoot;
+    }
+
+    public Sha256 baseRootHash() {
+        return previousRoot;
+    }
+
+    public Sha256 resultingRootHash() {
+        return rootHash();
     }
 }

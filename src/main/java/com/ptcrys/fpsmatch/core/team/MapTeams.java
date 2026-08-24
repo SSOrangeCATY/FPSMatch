@@ -686,7 +686,9 @@ public class MapTeams {
      * @param player 玩家对象
      */
     public void leaveTeam(ServerPlayer player) {
-        player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+        if (player.getScoreboard().getPlayersTeam(player.getScoreboardName()) != null) {
+            player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+        }
 
         for (ServerTeam team : teams.values()) {
             if(team.hasPlayer(player.getUUID())) {

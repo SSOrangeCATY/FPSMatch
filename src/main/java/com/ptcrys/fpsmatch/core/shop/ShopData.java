@@ -191,17 +191,17 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param index 槽位索引
      * @param action 操作类型
      */
-    public void handleButton(ServerPlayer player, T type, int index, ShopAction action) {
+    public ShopActionResult handleButton(ServerPlayer player, T type, int index, ShopAction action) {
         List<ShopSlot> shopSlotList = data.get(type);
-        if (index < 0 || index >= shopSlotList.size()) {
-            return;
+        if (shopSlotList == null || index < 0 || index >= shopSlotList.size()) {
+            return ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
         }
         ShopSlot currentSlot = shopSlotList.get(index);
 
-        switch (action) {
+        return switch (action) {
             case BUY -> this.handleBuy(player, currentSlot);
             case RETURN -> this.handleReturn(player, currentSlot);
-        }
+        };
     }
 
     /**
@@ -212,12 +212,18 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param player 玩家对象
      * @param currentSlot 当前槽位
      */
-    protected void handleBuy(ServerPlayer player, ShopSlot currentSlot) {
+    protected ShopActionResult handleBuy(ServerPlayer player, ShopSlot currentSlot) {
+        if (currentSlot.isLocked()
+                || currentSlot.getBoughtCount() >= currentSlot.getMaxBuyCount()) {
+            return ShopActionResult.failure(ShopActionResult.Code.LOCKED_OR_MAX_COUNT);
+        }
         boolean check = this.broadcastCostCheckEvent(player, currentSlot);
         if (check || currentSlot.canBuy(this.money)) {
             this.broadcastGroupChangeEvent(player, currentSlot, 1);
             this.setMoney(currentSlot.buy(player, this.money));
+            return ShopActionResult.success();
         }
+        return ShopActionResult.failure(ShopActionResult.Code.INSUFFICIENT_FUNDS);
     }
 
     /**
@@ -228,7 +234,7 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param player 玩家对象
      * @param currentSlot 当前槽位
      */
-    protected void handleReturn(ServerPlayer player, ShopSlot currentSlot) {
+    protected ShopActionResult handleReturn(ServerPlayer player, ShopSlot currentSlot) {
         AtomicBoolean checkFlag = new AtomicBoolean(true);
         List<ShopSlot> groupSlot = currentSlot.haveGroup() ? this.grouped.get(currentSlot.getGroupId()).stream().filter((slot) -> slot != currentSlot).toList() : new ArrayList<>();
         for (ShopSlot slot : groupSlot) {
@@ -243,7 +249,9 @@ public class ShopData<T extends Enum<T> & INamedType> {
             this.broadcastGroupChangeEvent(player, currentSlot, -1);
             this.addMoney(currentSlot.getCost());
             currentSlot.returnItem(player);
+            return ShopActionResult.success();
         }
+        return ShopActionResult.failure(ShopActionResult.Code.CANNOT_RETURN);
     }
 
     /**

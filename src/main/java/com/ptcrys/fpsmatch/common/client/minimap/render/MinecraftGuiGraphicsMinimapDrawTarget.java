@@ -7,6 +7,7 @@ import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Objects;
@@ -197,10 +198,12 @@ public final class MinecraftGuiGraphicsMinimapDrawTarget
         try {
             graphics.pose().translate(x, y, 0);
             graphics.pose().scale((float) scale, (float) scale, 1f);
+            int left = floor(-width * 0.5) - 2;
+            graphics.fill(left, -6, left + width + 4, 6, 0xA8000000);
             graphics.drawString(
                     Minecraft.getInstance().font,
                     text,
-                    floor(-width * 0.5),
+                    left + 2,
                     -4,
                     resolvedColor,
                     true
@@ -233,10 +236,16 @@ public final class MinecraftGuiGraphicsMinimapDrawTarget
             double centerX,
             double centerY
     ) {
-        String text = switch (placeholder) {
-            case LOADING -> "Loading map";
-            case STALE -> "Map updating";
-            case ERROR -> "Map unavailable";
+        Component text = switch (placeholder) {
+            case LOADING -> Component.translatable(
+                    "gui.fpsm.minimap.placeholder.loading"
+            );
+            case STALE -> Component.translatable(
+                    "gui.fpsm.minimap.placeholder.stale"
+            );
+            case ERROR -> Component.translatable(
+                    "gui.fpsm.minimap.placeholder.error"
+            );
         };
         int width = Minecraft.getInstance().font.width(text);
         graphics.drawString(
@@ -247,6 +256,43 @@ public final class MinecraftGuiGraphicsMinimapDrawTarget
                 0xFFE5E7EB,
                 true
         );
+    }
+
+    @Override
+    public void floorLabel(
+            DisplayLabel label,
+            double centerX,
+            double baselineY
+    ) {
+        label(label, centerX, baselineY, 0xFFFFFFFF, 0.75, 1f);
+    }
+
+    @Override
+    public void compass(
+            float rotationDegrees,
+            double centerX,
+            double centerY
+    ) {
+        Component north = Component.translatable(
+                "gui.fpsm.minimap.compass.north"
+        );
+        int width = Minecraft.getInstance().font.width(north);
+        graphics.pose().pushPose();
+        try {
+            graphics.pose().translate(centerX, centerY, 0);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(rotationDegrees));
+            graphics.fill(-1, -7, 2, -1, 0xFFE6F4FF);
+            graphics.drawString(
+                    Minecraft.getInstance().font,
+                    north,
+                    -width / 2,
+                    1,
+                    0xFFFFFFFF,
+                    true
+            );
+        } finally {
+            graphics.pose().popPose();
+        }
     }
 
     @Override

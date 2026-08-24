@@ -5,10 +5,22 @@ import com.ptcrys.fpsmatch.common.client.minimap.tactical.TacticalMapState;
 import com.ptcrys.fpsmatch.common.client.minimap.tactical.TacticalViewport;
 import com.ptcrys.fpsmatch.core.minimap.format.MinimapContainerLayout;
 import com.ptcrys.fpsmatch.core.minimap.marker.MarkerSnapshot;
-import com.ptcrys.fpsmatch.core.minimap.model.*;
+import com.ptcrys.fpsmatch.core.minimap.model.AutoFloorSelector;
+import com.ptcrys.fpsmatch.core.minimap.model.AutoFloorState;
+import com.ptcrys.fpsmatch.core.minimap.model.CanvasBounds;
+import com.ptcrys.fpsmatch.core.minimap.model.CanvasPoint;
+import com.ptcrys.fpsmatch.core.minimap.model.CanvasRect;
+import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
+import com.ptcrys.fpsmatch.core.minimap.model.DefaultViewMode;
+import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
 import com.ptcrys.fpsmatch.core.minimap.model.PolygonGeometry;
 import com.ptcrys.fpsmatch.core.minimap.model.RectangleGeometry;
 import com.ptcrys.fpsmatch.core.minimap.model.RgbaColor;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeDefinition;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeFloor;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeManifest;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeRegion;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeStyle;
 import com.ptcrys.fpsmatch.core.minimap.model.TextAppearance;
 import com.ptcrys.fpsmatch.core.minimap.model.Vector2D;
 import com.ptcrys.fpsmatch.core.minimap.model.WorldPoint2D;
@@ -18,7 +30,6 @@ import com.ptcrys.fpsmatch.core.minimap.view.LabelCollisionResolver;
 import com.ptcrys.fpsmatch.core.minimap.view.MapDrawCommand;
 import com.ptcrys.fpsmatch.core.minimap.view.PlaceholderKind;
 import com.ptcrys.fpsmatch.core.minimap.view.ViewportCamera;
-import com.ptcrys.fpsmatch.core.minimap.view.FloorViewMode;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 public final class RuntimeMinimapFramePlanner {
@@ -106,14 +118,12 @@ public final class RuntimeMinimapFramePlanner {
             return cachedHudFrame;
         }
 
-        boolean revisionChanged = !generation.equals(currentGeneration);
-        automaticFloor = new AutoFloorSelector(
-                manifest.floors().stream().map(RuntimeFloor::selection).toList()
-        ).resolve(automaticFloor, viewer.y(), revisionChanged);
-        currentGeneration = generation;
+        Optional<RuntimeFloor> selectedFloor = resolveHudFloor(
+                generation, manifest, viewer.y()
+        );
 
         RuntimeFloor fallback = manifest.floors().get(0);
-        if (!(automaticFloor instanceof AutoFloorState.Floor selected)) {
+        if (selectedFloor.isEmpty()) {
             return cacheHud(
                     generation, manifest, definition, availablePaths, viewer,
                     markers, settings, viewportWidth, viewportHeight,
@@ -129,10 +139,7 @@ public final class RuntimeMinimapFramePlanner {
                     )
             );
         }
-        RuntimeFloor floor = manifest.floors().stream()
-                .filter(candidate -> candidate.selection().id().equals(selected.floorId()))
-                .findFirst()
-                .orElse(fallback);
+        RuntimeFloor floor = selectedFloor.orElseThrow();
         ViewportCamera camera = camera(
                 manifest, floor, viewer, settings,
                 viewportWidth, viewportHeight
@@ -150,7 +157,10 @@ public final class RuntimeMinimapFramePlanner {
                         camera,
                         FloorViewState.automatic(floor.selection().id()),
                         planned.commands(),
-                        planned.hasTiles() ? null : PlaceholderKind.LOADING
+                        planned.hasTiles() ? null : PlaceholderKind.LOADING,
+                        planned.hasTiles()
+                                ? hudOverlay(settings, floor, camera)
+                                : null
                 )
         );
     }
@@ -193,7 +203,7 @@ public final class RuntimeMinimapFramePlanner {
     ) {
         return planTactical(
                 generation, manifest, null, availablePaths, viewer, markers,
-                settings, state
+                settings, state, null
         );
     }
 
@@ -215,7 +225,33 @@ public final class RuntimeMinimapFramePlanner {
                 viewer,
                 markers,
                 settings,
-                state
+                state,
+                null
+        );
+    }
+
+    /** Plans a tactical frame using a floor decision already resolved for this call. */
+    MinimapFrame planTactical(
+            RuntimeGeneration generation,
+            RuntimeDefinition definition,
+            Set<ContainerPath> availablePaths,
+            MinimapViewerPose viewer,
+            List<MarkerSnapshot.Marker> markers,
+            MinimapClientSettings settings,
+            TacticalMapState state,
+            TacticalFloorResolution resolvedFloor
+    ) {
+        Objects.requireNonNull(definition, "definition");
+        return planTactical(
+                generation,
+                definition.manifest(),
+                definition,
+                availablePaths,
+                viewer,
+                markers,
+                settings,
+                state,
+                Objects.requireNonNull(resolvedFloor, "resolvedFloor")
         );
     }
 
@@ -227,7 +263,8 @@ public final class RuntimeMinimapFramePlanner {
             MinimapViewerPose viewer,
             List<MarkerSnapshot.Marker> markers,
             MinimapClientSettings settings,
-            TacticalMapState state
+            TacticalMapState state,
+            TacticalFloorResolution resolvedFloor
     ) {
         Objects.requireNonNull(generation, "generation");
         Objects.requireNonNull(manifest, "manifest");
@@ -246,29 +283,13 @@ public final class RuntimeMinimapFramePlanner {
             return cachedTacticalFrame;
         }
 
-        boolean revisionChanged = !generation.equals(tacticalGeneration);
-        tacticalAutomaticFloor = new AutoFloorSelector(
-                manifest.floors().stream().map(RuntimeFloor::selection).toList()
-        ).resolve(tacticalAutomaticFloor, viewer.y(), revisionChanged);
-        tacticalGeneration = generation;
-
-        RuntimeFloor fallback = manifest.floors().get(0);
-        String automaticId = tacticalAutomaticFloor instanceof AutoFloorState.Floor floor
-                ? floor.floorId()
-                : fallback.selection().id();
-        FloorViewState floorState = state.floor().withAutomaticFloor(automaticId);
-        RuntimeFloor selectedFloor = floorState.effectiveFloorId()
-                .flatMap(id -> manifest.floors().stream()
-                        .filter(floor -> floor.selection().id().equals(id))
-                        .findFirst())
-                .orElse(fallback);
-        if (floorState.mode()
-                == FloorViewMode.MANUAL
-                && !selectedFloor.selection().id().equals(
-                floorState.effectiveFloorId().orElse(automaticId)
-        )) {
-            floorState = FloorViewState.automatic(automaticId);
-        }
+        TacticalFloorResolution floorResolution = resolvedFloor != null
+                ? resolvedFloor
+                : resolveTacticalFloor(
+                        generation, manifest, viewer.y(), state.floor()
+                );
+        FloorViewState floorState = floorResolution.floorState();
+        RuntimeFloor selectedFloor = floorResolution.floor();
 
         TacticalViewport viewport = new TacticalViewport(
                 manifest.canvas(),
@@ -303,6 +324,48 @@ public final class RuntimeMinimapFramePlanner {
                         planned.hasTiles() ? null : PlaceholderKind.LOADING
                 )
         );
+    }
+
+    /**
+     * Resolves tactical automatic/manual floor state once for one presentation pass.
+     * The HUD uses the returned floor to bind generated tiles before planning commands.
+     */
+    public TacticalFloorResolution resolveTacticalFloor(
+            RuntimeGeneration generation,
+            RuntimeManifest manifest,
+            double viewerY,
+            FloorViewState requestedFloor
+    ) {
+        Objects.requireNonNull(generation, "generation");
+        Objects.requireNonNull(manifest, "manifest");
+        Objects.requireNonNull(requestedFloor, "requestedFloor");
+        if (manifest.floors().isEmpty()) {
+            throw new IllegalArgumentException("Runtime floors must be non-empty");
+        }
+        boolean revisionChanged = !generation.equals(tacticalGeneration);
+        tacticalAutomaticFloor = new AutoFloorSelector(
+                manifest.floors().stream().map(RuntimeFloor::selection).toList()
+        ).resolve(tacticalAutomaticFloor, viewerY, revisionChanged);
+        tacticalGeneration = generation;
+
+        RuntimeFloor fallback = manifest.floors().get(0);
+        String automaticId = tacticalAutomaticFloor instanceof AutoFloorState.Floor floor
+                ? floor.floorId()
+                : fallback.selection().id();
+        FloorViewState floorState = requestedFloor.withAutomaticFloor(automaticId);
+        RuntimeFloor selectedFloor = floorState.effectiveFloorId()
+                .flatMap(id -> manifest.floors().stream()
+                        .filter(floor -> floor.selection().id().equals(id))
+                        .findFirst())
+                .orElse(fallback);
+        if (floorState.mode()
+                == com.ptcrys.fpsmatch.core.minimap.view.FloorViewMode.MANUAL
+                && !selectedFloor.selection().id().equals(
+                floorState.effectiveFloorId().orElse(automaticId)
+        )) {
+            floorState = FloorViewState.automatic(automaticId);
+        }
+        return new TacticalFloorResolution(floorState, selectedFloor);
     }
 
     private MinimapFrame cacheTactical(
@@ -341,6 +404,23 @@ public final class RuntimeMinimapFramePlanner {
         cachedTacticalFrame = null;
     }
 
+    private static MinimapFrame.HudOverlay hudOverlay(
+            MinimapClientSettings settings,
+            RuntimeFloor floor,
+            ViewportCamera camera
+    ) {
+        Optional<DisplayLabel> floorLabel = settings.showFloorLabel()
+                ? Optional.of(floor.label())
+                : Optional.empty();
+        Optional<Float> compassRotation = settings.showCompass()
+                ? Optional.of(camera.rotationDegrees())
+                : Optional.empty();
+        if (floorLabel.isEmpty() && compassRotation.isEmpty()) {
+            return null;
+        }
+        return new MinimapFrame.HudOverlay(floorLabel, compassRotation);
+    }
+
     private static CanvasRect canvasRect(CanvasBounds canvas) {
         return new CanvasRect(0, 0, canvas.width(), canvas.height());
     }
@@ -364,6 +444,9 @@ public final class RuntimeMinimapFramePlanner {
             double scale = Math.scalb(1.0, zoom);
             tiles.stream()
                     .filter(tile -> tile.zoom() == zoom)
+                    .filter(tile -> intersectsCanvas(
+                            tile, manifest.canvas(), manifest.tileEdge(), scale
+                    ))
                     .sorted(Comparator.comparingInt(TileAddress::y)
                             .thenComparingInt(TileAddress::x))
                     .forEach(tile -> commands.add(tileCommand(
@@ -420,7 +503,7 @@ public final class RuntimeMinimapFramePlanner {
             RuntimeFloor floor,
             ViewportCamera camera
     ) {
-        Map<NamespacedId,
+        Map<com.ptcrys.fpsmatch.core.minimap.model.NamespacedId,
                 RuntimeStyle> styles = new HashMap<>();
         for (RuntimeStyle style : definition.styles().styles()) {
             styles.put(style.id(), style);
@@ -463,18 +546,27 @@ public final class RuntimeMinimapFramePlanner {
                     region.labelAnchor().v(),
                     0f
             );
-            candidates.add(new LabelCandidate(
+            LabelCandidate candidate = new LabelCandidate(
                     region.id(),
                     projected.canvasX() - width * 0.5,
                     projected.canvasY() - height * 0.5,
                     width,
                     height,
                     region.priority()
-            ));
-            labels.put(region.id(), new LabelRender(
-                    region,
-                    appearance
-            ));
+            );
+            double halfWidth = camera.viewportWidth() * 0.5;
+            double halfHeight = camera.viewportHeight() * 0.5;
+            double padding = 2.0;
+            if (candidate.x() >= -halfWidth + padding
+                    && candidate.y() >= -halfHeight + padding
+                    && candidate.x() + candidate.width() <= halfWidth - padding
+                    && candidate.y() + candidate.height() <= halfHeight - padding) {
+                candidates.add(candidate);
+                labels.put(region.id(), new LabelRender(
+                        region,
+                        appearance
+                ));
+            }
         }
         for (LabelCandidate accepted : LabelCollisionResolver.resolve(candidates)) {
             LabelRender render = labels.get(accepted.id());
@@ -649,6 +741,57 @@ public final class RuntimeMinimapFramePlanner {
                 maxV - minV,
                 1f
         );
+    }
+
+    /**
+     * Resolves the HUD floor once so generated-tile binding and HUD projection
+     * share the planner's hysteresis and priority state.
+     */
+    public Optional<RuntimeFloor> resolveHudFloor(
+            RuntimeGeneration generation,
+            RuntimeManifest manifest,
+            double viewerY
+    ) {
+        Objects.requireNonNull(generation, "generation");
+        Objects.requireNonNull(manifest, "manifest");
+        if (manifest.floors().isEmpty()) {
+            throw new IllegalArgumentException("Runtime floors must be non-empty");
+        }
+        boolean revisionChanged = !generation.equals(currentGeneration);
+        automaticFloor = new AutoFloorSelector(
+                manifest.floors().stream().map(RuntimeFloor::selection).toList()
+        ).resolve(automaticFloor, viewerY, revisionChanged);
+        currentGeneration = generation;
+        if (!(automaticFloor instanceof AutoFloorState.Floor selected)) {
+            return Optional.empty();
+        }
+        return manifest.floors().stream()
+                .filter(floor -> floor.selection().id().equals(selected.floorId()))
+                .findFirst();
+    }
+
+    private static boolean intersectsCanvas(
+            TileAddress tile,
+            CanvasBounds canvas,
+            int tileEdge,
+            double scale
+    ) {
+        double minU = tile.x() * tileEdge * scale;
+        double minV = tile.y() * tileEdge * scale;
+        double maxU = minU + tileEdge * scale;
+        double maxV = minV + tileEdge * scale;
+        return maxU > 0.0 && maxV > 0.0
+                && minU < canvas.width() && minV < canvas.height();
+    }
+
+    public record TacticalFloorResolution(
+            FloorViewState floorState,
+            RuntimeFloor floor
+    ) {
+        public TacticalFloorResolution {
+            Objects.requireNonNull(floorState, "floorState");
+            Objects.requireNonNull(floor, "floor");
+        }
     }
 
     private record TileAddress(ContainerPath path, int zoom, int x, int y) {

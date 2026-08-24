@@ -12,7 +12,6 @@ import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeManifest;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
-import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -43,7 +42,7 @@ public final class MinimapClientSyncManager {
         this.entryValidator = Objects.requireNonNull(entryValidator, "entryValidator");
     }
 
-    public Optional<byte[]> acceptFragment(
+    public synchronized Optional<byte[]> acceptFragment(
             MinimapCacheKey cacheKey,
             TransferKey transferKey,
             int fragmentIndex,
@@ -77,6 +76,18 @@ public final class MinimapClientSyncManager {
             byte[] fragmentBytes,
             long nowMillis
     ) {
+        return acceptManifestWithProgress(
+                generation, transferKey, fragmentIndex, fragmentBytes, nowMillis
+        ).manifest();
+    }
+
+    synchronized ManifestFragmentResult acceptManifestWithProgress(
+            RuntimeGeneration generation,
+            TransferKey transferKey,
+            int fragmentIndex,
+            byte[] fragmentBytes,
+            long nowMillis
+    ) {
         Objects.requireNonNull(generation, "generation");
         Objects.requireNonNull(transferKey, "transferKey");
         Objects.requireNonNull(fragmentBytes, "fragmentBytes");
@@ -84,43 +95,58 @@ public final class MinimapClientSyncManager {
                 || !generation.runtimeHash().equals(transferKey.objectHash())
                 || transferKey.totalLength() > MinimapHardLimits.MAX_RUNTIME_MANIFEST_BYTES
                 || !canonicalTransferGeometry(transferKey)) {
-            return Optional.empty();
+            return ManifestFragmentResult.REJECTED;
         }
-        Optional<byte[]> assembled;
+        FragmentAccumulator.Acceptance progress;
         try {
-            assembled = accumulator.accept(
+            progress = accumulator.acceptDetailed(
                     transferKey, fragmentIndex, fragmentBytes, nowMillis
             );
         } catch (FragmentAssemblyException exception) {
-            return Optional.empty();
+            return ManifestFragmentResult.REJECTED;
         }
-        if (assembled.isEmpty()) {
-            return Optional.empty();
+        if (progress.assembled().isEmpty()) {
+            return progress.progressed()
+                    ? ManifestFragmentResult.PROGRESS
+                    : ManifestFragmentResult.DUPLICATE;
         }
-        byte[] payload = assembled.get();
+        byte[] payload = progress.assembled().orElseThrow();
         RuntimeManifest manifest;
         try {
             manifest = RuntimeEntryValidation.readManifest(payload).value();
         } catch (ContainerValidationException | IllegalArgumentException exception) {
-            return Optional.empty();
+            return ManifestFragmentResult.REJECTED;
         }
         if (!manifest.binding().equals(generation.mapKey())
                 || !manifest.documentId().equals(generation.documentId())
                 || manifest.publishRevision() != generation.revision()) {
-            return Optional.empty();
+            return ManifestFragmentResult.REJECTED;
         }
         MinimapCacheKey cacheKey = cacheKey(
                 generation, generation.runtimeHash(), MinimapContainerLayout.RUNTIME_MANIFEST
         );
         if (!entryValidator.validate(cacheKey, payload) || !diskCache.put(cacheKey, payload)) {
-            return Optional.empty();
+            return ManifestFragmentResult.REJECTED;
         }
         entryStore.stage(cacheKey, payload);
         manifests.put(generation, new ManifestState(manifest));
-        return Optional.of(manifest);
+        return new ManifestFragmentResult(Optional.of(manifest), true);
     }
 
     public synchronized Optional<byte[]> acceptEntry(
+            RuntimeGeneration generation,
+            ContainerPath path,
+            TransferKey transferKey,
+            int fragmentIndex,
+            byte[] fragmentBytes,
+            long nowMillis
+    ) {
+        return acceptEntryWithProgress(
+                generation, path, transferKey, fragmentIndex, fragmentBytes, nowMillis
+        ).payload();
+    }
+
+    synchronized EntryFragmentResult acceptEntryWithProgress(
             RuntimeGeneration generation,
             ContainerPath path,
             TransferKey transferKey,
@@ -135,7 +161,7 @@ public final class MinimapClientSyncManager {
         ManifestState state = manifests.get(generation);
         if (state == null || !MinimapContainerLayout.isRuntimePath(path)
                 || MinimapContainerLayout.RUNTIME_MANIFEST.equals(path)) {
-            return Optional.empty();
+            return EntryFragmentResult.REJECTED;
         }
         RuntimeEntryDescriptor descriptor = state.entries().get(path);
         if (descriptor == null
@@ -143,33 +169,35 @@ public final class MinimapClientSyncManager {
                 || descriptor.byteLength() != transferKey.totalLength()
                 || !descriptor.sha256().equals(transferKey.objectHash())
                 || !canonicalTransferGeometry(transferKey)) {
-            return Optional.empty();
+            return EntryFragmentResult.REJECTED;
         }
-        Optional<byte[]> assembled;
+        FragmentAccumulator.Acceptance progress;
         try {
-            assembled = accumulator.accept(
+            progress = accumulator.acceptDetailed(
                     transferKey, fragmentIndex, fragmentBytes, nowMillis
             );
         } catch (FragmentAssemblyException exception) {
-            return Optional.empty();
+            return EntryFragmentResult.REJECTED;
         }
-        if (assembled.isEmpty()) {
-            return Optional.empty();
+        if (progress.assembled().isEmpty()) {
+            return progress.progressed()
+                    ? EntryFragmentResult.PROGRESS
+                    : EntryFragmentResult.DUPLICATE;
         }
-        byte[] payload = assembled.get();
+        byte[] payload = progress.assembled().orElseThrow();
         try {
             RuntimeEntryValidation.validateEntry(state.manifest(), path, payload);
         } catch (ContainerValidationException | IllegalArgumentException exception) {
-            return Optional.empty();
+            return EntryFragmentResult.REJECTED;
         }
         MinimapCacheKey cacheKey = cacheKey(
                 generation, descriptor.sha256(), path
         );
         if (!entryValidator.validate(cacheKey, payload) || !diskCache.put(cacheKey, payload)) {
-            return Optional.empty();
+            return EntryFragmentResult.REJECTED;
         }
         entryStore.stage(cacheKey, payload);
-        return Optional.of(payload);
+        return new EntryFragmentResult(Optional.of(payload), true);
     }
 
     public synchronized boolean activateGeneration(
@@ -279,17 +307,18 @@ public final class MinimapClientSyncManager {
         return true;
     }
 
-    public Optional<RuntimeEntryStore.ActiveEntry> active(MapKey mapKey) {
+    public Optional<RuntimeEntryStore.ActiveEntry> active(com.ptcrys.fpsmatch.core.minimap.model.MapKey mapKey) {
         return entryStore.active(mapKey);
     }
 
     public Optional<RuntimeEntryStore.ActiveRuntime> activeRuntime(
-            MapKey mapKey
+            com.ptcrys.fpsmatch.core.minimap.model.MapKey mapKey
     ) {
         return entryStore.activeRuntime(mapKey);
     }
 
     public synchronized void clearTransientState() {
+        accumulator.clear();
         manifests.clear();
         entryStore.clear();
     }
@@ -329,6 +358,35 @@ public final class MinimapClientSyncManager {
                             entry -> entry
                     ))
             );
+        }
+    }
+
+    record ManifestFragmentResult(
+            Optional<RuntimeManifest> manifest,
+            boolean progressed
+    ) {
+        private static final ManifestFragmentResult PROGRESS =
+                new ManifestFragmentResult(Optional.empty(), true);
+        private static final ManifestFragmentResult DUPLICATE =
+                new ManifestFragmentResult(Optional.empty(), false);
+        private static final ManifestFragmentResult REJECTED =
+                new ManifestFragmentResult(Optional.empty(), false);
+
+        ManifestFragmentResult {
+            Objects.requireNonNull(manifest, "manifest");
+        }
+    }
+
+    record EntryFragmentResult(Optional<byte[]> payload, boolean progressed) {
+        private static final EntryFragmentResult PROGRESS =
+                new EntryFragmentResult(Optional.empty(), true);
+        private static final EntryFragmentResult DUPLICATE =
+                new EntryFragmentResult(Optional.empty(), false);
+        private static final EntryFragmentResult REJECTED =
+                new EntryFragmentResult(Optional.empty(), false);
+
+        EntryFragmentResult {
+            Objects.requireNonNull(payload, "payload");
         }
     }
 }

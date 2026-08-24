@@ -23,14 +23,4 @@ public record DraftSnapshot(
         }
     }
 
-    public static DraftSnapshot fromLog(UUID draftId, long ackCursor, Sha256 baseSourceHash, EditorCommandLog log) {
-        Objects.requireNonNull(log, "log");
-        return new DraftSnapshot(
-                draftId,
-                ackCursor,
-                baseSourceHash,
-                log.rootHash(),
-                log.currentState().operations()
-        );
-    }
 }

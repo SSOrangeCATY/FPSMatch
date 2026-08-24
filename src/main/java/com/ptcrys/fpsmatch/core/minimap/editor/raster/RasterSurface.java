@@ -2,7 +2,6 @@ package com.ptcrys.fpsmatch.core.minimap.editor.raster;
 
 import com.ptcrys.fpsmatch.core.minimap.editor.document.EditorDocument;
 import com.ptcrys.fpsmatch.core.minimap.editor.document.EditableLayer;
-import com.ptcrys.fpsmatch.core.minimap.model.CompositionOperator;
 import com.ptcrys.fpsmatch.core.minimap.model.LayerType;
 
 import java.util.Arrays;
@@ -10,6 +9,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class RasterSurface {
+    private static final int INHERITED_PIXEL = 0x00000001;
+
     private final EditorDocument document;
     private final String floorId;
     private final String layerId;
@@ -50,7 +51,7 @@ public final class RasterSurface {
         return selection == null || selection.contains(x, y);
     }
 
-    public CompositionOperator compositionOperator() {
+    public com.ptcrys.fpsmatch.core.minimap.model.CompositionOperator compositionOperator() {
         return layer.type().operator();
     }
 
@@ -69,7 +70,7 @@ public final class RasterSurface {
         int localX = x - tileX * tileEdge;
         int localY = y - tileY * tileEdge;
         int tileWidth = Math.min(tileEdge, width - tileX * tileEdge);
-        return isInheritedSentinel(tile.get()[localY * tileWidth + localX]);
+        return isInheritedPixel(tile.get()[localY * tileWidth + localX]);
     }
 
     public int getPixel(int x, int y) {
@@ -84,7 +85,7 @@ public final class RasterSurface {
         int localY = y - tileY * tileEdge;
         int tileWidth = Math.min(tileEdge, width - tileX * tileEdge);
         int value = tile.get()[localY * tileWidth + localX];
-        return isInheritedSentinel(value) ? 0 : value;
+        return isInheritedPixel(value) ? 0 : value;
     }
 
     public void setPixel(int x, int y, int rgba) {
@@ -121,10 +122,10 @@ public final class RasterSurface {
         int localX = x - tileX * tileEdge;
         int localY = y - tileY * tileEdge;
         int[] pixels = existing.get();
-        pixels[localY * tileWidth + localX] = inheritedSentinel();
+        pixels[localY * tileWidth + localX] = inheritedPixel();
         if (allInherited(pixels)) {
             // Leave an all-inherited tile rather than deleting; missing-tile semantics remain inherit.
-            Arrays.fill(pixels, inheritedSentinel());
+            Arrays.fill(pixels, inheritedPixel());
         }
         document.putTilePixels(floorId, layerId, tileX, tileY, pixels);
     }
@@ -150,7 +151,7 @@ public final class RasterSurface {
             return existing.get();
         }
         int[] created = new int[tileWidth * tileHeight];
-        Arrays.fill(created, inheritedSentinel());
+        Arrays.fill(created, inheritedPixel());
         return created;
     }
 
@@ -160,20 +161,18 @@ public final class RasterSurface {
         }
     }
 
-    private static int inheritedSentinel() {
-        // Use a non-zero alpha with marker in high green/blue unused pattern? Spec uses inherit as absence.
-        // Represent inherit inside an existing tile as 0x00000001 (alpha 0, rgb marker) is ambiguous with transparent.
-        // Use alpha=0 and RGB=1,0,0 as inherit marker; transparent paint stores exact 0 via Rgba8.
-        return 0x00000001;
+    /** In-memory marker for a raster-paint pixel that inherits from lower layers. */
+    public static int inheritedPixel() {
+        return INHERITED_PIXEL;
     }
 
-    private static boolean isInheritedSentinel(int value) {
-        return value == 0x00000001;
+    public static boolean isInheritedPixel(int value) {
+        return value == INHERITED_PIXEL;
     }
 
     private static boolean allInherited(int[] pixels) {
         for (int pixel : pixels) {
-            if (!isInheritedSentinel(pixel)) {
+            if (!isInheritedPixel(pixel)) {
                 return false;
             }
         }

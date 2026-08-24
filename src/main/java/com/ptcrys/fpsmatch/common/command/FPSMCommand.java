@@ -12,7 +12,6 @@ import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import com.ptcrys.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
 import com.ptcrys.fpsmatch.core.map.*;
 import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;

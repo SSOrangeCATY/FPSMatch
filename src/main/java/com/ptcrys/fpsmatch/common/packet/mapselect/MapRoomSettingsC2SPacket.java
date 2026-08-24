@@ -2,7 +2,6 @@ package com.ptcrys.fpsmatch.common.packet.mapselect;
 
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -33,7 +32,7 @@ public record MapRoomSettingsC2SPacket(String gameType, String mapName, String s
             MapRoomActionService.Result result = MapRoomActionService.setSetting(player, gameType, mapName, settingName, value);
             MapRoomActionService.sendMessage(player, result);
             if (result.success() && result.detail().isPresent()) {
-                MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
+                com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
             }
             result.detail().ifPresentOrElse(
                     detail -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(detail)),

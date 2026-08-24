@@ -3,6 +3,7 @@ package com.ptcrys.fpsmatch.common.client.minimap;
 import com.ptcrys.fpsmatch.common.packet.minimap.MinimapS2CDispatcher;
 
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public final class ClientMinimapBootstrap {
@@ -27,16 +28,17 @@ public final class ClientMinimapBootstrap {
             return;
         }
         installed = true;
-        dispatcherInstaller.accept(services.dispatcher());
-        events.bind(services::connect, services::disconnect, services::reset);
+        services.installDispatcherWith(dispatcherInstaller);
+        events.bind(services::connect, services::disconnect, services::reset, services::tick);
     }
 
     @FunctionalInterface
     public interface EventSource {
         void bind(
-                Consumer<String> onConnect,
-                Runnable onDisconnect,
-                Runnable onReset
+                BiConsumer<Object, String> onConnect,
+                Consumer<Object> onDisconnect,
+                Runnable onReset,
+                Runnable onTick
         );
     }
 }

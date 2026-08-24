@@ -108,9 +108,9 @@ public sealed interface EditorWireMessage extends MinimapWireMessage
         public EditorOperation {
             Objects.requireNonNull(requestId, "requestId");
             Objects.requireNonNull(context, "context");
-            if (opSequence < 0) {
+            if (opSequence <= 0) {
                 throw new IllegalArgumentException(
-                        "Editor operation sequence must be non-negative"
+                        "Editor operation sequence must be positive"
                 );
             }
             Objects.requireNonNull(expectedRootHash, "expectedRootHash");
@@ -123,6 +123,11 @@ public sealed interface EditorWireMessage extends MinimapWireMessage
                 );
             }
             mutations = List.copyOf(mutations);
+        }
+
+        /** Canonical operation-descriptor hash; payloadHash is kept for source compatibility. */
+        public Sha256 descriptorHash() {
+            return payloadHash;
         }
 
         @Override

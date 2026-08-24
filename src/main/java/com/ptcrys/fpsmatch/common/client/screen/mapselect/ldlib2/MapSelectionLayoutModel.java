@@ -3,6 +3,7 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 /** Pure responsive layout calculation used by the LDLib2 map-room screen. */
 public record MapSelectionLayoutModel(
         Rect header,
+        Rect toast,
         Rect filters,
         Rect roomList,
         Rect detail,
@@ -33,8 +34,11 @@ public record MapSelectionLayoutModel(
             throw new IllegalArgumentException("screen dimensions must be positive");
         }
         int headerHeight = Math.min(height, Math.max(20, Math.min(32, height / 18)));
-        int contentTop = headerHeight;
-        int contentHeight = Math.max(1, height - contentTop);
+        // Keep one stable notice band in the layout so late server feedback never covers or
+        // shifts the first room row. The element may be hidden, but its space remains reserved.
+        int toastHeight = Math.min(28, Math.max(0, height - headerHeight));
+        int contentTop = headerHeight + toastHeight;
+        int contentHeight = Math.max(0, height - contentTop);
 
         // Three-column shell once there is room for filter rail + list + right rail.
         if (width >= 420) {
@@ -80,6 +84,7 @@ public record MapSelectionLayoutModel(
             int browserTop = actionsTop + actionHeight;
             return new MapSelectionLayoutModel(
                     new Rect(0, 0, width, headerHeight),
+                    new Rect(0, headerHeight, width, toastHeight),
                     new Rect(0, contentTop, filterWidth, filterHeight),
                     new Rect(filterWidth, contentTop, listWidth, contentHeight),
                     new Rect(filterWidth + listWidth, contentTop, rightWidth, contentHeight),
@@ -105,6 +110,7 @@ public record MapSelectionLayoutModel(
         int browserTop = contentTop + contentHeight - browserActionsHeight;
         return new MapSelectionLayoutModel(
                 new Rect(0, 0, width, headerHeight),
+                new Rect(0, headerHeight, width, toastHeight),
                 new Rect(0, contentTop, leftWidth, filterHeight),
                 new Rect(leftWidth, contentTop, listWidth, contentHeight),
                 new Rect(width, contentTop, 0, 0),

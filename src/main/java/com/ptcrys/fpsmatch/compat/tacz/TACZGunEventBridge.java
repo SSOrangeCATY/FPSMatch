@@ -1,7 +1,6 @@
 package com.ptcrys.fpsmatch.compat.tacz;
 
 import com.ptcrys.fpsmatch.common.event.*;
-import com.ptcrys.fpsmatch.common.event.*;
 import com.ptcrys.fpsmatch.compat.PassThroughFlagResolver;
 import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import com.tacz.guns.api.event.common.*;

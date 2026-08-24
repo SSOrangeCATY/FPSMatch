@@ -496,7 +496,6 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
-        modularUI.getWidget().mouseMoved(mouseX, mouseY);
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.ptcrys.fpsmatch.core.minimap.wire;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -274,7 +273,8 @@ final class SnapshotWireCodec {
         }
         if (totalLength > MinimapHardLimits.MAX_SNAPSHOT_CHANNEL_BYTES) {
             throw new MinimapWireError(
-                    MinimapErrorCode.QUOTA_EXCEEDED,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.QUOTA_EXCEEDED,
                     "Snapshot channel length exceeds its hard limit"
             );
         }
@@ -325,7 +325,8 @@ final class SnapshotWireCodec {
         long maximum = MinimapHardLimits.MAX_SNAPSHOT_MANIFEST_DECLARED_BYTES;
         if (additional < 0 || current > maximum - additional) {
             throw new MinimapWireError(
-                    MinimapErrorCode.QUOTA_EXCEEDED,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.QUOTA_EXCEEDED,
                     "Snapshot manifest declared bytes exceed their limit"
             );
         }
@@ -342,7 +343,8 @@ final class SnapshotWireCodec {
 
     private static MinimapWireError malformed(String message) {
         return new MinimapWireError(
-                MinimapErrorCode.MALFORMED_MESSAGE,
+                com.ptcrys.fpsmatch.core.minimap.contract
+                        .MinimapErrorCode.MALFORMED_MESSAGE,
                 message
         );
     }

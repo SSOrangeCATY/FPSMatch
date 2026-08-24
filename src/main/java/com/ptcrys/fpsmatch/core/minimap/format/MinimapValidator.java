@@ -1,8 +1,14 @@
 package com.ptcrys.fpsmatch.core.minimap.format;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
-import com.ptcrys.fpsmatch.core.minimap.model.*;
+import com.ptcrys.fpsmatch.core.minimap.model.AffineFit;
+import com.ptcrys.fpsmatch.core.minimap.model.CanvasBounds;
+import com.ptcrys.fpsmatch.core.minimap.model.CanvasRect;
+import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
+import com.ptcrys.fpsmatch.core.minimap.model.ConnectionEndpoint;
+import com.ptcrys.fpsmatch.core.minimap.model.ControlPoint;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapFloor;
+import com.ptcrys.fpsmatch.core.minimap.model.MinimapDefinition;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapFloorConnection;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapLayer;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapRegion;
@@ -11,6 +17,16 @@ import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.PolygonGeometry;
 import com.ptcrys.fpsmatch.core.minimap.model.RectangleGeometry;
 import com.ptcrys.fpsmatch.core.minimap.model.RegionVisualLayer;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeDefinition;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeFloor;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeManifest;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeRegion;
+import com.ptcrys.fpsmatch.core.minimap.model.RuntimeStyle;
+import com.ptcrys.fpsmatch.core.minimap.model.SourceDocument;
+import com.ptcrys.fpsmatch.core.minimap.model.SourceEntryDescriptor;
+import com.ptcrys.fpsmatch.core.minimap.model.SourceFloor;
+import com.ptcrys.fpsmatch.core.minimap.model.SourceManifest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -130,7 +146,7 @@ public final class MinimapValidator {
             if (style == null) {
                 add(issues, MinimapValidationCode.MISSING_STYLE_REFERENCE, path + "/styleId",
                         "Region style does not exist");
-            } else if (style.type() != StyleType.REGION) {
+            } else if (style.type() != com.ptcrys.fpsmatch.core.minimap.model.StyleType.REGION) {
                 add(issues, MinimapValidationCode.STYLE_TYPE_MISMATCH, path + "/styleId",
                         "Region must reference a region style");
             }
@@ -271,8 +287,8 @@ public final class MinimapValidator {
 
     private static void validateRegionBounds(
             CanvasBounds canvas,
-            RegionGeometry geometry,
-            CanvasPoint labelAnchor,
+            com.ptcrys.fpsmatch.core.minimap.model.RegionGeometry geometry,
+            com.ptcrys.fpsmatch.core.minimap.model.CanvasPoint labelAnchor,
             String path,
             List<MinimapValidationIssue> issues
     ) {

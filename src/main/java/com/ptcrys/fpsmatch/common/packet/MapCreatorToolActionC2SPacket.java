@@ -122,7 +122,11 @@ public record MapCreatorToolActionC2SPacket(
         }
 
         BaseMap newMap = factory.apply(level, mapName, areaData.get());
-        FPSMCore.getInstance().registerMap(type, newMap);
+        if (!FPSMCore.getInstance().registerMap(type, newMap)) {
+            player.displayClientMessage(Component.translatable(
+                    "message.fpsm.map_creator_tool.duplicate_map", mapName), false);
+            return;
+        }
 
         MapCreatorTool.setSelectedType(stack, type);
         MapCreatorTool.setSelectedMap(stack, mapName);

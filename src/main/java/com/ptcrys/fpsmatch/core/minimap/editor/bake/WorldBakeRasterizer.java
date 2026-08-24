@@ -42,8 +42,17 @@ public final class WorldBakeRasterizer {
                     case TRANSPARENT, IGNORE -> 0;
                 };
             }
-            // place section plane into tile (0,0) for unit tests / single-section bakes
-            document.putTilePixels(floorId, layerId, 0, 0, pixels);
+            // Section coordinates are already expressed in the editable tile
+            // grid.  Keeping the world coordinate here is important when a
+            // bake contains more than one loaded section; writing every
+            // section to (0,0) silently loses all but the last section.
+            document.putTilePixels(
+                    floorId,
+                    layerId,
+                    section.coord().sectionX(),
+                    section.coord().sectionZ(),
+                    pixels
+            );
         }
         return layerId;
     }

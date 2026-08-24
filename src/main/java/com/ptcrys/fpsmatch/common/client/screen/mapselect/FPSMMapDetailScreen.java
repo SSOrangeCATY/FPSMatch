@@ -4,7 +4,6 @@ import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.screen.FPSMTeamManageScreen;
 import com.ptcrys.fpsmatch.common.packet.mapselect.*;
-import com.ptcrys.fpsmatch.common.packet.mapselect.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -223,7 +222,7 @@ public class FPSMMapDetailScreen extends FPSMMapScreenBase implements FPSMMapDet
         if (parent instanceof FPSMMapSelectionScreen) {
             FPSMatch.sendToServer(new OpenMapSelectionC2SPacket());
         } else {
-            FPSMatch.sendToServer(new CloseMapViewC2SPacket());
+            FPSMatch.sendToServer(new com.ptcrys.fpsmatch.common.packet.mapselect.CloseMapViewC2SPacket());
         }
         minecraft.setScreen(parent);
     }

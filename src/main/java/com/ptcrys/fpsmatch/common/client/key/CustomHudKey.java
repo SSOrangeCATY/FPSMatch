@@ -25,8 +25,7 @@ public class CustomHudKey {
     public static final KeyMapping KEY = new KeyMapping("key.fpsm.hud.custom.desc",
             KeyConflictContext.IN_GAME,
             KeyModifier.NONE,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_N,
+            InputConstants.UNKNOWN,
             "key.category.fpsm");
 
     @SubscribeEvent

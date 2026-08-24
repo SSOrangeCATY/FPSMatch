@@ -109,17 +109,19 @@ public class FPSMCore {
         playerToMapCache.remove(player, map);
     }
 
-    public void registerMap(String type, BaseMap map){
+    public boolean registerMap(String type, BaseMap map){
         if(REGISTRY.containsKey(type)) {
             if(getMapNames(type).contains(map.getMapName())){
                 FPSMatch.LOGGER.error("FPSMatch Core : has same map name -> {}", map.getMapName());
-                return;
+                return false;
             }
             List<BaseMap> maps = GAMES.getOrDefault(type,new ArrayList<>());
             maps.add(map);
             GAMES.put(type,maps);
+            return true;
         }else{
             FPSMatch.LOGGER.error("FPSMatch Core : unregister game type {}", type);
+            return false;
         }
     }
 

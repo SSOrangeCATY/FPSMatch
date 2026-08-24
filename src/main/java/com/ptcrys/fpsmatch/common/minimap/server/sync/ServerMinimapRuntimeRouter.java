@@ -3,9 +3,11 @@ package com.ptcrys.fpsmatch.common.minimap.server.sync;
 import com.ptcrys.fpsmatch.common.packet.minimap.MinimapC2SDispatcher;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
-import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
-import com.ptcrys.fpsmatch.core.minimap.marker.*;
+import com.ptcrys.fpsmatch.core.minimap.marker.MarkerSnapshot;
+import com.ptcrys.fpsmatch.core.minimap.marker.MarkerStreamManager;
+import com.ptcrys.fpsmatch.core.minimap.marker.MarkerStreamUpdate;
 import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
+import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 import com.ptcrys.fpsmatch.common.minimap.server.EditorSession;
 import com.ptcrys.fpsmatch.common.minimap.server.EditorSessionManager;
@@ -13,6 +15,7 @@ import com.ptcrys.fpsmatch.common.minimap.server.ServerEditorPublishService;
 import com.ptcrys.fpsmatch.common.minimap.server.MinimapAction;
 import com.ptcrys.fpsmatch.common.minimap.server.MinimapPermissionPolicy;
 import com.ptcrys.fpsmatch.common.minimap.server.SessionAccessException;
+import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
 import com.ptcrys.fpsmatch.core.minimap.wire.EditorWireMessage;
 import com.ptcrys.fpsmatch.core.minimap.wire.MarkerWireMessage;
 import com.ptcrys.fpsmatch.core.minimap.wire.MinimapWireMessage;
@@ -23,10 +26,9 @@ import com.ptcrys.fpsmatch.core.minimap.wire.WireIdentity;
 import com.ptcrys.fpsmatch.core.minimap.wire.WireMarker;
 import com.ptcrys.fpsmatch.core.minimap.wire.WireStatus;
 import com.ptcrys.fpsmatch.core.minimap.wire.WireTransfer;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapOpcode;
-import com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +53,7 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
     private final EditorSessionManager editorSessions;
     private final MinimapPermissionPolicy editorPermissions;
     private final ServerEditorPublishService editorPublish;
+    private ServerMinimapEditorRouter editorRouter;
     private Map<UUID, Subscription> markerSubscriptionSnapshot;
 
     public ServerMinimapRuntimeRouter(
@@ -130,6 +133,8 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             requestEntries(actorId, request);
         } else if (message instanceof RuntimeWireMessage.RequestMarkerReset request) {
             requestMarkerReset(actorId, request);
+        } else if (editorRouter != null && isEditorMessage(message)) {
+            editorRouter.dispatch(actorId, message);
         } else if (message instanceof EditorWireMessage.EditorOpen open) {
             openEditor(actorId, open);
         } else if (message instanceof EditorWireMessage.EditorClose close) {
@@ -151,6 +156,9 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
     public boolean allowEditor(UUID actorId, MinimapWireMessage message) {
         Objects.requireNonNull(actorId, "actorId");
         Objects.requireNonNull(message, "message");
+        if (editorRouter != null) {
+            return editorRouter.allow(actorId, message);
+        }
         if (editorSessions == null || editorPermissions == null) {
             return false;
         }
@@ -351,9 +359,65 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             invalidateMarkerSubscriptionSnapshot();
         }
         markerStreams.remove(actorId);
-        if (editorSessions != null) {
+        if (editorRouter != null) {
+            editorRouter.onPlayerLogout(actorId);
+        } else if (editorSessions != null) {
             editorSessions.invalidateActor(actorId);
         }
+    }
+
+    public synchronized void installEditorRouter(ServerMinimapEditorRouter editorRouter) {
+        this.editorRouter = Objects.requireNonNull(editorRouter, "editorRouter");
+    }
+
+    public synchronized void invalidateMap(MapKey mapKey) {
+        Objects.requireNonNull(mapKey, "mapKey");
+        List<Map.Entry<SubscriptionKey, Subscription>> matches =
+                subscriptions.entrySet().stream()
+                .filter(entry -> entry.getValue().identity().binding().target().mapKey()
+                        .equals(mapKey))
+                .sorted(Map.Entry.comparingByKey(
+                        ServerMinimapRuntimeRouter::compareSubscriptionKeys
+                ))
+                .toList();
+        ArrayList<Map.Entry<SubscriptionKey, Subscription>> detached =
+                new ArrayList<>(matches.size());
+        for (Map.Entry<SubscriptionKey, Subscription> entry : matches) {
+            if (detachMarkerSubscription(entry.getKey().actorId(), entry.getValue())) {
+                detached.add(entry);
+            }
+        }
+        Throwable failure = null;
+        if (editorRouter != null) {
+            try {
+                editorRouter.invalidateMap(mapKey);
+            } catch (RuntimeException | Error next) {
+                failure = LifecycleFailures.merge(failure, next);
+            }
+        } else if (editorSessions != null) {
+            try {
+                editorSessions.invalidateMap(mapKey);
+            } catch (RuntimeException | Error next) {
+                failure = LifecycleFailures.merge(failure, next);
+            }
+        }
+        for (Map.Entry<SubscriptionKey, Subscription> entry : detached) {
+            failure = notifyMarkerRevocation(
+                    failure, entry.getKey().actorId(), entry.getValue(),
+                    MinimapErrorCode.REVISION_CONFLICT,
+                    WireStatus.RetryDisposition.RESYNC_SCOPE,
+                    "Published minimap binding changed"
+            );
+        }
+        LifecycleFailures.rethrow(failure);
+    }
+
+    private static boolean isEditorMessage(MinimapWireMessage message) {
+        return message instanceof EditorWireMessage
+                || message instanceof PublishWireMessage.EditorRebase
+                || message instanceof PublishWireMessage.ReservePublish
+                || message instanceof PublishWireMessage.CommitPublish
+                || message instanceof PublishWireMessage.QueryPublishStatus;
     }
 
     public synchronized void tick(long nowTick) {
@@ -371,6 +435,38 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
                 tickMarkers(entry.getKey(), entry.getValue(), wireMarkerCache);
             }
         }
+    }
+
+    public synchronized void onCatalogReload() {
+        subscriptions.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey(
+                        ServerMinimapRuntimeRouter::compareSubscriptionKeys
+                ))
+                .toList()
+                .forEach(entry -> reconcileCatalogSubscription(entry.getKey().actorId(), entry.getValue()));
+    }
+
+    private void reconcileCatalogSubscription(UUID actorId, Subscription subscription) {
+        RuntimeMapSource source;
+        try {
+            source = resolve(actorId, subscription.identity().binding().target()).orElse(null);
+        } catch (RuntimeException unavailable) {
+            revokeMarkerSubscriptions(actorId, subscription, MinimapErrorCode.MAP_UNAVAILABLE, WireStatus.RetryDisposition.RETRY_NEW_REQUEST, "Runtime map is unavailable");
+            return;
+        }
+        if (source == null) {
+            revokeMarkerSubscriptions(actorId, subscription, MinimapErrorCode.UNAUTHORIZED, WireStatus.RetryDisposition.DO_NOT_RETRY, "Runtime map authorization changed");
+            return;
+        }
+        try (source) {
+            if (source.identity().equals(subscription.identity())) {
+                return;
+            }
+        } catch (IOException | RuntimeException unavailable) {
+            revokeMarkerSubscriptions(actorId, subscription, MinimapErrorCode.MAP_UNAVAILABLE, WireStatus.RetryDisposition.RETRY_NEW_REQUEST, "Runtime map is unavailable");
+            return;
+        }
+        revokeMarkerSubscriptions(actorId, subscription, MinimapErrorCode.REVISION_CONFLICT, WireStatus.RetryDisposition.RESYNC_SCOPE, "Runtime identity changed");
     }
 
     private void tickMarkers(
@@ -471,17 +567,56 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             WireStatus.RetryDisposition retry,
             String detail
     ) {
-        resetMarkerStream(actorId, subscription);
-        if (subscriptions.keySet().removeIf(key -> key.actorId().equals(actorId))) {
-            invalidateMarkerSubscriptionSnapshot();
+        if (!detachMarkerSubscription(actorId, subscription)) {
+            return;
         }
-        markerStreams.remove(actorId);
-        markerError(actorId, subscription, code, retry, detail);
+        LifecycleFailures.rethrow(notifyMarkerRevocation(
+                null, actorId, subscription, code, retry, detail
+        ));
+    }
+
+    private boolean detachMarkerSubscription(UUID actorId, Subscription subscription) {
+        SubscriptionKey key = new SubscriptionKey(actorId, subscription.lease().scope());
+        if (!subscriptions.remove(key, subscription)) {
+            return false;
+        }
+        invalidateMarkerSubscriptionSnapshot();
+        if (subscriptions.keySet().stream().noneMatch(candidate ->
+                candidate.actorId().equals(actorId))) {
+            markerStreams.remove(actorId);
+        }
+        return true;
+    }
+
+    private Throwable notifyMarkerRevocation(
+            Throwable failure,
+            UUID actorId,
+            Subscription subscription,
+            MinimapErrorCode code,
+            WireStatus.RetryDisposition retry,
+            String detail
+    ) {
+        try {
+            resetMarkerStream(actorId, subscription);
+        } catch (RuntimeException | Error next) {
+            failure = LifecycleFailures.merge(failure, next);
+        }
+        try {
+            markerError(actorId, subscription, code, retry, detail);
+        } catch (RuntimeException | Error next) {
+            failure = LifecycleFailures.merge(failure, next);
+        }
+        return failure;
     }
 
     private void resetMarkerStream(UUID actorId, Subscription subscription) {
         MarkerStreamManager replacement = markerStream();
-        markerStreams.put(actorId, replacement);
+        if (subscriptions.keySet().stream().anyMatch(candidate ->
+                candidate.actorId().equals(actorId))) {
+            markerStreams.put(actorId, replacement);
+        } else {
+            markerStreams.remove(actorId);
+        }
         MarkerStreamUpdate reset = replacement.subscribe(
                 emptyViewer(), List.of()
         );
@@ -501,7 +636,8 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
         sender.send(actorId, new PublishWireMessage.ErrorMessage(
                 Optional.empty(), Optional.of(subscription.lease()),
                 Optional.of(subscription.identity().binding()),
-                Optional.of(MinimapOpcode.S2C_MARKER_DELTA.code()),
+                Optional.of(com.ptcrys.fpsmatch.core.minimap.contract
+                        .MinimapOpcode.S2C_MARKER_DELTA.code()),
                 new WireStatus.ErrorInfo(code.code(), retry, detail)
         ));
     }
@@ -613,7 +749,7 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
                 return;
             }
             for (WireTransfer.EntryRequest request : message.entries()) {
-                Optional<RuntimeEntryDescriptor>
+                Optional<com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor>
                         descriptor = source.descriptor(request.path());
                 if (descriptor.isEmpty()) {
                     error(actorId, message.requestId(), message.lease(),
@@ -762,22 +898,24 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
     }
 
     private static WireMarker.DeltaOperation wireOperation(
-            MarkerDelta operation,
+            com.ptcrys.fpsmatch.core.minimap.marker.MarkerDelta operation,
             IdentityHashMap<MarkerSnapshot.Marker, WireMarker.Marker>
                     wireMarkerCache
     ) {
-        if (operation instanceof MarkerDelta.Add add) {
+        if (operation instanceof com.ptcrys.fpsmatch.core.minimap.marker
+                .MarkerDelta.Add add) {
             return new WireMarker.Add(wireMarkerCache.computeIfAbsent(
                     add.marker(), ServerMinimapRuntimeRouter::wireMarker
             ));
         }
-        if (operation instanceof MarkerDelta.Update update) {
+        if (operation instanceof com.ptcrys.fpsmatch.core.minimap.marker
+                .MarkerDelta.Update update) {
             return new WireMarker.Update(wireMarkerCache.computeIfAbsent(
                     update.marker(), ServerMinimapRuntimeRouter::wireMarker
             ));
         }
         return new WireMarker.Remove(
-                ((MarkerDelta.Remove)
+                ((com.ptcrys.fpsmatch.core.minimap.marker.MarkerDelta.Remove)
                         operation).markerId()
         );
     }
@@ -788,15 +926,9 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
         }
         java.util.TreeMap<UUID, Subscription> result = new java.util.TreeMap<>();
         subscriptions.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey((left, right) -> {
-                    int actor = left.actorId().compareTo(right.actorId());
-                    if (actor != 0) {
-                        return actor;
-                    }
-                    return Integer.compare(
-                            left.scope().ordinal(), right.scope().ordinal()
-                    );
-                }))
+                .sorted(Map.Entry.comparingByKey(
+                        ServerMinimapRuntimeRouter::compareSubscriptionKeys
+                ))
                 .forEach(entry -> result.putIfAbsent(
                         entry.getKey().actorId(), entry.getValue()
                 ));
@@ -808,6 +940,11 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
         markerSubscriptionSnapshot = null;
     }
 
+    private static int compareSubscriptionKeys(SubscriptionKey left, SubscriptionKey right) {
+        int actor = left.actorId().compareTo(right.actorId());
+        return actor != 0 ? actor : Integer.compare(left.scope().ordinal(), right.scope().ordinal());
+    }
+
     private static MarkerStreamManager markerStream() {
         return new MarkerStreamManager(
                 context -> List.of(),
@@ -815,9 +952,11 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
         );
     }
 
-    private static MinimapViewerContext emptyViewer() {
-        return new MinimapViewerContext(
-                ViewerRole
+    private static com.ptcrys.fpsmatch.core.minimap.marker
+            .MinimapViewerContext emptyViewer() {
+        return new com.ptcrys.fpsmatch.core.minimap.marker
+                .MinimapViewerContext(
+                com.ptcrys.fpsmatch.core.minimap.marker.ViewerRole
                         .SPECTATOR_TEAM,
                 "unavailable", Optional.empty(), false, false
         );
@@ -848,7 +987,7 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
             UUID actorId,
             RuntimeWireMessage.RequestEntries message,
             ContainerPath path,
-            RuntimeEntryDescriptor descriptor,
+            com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor descriptor,
             InputStream input
     ) throws IOException {
         int count = Math.toIntExact(
@@ -888,7 +1027,7 @@ public final class ServerMinimapRuntimeRouter implements MinimapC2SDispatcher {
 
     private List<WireTransfer.TransferFragment> fragments(
             byte[] payload,
-            Sha256 objectHash
+            com.ptcrys.fpsmatch.core.minimap.model.Sha256 objectHash
     ) {
         int count = (payload.length - 1)
                 / MinimapHardLimits.MAX_WIRE_FRAGMENT_BYTES + 1;

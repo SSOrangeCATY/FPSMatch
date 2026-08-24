@@ -10,15 +10,19 @@ import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelect
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetailS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Map-room UI router.
@@ -59,6 +63,68 @@ public final class FPSMMapSelectScreens {
         } catch (Throwable error) {
             // Fail hard: do not fall back to classic widget screens.
             LOGGER.error("Failed to open LDLib2 map selection UI", error);
+        }
+    }
+
+    public static Optional<AcceptanceHandle> openAcceptance(
+            MapSelectionSnapshotS2CPacket snapshot,
+            MapRoomDetail detail,
+            MapRoomToastS2CPacket toast
+    ) {
+        Objects.requireNonNull(snapshot, "snapshot");
+        Objects.requireNonNull(detail, "detail");
+        Objects.requireNonNull(toast, "toast");
+        boolean containsDetail = snapshot.maps().stream().anyMatch(summary ->
+                summary.gameType().equals(detail.summary().gameType())
+                        && summary.mapName().equals(detail.summary().mapName())
+        );
+        if (!containsDetail || !toast.error()) {
+            return Optional.empty();
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Screen parent = sanitizeParent(minecraft.screen);
+        Ldlib2MapSelectionScreen screen =
+                new Ldlib2MapSelectionScreen(snapshot, parent);
+        try {
+            minecraft.setScreen(screen);
+            if (minecraft.screen != screen) {
+                return Optional.empty();
+            }
+            screen.applySnapshot(snapshot);
+            screen.applyDetail(detail);
+            screen.applyToast();
+            return Optional.of(new AcceptanceHandle(screen));
+        } catch (RuntimeException failure) {
+            if (minecraft.screen == screen) {
+                minecraft.setScreen(parent);
+            }
+            LOGGER.error("Failed to open LDLib2 map selection acceptance UI", failure);
+            return Optional.empty();
+        }
+    }
+
+    public static final class AcceptanceHandle {
+        private final Ldlib2MapSelectionScreen screen;
+
+        private AcceptanceHandle(Ldlib2MapSelectionScreen screen) {
+            this.screen = Objects.requireNonNull(screen, "screen");
+        }
+
+        public boolean isCurrent() {
+            return Minecraft.getInstance().screen == screen;
+        }
+
+        public boolean ownsScreen(Screen candidate) {
+            return candidate == screen;
+        }
+
+        public boolean closeAcceptance() {
+            if (!isCurrent()) {
+                return false;
+            }
+            screen.onClose();
+            return true;
         }
     }
 
@@ -120,7 +186,7 @@ public final class FPSMMapSelectScreens {
     /**
      * Passive detail update: only refresh when a detail/child screen is already open.
      */
-    public static void applyDetailIfOpen(MapRoomDetail detail) {
+    public static void applyDetailIfOpen(com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail detail) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof FPSMMapDetailChildScreen screen) {
             screen.applyDetail(detail);

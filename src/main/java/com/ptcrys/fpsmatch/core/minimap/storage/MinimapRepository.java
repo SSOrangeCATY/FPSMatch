@@ -7,23 +7,17 @@ import com.ptcrys.fpsmatch.core.minimap.codec.MinimapCodecs;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.format.JcsCanonicalizer;
 import com.ptcrys.fpsmatch.core.minimap.format.MapRebindService;
-import com.ptcrys.fpsmatch.core.minimap.format.CompiledMapPair;
 import com.ptcrys.fpsmatch.core.minimap.format.CommittedMapPairSnapshot;
 import com.ptcrys.fpsmatch.core.minimap.format.ContainerLimits;
 import com.ptcrys.fpsmatch.core.minimap.format.ContainerValidationException;
-import com.ptcrys.fpsmatch.core.minimap.format.RuntimeMap;
-import com.ptcrys.fpsmatch.core.minimap.format.RuntimeMapReader;
 import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
 import com.ptcrys.fpsmatch.core.minimap.format.StrictJsonParser;
-import com.ptcrys.fpsmatch.core.minimap.format.SourceMap;
-import com.ptcrys.fpsmatch.core.minimap.format.SourceMapReader;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +39,6 @@ public final class MinimapRepository {
     private static final String RECORD_FILE = "publish-record.json";
     private static final String SOURCE_FILE = "source.fpsmap";
     private static final String RUNTIME_FILE = "runtime.fpsmapc";
-    private static final String RECOVERY_MARKER = "RECOVERY_REQUIRED";
     private static final String DIRECTORY_SYNC_LOST_REASON = "directory-sync-lost";
     private static final int LOCK_STRIPE_COUNT = 64;
     private static final Pattern PIN_FILE_NAME = Pattern.compile(
@@ -53,19 +46,18 @@ public final class MinimapRepository {
     );
     private static final Sha256 ZERO_HASH = Sha256.parse("0".repeat(64));
     private static final Duration DEFAULT_RESERVATION_TTL = Duration.ofMinutes(30);
-    private static final long MAX_METADATA_BYTES = 1024L * 1024;
     private static final int MAX_DIRECTORY_ENTRIES = 4096;
     private static final int MAX_CLEANUP_TREE_NODES = 16384;
     private static final int MAX_CLEANUP_TREE_DEPTH = 16;
 
-    private final Path root;
-    private final Path realRoot;
     private final RepositoryFileSystem fileSystem;
     private final Clock clock;
+    private final MinimapRepositoryPersistence persistence;
+    private final MinimapRepositoryJournalAccess journalAccess;
+    private final StrictRepositoryDispatch strictDispatch;
     private final Map<Integer, Object> locks = new ConcurrentHashMap<>();
     private final Map<String, CurrentPointer> authoritativePointers = new ConcurrentHashMap<>();
     private final Set<String> suspendedMaps = ConcurrentHashMap.newKeySet();
-    private volatile boolean directorySyncDegraded;
 
     public MinimapRepository(Path root) {
         this(root, new NioRepositoryFileSystem(), Clock.systemUTC());
@@ -76,12 +68,31 @@ public final class MinimapRepository {
     }
 
     public MinimapRepository(Path root, RepositoryFileSystem fileSystem, Clock clock) {
-        this.root = Objects.requireNonNull(root, "root").toAbsolutePath().normalize();
+        this(root, fileSystem, clock, MinimapAuthorityJournal.provider());
+    }
+
+    MinimapRepository(
+            Path root,
+            RepositoryFileSystem fileSystem,
+            Clock clock,
+            AuthorityJournalProvider authorityProvider
+    ) {
+        Path normalizedRoot = Objects.requireNonNull(root, "root")
+                .toAbsolutePath().normalize();
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem");
         this.clock = Objects.requireNonNull(clock, "clock");
+        Objects.requireNonNull(authorityProvider, "authorityProvider");
         try {
-            fileSystem.createDirectories(this.root);
-            this.realRoot = this.root.toRealPath();
+            fileSystem.createDirectories(normalizedRoot);
+            this.persistence = new MinimapRepositoryPersistence(
+                    normalizedRoot, normalizedRoot.toRealPath(), fileSystem
+            );
+            this.journalAccess = new MinimapRepositoryJournalAccess(
+                    authorityProvider
+            );
+            this.strictDispatch = new StrictRepositoryDispatch(
+                    fileSystem, authorityProvider, journalAccess
+            );
         } catch (IOException exception) {
             throw storageFailure("Unable to create minimap repository root", exception);
         }
@@ -113,6 +124,23 @@ public final class MinimapRepository {
             throw new IllegalArgumentException("Reservation base revision and TTL are invalid");
         }
         Path mapDirectory = mapDirectory(key);
+        if (strictDispatch.mode(mapDirectory, key)
+                == StrictRepositoryDispatch.Mode.STRICT) {
+            AuthorityJournalProvider.StrictReservationResult strictReservation =
+                    strictDispatch.reservePublish(
+                            mapDirectory, "publish-" + UUID.randomUUID()
+                    );
+            if (strictReservation.status()
+                    == AuthorityJournalProvider.MutationStatus.UNAVAILABLE) {
+                throw new ContainerStorageException(
+                        "Strict publication reservation is unavailable: "
+                                + strictReservation.detail()
+                );
+            }
+            throw new ContainerStorageException(
+                    "Strict publication reservation is not available through the legacy transaction API"
+            );
+        }
         synchronized (lockFor(mapDirectory)) {
             requireDirectorySyncForPublish();
             try (RepositoryFileSystem.LockHandle ignored = acquireMapLock(mapDirectory)) {
@@ -264,7 +292,7 @@ public final class MinimapRepository {
                         Instant.ofEpochMilli(current.descriptor().expiresAtEpochMillis()),
                         PublishState.RESERVED
                 );
-                ValidatedPair validated = validatePair(
+                MinimapPairValidator.Result validated = MinimapPairValidator.validate(
                         persistedReservation, sourceBytes, runtimeBytes
                 );
                 PublishDescriptor descriptor = new PublishDescriptor(
@@ -339,6 +367,8 @@ public final class MinimapRepository {
                 verifyPersistedPreparedPair(transaction, record, recordPath);
                 Optional<CurrentPointer> currentPointer = readCurrent(mapDirectory);
                 long currentRevision = currentPointer.map(CurrentPointer::revision).orElse(0L);
+                currentPointer.filter(pointer -> pointer.revision() == 0)
+                        .ifPresent(CurrentPointer::requireResetTombstone);
                 boolean currentContentValid = currentPointer.isEmpty()
                         || currentRevision == 0
                         || findCandidate(
@@ -434,6 +464,14 @@ public final class MinimapRepository {
     public long highWaterMark(MapKey key) {
         Objects.requireNonNull(key, "key");
         Path mapDirectory = mapDirectory(key);
+        if (strictDispatch.mode(mapDirectory, key)
+                == StrictRepositoryDispatch.Mode.STRICT) {
+            return strictDispatch.snapshot(mapDirectory)
+                    .map(snapshot -> Math.max(
+                            snapshot.highWater(), snapshot.headGeneration()
+                    ))
+                    .orElse(0L);
+        }
         synchronized (lockFor(mapDirectory)) {
             return readHighWaterMark(mapDirectory);
         }
@@ -442,6 +480,16 @@ public final class MinimapRepository {
     public Optional<CurrentPointer> current(MapKey key) {
         Objects.requireNonNull(key, "key");
         Path mapDirectory = mapDirectory(key);
+        if (strictDispatch.mode(mapDirectory, key)
+                == StrictRepositoryDispatch.Mode.STRICT) {
+            return strictDispatch.snapshot(mapDirectory)
+                    .flatMap(snapshot -> {
+                        if (!snapshot.active() || snapshot.currentPointer().length == 0) {
+                            return Optional.empty();
+                        }
+                        return Optional.of(CurrentPointer.read(snapshot.currentPointer()));
+                    });
+        }
         synchronized (lockFor(mapDirectory)) {
             if (recoveryMarkerPresent(mapDirectory)) {
                 return Optional.ofNullable(
@@ -452,77 +500,153 @@ public final class MinimapRepository {
         }
     }
 
+    public void activateStrictJournal(MapKey key) {
+        Objects.requireNonNull(key, "key");
+        Path mapDirectory = mapDirectory(key);
+        if (strictDispatch.hasStrictCapability()) {
+            strictDispatch.activate(mapDirectory, key);
+            return;
+        }
+        synchronized (lockFor(mapDirectory)) {
+            try (RepositoryFileSystem.LockHandle ignored = acquireMapLock(mapDirectory)) {
+                MinimapRepositoryJournalAccess.Detection detection =
+                        journalAccess.detect(mapDirectory, key);
+                if (detection == MinimapRepositoryJournalAccess.Detection.JOURNAL) {
+                    return;
+                }
+                if (detection == MinimapRepositoryJournalAccess.Detection.UNAVAILABLE) {
+                    throw new IOException("Strict authority journal is unavailable");
+                }
+                if (readCurrent(mapDirectory).isPresent()
+                        || recoveryMarkerPresent(mapDirectory)) {
+                    throw new ContainerStorageException(
+                            "Strict journal activation requires empty legacy authority");
+                }
+                journalAccess.activate(mapDirectory, key);
+            } catch (IOException exception) {
+                throw storageFailure("Unable to activate strict authority journal", exception);
+            }
+        }
+    }
+
+    public boolean isStrictJournalActive(MapKey key) {
+        Objects.requireNonNull(key, "key");
+        Path mapDirectory = mapDirectory(key);
+        if (strictDispatch.mode(mapDirectory, key)
+                == StrictRepositoryDispatch.Mode.STRICT) {
+            return strictDispatch.active(mapDirectory);
+        }
+        synchronized (lockFor(mapDirectory)) {
+            try {
+                MinimapRepositoryJournalAccess.Detection detection =
+                        journalAccess.detect(mapDirectory, key);
+                if (detection == MinimapRepositoryJournalAccess.Detection.UNAVAILABLE) {
+                    throw new IOException("Strict authority journal is unavailable");
+                }
+                return detection == MinimapRepositoryJournalAccess.Detection.JOURNAL;
+            } catch (IOException exception) {
+                throw storageFailure("Unable to inspect strict authority journal", exception);
+            }
+        }
+    }
+
+    public Optional<CurrentPublication> currentPublication(MapKey key) {
+        Objects.requireNonNull(key, "key");
+        Path mapDirectory = mapDirectory(key);
+        if (strictDispatch.mode(mapDirectory, key)
+                == StrictRepositoryDispatch.Mode.STRICT) {
+            return strictDispatch.withSession(mapDirectory, () -> {
+                Optional<MinimapAuthorityJournal.Snapshot> snapshot =
+                        journalAccess.snapshot(mapDirectory);
+                if (snapshot.isEmpty() || !snapshot.orElseThrow().active()) {
+                    return Optional.empty();
+                }
+                byte[] pointerBytes = snapshot.orElseThrow().currentPointer();
+                if (pointerBytes.length == 0) {
+                    return Optional.empty();
+                }
+                CurrentPointer pointer = CurrentPointer.read(pointerBytes);
+                if (pointer.revision() == 0) {
+                    CurrentPointer.requireResetTombstone(pointer);
+                    return Optional.empty();
+                }
+                return Optional.of(requireCurrentPublication(mapDirectory, key, pointer));
+            });
+        }
+        synchronized (lockFor(mapDirectory)) {
+            try (RepositoryFileSystem.LockHandle ignored = acquireMapLock(mapDirectory)) {
+                if (suspendedMaps.contains(mapDirectory.toString())
+                        || recoveryMarkerPresent(mapDirectory)) {
+                    throw new ContainerStorageException("Current publication requires recovery");
+                }
+                Optional<CurrentPointer> current = readCurrent(mapDirectory);
+                if (current.isEmpty()) return Optional.empty();
+                CurrentPointer pointer = current.orElseThrow();
+                if (pointer.revision() == 0) {
+                    CurrentPointer.requireResetTombstone(pointer);
+                    return Optional.empty();
+                }
+                return Optional.of(requireCurrentPublication(mapDirectory, key, pointer));
+            } catch (IOException exception) {
+                throw storageFailure("Unable to lock current publication read", exception);
+            }
+        }
+    }
+
+    public CurrentResetResult compareAndResetCurrent(MapKey key, CurrentPointer expected) {
+        Objects.requireNonNull(key, "key");
+        Objects.requireNonNull(expected, "expected");
+        Path mapDirectory = mapDirectory(key);
+        synchronized (lockFor(mapDirectory)) {
+            try (RepositoryFileSystem.LockHandle ignored = acquireMapLock(mapDirectory)) {
+                if (suspendedMaps.contains(mapDirectory.toString())
+                        || recoveryMarkerPresent(mapDirectory)) {
+                    throw new ContainerStorageException("CURRENT reset requires recovery");
+                }
+                requireDirectorySyncForPublish();
+                CurrentPointer current = readCurrent(mapDirectory).orElseThrow(
+                        () -> new ContainerStorageException("CURRENT pointer is missing"));
+                if (current.revision() == 0) {
+                    CurrentPointer.requireResetTombstone(current);
+                    return CurrentResetResult.ALREADY_RESET;
+                }
+                if (!current.equals(expected)) return CurrentResetResult.MISMATCH;
+                requireCurrentPublication(mapDirectory, key, current);
+                authoritativePointers.put(mapDirectory.toString(), current);
+                try {
+                    persistence.resetCurrentDurably(mapDirectory, current, CurrentPointer.RESET_TOMBSTONE);
+                } catch (IOException exception) {
+                    suspendedMaps.add(mapDirectory.toString());
+                    throw storageFailure("CURRENT reset status is unknown", exception);
+                } catch (RuntimeException exception) {
+                    suspendedMaps.add(mapDirectory.toString());
+                    throw exception;
+                }
+                authoritativePointers.put(mapDirectory.toString(), CurrentPointer.RESET_TOMBSTONE);
+                suspendedMaps.remove(mapDirectory.toString());
+                return CurrentResetResult.RESET;
+            } catch (IOException exception) {
+                throw storageFailure("Unable to lock CURRENT reset", exception);
+            }
+        }
+    }
+
     public boolean directorySyncDegraded() {
-        return directorySyncDegraded || !suspendedMaps.isEmpty();
+        return persistence.directorySyncDegraded() || !suspendedMaps.isEmpty();
     }
 
     public boolean isDurabilityDegraded() {
-        return directorySyncDegraded
+        return persistence.directorySyncDegraded()
                 || !suspendedMaps.isEmpty()
                 || hasPersistedRecoveryMarker();
     }
 
     private boolean hasPersistedRecoveryMarker() {
-        Path maps = root.resolve("maps");
-        try {
-            BasicFileAttributes mapsAttributes = readAttributesIfPresent(maps);
-            if (mapsAttributes == null) {
-                return false;
-            }
-            if (!mapsAttributes.isDirectory()
-                    || mapsAttributes.isSymbolicLink()
-                    || mapsAttributes.isOther()) {
-                return true;
-            }
-            try (java.util.stream.Stream<Path> stream = Files.list(maps)) {
-                java.util.List<Path> mapDirectories = stream
-                        .limit(MAX_DIRECTORY_ENTRIES + 1L)
-                        .toList();
-                if (mapDirectories.size() > MAX_DIRECTORY_ENTRIES) {
-                    return true;
-                }
-                for (Path mapDirectory : mapDirectories) {
-                    BasicFileAttributes mapAttributes = readAttributesIfPresent(mapDirectory);
-                    if (mapAttributes == null) {
-                        continue;
-                    }
-                    if (mapAttributes.isSymbolicLink() || mapAttributes.isOther()) {
-                        return true;
-                    }
-                    if (!mapAttributes.isDirectory()) {
-                        continue;
-                    }
-                    if (recoveryMarkerPresent(mapDirectory)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        } catch (IOException | RuntimeException inspectionFailure) {
-            return true;
-        }
-    }
-
-    private static BasicFileAttributes readAttributesIfPresent(Path path) throws IOException {
-        try {
-            return Files.readAttributes(
-                    path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS
-            );
-        } catch (NoSuchFileException missing) {
-            return null;
-        }
+        return persistence.hasPersistedRecoveryMarker();
     }
 
     private boolean recoveryMarkerPresent(Path mapDirectory) {
-        Path marker = mapDirectory.resolve(RECOVERY_MARKER);
-        try {
-            readMetadata(marker);
-            return true;
-        } catch (NoSuchFileException missing) {
-            return false;
-        } catch (IOException failure) {
-            throw storageFailure("Unable to read recovery marker", failure);
-        }
+        return persistence.recoveryMarkerPresent(mapDirectory);
     }
 
     public void pinRevision(MapKey key, long revision, String pinId) {
@@ -715,7 +839,9 @@ public final class MinimapRepository {
                 }
                 Set<Long> keep = new java.util.HashSet<>(readPinnedRevisions(mapDirectory));
                 long currentRevision = current.orElseThrow().revision();
-                if (currentRevision > 0) {
+                if (currentRevision == 0) {
+                    CurrentPointer.requireResetTombstone(current.orElseThrow());
+                } else {
                     keep.add(currentRevision);
                 }
                 java.util.List<Long> existing = new java.util.ArrayList<>();
@@ -795,6 +921,19 @@ public final class MinimapRepository {
                 rebuildHighWaterMark(mapDirectory);
                 cleanupCurrentTemporaries(mapDirectory);
                 Optional<CurrentPointer> pointer = readCurrentSafely(mapDirectory);
+                if (pointer.filter(value -> value.revision() == 0).isPresent()) {
+                    CurrentPointer tombstone = pointer.orElseThrow();
+                    CurrentPointer.requireResetTombstone(tombstone);
+                    cleanupTransactions(mapDirectory);
+                    cleanupOrphanRevisions(mapDirectory, Optional.empty());
+                    // Clear the marker only after the tombstone's parent is durable.
+                    syncDirectory(mapDirectory);
+                    clearRecoveryRequired(mapDirectory);
+                    authoritativePointers.put(mapDirectory.toString(), tombstone);
+                    suspendedMaps.remove(mapDirectory.toString());
+                    return new PublishOutcome(PublishState.ABORTED,
+                            PublishOutcome.Status.ABORTED, 0, "current reset preserved");
+                }
                 Optional<RecoveryCandidate> pointedCandidate = pointer.flatMap(
                         value -> findCandidate(mapDirectory, key, value.revision(), value, true)
                 );
@@ -945,6 +1084,7 @@ public final class MinimapRepository {
             return;
         }
         if (pointer.orElseThrow().revision() == 0) {
+            CurrentPointer.requireResetTombstone(pointer.orElseThrow());
             return;
         }
         Optional<RecoveryCandidate> candidate = findCandidate(
@@ -1173,7 +1313,8 @@ public final class MinimapRepository {
                 return Optional.empty();
             }
             if (pointer != null && (!record.descriptorChecksum().equals(pointer.descriptorChecksum())
-                    || record.descriptor().publishRevision() != pointer.revision())) {
+                    || record.descriptor().publishRevision() != pointer.revision()
+                    || record.descriptor().baseRevision() != pointer.expectedBaseRevision())) {
                 return Optional.empty();
             }
             if (record.state() != PublishState.COMMITTED
@@ -1685,93 +1826,6 @@ public final class MinimapRepository {
     private record RecoveryCandidate(Path directory, PublishRecord record) {
     }
 
-    private static ValidatedPair validatePair(
-            PublishTransaction transaction,
-            byte[] sourceBytes,
-            byte[] runtimeBytes
-    ) {
-        try (SourceMap source = SourceMapReader.read(sourceBytes);
-             RuntimeMap runtime = RuntimeMapReader.read(runtimeBytes)) {
-            return validatePair(transaction, source, runtime);
-        } catch (ContainerStorageException exception) {
-            throw exception;
-        } catch (ContainerValidationException exception) {
-            throw new ContainerStorageException("Candidate map pair failed validation", exception);
-        } catch (IOException exception) {
-            throw new ContainerStorageException("Unable to close candidate map pair", exception);
-        } catch (RuntimeException exception) {
-            throw new ContainerStorageException("Candidate map pair failed validation", exception);
-        }
-    }
-
-    private ValidatedPair validatePair(
-            PublishTransaction transaction,
-            Path sourcePath,
-            Path runtimePath
-    ) throws IOException {
-        verifySafeRepositoryPath(sourcePath);
-        verifySafeRepositoryPath(runtimePath);
-        try (RepositoryFileSystem.BoundedReadChannel sourceInput =
-                     fileSystem.openBoundedReadChannel(
-                             sourcePath,
-                             ContainerLimits.sourceHardLimits().maxCanonicalContainerBytes()
-                     );
-             RepositoryFileSystem.BoundedReadChannel runtimeInput =
-                     fileSystem.openBoundedReadChannel(
-                             runtimePath,
-                             ContainerLimits.runtimeHardLimits().maxCanonicalContainerBytes()
-                     );
-             SourceMap source = SourceMapReader.open(
-                     sourceInput.channel(), sourceInput.size()
-             );
-             RuntimeMap runtime = RuntimeMapReader.open(
-                     runtimeInput.channel(), runtimeInput.size()
-             )) {
-            return validatePair(transaction, source, runtime);
-        } catch (ContainerStorageException exception) {
-            throw exception;
-        } catch (ContainerValidationException exception) {
-            throw new ContainerStorageException("Candidate map pair failed validation", exception);
-        } catch (RuntimeException exception) {
-            throw new ContainerStorageException("Candidate map pair failed validation", exception);
-        }
-    }
-
-    private static ValidatedPair validatePair(
-            PublishTransaction transaction,
-            SourceMap source,
-            RuntimeMap runtime
-    ) {
-        if (!source.manifest().binding().equals(transaction.mapKey())) {
-            throw new ContainerStorageException("Source map binding does not match the reservation");
-        }
-        if (!source.manifest().dimension().equals(transaction.dimension())) {
-            throw new ContainerStorageException(
-                    "Source map dimension does not match the reservation"
-            );
-        }
-        if (!source.manifest().documentId().equals(transaction.documentId())) {
-            throw new ContainerStorageException(
-                    "Source map document ID does not match the reservation"
-            );
-        }
-        if (source.manifest().revision() != transaction.publishRevision()
-                || runtime.manifest().publishRevision() != transaction.publishRevision()) {
-            throw new ContainerStorageException("Candidate revision does not match the reservation");
-        }
-        CompiledMapPair.verifyBinding(source, runtime);
-        return new ValidatedPair(
-                source.sourceHash(), runtime.runtimeHash(), runtime.containerHash()
-        );
-    }
-
-    private record ValidatedPair(
-            Sha256 sourceHash,
-            Sha256 runtimeHash,
-            Sha256 runtimeContainerHash
-    ) {
-    }
-
     private void verifyPersistedPreparedPair(
             PublishTransaction caller,
             PublishRecord record,
@@ -1785,10 +1839,12 @@ public final class MinimapRepository {
                     Instant.ofEpochMilli(record.descriptor().expiresAtEpochMillis()),
                     PublishState.PREPARED
             );
-            ValidatedPair validated = validatePair(
+            MinimapPairValidator.Result validated = MinimapPairValidator.validate(
                     persisted,
                     caller.transactionDirectory().resolve(SOURCE_FILE),
-                    caller.transactionDirectory().resolve(RUNTIME_FILE)
+                    caller.transactionDirectory().resolve(RUNTIME_FILE),
+                    fileSystem,
+                    this::verifySafeRepositoryPath
             );
             if (!validated.sourceHash().equals(record.descriptor().sourceHash())
                     || !validated.runtimeHash().equals(record.descriptor().runtimeHash())
@@ -1821,16 +1877,7 @@ public final class MinimapRepository {
     }
 
     public Path mapDirectory(MapKey key) {
-        Objects.requireNonNull(key, "key");
-        JsonElement encoded = MapKey.codec().encodeStart(JsonOps.INSTANCE, key)
-                .result()
-                .orElseThrow(() -> new ContainerStorageException("Unable to encode map key"));
-        String digest = Sha256Digest.of(JcsCanonicalizer.canonicalize(encoded)).value();
-        Path result = root.resolve("maps").resolve(digest).normalize();
-        if (!result.startsWith(root)) {
-            throw new ContainerStorageException("Map repository path escaped its root");
-        }
-        return result;
+        return persistence.mapDirectory(key);
     }
 
     private Object lockFor(Path mapDirectory) {
@@ -1840,72 +1887,19 @@ public final class MinimapRepository {
 
     private RepositoryFileSystem.LockHandle acquireMapLock(Path mapDirectory)
             throws IOException {
-        Path maps = mapDirectory.getParent();
-        boolean mapsMissing = !Files.exists(maps, LinkOption.NOFOLLOW_LINKS);
-        boolean mapMissing = !Files.exists(mapDirectory, LinkOption.NOFOLLOW_LINKS);
-        verifySafeRepositoryPath(mapDirectory);
-        fileSystem.createDirectories(mapDirectory);
-        verifySafeRepositoryPath(mapDirectory);
-        if (mapsMissing) {
-            syncDirectory(root);
-        }
-        if (mapMissing) {
-            syncDirectory(maps);
-        }
-        RepositoryFileSystem.LockHandle lock = fileSystem.acquireExclusiveLock(
-                mapDirectory.resolve(".repository.lock")
-        );
-        if (!mapMissing) {
-            return lock;
-        }
-        try {
-            syncDirectory(mapDirectory);
-            return lock;
-        } catch (IOException | RuntimeException failure) {
-            try {
-                lock.close();
-            } catch (IOException closeFailure) {
-                failure.addSuppressed(closeFailure);
-            }
-            throw failure;
-        }
+        return persistence.acquireMapLock(mapDirectory);
+    }
+
+    private CurrentPublication requireCurrentPublication(Path mapDirectory, MapKey key, CurrentPointer pointer) {
+        RecoveryCandidate candidate = findCandidate(
+                mapDirectory, key, pointer.revision(), pointer, false)
+                .orElseThrow(() -> new ContainerStorageException(
+                        "Current publication metadata is invalid"));
+        return new CurrentPublication(pointer, candidate.record());
     }
 
     private void verifySafeRepositoryPath(Path candidate) {
-        Path absolute = Objects.requireNonNull(candidate, "candidate")
-                .toAbsolutePath().normalize();
-        if (!absolute.startsWith(root)) {
-            throw new ContainerStorageException("Repository path escaped its root");
-        }
-        try {
-            if (!root.toRealPath().equals(realRoot)) {
-                throw new ContainerStorageException(
-                        "Repository root changed after initialization"
-                );
-            }
-            Path current = root;
-            for (Path component : root.relativize(absolute)) {
-                current = current.resolve(component);
-                BasicFileAttributes attributes;
-                try {
-                    attributes = fileSystem.readAttributesNoFollow(current);
-                } catch (NoSuchFileException missingComponent) {
-                    continue;
-                }
-                if (attributes.isSymbolicLink() || attributes.isOther()) {
-                    throw new ContainerStorageException(
-                            "Repository path contains a link or reparse point: " + current
-                    );
-                }
-                if (!current.toRealPath().startsWith(realRoot)) {
-                    throw new ContainerStorageException(
-                            "Repository path resolved outside its real root"
-                    );
-                }
-            }
-        } catch (IOException exception) {
-            throw storageFailure("Unable to verify repository path", exception);
-        }
+        persistence.verifySafeRepositoryPath(candidate);
     }
 
     private void verifyTransactionDirectory(
@@ -1924,144 +1918,50 @@ public final class MinimapRepository {
     }
 
     private Optional<CurrentPointer> readCurrent(Path mapDirectory) {
-        Path current = mapDirectory.resolve("CURRENT");
-        try {
-            return Optional.of(CurrentPointer.read(readMetadata(current)));
-        } catch (NoSuchFileException missing) {
-            return Optional.empty();
-        } catch (IOException exception) {
-            throw storageFailure("Unable to read CURRENT pointer", exception);
-        }
+        return persistence.readCurrent(mapDirectory);
     }
 
     private long readHighWaterMark(Path mapDirectory) {
-        return readHighWaterMarkIfPresent(mapDirectory).orElse(0L);
+        return persistence.readHighWaterMark(mapDirectory);
     }
 
     private java.util.OptionalLong readHighWaterMarkIfPresent(Path mapDirectory) {
-        Path state = mapDirectory.resolve(STATE_FILE);
-        try {
-            return java.util.OptionalLong.of(readHighWaterStateFile(state));
-        } catch (NoSuchFileException missing) {
-            return java.util.OptionalLong.empty();
-        } catch (IOException exception) {
-            throw storageFailure("Unable to read publish state", exception);
-        } catch (RuntimeException exception) {
-            if (exception instanceof ContainerStorageException storageException) {
-                throw storageException;
-            }
-            throw new ContainerStorageException("Publish state is invalid", exception);
-        }
+        return persistence.readHighWaterMarkIfPresent(mapDirectory);
     }
 
     private long readHighWaterStateFile(Path state) throws IOException {
-        byte[] bytes = readMetadata(state);
-        JsonElement parsed = StrictJsonParser.parse(bytes);
-        if (!parsed.isJsonObject()
-                || !Arrays.equals(bytes, JcsCanonicalizer.canonicalize(parsed))) {
-            throw new ContainerStorageException("Publish state is not canonical JSON");
-        }
-        JsonObject root = parsed.getAsJsonObject();
-        if (!root.keySet().equals(Set.of("highWaterMark"))) {
-            throw new ContainerStorageException("Publish state fields are invalid");
-        }
-        return MinimapCodecs.NON_NEGATIVE_LONG
-                .parse(JsonOps.INSTANCE, root.get("highWaterMark"))
-                .result()
-                .orElseThrow(() -> new ContainerStorageException(
-                        "Publish high-water mark is invalid"
-                ));
+        return persistence.readHighWaterStateFile(state);
     }
 
     private PublishRecord readPublishRecord(Path path) throws IOException {
-        return PublishRecord.read(readMetadata(path));
+        return persistence.readPublishRecord(path);
     }
 
     private byte[] readMetadata(Path path) throws IOException {
-        verifySafeRepositoryPath(path);
-        try (RepositoryFileSystem.BoundedReadChannel input =
-                     fileSystem.openBoundedReadChannel(path, MAX_METADATA_BYTES)) {
-            if (input.size() > Integer.MAX_VALUE) {
-                throw new IOException("Repository metadata exceeds the JVM array limit");
-            }
-            byte[] bytes = new byte[(int) input.size()];
-            java.nio.ByteBuffer destination = java.nio.ByteBuffer.wrap(bytes);
-            while (destination.hasRemaining()) {
-                int read = input.channel().read(destination);
-                if (read < 0) {
-                    throw new IOException("Repository metadata changed while being read");
-                }
-                if (read == 0) {
-                    continue;
-                }
-            }
-            java.nio.ByteBuffer trailing = java.nio.ByteBuffer.allocate(1);
-            if (input.channel().read(trailing) != -1) {
-                throw new IOException("Repository metadata changed while being read");
-            }
-            return bytes;
-        }
+        return persistence.readMetadata(path);
     }
 
     private void writeHighWaterMark(Path mapDirectory, long highWaterMark) throws IOException {
-        JsonObject root = new JsonObject();
-        root.addProperty("highWaterMark", Long.toString(highWaterMark));
-        Path state = mapDirectory.resolve(STATE_FILE);
-        Path temporary = mapDirectory.resolve(
-                STATE_FILE + "." + UUID.randomUUID() + ".tmp"
-        );
-        try {
-            writeDurable(temporary, JcsCanonicalizer.canonicalize(root));
-            fileSystem.replaceAtomically(temporary, state);
-            syncDirectory(mapDirectory);
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
+        persistence.writeHighWaterMark(mapDirectory, highWaterMark);
     }
 
     private void writeDurable(Path file, byte[] bytes) throws IOException {
-        fileSystem.write(file, bytes);
-        fileSystem.fsyncFile(file);
+        persistence.writeDurable(file, bytes);
     }
 
     private void writeRecordDurable(Path record, byte[] bytes) throws IOException {
-        Path temporary = record.resolveSibling(
-                record.getFileName() + "." + UUID.randomUUID() + ".tmp"
-        );
-        try {
-            writeDurable(temporary, bytes);
-            fileSystem.replaceAtomically(temporary, record);
-            syncDirectory(record.getParent());
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
+        persistence.writeRecordDurable(record, bytes);
     }
 
     private void markRecoveryRequired(
             Path mapDirectory,
             PublishDescriptor descriptor
     ) throws IOException {
-        JsonObject root = new JsonObject();
-        root.addProperty("descriptorChecksum", descriptor.descriptorChecksum().value());
-        root.addProperty("publishRevision", Long.toString(descriptor.publishRevision()));
-        root.addProperty("publishToken", descriptor.publishToken());
-        Path marker = mapDirectory.resolve(RECOVERY_MARKER);
-        Path temporary = mapDirectory.resolve(
-                RECOVERY_MARKER + "." + UUID.randomUUID() + ".tmp"
-        );
-        try {
-            writeDurable(temporary, JcsCanonicalizer.canonicalize(root));
-            fileSystem.replaceAtomically(temporary, marker);
-            syncDirectory(mapDirectory);
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
+        persistence.markRecoveryRequired(mapDirectory, descriptor);
     }
 
     private void clearRecoveryRequired(Path mapDirectory) throws IOException {
-        if (Files.deleteIfExists(mapDirectory.resolve(RECOVERY_MARKER))) {
-            syncDirectory(mapDirectory);
-        }
+        persistence.clearRecoveryRequired(mapDirectory);
     }
 
     private void abortIfExpired(
@@ -2081,22 +1981,11 @@ public final class MinimapRepository {
     }
 
     private void syncDirectory(Path directory) throws IOException {
-        if (fileSystem.directorySyncSupport()
-                == RepositoryFileSystem.DirectorySyncSupport.UNSUPPORTED) {
-            directorySyncDegraded = true;
-            throw new DirectorySyncUnavailableException(directory);
-        }
-        fileSystem.fsyncDirectory(directory);
+        persistence.syncDirectory(directory);
     }
 
     private void requireDirectorySyncForPublish() {
-        if (fileSystem.directorySyncSupport()
-                == RepositoryFileSystem.DirectorySyncSupport.UNSUPPORTED) {
-            directorySyncDegraded = true;
-            throw new ContainerStorageException(
-                    "Publishing requires durable directory synchronization"
-            );
-        }
+        persistence.requireDirectorySyncForPublish();
     }
 
     private PublishOutcome suspendForDirectorySyncLoss(
@@ -2104,7 +1993,7 @@ public final class MinimapRepository {
             Path recordPath,
             PublishRecord record
     ) {
-        directorySyncDegraded = true;
+        persistence.markDirectorySyncDegraded();
         suspendedMaps.add(mapDirectory.toString());
         PublishRecord frozen = new PublishRecord(
                 record.target(),
@@ -2117,11 +2006,8 @@ public final class MinimapRepository {
             fileSystem.write(recordPath, frozen.canonicalBytes());
             fileSystem.fsyncFile(recordPath);
             markRecoveryRequired(mapDirectory, frozen.descriptor());
-        } catch (DirectorySyncUnavailableException expected) {
-            if (!Files.exists(
-                    mapDirectory.resolve(RECOVERY_MARKER),
-                    LinkOption.NOFOLLOW_LINKS
-            )) {
+        } catch (MinimapRepositoryPersistence.DirectorySyncUnavailableException expected) {
+            if (!persistence.recoveryMarkerExists(mapDirectory)) {
                 throw storageFailure(
                         "Unable to freeze publish after directory sync loss", expected
                 );
@@ -2138,12 +2024,6 @@ public final class MinimapRepository {
                 frozen.descriptor().publishRevision(),
                 "Directory synchronization became unavailable before commit"
         );
-    }
-
-    private static final class DirectorySyncUnavailableException extends IOException {
-        private DirectorySyncUnavailableException(Path directory) {
-            super("Directory synchronization is unavailable: " + directory);
-        }
     }
 
     private static ContainerStorageException storageFailure(String message, IOException exception) {

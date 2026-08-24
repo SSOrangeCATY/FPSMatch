@@ -4,8 +4,10 @@ import com.ptcrys.fpsmatch.core.minimap.codec.MinimapModelCodecs;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatContract;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.model.AffineTransform2D;
+import com.ptcrys.fpsmatch.core.minimap.model.CompilerProfile;
 import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
 import com.ptcrys.fpsmatch.core.minimap.model.IconStyle;
+import com.ptcrys.fpsmatch.core.minimap.model.LineStyle;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapDefinition;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapRegion;
@@ -23,6 +25,7 @@ import com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 import com.ptcrys.fpsmatch.core.minimap.model.SourceFloor;
 import com.ptcrys.fpsmatch.core.minimap.model.SourceManifest;
+import com.ptcrys.fpsmatch.core.minimap.model.StyleType;
 import com.ptcrys.fpsmatch.core.minimap.model.TextAppearance;
 import com.ptcrys.fpsmatch.core.minimap.model.TextStyle;
 

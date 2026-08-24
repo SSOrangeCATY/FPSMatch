@@ -6,6 +6,7 @@ import com.ptcrys.fpsmatch.common.minimap.server.sync.BuiltinRuntimeResourceLoad
 import com.ptcrys.fpsmatch.common.minimap.server.sync.ServerMinimapRuntimeBootstrap;
 import com.ptcrys.fpsmatch.common.minimap.server.sync.ServerMinimapRuntimeFactory;
 import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.minimap.wire.WireIdentity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -16,7 +17,35 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class ForgeMinimapServerRuntimeRegistration {
+    private static volatile ServerMinimapRuntimeBootstrap installedBootstrap;
+
     private ForgeMinimapServerRuntimeRegistration() {
+    }
+
+    public static boolean matchesActiveEditorContext(
+            Object server,
+            UUID actorId,
+            WireIdentity.EditorContext context
+    ) {
+        ServerMinimapRuntimeBootstrap bootstrap = installedBootstrap;
+        if (bootstrap == null) {
+            return false;
+        }
+        try {
+            return bootstrap.matchesActiveEditorContext(server, actorId, context);
+        } catch (RuntimeException failure) {
+            return false;
+        }
+    }
+
+    /** Reuses the active runtime's authoritative publication invalidation path. */
+    public static void invalidateMap(Object server, com.ptcrys.fpsmatch.core.minimap.model.MapKey mapKey) {
+        Objects.requireNonNull(server, "server");
+        Objects.requireNonNull(mapKey, "mapKey");
+        ServerMinimapRuntimeBootstrap bootstrap = installedBootstrap;
+        if (bootstrap != null) {
+            bootstrap.invalidateMap(server, mapKey);
+        }
     }
 
     public static void install(ForgeMinimapServerLifecycleEventSource events) {
@@ -87,6 +116,7 @@ public final class ForgeMinimapServerRuntimeRegistration {
                 handlerInstaller, runtimeFactory
         );
         bootstrap.install(Objects.requireNonNull(events, "events"));
+        installedBootstrap = bootstrap;
     }
 
     static void install(
@@ -96,11 +126,18 @@ public final class ForgeMinimapServerRuntimeRegistration {
             Consumer<Object> catalogLoader,
             Runnable catalogClearer
     ) {
+        ServerMinimapRuntimeBootstrap bootstrap = new ServerMinimapRuntimeBootstrap(
+                handlerInstaller, runtimeFactory
+        );
         Objects.requireNonNull(events, "events").bindBuiltinCatalog(
                 catalogLoader,
-                catalogLoader,
+                server -> {
+                    catalogLoader.accept(server);
+                    bootstrap.onCatalogReload();
+                },
                 catalogClearer
         );
-        install(events, handlerInstaller, runtimeFactory);
+        bootstrap.install(events);
+        installedBootstrap = bootstrap;
     }
 }

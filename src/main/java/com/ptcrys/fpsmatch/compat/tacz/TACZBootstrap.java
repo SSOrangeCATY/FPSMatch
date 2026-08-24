@@ -1,17 +1,14 @@
 package com.ptcrys.fpsmatch.compat.tacz;
 
-import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
 import com.ptcrys.fpsmatch.compat.spectate.tacz.*;
-import com.ptcrys.fpsmatch.compat.spectate.tacz.*;
-import com.ptcrys.fpsmatch.compat.tacz.client.event.SpectatorEventHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
 /**
  * TACZ 兼容层注册入口。
- * 由 {@link FPSMatch#registerCompat()} 在确认 TACZ 已加载后调用。
+ * 由 {@link com.ptcrys.fpsmatch.FPSMatch#registerCompat()} 在确认 TACZ 已加载后调用。
  * <p>
  * 调用方须在调用前通过 {@code ModList.get().isLoaded("tacz")} 判断，
  * 避免 JVM 在 TACZ 未加载时解析本类及其 TACZ 依赖，导致 NoClassDefFoundError。
@@ -35,7 +32,7 @@ public final class TACZBootstrap {
         // 这些类直接依赖 net.minecraft.client.*（LocalPlayer、Minecraft 等），
         // 在专用服务器（DedicatedServer）上不存在，必须通过 DistExecutor 隔离类加载
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            MinecraftForge.EVENT_BUS.register(SpectatorEventHandler.class);
+            MinecraftForge.EVENT_BUS.register(com.ptcrys.fpsmatch.compat.tacz.client.event.SpectatorEventHandler.class);
             MinecraftForge.EVENT_BUS.register(SpectatorGunMovementMirror.class);
             MinecraftForge.EVENT_BUS.register(SpectatorGunRecoil.class);
             MinecraftForge.EVENT_BUS.register(SpectatorGunFireMirror.class);

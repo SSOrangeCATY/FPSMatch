@@ -199,6 +199,25 @@ public final class EditorSessionManager {
         }
     }
 
+    public void close(
+            UUID actorId,
+            UUID sessionId,
+            MapKey mapKey,
+            NamespacedId dimension,
+            NamespacedId documentId,
+            UUID draftId,
+            long baseRevision,
+            MinimapAction action
+    ) {
+        EditorSession authorized = authorize(
+                actorId, sessionId, mapKey, dimension, documentId,
+                draftId, baseRevision, action
+        );
+        synchronized (lifecycleLock) {
+            removeSessionLocked(sessionId, authorized);
+        }
+    }
+
     public void invalidateMap(MapKey mapKey) {
         Objects.requireNonNull(mapKey, "mapKey");
         synchronized (lifecycleLock) {
@@ -213,6 +232,14 @@ public final class EditorSessionManager {
                 actorSessions.remove(session.actorId(), entry.getKey());
                 return true;
             });
+        }
+    }
+
+    public void invalidateAll() {
+        synchronized (lifecycleLock) {
+            pendingOpens.forEach(attempt -> attempt.invalidated = true);
+            sessions.clear();
+            actorSessions.clear();
         }
     }
 

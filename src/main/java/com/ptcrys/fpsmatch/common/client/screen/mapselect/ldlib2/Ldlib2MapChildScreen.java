@@ -1,24 +1,25 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.ConcurrentModificationException;
 import java.util.Objects;
 
 /** Shared lifecycle for LDLib2 map-room child pages. */
-public abstract class Ldlib2MapChildScreen extends ModularUIScreen implements FPSMMapDetailChildScreen {
+public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen implements FPSMMapDetailChildScreen {
     protected final Screen parent;
     protected MapRoomDetail detail;
-    private UIElement fallbackClickTarget;
 
     protected Ldlib2MapChildScreen(ModularUI ui, Component title, MapRoomDetail detail, Screen parent) {
         super(ui, title);
@@ -53,43 +54,19 @@ public abstract class Ldlib2MapChildScreen extends ModularUIScreen implements FP
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        modularUI.getWidget().mouseMoved(mouseX, mouseY);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        UIElement target = hitElementAt(mouseX, mouseY);
-        if (target == modularUI.getLastHoveredElement()
-                && super.mouseClicked(mouseX, mouseY, button)) {
-            return true;
-        }
-        if (target == null) {
-            return false;
-        }
-        UIEvent event = mouseEvent("mouseDown", target, mouseX, mouseY, button);
-        UIEventDispatcher.dispatchEvent(event);
-        fallbackClickTarget = event.hasHandler ? target : null;
-        return fallbackClickTarget != null;
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        boolean handled = super.mouseReleased(mouseX, mouseY, button);
-        UIElement pressedTarget = fallbackClickTarget;
-        fallbackClickTarget = null;
-        if (pressedTarget != null && !handled) {
-            UIElement releasedTarget = hitElementAt(mouseX, mouseY);
-            if (releasedTarget != null) {
-                UIEvent mouseUp = mouseEvent("mouseUp", releasedTarget, mouseX, mouseY, button);
-                UIEventDispatcher.dispatchEvent(mouseUp);
-                if (releasedTarget == pressedTarget) {
-                    UIEventDispatcher.dispatchEvent(mouseEvent("mouseClick", releasedTarget, mouseX, mouseY, button));
-                }
+        try {
+            super.render(graphics, mouseX, mouseY, partialTick);
+        } catch (ConcurrentModificationException failure) {
+            if (!Ldlib2RenderGuard.ignoreConcurrentModification(this, failure)) {
+                throw failure;
             }
-            return true;
         }
-        return handled || pressedTarget != null;
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        super.mouseMoved(mouseX, mouseY);
+        modularUI.getWidget().mouseMoved(mouseX, mouseY);
     }
 
     /**
@@ -100,7 +77,10 @@ public abstract class Ldlib2MapChildScreen extends ModularUIScreen implements FP
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         boolean handled = super.mouseScrolled(mouseX, mouseY, scrollY);
-        UIElement target = hitElementAt(mouseX, mouseY);
+        var hit = modularUI.ui.rootElement.hitTest(
+                mouseX - modularUI.getLeftPos(), mouseY - modularUI.getTopPos()
+        );
+        UIElement target = hit == null ? null : hit.getA();
         if (handled || target == null || target == modularUI.getLastHoveredElement()) {
             return handled;
         }
@@ -112,26 +92,5 @@ public abstract class Ldlib2MapChildScreen extends ModularUIScreen implements FP
         event.target = target;
         UIEventDispatcher.dispatchEvent(event);
         return event.hasHandler;
-    }
-
-    private UIEvent mouseEvent(String type, UIElement target, double mouseX, double mouseY, int button) {
-        UIEvent event = UIEvent.create(type);
-        event.x = (float) (mouseX - modularUI.getLeftPos());
-        event.y = (float) (mouseY - modularUI.getTopPos());
-        event.button = button;
-        event.target = target;
-        return event;
-    }
-
-    protected final UIElement hitElementAt(double mouseX, double mouseY) {
-        var hit = modularUI.ui.rootElement.hitTest(
-                mouseX - modularUI.getLeftPos(), mouseY - modularUI.getTopPos());
-        return hit == null ? null : hit.getA();
-    }
-
-    @Override
-    public void removed() {
-        modularUI.onRemoved();
-        super.removed();
     }
 }

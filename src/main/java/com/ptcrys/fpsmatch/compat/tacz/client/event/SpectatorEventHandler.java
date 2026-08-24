@@ -1,7 +1,6 @@
 package com.ptcrys.fpsmatch.compat.tacz.client.event;
 
 import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.ptcrys.fpsmatch.compat.tacz.client.animation.GunAnimationController;
 import com.ptcrys.fpsmatch.compat.tacz.client.fakeitem.ClientFakeItemManager;
 import com.ptcrys.fpsmatch.compat.tacz.client.test.TaczSpecScreenShake;
@@ -18,7 +17,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * TACZ 旁观者事件处理。
- * 由 {@link TACZBootstrap} 在确认 TACZ 加载后手动注册。
+ * 由 {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} 在确认 TACZ 加载后手动注册。
  */
 public class SpectatorEventHandler {
 

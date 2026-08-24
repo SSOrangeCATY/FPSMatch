@@ -70,11 +70,11 @@ import com.ptcrys.fpsmatch.core.minimap.model.VectorsFile;
 import com.ptcrys.fpsmatch.core.minimap.model.WorldBakeLayer;
 import com.ptcrys.fpsmatch.core.minimap.model.WorldBounds;
 import com.ptcrys.fpsmatch.core.minimap.model.WorldPoint2D;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 public final class MinimapModelCodecs {
     public static final Codec<WorldPoint2D> WORLD_POINT = RecordCodecBuilder.create(instance -> instance.group(
@@ -259,7 +259,7 @@ public final class MinimapModelCodecs {
     ).apply(instance, Provenance::new));
 
     public static final Codec<SourceManifest> SOURCE_MANIFEST = RecordCodecBuilder.create(instance -> instance.group(
-            MinimapFormatVersion.codec()
+            com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion.codec()
                     .fieldOf("formatVersion").forGetter(SourceManifest::formatVersion),
             NamespacedId.codec().fieldOf("documentId").forGetter(SourceManifest::documentId),
             MapKey.codec().fieldOf("binding").forGetter(SourceManifest::binding),
@@ -272,7 +272,7 @@ public final class MinimapModelCodecs {
 
     public static final Codec<CompilerProfile> COMPILER_PROFILE = RecordCodecBuilder.create(instance -> instance.group(
             NamespacedId.codec().fieldOf("id").forGetter(CompilerProfile::id),
-            MinimapFormatVersion.codec()
+            com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion.codec()
                     .fieldOf("version").forGetter(CompilerProfile::version)
     ).apply(instance, CompilerProfile::new));
 
@@ -285,7 +285,7 @@ public final class MinimapModelCodecs {
     ).apply(instance, RuntimeFloor::new));
 
     public static final Codec<RuntimeManifest> RUNTIME_MANIFEST = RecordCodecBuilder.create(instance -> instance.group(
-            MinimapFormatVersion.codec()
+            com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion.codec()
                     .fieldOf("formatVersion").forGetter(RuntimeManifest::formatVersion),
             NamespacedId.codec().fieldOf("documentId").forGetter(RuntimeManifest::documentId),
             MapKey.codec().fieldOf("binding").forGetter(RuntimeManifest::binding),

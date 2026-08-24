@@ -10,6 +10,7 @@ import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
 import net.minecraft.client.Minecraft;
@@ -19,6 +20,7 @@ import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.UUID;
+import java.util.ConcurrentModificationException;
 
 /** Incoming map-room invitation dialog. */
 public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
@@ -65,7 +67,13 @@ public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        try {
+            super.render(graphics, mouseX, mouseY, partialTick);
+        } catch (ConcurrentModificationException failure) {
+            if (!Ldlib2RenderGuard.ignoreConcurrentModification(this, failure)) {
+                throw failure;
+            }
+        }
     }
 
     private void accept() {

@@ -2,7 +2,6 @@ package com.ptcrys.fpsmatch.core.minimap.wire;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapOpcode;
-import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.util.List;
@@ -133,7 +132,7 @@ public sealed interface SnapshotWireMessage extends MinimapWireMessage
             long snapshotId,
             WireSnapshot.SectionKey section,
             long sectionRevision,
-            NamespacedId channelId,
+            com.ptcrys.fpsmatch.core.minimap.model.NamespacedId channelId,
             int channelVersion,
             WireTransfer.TransferFragment transfer
     ) implements SnapshotWireMessage {

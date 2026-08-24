@@ -3,7 +3,6 @@ package com.ptcrys.fpsmatch.core.minimap.wire;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
-import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.util.Objects;
@@ -426,7 +425,7 @@ public final class WireEditor {
     }
 
     public record IdSubject(
-            NamespacedId id
+            com.ptcrys.fpsmatch.core.minimap.model.NamespacedId id
     ) implements ConflictSubject {
         public IdSubject {
             Objects.requireNonNull(id, "id");

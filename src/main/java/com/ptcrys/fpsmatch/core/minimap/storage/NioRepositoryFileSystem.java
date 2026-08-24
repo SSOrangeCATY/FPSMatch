@@ -31,6 +31,15 @@ public final class NioRepositoryFileSystem implements RepositoryFileSystem {
     }
 
     @Override
+    public RepositorySessionCapability repositorySessionCapability() {
+        return WINDOWS
+                ? RepositorySessionCapability.strict(
+                        RepositorySessionComposition.productionProvider()
+                )
+                : RepositorySessionCapability.unsupported();
+    }
+
+    @Override
     public void createDirectories(Path directory) throws IOException {
         Files.createDirectories(Objects.requireNonNull(directory, "directory"));
     }

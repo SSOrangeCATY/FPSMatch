@@ -42,6 +42,58 @@ public final class EditorDocument {
         return document;
     }
 
+    static EditorDocument hydrate(CanvasBounds canvas, int tileEdge) {
+        return new EditorDocument(canvas, tileEdge);
+    }
+
+    void hydrateFloor(String floorId, DisplayLabel floorLabel) {
+        addFloorInternal(floorId, floorLabel);
+    }
+
+    void hydrateLayer(
+            String floorId,
+            String layerId,
+            LayerType type,
+            DisplayLabel label,
+            boolean visible,
+            boolean locked,
+            double opacity,
+            BlendMode blendMode,
+            boolean maskEnabled,
+            Optional<String> importedAssetId,
+            Optional<String> generatorId
+    ) {
+        EditableLayer layer = new EditableLayer(layerId, type, label);
+        layer.setVisible(visible);
+        layer.setOpacity(opacity);
+        layer.setBlendMode(blendMode);
+        layer.setMaskEnabled(maskEnabled);
+        importedAssetId.ifPresent(layer::bindImportedAsset);
+        generatorId.ifPresent(layer::bindGenerator);
+        layer.setLocked(locked);
+        floor(floorId).addLayer(layer);
+    }
+
+    void hydrateTilePixels(
+            String floorId,
+            String layerId,
+            int tileX,
+            int tileY,
+            int[] pixels,
+            boolean mask
+    ) {
+        validateTilePixels(tileX, tileY, pixels);
+        EditableLayer layer = layer(floorId, layerId);
+        if (mask) {
+            if (!layer.maskEnabled()) {
+                throw new IllegalStateException("Mask is not enabled for layer: " + layerId);
+            }
+            layer.maskTiles().put(tileX, tileY, pixels);
+        } else {
+            layer.tiles().put(tileX, tileY, pixels);
+        }
+    }
+
     public CanvasBounds canvas() {
         return canvas;
     }
@@ -199,6 +251,15 @@ public final class EditorDocument {
         markTileDirty(tileX, tileY);
     }
 
+    /** Removes one raster tile while preserving the document's dirty-region bookkeeping. */
+    public void removeTilePixels(String floorId, String layerId, int tileX, int tileY) {
+        EditableLayer layer = layer(floorId, layerId);
+        layer.requireUnlocked();
+        validateTileCoordinates(tileX, tileY);
+        layer.tiles().remove(tileX, tileY);
+        markTileDirty(tileX, tileY);
+    }
+
     public void putMaskPixels(String floorId, String layerId, int tileX, int tileY, int[] pixels) {
         EditableLayer layer = layer(floorId, layerId);
         layer.requireUnlocked();
@@ -288,6 +349,17 @@ public final class EditorDocument {
 
     private void validateTilePixels(int tileX, int tileY, int[] pixels) {
         Objects.requireNonNull(pixels, "pixels");
+        validateTileCoordinates(tileX, tileY);
+        int expectedWidth = tileWidth(tileX);
+        int expectedHeight = tileHeight(tileY);
+        if (pixels.length != expectedWidth * expectedHeight) {
+            throw new IllegalArgumentException(
+                    "Tile pixel length must be " + (expectedWidth * expectedHeight)
+                            + " but was " + pixels.length);
+        }
+    }
+
+    private void validateTileCoordinates(int tileX, int tileY) {
         if (tileX < 0 || tileY < 0) {
             throw new IllegalArgumentException("Tile coordinates must be non-negative");
         }
@@ -296,27 +368,22 @@ public final class EditorDocument {
         if (expectedWidth <= 0 || expectedHeight <= 0) {
             throw new IllegalArgumentException("Tile is outside the canvas");
         }
-        if (pixels.length != expectedWidth * expectedHeight) {
-            throw new IllegalArgumentException(
-                    "Tile pixel length must be " + (expectedWidth * expectedHeight)
-                            + " but was " + pixels.length);
-        }
     }
 
     private int tileWidth(int tileX) {
-        int origin = tileX * tileEdge;
+        long origin = (long) tileX * tileEdge;
         if (origin >= canvas.width()) {
             return 0;
         }
-        return Math.min(tileEdge, canvas.width() - origin);
+        return (int) Math.min(tileEdge, canvas.width() - origin);
     }
 
     private int tileHeight(int tileY) {
-        int origin = tileY * tileEdge;
+        long origin = (long) tileY * tileEdge;
         if (origin >= canvas.height()) {
             return 0;
         }
-        return Math.min(tileEdge, canvas.height() - origin);
+        return (int) Math.min(tileEdge, canvas.height() - origin);
     }
 
     private void markTileDirty(int tileX, int tileY) {

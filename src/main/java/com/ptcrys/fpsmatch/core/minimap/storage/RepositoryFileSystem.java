@@ -81,6 +81,10 @@ public interface RepositoryFileSystem {
         return DirectorySyncSupport.SUPPORTED;
     }
 
+    default RepositorySessionCapability repositorySessionCapability() {
+        return RepositorySessionCapability.unsupported();
+    }
+
     LockHandle acquireExclusiveLock(Path lockFile) throws IOException;
 
     byte[] readAllBytes(Path file) throws IOException;

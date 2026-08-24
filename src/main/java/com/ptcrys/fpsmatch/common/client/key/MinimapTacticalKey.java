@@ -45,30 +45,30 @@ public final class MinimapTacticalKey {
         if (!KEY.consumeClick() && !KEY.matches(event.getKey(), event.getScanCode())) {
             return;
         }
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) {
-            return;
-        }
-        boolean textInputActive = mc.screen instanceof ChatScreen
-                || (mc.screen != null && mc.screen.isPauseScreen() == false && mc.screen.getClass().getName().contains("Editor"));
-        boolean inGame = mc.screen == null || !textInputActive;
-        boolean capabilityPresent = FPSMClientPacketRegistrar.minimapServices() != null
-                && FPSMClientPacketRegistrar.minimapServices()
-                .subscriptions().matchHudAvailable();
         MinimapClientScreens current = screens;
-        if (current == null || !MinimapKeys.canConsumeOpen(
-                inGame, capabilityPresent, textInputActive,
-                current.controller().isOpen()
-        )) {
+        if (current == null) {
             return;
         }
-        if (current.controller().isOpen()) {
-            current.close();
-        } else {
-            current.openIfAllowed(new TacticalOpenRequest(
-                    true, capabilityPresent, false, false
-            ));
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null && !current.ownsScreen(mc.screen)) {
+            return;
         }
+        current.toggle(() -> {
+            if (mc.player == null || mc.level == null) {
+                return new TacticalOpenRequest(false, false, false, false);
+            }
+            boolean textInputActive = mc.screen instanceof ChatScreen
+                    || (mc.screen != null
+                    && !mc.screen.isPauseScreen()
+                    && mc.screen.getClass().getName().contains("Editor"));
+            boolean inGame = mc.screen == null || !textInputActive;
+            boolean capabilityPresent = FPSMClientPacketRegistrar.minimapServices() != null
+                    && FPSMClientPacketRegistrar.minimapServices()
+                    .subscriptions().matchHudAvailable();
+            return new TacticalOpenRequest(
+                    inGame, capabilityPresent, textInputActive, false
+            );
+        });
     }
 
     public static void install(MinimapClientScreens screens) {

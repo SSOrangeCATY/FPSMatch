@@ -1,22 +1,25 @@
 package com.ptcrys.fpsmatch.common.client.minimap.ui.ldlib2;
 
+import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SDFRectTexture;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.ptcrys.fpsmatch.common.client.minimap.render.GuiGraphicsMinimapDrawBackend;
 import com.ptcrys.fpsmatch.common.client.minimap.render.MinecraftGuiGraphicsMinimapDrawTarget;
 import com.ptcrys.fpsmatch.common.client.minimap.render.MarkerPresentationResolver;
 import com.ptcrys.fpsmatch.common.client.minimap.render.MinimapFrame;
 import com.ptcrys.fpsmatch.common.client.minimap.render.MinimapTextureResolver;
-import com.ptcrys.fpsmatch.core.minimap.view.ShapeMode;
-
+import net.minecraft.network.chat.Component;
 import java.util.Objects;
+import java.util.Optional;
 
-public final class Ldlib2MinimapCanvasElement extends UIElement {
+public final class Ldlib2MinimapCanvasElement extends AccessiblePanel {
     private final MinimapTextureResolver textures;
     private final MarkerPresentationResolver markerPresentations;
-    private final SDFRectTexture clip = SDFRectTexture.of(0xFFFFFFFF);
+    private final SDFRectTexture circleClip = SDFRectTexture.of(0xFFFFFFFF);
     private volatile MinimapFrame frame;
+    private long drawSequence;
+    private volatile MinimapDrawReceipt drawReceipt;
 
     public Ldlib2MinimapCanvasElement(
             String id,
@@ -44,14 +47,36 @@ public final class Ldlib2MinimapCanvasElement extends UIElement {
                 markerPresentations, "markerPresentations"
         );
         setId(Objects.requireNonNull(id, "id"));
+        setFocusable(interactive);
+        setAccessibleName(Component.translatable(
+                "gui.fpsm.minimap.tactical.canvas.name"
+        ));
+        setAccessibleHint(() -> Component.translatable(
+                "gui.fpsm.minimap.tactical.canvas.hint"
+        ));
         setAllowHitTest(interactive);
         setOverflowVisible(false);
-        style(style -> style.overflowClip(clip));
+        style(style -> style.overflowClip(IGuiTexture.EMPTY));
     }
 
     public void present(MinimapFrame frame) {
         this.frame = Objects.requireNonNull(frame, "frame");
-        clip.setRadius(frame.shape() == ShapeMode.CIRCLE ? 10_000f : 0f);
+        if (Ldlib2MinimapCanvasClipPolicy.usesCircularClip(frame.shape())) {
+            // LDLib2 binds this clip during the style update.
+            circleClip.setRadius(
+                    Ldlib2MinimapCanvasClipPolicy.circularRadius(frame)
+            );
+            style(style -> style.overflowClip(circleClip));
+        } else {
+            style(style -> style.overflowClip(IGuiTexture.EMPTY));
+        }
+    }
+
+    /** Clears a stale projection when the runtime authority is no longer usable. */
+    public void clearFrame() {
+        frame = null;
+        drawReceipt = null;
+        style(style -> style.overflowClip(IGuiTexture.EMPTY));
     }
 
     public MinimapFrame frame() {
@@ -60,6 +85,10 @@ public final class Ldlib2MinimapCanvasElement extends UIElement {
 
     public MinimapTextureResolver textures() {
         return textures;
+    }
+
+    Optional<MinimapDrawReceipt> drawReceipt() {
+        return Optional.ofNullable(drawReceipt);
     }
 
     @Override
@@ -78,6 +107,12 @@ public final class Ldlib2MinimapCanvasElement extends UIElement {
                 getSizeHeight(),
                 markerPresentations
         ).submit(current);
+        long nextSequence = drawSequence + 1L;
+        MinimapDrawReceipt completed = new MinimapDrawReceipt(
+                current, nextSequence
+        );
+        drawSequence = nextSequence;
+        drawReceipt = completed;
     }
 
     private static MarkerPresentationResolver emptyMarkerPresentations() {

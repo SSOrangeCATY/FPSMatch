@@ -20,6 +20,17 @@ public final class MinimapHudRenderer {
             List<MapDrawCommand> commands,
             PlaceholderKind placeholder
     ) {
+        return compose(settings, camera, floor, commands, placeholder, null);
+    }
+
+    public MinimapFrame compose(
+            MinimapClientSettings settings,
+            ViewportCamera camera,
+            FloorViewState floor,
+            List<MapDrawCommand> commands,
+            PlaceholderKind placeholder,
+            MinimapFrame.HudOverlay hudOverlay
+    ) {
         Objects.requireNonNull(settings, "settings");
         Objects.requireNonNull(camera, "camera");
         Objects.requireNonNull(floor, "floor");
@@ -44,6 +55,9 @@ public final class MinimapHudRenderer {
         }
         if (placeholder != null) {
             builder.placeholder(placeholder);
+        }
+        if (hudOverlay != null) {
+            builder.hudOverlay(hudOverlay);
         }
         return builder.build();
     }

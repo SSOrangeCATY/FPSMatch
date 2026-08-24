@@ -4,7 +4,6 @@ import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
-import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.util.Optional;
 import java.util.IdentityHashMap;
@@ -106,7 +105,7 @@ final class WireValueCodec {
         WireIdentity.DocumentBinding binding = readDocumentBinding(reader);
         long revision = reader.readNonNegativeVarLong();
         var runtimeHash = reader.readHash();
-        Optional<Sha256> containerHash =
+        Optional<com.ptcrys.fpsmatch.core.minimap.model.Sha256> containerHash =
                 reader.readBoolean() ? Optional.of(reader.readHash()) : Optional.empty();
         return new WireIdentity.RuntimeIdentity(
                 binding, revision, runtimeHash, containerHash

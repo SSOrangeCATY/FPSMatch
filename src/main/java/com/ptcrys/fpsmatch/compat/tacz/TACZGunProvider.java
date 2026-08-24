@@ -1,10 +1,6 @@
 package com.ptcrys.fpsmatch.compat.tacz;
 
 import com.ptcrys.fpsmatch.compat.gun.*;
-import com.ptcrys.fpsmatch.compat.gun.GunDataDTO;
-import com.ptcrys.fpsmatch.compat.gun.GunTabTypeEnum;
-import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
-import com.ptcrys.fpsmatch.compat.tacz.client.util.GunSpecUtils;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
@@ -44,7 +40,7 @@ public class TACZGunProvider implements IGunProvider {
     @Override
     public ResourceLocation getGunId(ItemStack stack) {
         IGun iGun = IGun.getIGunOrNull(stack);
-        return iGun != null ? iGun.getGunId(stack) : ResourceLocation.tryBuild("empty", "empty");
+        return iGun != null ? iGun.getGunId(stack) : new ResourceLocation("empty", "empty");
     }
 
     @Override
@@ -150,7 +146,7 @@ public class TACZGunProvider implements IGunProvider {
         // 客户端专用逻辑通过 DistExecutor 分发，避免在专用服务器上加载 client-only 的 TACZ 渲染类
         // Client-only texture lookup; avoid DistExecutor safe referent validation here.
         if (FMLEnvironment.dist != Dist.CLIENT) return null;
-        return GunSpecUtils.getGunHUDTexture(stack);
+        return com.ptcrys.fpsmatch.compat.tacz.client.util.GunSpecUtils.getGunHUDTexture(stack);
     }
 
     // ========== 枪械 ID 设置 ==========

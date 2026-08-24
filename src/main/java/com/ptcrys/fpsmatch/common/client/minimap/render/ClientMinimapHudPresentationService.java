@@ -2,10 +2,14 @@ package com.ptcrys.fpsmatch.common.client.minimap.render;
 
 import com.ptcrys.fpsmatch.common.client.minimap.RuntimeGeneration;
 import com.ptcrys.fpsmatch.common.client.minimap.cache.RuntimeEntryStore;
+import com.ptcrys.fpsmatch.common.client.minimap.generated.GeneratedMinimapTile;
+import com.ptcrys.fpsmatch.common.client.minimap.generated.GeneratedMinimapRuntimeBinding;
+import com.ptcrys.fpsmatch.common.client.minimap.generated.GeneratedMinimapTileComposer;
 import com.ptcrys.fpsmatch.common.client.minimap.tactical.TacticalMapPresentation;
 import com.ptcrys.fpsmatch.common.client.minimap.tactical.TacticalMapState;
 import com.ptcrys.fpsmatch.common.client.minimap.tactical.TacticalViewport;
 import com.ptcrys.fpsmatch.core.minimap.extension.MinimapExtensionRegistry;
+import com.ptcrys.fpsmatch.core.minimap.format.CanonicalJsonException;
 import com.ptcrys.fpsmatch.core.minimap.format.ContainerValidationException;
 import com.ptcrys.fpsmatch.core.minimap.format.MinimapContainerLayout;
 import com.ptcrys.fpsmatch.core.minimap.format.RuntimeEntryValidation;
@@ -18,6 +22,7 @@ import com.ptcrys.fpsmatch.core.minimap.model.RuntimeDefinition;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeRegion;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeManifest;
 import com.ptcrys.fpsmatch.core.minimap.view.PlaceholderKind;
+import com.ptcrys.fpsmatch.core.minimap.view.ShapeMode;
 import com.ptcrys.fpsmatch.core.minimap.view.ViewportCamera;
 
 import java.util.LinkedHashSet;
@@ -26,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 public final class ClientMinimapHudPresentationService {
     private final Supplier<Optional<RuntimeGeneration>> currentGeneration;
@@ -33,12 +39,19 @@ public final class ClientMinimapHudPresentationService {
     private final Supplier<List<MarkerSnapshot.Marker>> markers;
     private final MinimapTileUploadQueue uploads;
     private final MinecraftMinimapTextureManager textures;
+    private final Supplier<List<GeneratedMinimapTile>> generatedTiles;
+    private final Consumer<GeneratedMinimapRuntimeBinding> generatedBinding;
     private final RuntimeMinimapFramePlanner planner =
             new RuntimeMinimapFramePlanner();
+    private final java.util.Map<String, Long> uploadedGeneratedRevisions =
+            new java.util.LinkedHashMap<>();
+    private RuntimeGeneration uploadedGeneratedGeneration;
 
     private RuntimeGeneration parsedGeneration;
     private RuntimeManifest parsedManifest;
     private RuntimeDefinition parsedDefinition;
+    private MinimapClientSettings tacticalSourceSettings;
+    private MinimapClientSettings tacticalProjectionSettings;
 
     public ClientMinimapHudPresentationService(
             Supplier<Optional<RuntimeGeneration>> currentGeneration,
@@ -46,6 +59,45 @@ public final class ClientMinimapHudPresentationService {
             Supplier<List<MarkerSnapshot.Marker>> markers,
             MinimapTileUploadQueue uploads,
             MinecraftMinimapTextureManager textures
+    ) {
+        this(
+                currentGeneration,
+                activeRuntime,
+                markers,
+                uploads,
+                textures,
+                List::of,
+                ignored -> { }
+        );
+    }
+
+    public ClientMinimapHudPresentationService(
+            Supplier<Optional<RuntimeGeneration>> currentGeneration,
+            Supplier<Optional<RuntimeEntryStore.ActiveRuntime>> activeRuntime,
+            Supplier<List<MarkerSnapshot.Marker>> markers,
+            MinimapTileUploadQueue uploads,
+            MinecraftMinimapTextureManager textures,
+            Supplier<List<GeneratedMinimapTile>> generatedTiles
+    ) {
+        this(
+                currentGeneration,
+                activeRuntime,
+                markers,
+                uploads,
+                textures,
+                generatedTiles,
+                ignored -> { }
+        );
+    }
+
+    public ClientMinimapHudPresentationService(
+            Supplier<Optional<RuntimeGeneration>> currentGeneration,
+            Supplier<Optional<RuntimeEntryStore.ActiveRuntime>> activeRuntime,
+            Supplier<List<MarkerSnapshot.Marker>> markers,
+            MinimapTileUploadQueue uploads,
+            MinecraftMinimapTextureManager textures,
+            Supplier<List<GeneratedMinimapTile>> generatedTiles,
+            Consumer<GeneratedMinimapRuntimeBinding> generatedBinding
     ) {
         this.currentGeneration = Objects.requireNonNull(
                 currentGeneration, "currentGeneration"
@@ -56,6 +108,8 @@ public final class ClientMinimapHudPresentationService {
         this.markers = Objects.requireNonNull(markers, "markers");
         this.uploads = Objects.requireNonNull(uploads, "uploads");
         this.textures = Objects.requireNonNull(textures, "textures");
+        this.generatedTiles = Objects.requireNonNull(generatedTiles, "generatedTiles");
+        this.generatedBinding = Objects.requireNonNull(generatedBinding, "generatedBinding");
     }
 
     public synchronized Optional<MinimapFrame> prepareFrame(
@@ -64,50 +118,49 @@ public final class ClientMinimapHudPresentationService {
             int viewportWidth,
             int viewportHeight
     ) {
+        return prepareFrame(
+                viewer,
+                settings,
+                viewportWidth,
+                viewportHeight,
+                Optional.empty()
+        );
+    }
+
+    public synchronized Optional<MinimapFrame> prepareFrame(
+            MinimapViewerPose viewer,
+            MinimapClientSettings settings,
+            int viewportWidth,
+            int viewportHeight,
+            Optional<PlaceholderKind> forcedPlaceholder
+    ) {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(settings, "settings");
-        Optional<RuntimeGeneration> current = currentGeneration.get();
-        Optional<RuntimeEntryStore.ActiveRuntime> active = activeRuntime.get();
-        if (current.isEmpty()) {
-            return Optional.empty();
-        }
-        if (active.isEmpty()) {
-            return Optional.of(loadingFrame(
-                    settings, viewportWidth, viewportHeight
+        Objects.requireNonNull(forcedPlaceholder, "forcedPlaceholder");
+        if (forcedPlaceholder.isPresent()) {
+            return Optional.of(placeholderFrame(
+                    settings,
+                    viewportWidth,
+                    viewportHeight,
+                    forcedPlaceholder.orElseThrow()
             ));
         }
-        if (!matches(active.orElseThrow(), current.orElseThrow())) {
-            return Optional.empty();
+        AuthorityLoadResult<LoadedRuntime> load = loadRuntime();
+        if (!load.ready()) {
+            return load.placeholder().map(placeholder -> placeholderFrame(
+                    settings, viewportWidth, viewportHeight, placeholder
+            ));
         }
-        RuntimeGeneration generation = current.orElseThrow();
-        RuntimeEntryStore.ActiveRuntime runtime = active.orElseThrow();
-        Optional<RuntimeDefinition> definition = definition(generation, runtime);
-        if (definition.isEmpty()) {
-            return Optional.empty();
-        }
+        LoadedRuntime loaded = load.value().orElseThrow();
+        RuntimeGeneration generation = loaded.generation();
+        RuntimeEntryStore.ActiveRuntime runtime = loaded.runtime();
 
-        Set<ContainerPath> readyTiles = new LinkedHashSet<>();
-        for (RuntimeEntryStore.ActiveEntry entry : runtime.entries().values()) {
-            ContainerPath path;
-            try {
-                path = ContainerPath.parse(entry.key().stablePath());
-            } catch (IllegalArgumentException invalidPath) {
-                continue;
-            }
-            if (MinimapContainerLayout.parseRuntimeTile(path).isEmpty()) {
-                continue;
-            }
-            String textureKey = path.value();
-            if (textures.resolve(textureKey).isEmpty()) {
-                uploads.request(generation, textureKey, entry.payload());
-            }
-            if (textures.resolve(textureKey).isPresent()) {
-                readyTiles.add(path);
-            }
-        }
+        Set<ContainerPath> readyTiles = readyTiles(
+                generation, runtime, Optional.empty(), viewer.y()
+        );
         return Optional.of(planner.planHud(
                 generation,
-                definition.orElseThrow(),
+                loaded.definition(),
                 readyTiles,
                 viewer,
                 markers.get(),
@@ -125,26 +178,25 @@ public final class ClientMinimapHudPresentationService {
         Objects.requireNonNull(viewer, "viewer");
         Objects.requireNonNull(settings, "settings");
         Objects.requireNonNull(state, "state");
-        Optional<RuntimeGeneration> current = currentGeneration.get();
-        Optional<RuntimeEntryStore.ActiveRuntime> active = activeRuntime.get();
-        if (current.isEmpty()) {
-            return Optional.empty();
+        MinimapClientSettings tacticalSettings = tacticalSettingsFor(settings);
+        AuthorityLoadResult<LoadedRuntime> load = loadRuntime();
+        if (!load.ready()) {
+            return load.placeholder().map(placeholder -> placeholderTactical(
+                    tacticalSettings, state, placeholder
+            ));
         }
-        if (active.isEmpty()) {
-            return Optional.of(loadingTactical(settings, state));
-        }
-        RuntimeGeneration generation = current.orElseThrow();
-        RuntimeEntryStore.ActiveRuntime runtime = active.orElseThrow();
-        if (!matches(runtime, generation)) {
-            return Optional.empty();
-        }
-        Optional<RuntimeDefinition> parsed = definition(generation, runtime);
-        if (parsed.isEmpty()) {
-            return Optional.empty();
-        }
-        RuntimeDefinition definition = parsed.orElseThrow();
+        LoadedRuntime loaded = load.value().orElseThrow();
+        RuntimeGeneration generation = loaded.generation();
+        RuntimeEntryStore.ActiveRuntime runtime = loaded.runtime();
+        RuntimeDefinition definition = loaded.definition();
         RuntimeManifest manifest = definition.manifest();
-        Set<ContainerPath> readyTiles = readyTiles(generation, runtime);
+        RuntimeMinimapFramePlanner.TacticalFloorResolution floorResolution =
+                planner.resolveTacticalFloor(
+                        generation, manifest, viewer.y(), state.floor()
+                );
+        Set<ContainerPath> readyTiles = readyTiles(
+                generation, runtime, Optional.of(floorResolution.floor()), viewer.y()
+        );
         List<MarkerSnapshot.Marker> markerSnapshot = List.copyOf(markers.get());
         MinimapFrame frame = planner.planTactical(
                 generation,
@@ -152,8 +204,9 @@ public final class ClientMinimapHudPresentationService {
                 readyTiles,
                 viewer,
                 markerSnapshot,
-                settings,
-                state
+                tacticalSettings,
+                state,
+                floorResolution
         );
         RuntimeFloor selectedFloor = frame.floor().effectiveFloorId()
                 .flatMap(id -> manifest.floors().stream()
@@ -196,20 +249,72 @@ public final class ClientMinimapHudPresentationService {
         parsedGeneration = null;
         parsedManifest = null;
         parsedDefinition = null;
+        tacticalSourceSettings = null;
+        tacticalProjectionSettings = null;
+        uploadedGeneratedRevisions.clear();
+        uploadedGeneratedGeneration = null;
     }
 
-    private Optional<RuntimeManifest> manifest(
+    static MinimapClientSettings tacticalSettings(
+            MinimapClientSettings hudSettings
+    ) {
+        return Objects.requireNonNull(hudSettings, "hudSettings")
+                .withShape(ShapeMode.SQUARE)
+                .withOpacity(1.0f)
+                .withShowLabels(true);
+    }
+
+    private MinimapClientSettings tacticalSettingsFor(
+            MinimapClientSettings hudSettings
+    ) {
+        if (hudSettings == tacticalSourceSettings) {
+            return tacticalProjectionSettings;
+        }
+        // The planner caches settings by instance, so keep this immutable copy stable.
+        tacticalSourceSettings = hudSettings;
+        tacticalProjectionSettings = tacticalSettings(hudSettings);
+        return tacticalProjectionSettings;
+    }
+
+    private AuthorityLoadResult<LoadedRuntime> loadRuntime() {
+        Optional<RuntimeGeneration> current = currentGeneration.get();
+        Optional<RuntimeEntryStore.ActiveRuntime> active = activeRuntime.get();
+        if (current.isEmpty()) {
+            return active.isEmpty()
+                    ? AuthorityLoadResult.ineligible()
+                    : AuthorityLoadResult.stale();
+        }
+        if (active.isEmpty()) {
+            return AuthorityLoadResult.missing();
+        }
+        RuntimeGeneration generation = current.orElseThrow();
+        RuntimeEntryStore.ActiveRuntime runtime = active.orElseThrow();
+        if (!matches(runtime, generation)) {
+            return AuthorityLoadResult.stale();
+        }
+        AuthorityLoadResult<RuntimeDefinition> definition = definition(
+                generation, runtime
+        );
+        if (!definition.ready()) {
+            return definition.unavailable();
+        }
+        return AuthorityLoadResult.ready(new LoadedRuntime(
+                generation, runtime, definition.value().orElseThrow()
+        ));
+    }
+
+    private AuthorityLoadResult<RuntimeManifest> manifest(
             RuntimeGeneration generation,
             RuntimeEntryStore.ActiveRuntime runtime
     ) {
         if (generation.equals(parsedGeneration) && parsedManifest != null) {
-            return Optional.of(parsedManifest);
+            return AuthorityLoadResult.ready(parsedManifest);
         }
         Optional<byte[]> bytes = runtime.entry(
                 MinimapContainerLayout.RUNTIME_MANIFEST.value()
         );
         if (bytes.isEmpty()) {
-            return Optional.empty();
+            return AuthorityLoadResult.missing();
         }
         try {
             RuntimeManifest manifest = RuntimeEntryValidation.readManifest(
@@ -218,27 +323,30 @@ public final class ClientMinimapHudPresentationService {
             if (!manifest.binding().equals(generation.mapKey())
                     || !manifest.documentId().equals(generation.documentId())
                     || manifest.publishRevision() != generation.revision()) {
-                return Optional.empty();
+                return AuthorityLoadResult.stale();
             }
             parsedGeneration = generation;
             parsedManifest = manifest;
             parsedDefinition = null;
-            return Optional.of(manifest);
-        } catch (ContainerValidationException | IllegalArgumentException invalid) {
-            return Optional.empty();
+            return AuthorityLoadResult.ready(manifest);
+        } catch (ContainerValidationException | CanonicalJsonException
+                 | IllegalArgumentException invalid) {
+            return AuthorityLoadResult.invalid();
         }
     }
 
-    private Optional<RuntimeDefinition> definition(
+    private AuthorityLoadResult<RuntimeDefinition> definition(
             RuntimeGeneration generation,
             RuntimeEntryStore.ActiveRuntime runtime
     ) {
         if (generation.equals(parsedGeneration) && parsedDefinition != null) {
-            return Optional.of(parsedDefinition);
+            return AuthorityLoadResult.ready(parsedDefinition);
         }
-        Optional<RuntimeManifest> manifest = manifest(generation, runtime);
-        if (manifest.isEmpty()) {
-            return Optional.empty();
+        AuthorityLoadResult<RuntimeManifest> manifest = manifest(
+                generation, runtime
+        );
+        if (!manifest.ready()) {
+            return manifest.unavailable();
         }
         Optional<byte[]> regions = runtime.entry(
                 MinimapContainerLayout.RUNTIME_REGIONS.value()
@@ -250,26 +358,41 @@ public final class ClientMinimapHudPresentationService {
                 MinimapContainerLayout.RUNTIME_STYLES.value()
         );
         if (regions.isEmpty() || connections.isEmpty() || styles.isEmpty()) {
-            return Optional.empty();
+            return AuthorityLoadResult.missing();
         }
         try {
             parsedDefinition = RuntimeEntryValidation.readDefinition(
-                    manifest.orElseThrow(),
+                    manifest.value().orElseThrow(),
                     regions.orElseThrow(),
                     connections.orElseThrow(),
                     styles.orElseThrow()
             );
-            return Optional.of(parsedDefinition);
-        } catch (ContainerValidationException | IllegalArgumentException invalid) {
-            return Optional.empty();
+            return AuthorityLoadResult.ready(parsedDefinition);
+        } catch (ContainerValidationException | CanonicalJsonException
+                 | IllegalArgumentException invalid) {
+            return AuthorityLoadResult.invalid();
         }
     }
 
     private Set<ContainerPath> readyTiles(
             RuntimeGeneration generation,
-            RuntimeEntryStore.ActiveRuntime runtime
+            RuntimeEntryStore.ActiveRuntime runtime,
+            Optional<RuntimeFloor> preferredFloor,
+            double viewerY
     ) {
         Set<ContainerPath> readyTiles = new LinkedHashSet<>();
+        Set<String> desiredGeneratedKeys = new LinkedHashSet<>();
+        if (uploadedGeneratedGeneration != null
+                && !uploadedGeneratedGeneration.equals(generation)) {
+            textures.clearGenerated();
+            uploadedGeneratedRevisions.clear();
+        }
+        uploadedGeneratedGeneration = generation;
+        RuntimeManifest manifest = parsedManifest;
+        Optional<RuntimeFloor> activeFloor = preferredFloor.isPresent()
+                ? preferredFloor
+                : planner.resolveHudFloor(generation, manifest, viewerY);
+        Set<String> staticTextureKeys = new LinkedHashSet<>();
         for (RuntimeEntryStore.ActiveEntry entry : runtime.entries().values()) {
             ContainerPath path;
             try {
@@ -281,14 +404,88 @@ public final class ClientMinimapHudPresentationService {
                 continue;
             }
             String textureKey = path.value();
-            if (textures.resolve(textureKey).isEmpty()) {
+            if (!textures.hasStaticRecord(textureKey, generation)) {
                 uploads.request(generation, textureKey, entry.payload());
             }
-            if (textures.resolve(textureKey).isPresent()) {
+            if (textures.isVisibleStatic(textureKey, generation)
+                    && textures.resolve(textureKey).isPresent()) {
+                staticTextureKeys.add(textureKey);
                 readyTiles.add(path);
             }
         }
+        if (activeFloor.isPresent()) {
+            RuntimeFloor floor = activeFloor.orElseThrow();
+            int activeZoom = generatedZoom(runtime, floor);
+            generatedBinding.accept(new GeneratedMinimapRuntimeBinding(
+                    generation, floor, activeZoom, manifest.tileEdge()
+            ));
+            List<GeneratedMinimapTile> scopedGeneratedTiles = generatedTiles.get().stream()
+                    .filter(tile -> tile.key().dimension().equals(generation.dimension()))
+                    .filter(tile -> tile.floorId().equals(floor.selection().id()))
+                    .filter(tile -> tile.zoom() == activeZoom)
+                    .toList();
+            List<GeneratedMinimapTileComposer.ComposedTile> composed =
+                    GeneratedMinimapTileComposer.compose(
+                            scopedGeneratedTiles,
+                            floor,
+                            new CanvasBounds(manifest.canvas().width(),
+                                    manifest.canvas().height()),
+                            manifest.tileEdge(),
+                            activeZoom,
+                            staticTextureKeys
+                    );
+            for (GeneratedMinimapTileComposer.ComposedTile tile : composed) {
+                String textureKey = tile.textureKey();
+                desiredGeneratedKeys.add(textureKey);
+                if (!Objects.equals(
+                        uploadedGeneratedRevisions.get(textureKey), tile.signature()
+                ) || textures.resolve(textureKey).isEmpty()
+                        || !textures.isGenerated(textureKey, generation)) {
+                    textures.invalidateGenerated(textureKey, generation);
+                    if (textures.uploadGenerated(
+                            textureKey, tile.width(), tile.height(),
+                            tile.rgba(), generation
+                    ).isPresent()) {
+                        uploadedGeneratedRevisions.put(textureKey, tile.signature());
+                    }
+                }
+                if (textures.resolve(textureKey).isPresent()) {
+                    readyTiles.add(ContainerPath.parse(textureKey));
+                }
+            }
+        }
+        for (String textureKey : new LinkedHashSet<>(uploadedGeneratedRevisions.keySet())) {
+            if (!desiredGeneratedKeys.contains(textureKey)) {
+                textures.invalidateGenerated(textureKey, generation);
+                uploadedGeneratedRevisions.remove(textureKey);
+            }
+        }
         return Set.copyOf(readyTiles);
+    }
+
+    private static int generatedZoom(
+            RuntimeEntryStore.ActiveRuntime runtime,
+            RuntimeFloor floor
+    ) {
+        int highest = -1;
+        for (RuntimeEntryStore.ActiveEntry entry : runtime.entries().values()) {
+            try {
+                ContainerPath path = ContainerPath.parse(entry.key().stablePath());
+                var address = MinimapContainerLayout.parseRuntimeTile(path).orElse(null);
+                if (address != null
+                        && address.floorId().equals(floor.selection().id())) {
+                    highest = Math.max(highest, address.zoom());
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Invalid entry paths are rejected by the normal runtime parser.
+            }
+        }
+        // A floor with no authored tiles still needs a stable generated identity.
+        // Use its highest manifest-supported zoom rather than inheriting zoom 0
+        // from an unrelated floor's static tile set.
+        return highest < 0
+                ? floor.zoomLevels() - 1
+                : Math.min(highest, floor.zoomLevels() - 1);
     }
 
     private static boolean matches(
@@ -303,10 +500,11 @@ public final class ClientMinimapHudPresentationService {
                 && active.runtimeHash().equals(generation.runtimeHash());
     }
 
-    private static MinimapFrame loadingFrame(
+    private static MinimapFrame placeholderFrame(
             MinimapClientSettings settings,
             int viewportWidth,
-            int viewportHeight
+            int viewportHeight,
+            PlaceholderKind placeholder
     ) {
         MinimapClientSettings clamped = settings.clamp();
         return MinimapFrame.builder()
@@ -317,13 +515,14 @@ public final class ClientMinimapHudPresentationService {
                 .backgroundOpacity(
                         clamped.backgroundOpacity() * clamped.opacity()
                 )
-                .placeholder(PlaceholderKind.LOADING)
+                .placeholder(placeholder)
                 .build();
     }
 
-    private static TacticalMapPresentation loadingTactical(
+    private static TacticalMapPresentation placeholderTactical(
             MinimapClientSettings settings,
-            TacticalMapState state
+            TacticalMapState state,
+            PlaceholderKind placeholder
     ) {
         CanvasBounds canvas = new CanvasBounds(1, 1);
         TacticalViewport viewport = new TacticalViewport(
@@ -333,13 +532,103 @@ public final class ClientMinimapHudPresentationService {
                 state.viewportHeight()
         );
         return new TacticalMapPresentation(
-                loadingFrame(
-                        settings, state.viewportWidth(), state.viewportHeight()
+                placeholderFrame(
+                        settings,
+                        state.viewportWidth(),
+                        state.viewportHeight(),
+                        placeholder
                 ),
                 viewport,
                 List.of(),
                 List.of()
         );
+    }
+
+    private record LoadedRuntime(
+            RuntimeGeneration generation,
+            RuntimeEntryStore.ActiveRuntime runtime,
+            RuntimeDefinition definition
+    ) {
+        private LoadedRuntime {
+            Objects.requireNonNull(generation, "generation");
+            Objects.requireNonNull(runtime, "runtime");
+            Objects.requireNonNull(definition, "definition");
+        }
+    }
+
+    /** Keeps pending authority data distinct from stale or invalid authority. */
+    private record AuthorityLoadResult<T>(
+            AuthorityState state,
+            Optional<T> value
+    ) {
+        private AuthorityLoadResult {
+            Objects.requireNonNull(state, "state");
+            value = Objects.requireNonNull(value, "value");
+            if ((state == AuthorityState.READY) != value.isPresent()) {
+                throw new IllegalArgumentException(
+                        "Only a ready authority result may carry a value"
+                );
+            }
+        }
+
+        private static <T> AuthorityLoadResult<T> ready(T value) {
+            return new AuthorityLoadResult<>(
+                    AuthorityState.READY,
+                    Optional.of(Objects.requireNonNull(value, "value"))
+            );
+        }
+
+        private static <T> AuthorityLoadResult<T> ineligible() {
+            return unavailable(AuthorityState.INELIGIBLE);
+        }
+
+        private static <T> AuthorityLoadResult<T> missing() {
+            return unavailable(AuthorityState.MISSING);
+        }
+
+        private static <T> AuthorityLoadResult<T> stale() {
+            return unavailable(AuthorityState.STALE);
+        }
+
+        private static <T> AuthorityLoadResult<T> invalid() {
+            return unavailable(AuthorityState.INVALID);
+        }
+
+        private static <T> AuthorityLoadResult<T> unavailable(
+                AuthorityState state
+        ) {
+            return new AuthorityLoadResult<>(state, Optional.empty());
+        }
+
+        private boolean ready() {
+            return state == AuthorityState.READY;
+        }
+
+        private Optional<PlaceholderKind> placeholder() {
+            return switch (state) {
+                case READY, INELIGIBLE -> Optional.empty();
+                case MISSING -> Optional.of(PlaceholderKind.LOADING);
+                case STALE -> Optional.of(PlaceholderKind.STALE);
+                case INVALID -> Optional.of(PlaceholderKind.ERROR);
+            };
+        }
+
+        private <R> AuthorityLoadResult<R> unavailable() {
+            if (ready()) {
+                throw new IllegalStateException(
+                        "A ready authority result cannot drop its value"
+                );
+            }
+            return unavailable(state);
+        }
+    }
+
+    private enum AuthorityState {
+        READY,
+        INELIGIBLE,
+        MISSING,
+        STALE,
+        INVALID
     }
 
     private static CanvasRect canvasRect(CanvasBounds canvas) {

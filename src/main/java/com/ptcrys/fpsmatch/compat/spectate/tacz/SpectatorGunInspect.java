@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
 import com.tacz.guns.api.event.common.GunFireEvent;
@@ -20,7 +19,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * Plays and cancels TACZ inspect animations for the local player or spectated view.
- * Registered by {@link TACZBootstrap} when TACZ is loaded.
+ * Registered by {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
 public final class SpectatorGunInspect {
     private SpectatorGunInspect() {

@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.core.minimap.storage;
 
 import com.google.gson.JsonObject;
+import com.ptcrys.fpsmatch.core.minimap.codec.MinimapCodecs;
 import com.ptcrys.fpsmatch.core.minimap.format.JcsCanonicalizer;
 import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;

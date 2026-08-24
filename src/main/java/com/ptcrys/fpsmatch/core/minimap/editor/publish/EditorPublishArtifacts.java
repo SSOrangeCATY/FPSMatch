@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.core.minimap.editor.publish;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatContract;
+import com.ptcrys.fpsmatch.core.minimap.editor.document.EditorSourceDefaults;
 import com.ptcrys.fpsmatch.core.minimap.format.CanonicalPngCodecV1;
 import com.ptcrys.fpsmatch.core.minimap.format.CanonicalZipWriter;
 import com.ptcrys.fpsmatch.core.minimap.format.CompiledMapPair;
@@ -10,34 +11,16 @@ import com.ptcrys.fpsmatch.core.minimap.format.SourceMap;
 import com.ptcrys.fpsmatch.core.minimap.format.SourceMapReader;
 import com.ptcrys.fpsmatch.core.minimap.format.SourceMapWriter;
 import com.ptcrys.fpsmatch.core.minimap.model.CanvasBounds;
-import com.ptcrys.fpsmatch.core.minimap.model.CanvasPoint;
 import com.ptcrys.fpsmatch.core.minimap.model.CompilerProfile;
-import com.ptcrys.fpsmatch.core.minimap.model.ConnectionsFile;
 import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
-import com.ptcrys.fpsmatch.core.minimap.model.ControlPoint;
-import com.ptcrys.fpsmatch.core.minimap.model.DefaultViewMode;
-import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
-import com.ptcrys.fpsmatch.core.minimap.model.FloorBackground;
-import com.ptcrys.fpsmatch.core.minimap.model.FloorCalibration;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapDefinition;
-import com.ptcrys.fpsmatch.core.minimap.model.MinimapFloor;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
-import com.ptcrys.fpsmatch.core.minimap.model.RegionsFile;
-import com.ptcrys.fpsmatch.core.minimap.model.RgbaColor;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
-import com.ptcrys.fpsmatch.core.minimap.model.SourceDocument;
-import com.ptcrys.fpsmatch.core.minimap.model.SourceFloor;
-import com.ptcrys.fpsmatch.core.minimap.model.SourceManifest;
-import com.ptcrys.fpsmatch.core.minimap.model.StylesFile;
-import com.ptcrys.fpsmatch.core.minimap.model.WorldBounds;
-import com.ptcrys.fpsmatch.core.minimap.model.WorldPoint2D;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Builds a publishable empty source/runtime pair for CREATE_EMPTY editor sessions.
@@ -97,44 +80,8 @@ public final class EditorPublishArtifacts {
             throw new IllegalArgumentException("tileEdge must be positive");
         }
 
-        double worldMaxX = canvas.width();
-        double worldMaxZ = canvas.height();
-        SourceFloor floor = new SourceFloor(
-                new MinimapFloor(floorId, -64, 320, 0, 0.5, 1),
-                DisplayLabel.literal(floorId),
-                Optional.empty(),
-                new FloorBackground(new RgbaColor(0, 0, 0, 0)),
-                new FloorCalibration(List.of(
-                        new ControlPoint(new WorldPoint2D(0, 0), new CanvasPoint(0, 0)),
-                        new ControlPoint(new WorldPoint2D(worldMaxX, 0), new CanvasPoint(canvas.width(), 0)),
-                        new ControlPoint(new WorldPoint2D(0, worldMaxZ), new CanvasPoint(0, canvas.height()))
-                ), false, 2),
-                List.of()
-        );
-        SourceDocument document = new SourceDocument(
-                new WorldBounds(0, 0, worldMaxX, worldMaxZ),
-                canvas,
-                DefaultViewMode.FULL_MAP,
-                List.of(floor),
-                Map.of(floorId, List.of())
-        );
-        SourceManifest manifest = new SourceManifest(
-                MinimapFormatContract.CURRENT,
-                documentId,
-                mapKey,
-                revision,
-                dimension,
-                Optional.empty(),
-                tileEdge,
-                List.of()
-        );
-        MinimapDefinition definition = new MinimapDefinition(
-                manifest,
-                document,
-                new RegionsFile(List.of()),
-                new ConnectionsFile(List.of()),
-                new StylesFile(List.of())
-        );
+        MinimapDefinition definition = EditorSourceDefaults.createDefinition(
+                mapKey, dimension, documentId, revision, canvas, tileEdge, floorId, List.of());
         byte[] sourceBytes = SourceMapWriter.write(definition);
         List<CanonicalZipWriter.EntrySource> tiles = transparentTiles(floorId, canvas, tileEdge);
         try (SourceMap source = SourceMapReader.read(sourceBytes)) {

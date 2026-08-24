@@ -16,6 +16,22 @@ public final class RectangleSelection implements SelectionMask {
         this.maxY = maxY;
     }
 
+    public int minX() {
+        return minX;
+    }
+
+    public int minY() {
+        return minY;
+    }
+
+    public int maxX() {
+        return maxX;
+    }
+
+    public int maxY() {
+        return maxY;
+    }
+
     @Override
     public boolean contains(int x, int y) {
         return x >= minX && x < maxX && y >= minY && y < maxY;

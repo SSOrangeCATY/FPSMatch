@@ -2,8 +2,6 @@ package com.ptcrys.fpsmatch.core.minimap.wire;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
-import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,7 +109,7 @@ final class EditorWireCodec {
         WireValueCodec.writeEditorContext(writer, message.context());
         writer.writeNonNegativeVarLong(message.opSequence());
         writer.writeHash(message.expectedRootHash());
-        writer.writeHash(message.payloadHash());
+        writer.writeHash(message.descriptorHash());
         writer.writeUnsignedVarInt(message.mutations().size());
         for (WireEditor.DraftMutation mutation : message.mutations()) {
             writeMutation(writer, mutation);
@@ -124,11 +122,12 @@ final class EditorWireCodec {
         WireIdentity.EditorContext context = WireValueCodec.readEditorContext(reader);
         long opSequence = reader.readNonNegativeVarLong();
         var expectedRootHash = reader.readHash();
-        var payloadHash = reader.readHash();
+        var descriptorHash = reader.readHash();
         int count = reader.readCount(MinimapHardLimits.MAX_EDITOR_MUTATIONS);
         if (count == 0) {
             throw new MinimapWireError(
-                    MinimapErrorCode.MALFORMED_MESSAGE,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.MALFORMED_MESSAGE,
                     "editor operation must contain a mutation"
             );
         }
@@ -142,7 +141,7 @@ final class EditorWireCodec {
                         context,
                         opSequence,
                         expectedRootHash,
-                        payloadHash,
+                        descriptorHash,
                         mutations
                 );
         reader.requireFinished();
@@ -191,7 +190,8 @@ final class EditorWireCodec {
                     reader.readHash()
             );
             default -> throw new MinimapWireError(
-                    MinimapErrorCode.MALFORMED_MESSAGE,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.MALFORMED_MESSAGE,
                     "unknown editor mutation tag"
             );
         };
@@ -234,7 +234,8 @@ final class EditorWireCodec {
             case 2 -> new WireEditor.UploadFinish(reader.readUuid());
             case 3 -> new WireEditor.UploadAbort(reader.readUuid());
             default -> throw new MinimapWireError(
-                    MinimapErrorCode.MALFORMED_MESSAGE,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.MALFORMED_MESSAGE,
                     "unknown editor upload action"
             );
         };
@@ -256,7 +257,8 @@ final class EditorWireCodec {
         long totalLength = reader.readNonNegativeVarLong();
         if (totalLength <= 0 || totalLength > purpose.maximumBytes()) {
             throw new MinimapWireError(
-                    MinimapErrorCode.QUOTA_EXCEEDED,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.QUOTA_EXCEEDED,
                     "editor upload length exceeds its purpose limit"
             );
         }
@@ -421,7 +423,8 @@ final class EditorWireCodec {
                     reader.readUnsignedByte()
             ));
             default -> throw new MinimapWireError(
-                    MinimapErrorCode.MALFORMED_MESSAGE,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.MALFORMED_MESSAGE,
                     "unknown editor ACK tag"
             );
         };
@@ -440,12 +443,13 @@ final class EditorWireCodec {
         long receivedBytes = reader.readNonNegativeVarLong();
         if (receivedBytes > MinimapHardLimits.MAX_WIRE_TRANSFER_BYTES) {
             throw new MinimapWireError(
-                    MinimapErrorCode.QUOTA_EXCEEDED,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.QUOTA_EXCEEDED,
                     "Upload ACK byte count exceeds its limit"
             );
         }
         boolean complete = reader.readBoolean();
-        Optional<Sha256> objectHash =
+        Optional<com.ptcrys.fpsmatch.core.minimap.model.Sha256> objectHash =
                 reader.readBoolean() ? Optional.of(reader.readHash()) : Optional.empty();
         return new WireEditor.UploadAck(
                 uploadId, receivedFragments, receivedBytes, complete, objectHash

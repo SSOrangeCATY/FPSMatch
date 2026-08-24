@@ -13,6 +13,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import net.minecraft.network.chat.Component;
 
 /** Shared visual language for FPSMatch LDLib2 work surfaces. */
@@ -35,6 +36,9 @@ public final class FPSMLdlib2Theme {
     public static final int SETTINGS_CATEGORY_TEXT = 0xFFE4ECF2;
     public static final int SETTINGS_ENTRY_TEXT = 0xFFBAC5CE;
     public static final int HOLD_ACTION_PROGRESS = 0xFFEA6262;
+    public static final int FOCUS_RING_WIDTH = 2;
+    private static final IGuiTexture FOCUS_RING =
+            new ColorBorderTexture(FOCUS_RING_WIDTH, ACCENT);
 
     private FPSMLdlib2Theme() {
     }
@@ -53,6 +57,10 @@ public final class FPSMLdlib2Theme {
 
     public static void elevated(UIElement element) {
         element.style(style -> style.background(panelTexture(ELEVATED, BORDER)));
+    }
+
+    public static void statusSurface(UIElement element, int tone) {
+        element.style(style -> style.background(panelTexture(SURFACE, tone)));
     }
 
     public static void settingsCategory(UIElement element) {
@@ -162,6 +170,26 @@ public final class FPSMLdlib2Theme {
         button.textStyle(style -> style.fontSize(9).textColor(text).textShadow(false));
     }
 
+    /** Applies one truthful visual, pointer, and focus state to an actionable button. */
+    public static void buttonState(Button button, ButtonKind kind, boolean enabled) {
+        button.setActive(enabled);
+        button.setAllowHitTest(enabled);
+        button.setFocusable(enabled);
+        if (enabled) {
+            button(button, kind);
+            return;
+        }
+        if (button.isFocused()) {
+            button.blur();
+        }
+        IGuiTexture disabled = panelTexture(0xFF171D24, BORDER_SOFT);
+        button.buttonStyle(style -> style
+                .baseTexture(disabled)
+                .hoverTexture(disabled)
+                .pressedTexture(disabled));
+        button.textStyle(style -> style.fontSize(9).textColor(DISABLED).textShadow(false));
+    }
+
     public static void holdActionButton(Button button, boolean active) {
         if (!active) {
             button(button, ButtonKind.QUIET);
@@ -198,6 +226,18 @@ public final class FPSMLdlib2Theme {
                 .slotOverlay(new ColorBorderTexture(1, BORDER))
                 .hoverOverlay(new ColorRectTexture(0x304BB3FD))
                 .showItemTooltips(true));
+    }
+
+    public static void drawFocusRing(UIElement element, GUIContext context) {
+        if (!element.isFocused()) {
+            return;
+        }
+        context.drawTexture(
+                FOCUS_RING,
+                element.getPositionX(),
+                element.getPositionY(),
+                element.getSizeWidth(),
+                element.getSizeHeight());
     }
 
     public static IGuiTexture panelTexture(int fill, int border) {

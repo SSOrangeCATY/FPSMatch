@@ -2,7 +2,6 @@ package com.ptcrys.fpsmatch.common.minimap.server.sync;
 
 import com.ptcrys.fpsmatch.common.packet.minimap.MinimapC2SRequestHandler;
 import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
-import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
@@ -48,7 +47,8 @@ public final class FPSMatchMinimapGameTests {
                             @Override
                             public void dispatch(
                                     UUID actorId,
-                                    com.ptcrys.fpsmatch.core.minimap.wire.MinimapWireMessage message
+                                    com.ptcrys.fpsmatch.core.minimap.wire
+                                            .MinimapWireMessage message
                             ) {
                                 dispatches.incrementAndGet();
                             }
@@ -272,14 +272,14 @@ public final class FPSMatchMinimapGameTests {
 
         @Override
         public Optional<RuntimeEntryDescriptor> descriptor(
-                ContainerPath path
+                com.ptcrys.fpsmatch.core.minimap.model.ContainerPath path
         ) {
             return Optional.empty();
         }
 
         @Override
         public InputStream openEntry(
-                ContainerPath path
+                com.ptcrys.fpsmatch.core.minimap.model.ContainerPath path
         ) {
             return new ByteArrayInputStream(new byte[0]);
         }

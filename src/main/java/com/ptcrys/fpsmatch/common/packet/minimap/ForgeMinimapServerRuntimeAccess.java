@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class ForgeMinimapServerRuntimeAccess
@@ -117,6 +118,43 @@ public final class ForgeMinimapServerRuntimeAccess
                     player,
                     MinimapS2CPacket.fromMessage(frameIds.get(), message)
             );
+        }
+    }
+
+    @Override
+    public void onMapPublished(MinecraftServer server, MapKey mapKey) {
+        Objects.requireNonNull(server, "server");
+        Objects.requireNonNull(mapKey, "mapKey");
+        if (!FPSMCore.initialized()) {
+            return;
+        }
+        FPSMCore.getInstance()
+                .getMapByTypeWithName(mapKey.gameType(), mapKey.mapName())
+                .filter(map -> map.getServerLevel().getServer() == server)
+                .ifPresent(map -> notifyPlayers(
+                        map.getMapTeams().getJoinedPlayersWithSpec(),
+                        playerId -> map.getPlayerByUUID(playerId).ifPresent(map::pullGameInfo)
+                ));
+    }
+
+    static void notifyPlayers(Iterable<UUID> playerIds, Consumer<UUID> notification) {
+        Objects.requireNonNull(playerIds, "playerIds");
+        Objects.requireNonNull(notification, "notification");
+        RuntimeException failure = null;
+        for (UUID playerId : playerIds) {
+            try {
+                notification.accept(playerId);
+            } catch (RuntimeException next) {
+                // A broken connection must not suppress refresh signals for other players.
+                if (failure == null) {
+                    failure = next;
+                } else if (failure != next) {
+                    failure.addSuppressed(next);
+                }
+            }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 

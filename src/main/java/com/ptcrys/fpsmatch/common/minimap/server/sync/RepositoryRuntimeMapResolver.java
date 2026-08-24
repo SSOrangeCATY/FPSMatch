@@ -9,6 +9,7 @@ import com.ptcrys.fpsmatch.core.minimap.storage.CurrentPointer;
 import com.ptcrys.fpsmatch.core.minimap.storage.MinimapRepository;
 import com.ptcrys.fpsmatch.core.minimap.storage.PublishRecord;
 import com.ptcrys.fpsmatch.core.minimap.storage.PublishState;
+import com.ptcrys.fpsmatch.core.minimap.storage.RepositoryFileSystem;
 import com.ptcrys.fpsmatch.core.minimap.wire.WireIdentity;
 
 import java.io.IOException;
@@ -58,7 +59,7 @@ public final class RepositoryRuntimeMapResolver
         if (current.isEmpty()) {
             throw unavailable("Current runtime revision is unavailable", null);
         }
-        if (current.orElseThrow().revision() != expected.revision()) {
+        if (expected.revision() > current.orElseThrow().revision()) {
             return Optional.empty();
         }
         Path revision = repository.mapDirectory(target.mapKey())
@@ -72,10 +73,11 @@ public final class RepositoryRuntimeMapResolver
             PublishRecord record = PublishRecord.read(
                     readBounded(recordPath, MinimapHardLimits.MAX_WIRE_STRING_UTF8_BYTES)
             );
-            if (!record.descriptorChecksum().equals(
+            boolean currentRevision = expected.revision()
+                    == current.orElseThrow().revision();
+            if (currentRevision && !record.descriptorChecksum().equals(
                     current.orElseThrow().descriptorChecksum()
             ) || record.state() != PublishState.COMMITTED
-                    && record.state() != PublishState.PREPARED
                     || !record.target().mapKey().equals(target.mapKey())
                     || !record.target().dimension().equals(target.dimension())
                     || !record.target().documentId().equals(expected.documentId())

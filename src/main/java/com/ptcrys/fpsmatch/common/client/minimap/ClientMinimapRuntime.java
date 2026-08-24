@@ -255,6 +255,40 @@ public final class ClientMinimapRuntime {
         return Optional.of(current);
     }
 
+    synchronized Optional<RuntimeGeneration> pendingGenerationSnapshot(
+            WireIdentity.RuntimeIdentity identity
+    ) {
+        Objects.requireNonNull(identity, "identity");
+        if (!loggedIn || serverIdentity == null || !transitionPending) {
+            return Optional.empty();
+        }
+        WireIdentity.DocumentBinding binding = identity.binding();
+        return Optional.of(new RuntimeGeneration(
+                connectionEpoch.get(), serverIdentity,
+                binding.target().mapKey(), binding.documentId(),
+                identity.revision(), identity.runtimeHash(),
+                binding.target().dimension(), pendingGeneration
+        ));
+    }
+
+    synchronized boolean releaseIfCurrent(MinimapScopeLease lease) {
+        if (lease == null || !loggedIn) {
+            return false;
+        }
+        ScopeState state = scopes.get(lease.scope());
+        long expectedGeneration = transitionPending
+                ? pendingGeneration
+                : current == null ? pendingGeneration : current.localGeneration();
+        if (!state.active
+                || state.scopeEpoch != lease.scopeEpoch()
+                || lease.runtimeGeneration() != expectedGeneration) {
+            return false;
+        }
+        state.active = false;
+        state.acknowledged = false;
+        return true;
+    }
+
     public synchronized void release(WireIdentity.Scope scope) {
         Objects.requireNonNull(scope, "scope");
         ScopeState state = scopes.get(scope);

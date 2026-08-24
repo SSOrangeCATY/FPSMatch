@@ -2,8 +2,6 @@ package com.ptcrys.fpsmatch.core.minimap.wire;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
-import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
-import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -465,7 +463,7 @@ final class PublishWireCodec {
         int subjectTag = reader.readUnsignedByte();
         WireEditor.ConflictSubject subject = switch (subjectTag) {
             case 0 -> new WireEditor.PathSubject(
-                    ContainerPath.parse(
+                    com.ptcrys.fpsmatch.core.minimap.model.ContainerPath.parse(
                             reader.readUtf8(MinimapHardLimits.MAX_ENTRY_PATH_UTF8_BYTES)
                     )
             );
@@ -477,9 +475,9 @@ final class PublishWireCodec {
                     "unknown rebase conflict subject"
             );
         };
-        Optional<Sha256> oursHash =
+        Optional<com.ptcrys.fpsmatch.core.minimap.model.Sha256> oursHash =
                 reader.readBoolean() ? Optional.of(reader.readHash()) : Optional.empty();
-        Optional<Sha256> theirsHash =
+        Optional<com.ptcrys.fpsmatch.core.minimap.model.Sha256> theirsHash =
                 reader.readBoolean() ? Optional.of(reader.readHash()) : Optional.empty();
         return new WireEditor.Conflict(
                 conflictHash, subject, oursHash, theirsHash

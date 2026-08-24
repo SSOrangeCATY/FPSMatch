@@ -23,6 +23,7 @@ public final class MinecraftMinimapTextureManager
     private final BooleanSupplier renderThread;
     private final TexturePlatform platform;
     private final Map<String, Entry> entries = new LinkedHashMap<>();
+    private final Map<String, StaticRecord> staticRecords = new LinkedHashMap<>();
 
     public MinecraftMinimapTextureManager(
             Supplier<Optional<RuntimeGeneration>> currentGeneration,
@@ -58,21 +59,158 @@ public final class MinecraftMinimapTextureManager
         if (currentGeneration.get().filter(generation::equals).isEmpty()) {
             return Optional.empty();
         }
+        byte[] rgba = tile.rgba();
+        boolean visible = hasVisiblePixels(rgba);
+        staticRecords.put(textureKey, new StaticRecord(generation, visible));
         Entry existing = entries.get(textureKey);
-        if (existing != null && existing.generation().equals(generation)) {
+        if (existing != null && existing.generation().equals(generation)
+                && existing.source() == TextureSource.STATIC) {
+            return Optional.of(existing.handle());
+        }
+        if (existing != null && existing.generation().equals(generation)
+                && existing.source() == TextureSource.GENERATED && !visible) {
+            // Keep loaded-world pixels when an authored transparent placeholder
+            // finishes decoding after the generated fallback.
             return Optional.of(existing.handle());
         }
         if (existing != null) {
             platform.release(existing.handle().location());
         }
         ResourceLocation location = textureLocation(textureKey, generation);
-        byte[] rgba = tile.rgba();
         platform.upload(location, tile.width(), tile.height(), rgba);
         TextureHandle handle = new TextureHandle(
                 location, tile.width(), tile.height()
         );
-        entries.put(textureKey, new Entry(generation, handle));
+        entries.put(textureKey, new Entry(
+                generation, TextureSource.STATIC, handle, visible
+        ));
         return Optional.of(handle);
+    }
+
+    /**
+     * Drops one texture generation so a changed generated tile can be uploaded
+     * again even when its texture key remains stable.
+     */
+    public synchronized void invalidate(
+            String textureKey,
+            RuntimeGeneration generation
+    ) {
+        Objects.requireNonNull(textureKey, "textureKey");
+        Objects.requireNonNull(generation, "generation");
+        requireRenderThread();
+        Entry existing = entries.get(textureKey);
+        if (existing != null && existing.generation().equals(generation)
+                && existing.source() == TextureSource.GENERATED) {
+            platform.release(existing.handle().location());
+            entries.remove(textureKey);
+        }
+    }
+
+    public synchronized void invalidateGenerated(
+            String textureKey,
+            RuntimeGeneration generation
+    ) {
+        Objects.requireNonNull(textureKey, "textureKey");
+        Objects.requireNonNull(generation, "generation");
+        requireRenderThread();
+        Entry existing = entries.get(textureKey);
+        if (existing != null && existing.generation().equals(generation)
+                && existing.source() == TextureSource.GENERATED) {
+            platform.release(existing.handle().location());
+            entries.remove(textureKey);
+        }
+    }
+
+    /** Uploads raw generated RGBA pixels through the same render-thread gate. */
+    public synchronized Optional<TextureHandle> uploadGenerated(
+            String textureKey,
+            int width,
+            int height,
+            byte[] rgba,
+            RuntimeGeneration generation
+    ) {
+        Objects.requireNonNull(rgba, "rgba");
+        Objects.requireNonNull(textureKey, "textureKey");
+        Objects.requireNonNull(generation, "generation");
+        requireRenderThread();
+        if (currentGeneration.get().filter(generation::equals).isEmpty()) {
+            return Optional.empty();
+        }
+        Entry existing = entries.get(textureKey);
+        if (existing != null && existing.generation().equals(generation)) {
+            if (existing.source() == TextureSource.STATIC
+                    && existing.hasVisiblePixels()) {
+                return Optional.of(existing.handle());
+            }
+            if (existing.source() == TextureSource.GENERATED) {
+                return Optional.of(existing.handle());
+            }
+            // A transparent authored placeholder must not mask loaded-world pixels.
+            platform.release(existing.handle().location());
+            entries.remove(textureKey);
+        }
+        try (DecodedTile tile = new DecodedTile(width, height, rgba)) {
+            if (existing != null && entries.containsKey(textureKey)) {
+                platform.release(existing.handle().location());
+                entries.remove(textureKey);
+            }
+            ResourceLocation location = textureLocation(textureKey, generation);
+            platform.upload(location, tile.width(), tile.height(), tile.rgba());
+            TextureHandle handle = new TextureHandle(location, tile.width(), tile.height());
+            entries.put(textureKey, new Entry(
+                    generation, TextureSource.GENERATED, handle,
+                    hasVisiblePixels(rgba)
+            ));
+            return Optional.of(handle);
+        }
+    }
+
+    public synchronized boolean isStatic(
+            String textureKey,
+            RuntimeGeneration generation
+    ) {
+        Entry entry = entries.get(Objects.requireNonNull(textureKey, "textureKey"));
+        return entry != null && entry.source() == TextureSource.STATIC
+                && entry.generation().equals(generation);
+    }
+
+    public synchronized boolean hasStaticRecord(
+            String textureKey,
+            RuntimeGeneration generation
+    ) {
+        StaticRecord record = staticRecords.get(
+                Objects.requireNonNull(textureKey, "textureKey")
+        );
+        return record != null && record.generation().equals(generation);
+    }
+
+    public synchronized boolean isVisibleStatic(
+            String textureKey,
+            RuntimeGeneration generation
+    ) {
+        Entry entry = entries.get(Objects.requireNonNull(textureKey, "textureKey"));
+        return entry != null && entry.source() == TextureSource.STATIC
+                && entry.hasVisiblePixels() && entry.generation().equals(generation);
+    }
+
+    public synchronized boolean isGenerated(
+            String textureKey,
+            RuntimeGeneration generation
+    ) {
+        Entry entry = entries.get(Objects.requireNonNull(textureKey, "textureKey"));
+        return entry != null && entry.source() == TextureSource.GENERATED
+                && entry.generation().equals(generation);
+    }
+
+    public synchronized void clearGenerated() {
+        requireRenderThread();
+        for (String key : new java.util.ArrayList<>(entries.keySet())) {
+            Entry entry = entries.get(key);
+            if (entry != null && entry.source() == TextureSource.GENERATED) {
+                platform.release(entry.handle().location());
+                entries.remove(key);
+            }
+        }
     }
 
     @Override
@@ -91,6 +229,7 @@ public final class MinecraftMinimapTextureManager
             platform.release(entry.handle().location());
         }
         entries.clear();
+        staticRecords.clear();
     }
 
     @Override
@@ -117,7 +256,7 @@ public final class MinecraftMinimapTextureManager
                 + '\n' + generation.runtimeHash()
                 + '\n' + textureKey;
         String digest = Sha256Digest.of(identity.getBytes(StandardCharsets.UTF_8)).value();
-        return ResourceLocation.tryBuild("fpsmatch", "minimap/runtime/" + digest);
+        return new ResourceLocation("fpsmatch", "minimap/runtime/" + digest);
     }
 
     public interface TexturePlatform {
@@ -133,8 +272,30 @@ public final class MinecraftMinimapTextureManager
 
     private record Entry(
             RuntimeGeneration generation,
-            TextureHandle handle
+            TextureSource source,
+            TextureHandle handle,
+            boolean hasVisiblePixels
     ) {
+    }
+
+    private record StaticRecord(
+            RuntimeGeneration generation,
+            boolean hasVisiblePixels
+    ) {
+    }
+
+    private static boolean hasVisiblePixels(byte[] rgba) {
+        for (int index = 3; index < rgba.length; index += 4) {
+            if ((rgba[index] & 0xFF) != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private enum TextureSource {
+        STATIC,
+        GENERATED
     }
 
     private static final class MinecraftTexturePlatform implements TexturePlatform {

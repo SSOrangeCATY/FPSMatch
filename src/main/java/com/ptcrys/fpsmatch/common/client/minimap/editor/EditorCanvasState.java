@@ -32,4 +32,14 @@ public final class EditorCanvasState {
         }
         this.zoom = next;
     }
+
+    void setViewport(double panX, double panY, double zoom) {
+        if (!Double.isFinite(panX) || !Double.isFinite(panY)
+                || !Double.isFinite(zoom) || zoom < 0.25 || zoom > 8.0) {
+            throw new IllegalArgumentException("Viewport values are outside the supported range");
+        }
+        this.panX = panX;
+        this.panY = panY;
+        this.zoom = zoom;
+    }
 }

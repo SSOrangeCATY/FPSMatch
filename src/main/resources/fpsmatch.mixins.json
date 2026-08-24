@@ -53,7 +53,8 @@
     "spec.teammate.CameraInvokerMixin",
     "spec.teammate.KeyboardHandlerMixin",
     "spec.teammate.MouseHandlerMixin",
-    "spec.teammate.CameraRestrictedSpectatorMixin"
+    "spec.teammate.CameraRestrictedSpectatorMixin",
+    "MixinClientLevelMinimap"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,5 +1,6 @@
 package com.ptcrys.fpsmatch.common.packet;
 
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;

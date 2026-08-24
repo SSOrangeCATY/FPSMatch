@@ -1,6 +1,8 @@
 package com.ptcrys.fpsmatch.common.packet.minimap;
 
+import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
 import com.ptcrys.fpsmatch.common.minimap.server.sync.ServerMinimapRuntimeBootstrap;
+import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.TickEvent;
@@ -64,6 +66,19 @@ public final class ForgeMinimapServerLifecycleEventSource
     @Override
     public void bindTicks(LongConsumer onTick) {
         events.onServerTick(Objects.requireNonNull(onTick, "onTick"));
+    }
+
+    @Override
+    public void bindInvalidations(
+            Consumer<MapKey> onMapInvalidated,
+            Consumer<UUID> onActorInvalidated
+    ) {
+        events.onMapInvalidated(Objects.requireNonNull(
+                onMapInvalidated, "onMapInvalidated"
+        ));
+        events.onActorInvalidated(Objects.requireNonNull(
+                onActorInvalidated, "onActorInvalidated"
+        ));
     }
 
     void bindBuiltinCatalog(
@@ -134,8 +149,44 @@ public final class ForgeMinimapServerLifecycleEventSource
             }
 
             @Override
+            public void onMapInvalidated(Consumer<MapKey> listener) {
+                eventBus.addListener(EventPriority.LOWEST, (FPSMapEvent.ClearEvent event) -> {
+                    if (!event.isCanceled()) {
+                        listener.accept(mapKey(event));
+                    }
+                });
+                eventBus.addListener(EventPriority.LOWEST, (FPSMapEvent.ResetEvent event) ->
+                        listener.accept(mapKey(event)));
+                eventBus.addListener(EventPriority.LOWEST, (FPSMapEvent.ReloadEvent event) -> {
+                    if (!event.isCanceled()) {
+                        listener.accept(mapKey(event));
+                    }
+                });
+            }
+
+            @Override
+            public void onActorInvalidated(Consumer<UUID> listener) {
+                eventBus.addListener(
+                        EventPriority.LOWEST,
+                        (FPSMapEvent.PlayerEvent.LeaveEvent event) -> {
+                            if (!event.isCanceled()) {
+                                listener.accept(event.getPlayer().getUUID());
+                            }
+                        }
+                );
+                eventBus.addListener(
+                        EventPriority.LOWEST,
+                        (PlayerEvent.PlayerChangedDimensionEvent event) -> {
+                            if (event.getEntity() instanceof ServerPlayer player) {
+                                listener.accept(player.getUUID());
+                            }
+                        }
+                );
+            }
+
+            @Override
             public void onServerStopping(Consumer<Object> listener) {
-                eventBus.addListener(EventPriority.HIGHEST, (ServerStoppingEvent event) ->
+                eventBus.addListener(EventPriority.LOWEST, (ServerStoppingEvent event) ->
                         listener.accept(event.getServer()));
             }
 
@@ -156,6 +207,13 @@ public final class ForgeMinimapServerLifecycleEventSource
         };
     }
 
+    private static MapKey mapKey(FPSMapEvent event) {
+        return new MapKey(
+                event.getMap().getGameType(),
+                event.getMap().getMapName()
+        );
+    }
+
     interface EventRegistrar {
         void onServerStarted(Consumer<Object> listener);
 
@@ -168,6 +226,12 @@ public final class ForgeMinimapServerLifecycleEventSource
         void onConnectionClosed(Consumer<Object> listener);
 
         void onPlayerLoggedOut(Consumer<UUID> listener);
+
+        default void onMapInvalidated(Consumer<MapKey> listener) {
+        }
+
+        default void onActorInvalidated(Consumer<UUID> listener) {
+        }
 
         void onServerStopping(Consumer<Object> listener);
 

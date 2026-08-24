@@ -5,7 +5,6 @@ import com.ptcrys.fpsmatch.config.FPSMConfig;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.map.BaseRoundMap;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -93,7 +92,7 @@ public class FPSMEventHook {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            MapRoomSyncManager.unwatch(player.getUUID());
+            com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager.unwatch(player.getUUID());
             Optional<BaseMap> opt = FPSMCore.getInstance().getMapByPlayerWithSpec(player);
             boolean leave = true;
             if (opt.isPresent()) {

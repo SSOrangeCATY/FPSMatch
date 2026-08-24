@@ -12,7 +12,6 @@ import com.ptcrys.fpsmatch.core.minimap.model.SourceDocument;
 import com.ptcrys.fpsmatch.core.minimap.model.SourceEntryDescriptor;
 import com.ptcrys.fpsmatch.core.minimap.model.SourceManifest;
 import com.ptcrys.fpsmatch.core.minimap.model.StylesFile;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
@@ -57,7 +56,7 @@ public final class SourceMapReader {
     ) {
         Objects.requireNonNull(migrations, "migrations");
         CanonicalZipReader.Archive archive = CanonicalZipReader.read(container, limits);
-        MinimapFormatVersion version;
+        com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion version;
         try {
             version = readFormatVersion(archive, MinimapContainerLayout.SOURCE_MANIFEST);
             if (version.major() == MinimapFormatContract.CURRENT.major()
@@ -200,7 +199,7 @@ public final class SourceMapReader {
         }
     }
 
-    private static MinimapFormatVersion
+    private static com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion
     readFormatVersion(CanonicalZipReader.Archive archive, ContainerPath manifestPath) {
         if (archive.entryLength(manifestPath) > MinimapHardLimits.MAX_SOURCE_MANIFEST_BYTES) {
             throw new ContainerValidationException("Source manifest exceeds its byte limit");
@@ -216,7 +215,7 @@ public final class SourceMapReader {
             throw new ContainerValidationException("Source manifest formatVersion is missing");
         }
         try {
-            return MinimapFormatVersion.parse(
+            return com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion.parse(
                     value.getAsString()
             );
         } catch (IllegalArgumentException exception) {

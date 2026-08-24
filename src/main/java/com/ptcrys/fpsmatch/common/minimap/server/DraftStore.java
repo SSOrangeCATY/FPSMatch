@@ -1,75 +1,41 @@
 package com.ptcrys.fpsmatch.common.minimap.server;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.format.JcsCanonicalizer;
 import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
-import com.ptcrys.fpsmatch.core.minimap.format.StrictJsonParser;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
 
 import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.ByteBuffer;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class DraftStore {
-    private static final String STATE_FILE = "draft.json";
-    private static final long MAX_STATE_BYTES = MinimapHardLimits.MAX_SOURCE_MANIFEST_BYTES;
-    private static final int MAX_ROOT_ENTRIES = 4_096;
-    private static final int MAX_DELETE_TREE_NODES = 16_384;
-    private static final int MAX_DELETE_TREE_DEPTH = 16;
-    private static final Set<String> STATE_FIELDS = Set.of(
-            "ackCursor", "baseRevision", "baseSourceHash", "draftId",
-            "draftRootHash", "initialRootHash", "expiresAtEpochMillis", "lifecycle", "mapKey",
-            "dimension", "documentId", "operations"
-    );
-    private static final Set<String> PRE_CHAIN_STATE_FIELDS = Set.of(
-            "ackCursor", "baseRevision", "baseSourceHash", "draftId",
-            "draftRootHash", "expiresAtEpochMillis", "lifecycle", "mapKey",
-            "dimension", "documentId", "operations"
-    );
-    private static final Set<String> LEGACY_STATE_FIELDS = Set.of(
-            "ackCursor", "baseRevision", "baseSourceHash", "draftId",
-            "draftRootHash", "expiresAtEpochMillis", "mapKey", "operations"
-    );
-    private static final Set<String> OPERATION_FIELDS = Set.of(
-            "ackCursor", "ackRootHash", "originalAckRootHash",
-            "payloadHash", "sequence"
-    );
-
-    private final Path root;
     private final Duration draftTtl;
     private final int outOfOrderWindow;
     private final Clock clock;
     private final DraftAncestorPins ancestorPins;
-    private final FileSystem fileSystem;
     private final DraftStoreLimits limits;
+    private final DraftStorePersistence persistence;
     private final Object creationLock = new Object();
     private final Object[] locks = createLockStripes();
 
@@ -131,7 +97,8 @@ public final class DraftStore {
             FileSystem fileSystem,
             DraftStoreLimits limits
     ) {
-        this.root = Objects.requireNonNull(root, "root").toAbsolutePath().normalize();
+        Path normalizedRoot = Objects.requireNonNull(root, "root")
+                .toAbsolutePath().normalize();
         this.draftTtl = Objects.requireNonNull(draftTtl, "draftTtl");
         if (draftTtl.isZero() || draftTtl.isNegative() || outOfOrderWindow <= 0) {
             throw new IllegalArgumentException("Draft retention settings are invalid");
@@ -139,10 +106,14 @@ public final class DraftStore {
         this.outOfOrderWindow = outOfOrderWindow;
         this.clock = Objects.requireNonNull(clock, "clock");
         this.ancestorPins = Objects.requireNonNull(ancestorPins, "ancestorPins");
-        this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem");
         this.limits = Objects.requireNonNull(limits, "limits");
+        this.persistence = new DraftStorePersistence(
+                normalizedRoot,
+                Objects.requireNonNull(fileSystem, "fileSystem"),
+                this.limits
+        );
         try {
-            fileSystem.createDirectories(this.root);
+            persistence.ensureRoot();
         } catch (IOException exception) {
             throw failure("Unable to create draft store", exception);
         }
@@ -186,7 +157,7 @@ public final class DraftStore {
                 String pinId = pinId(draftId);
                 persist(draft);
                 try {
-                    fileSystem.syncDirectory(root);
+                    persistence.syncRoot();
                 } catch (IOException exception) {
                     throw failure("Unable to sync draft creation", exception);
                 }
@@ -286,7 +257,8 @@ public final class DraftStore {
                     payloadHash,
                     null,
                     draft.ackCursor,
-                    draft.draftRootHash
+                    draft.draftRootHash,
+                    null
             );
             draft.operations.put(opSequence, submitted);
             if (newContent) {
@@ -316,6 +288,168 @@ public final class DraftStore {
         }
     }
 
+    /**
+     * Applies one canonical forward editor descriptor. Legacy five-argument
+     * payloads intentionally remain on the compatibility path above.
+     */
+    public DraftAck apply(
+            UUID draftId,
+            Sha256 expectedRootHash,
+            long opSequence,
+            Sha256 descriptorHash,
+            byte[] descriptorBytes,
+            Map<Sha256, byte[]> referencedContent
+    ) {
+        Objects.requireNonNull(draftId, "draftId");
+        Objects.requireNonNull(expectedRootHash, "expectedRootHash");
+        Objects.requireNonNull(descriptorHash, "descriptorHash");
+        Objects.requireNonNull(descriptorBytes, "descriptorBytes");
+        Objects.requireNonNull(referencedContent, "referencedContent");
+        if (opSequence <= 0 || opSequence > limits.maximumOperationsPerDraft()) {
+            throw error(
+                    MinimapErrorCode.QUOTA_EXCEEDED,
+                    "Draft operation sequence is outside its limit"
+            );
+        }
+        DraftOperationDescriptor submission = DraftOperationDescriptor.validate(
+                descriptorHash,
+                descriptorBytes,
+                referencedContent,
+                limits.maximumContentBytesPerDraft()
+        );
+        synchronized (lockFor(draftId)) {
+            MutableDraft draft = requireActive(read(draftId));
+            Operation existing = draft.operations.get(opSequence);
+            if (existing != null) {
+                if (!existing.payloadHash.equals(descriptorHash)
+                        || existing.referencedContentHashes == null) {
+                    throw error(
+                            MinimapErrorCode.FRAGMENT_CONFLICT,
+                            "Draft operation sequence conflicts with its prior descriptor"
+                    );
+                }
+                if (!existing.referencedContentHashes.equals(
+                        submission.referencedContentHashes()
+                )) {
+                    throw error(
+                            MinimapErrorCode.FRAGMENT_CONFLICT,
+                            "Draft operation descriptor references changed content"
+                    );
+                }
+                // A replay may arrive after one-time uploads have been consumed.
+                return existing.originalAck(draftId);
+            }
+            submission.requireCompleteContent();
+            if (!draft.draftRootHash.equals(expectedRootHash)) {
+                throw error(
+                        MinimapErrorCode.REVISION_CONFLICT,
+                        "Draft root changed since the optimistic request"
+                );
+            }
+            long expectedSequence;
+            try {
+                expectedSequence = Math.addExact(draft.ackCursor, 1L);
+            } catch (ArithmeticException exhausted) {
+                throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft ACK cursor is exhausted");
+            }
+            if (opSequence != expectedSequence) {
+                throw error(
+                        MinimapErrorCode.VALIDATION_FAILED,
+                        "Draft operation sequence must follow the ACK cursor"
+                );
+            }
+            if (draft.operations.size() >= limits.maximumOperationsPerDraft()) {
+                throw error(
+                        MinimapErrorCode.QUOTA_EXCEEDED,
+                        "Draft operation quota is exhausted"
+                );
+            }
+            Map<Sha256, byte[]> entries = new LinkedHashMap<>();
+            submission.submittedContent().forEach((hash, bytes) -> entries.put(hash, bytes));
+            byte[] descriptor = submission.bytes();
+            byte[] collision = entries.put(descriptorHash, descriptor);
+            if (collision != null && !Arrays.equals(collision, descriptor)) {
+                throw error(MinimapErrorCode.HASH_MISMATCH, "Draft CAS hash collision");
+            }
+            long additionalBytes = ensureContentQuota(draft, entries);
+            // Content-addressed entries are durable before the state pointer moves.
+            entries.forEach((hash, bytes) -> persistPayload(draftId, hash, bytes));
+            Operation submitted = new Operation(
+                    opSequence,
+                    descriptorHash,
+                    null,
+                    draft.ackCursor,
+                    draft.draftRootHash,
+                    submission.referencedContentHashes()
+            );
+            draft.operations.put(opSequence, submitted);
+            Sha256 nextRoot = nextRoot(draft.draftRootHash, submitted);
+            submitted.ackRootHash = nextRoot;
+            draft.draftRootHash = nextRoot;
+            draft.ackCursor = opSequence;
+            submitted.originalAckCursor = opSequence;
+            submitted.originalAckRootHash = nextRoot;
+            draft.contentBytes = Math.addExact(draft.contentBytes, additionalBytes);
+            draft.expiresAt = clock.instant().plus(draftTtl);
+            persist(draft);
+            return draft.ack();
+        }
+    }
+
+    public DraftMaterialization requireMaterialization(
+            UUID draftId,
+            Sha256 expectedRootHash
+    ) {
+        Objects.requireNonNull(draftId, "draftId");
+        Objects.requireNonNull(expectedRootHash, "expectedRootHash");
+        synchronized (lockFor(draftId)) {
+            MutableDraft draft = requireActive(read(draftId));
+            if (!draft.draftRootHash.equals(expectedRootHash)) {
+                throw error(
+                        MinimapErrorCode.REVISION_CONFLICT,
+                        "Draft root changed since the optimistic request"
+                );
+            }
+            if (draft.ackCursor > draft.operations.size()) {
+                throw error(
+                        MinimapErrorCode.VALIDATION_FAILED,
+                        "Draft ACK cursor exceeds its operation prefix"
+                );
+            }
+            List<DraftMaterialization.Operation> materialized = new ArrayList<>();
+            Map<Sha256, byte[]> content = new LinkedHashMap<>();
+            for (long sequence = 1; sequence <= draft.ackCursor; sequence++) {
+                Operation operation = draft.operations.get(sequence);
+                if (operation == null || operation.referencedContentHashes == null) {
+                    throw error(
+                            MinimapErrorCode.VALIDATION_FAILED,
+                            "Draft materialization contains a legacy operation"
+                    );
+                }
+                byte[] descriptor = readPayload(draftId, operation.payloadHash);
+                Map<Sha256, byte[]> operationContent = new LinkedHashMap<>();
+                for (Sha256 hash : operation.referencedContentHashes) {
+                    operationContent.put(hash, readPayload(draftId, hash));
+                }
+                DraftOperationDescriptor validated = DraftOperationDescriptor.validate(
+                        operation.payloadHash,
+                        descriptor,
+                        operationContent,
+                        limits.maximumContentBytesPerDraft()
+                );
+                validated.requireCompleteContent();
+                materialized.add(new DraftMaterialization.Operation(
+                        sequence,
+                        operation.payloadHash,
+                        descriptor,
+                        validated.referencedContentHashes()
+                ));
+                operationContent.forEach((hash, bytes) -> content.putIfAbsent(hash, bytes));
+            }
+            return new DraftMaterialization(draft.snapshot(), materialized, content);
+        }
+    }
+
     public DraftState requireRoot(UUID draftId, Sha256 expectedRootHash) {
         Objects.requireNonNull(expectedRootHash, "expectedRootHash");
         synchronized (lockFor(draftId)) {
@@ -333,7 +467,7 @@ public final class DraftStore {
     public int removeExpired() {
         Instant now = clock.instant();
         int removed = 0;
-        for (Path directory : listDirectories(root)) {
+        for (Path directory : persistence.listDraftDirectories()) {
             UUID draftId;
             try {
                 draftId = UUID.fromString(directory.getFileName().toString());
@@ -385,7 +519,7 @@ public final class DraftStore {
     }
 
     private void revalidateActivePins() {
-        for (Path directory : listDirectories(root)) {
+        for (Path directory : persistence.listDraftDirectories()) {
             UUID draftId;
             try {
                 draftId = UUID.fromString(directory.getFileName().toString());
@@ -437,8 +571,8 @@ public final class DraftStore {
     private void finishDeletion(MutableDraft draft) {
         unpinAncestor(draft);
         try {
-            deleteTree(draftDirectory(draft.draftId));
-            fileSystem.syncDirectory(root);
+            persistence.delete(draft.draftId);
+            persistence.syncRoot();
         } catch (IOException exception) {
             throw failure("Unable to finish draft removal", exception);
         }
@@ -453,168 +587,101 @@ public final class DraftStore {
     }
 
     private void persistPayload(UUID draftId, Sha256 hash, byte[] payload) {
-        Path directory = requireDraftDirectory(draftId);
-        Path entries = directory.resolve("entries");
-        Path target = entries.resolve(hash.value() + ".bin");
         try {
-            ensureDirectory(entries, "Draft entry directory");
-            if (Files.exists(target)) {
-                if (!Arrays.equals(readBoundedRegularFile(
-                        target,
-                        limits.maximumContentBytesPerDraft(),
-                        "Draft content entry"
-                ), payload)) {
-                    throw error(
-                            MinimapErrorCode.HASH_MISMATCH,
-                            "Content-addressed draft entry conflicts with its hash"
-                    );
-                }
-                return;
-            }
-            fileSystem.writeAtomically(target, payload);
+            persistence.writePayload(draftId, hash, payload);
         } catch (IOException exception) {
             throw failure("Unable to persist draft entry", exception);
         }
     }
 
-    private void persist(MutableDraft draft) {
-        JsonObject root = new JsonObject();
-        root.addProperty("ackCursor", Long.toString(draft.ackCursor));
-        root.addProperty("baseRevision", Long.toString(draft.baseRevision));
-        root.addProperty("baseSourceHash", draft.baseSourceHash.value());
-        root.addProperty("draftId", draft.draftId.toString());
-        root.addProperty("draftRootHash", draft.draftRootHash.value());
-        root.addProperty("initialRootHash", draft.initialRootHash.value());
-        root.addProperty("dimension", draft.dimension.toString());
-        root.addProperty("documentId", draft.documentId.toString());
-        root.addProperty("expiresAtEpochMillis", Long.toString(draft.expiresAt.toEpochMilli()));
-        root.addProperty("lifecycle", draft.lifecycle.name());
-        JsonObject mapKey = new JsonObject();
-        mapKey.addProperty("gameType", draft.mapKey.gameType());
-        mapKey.addProperty("mapName", draft.mapKey.mapName());
-        root.add("mapKey", mapKey);
-        JsonArray operations = new JsonArray();
-        draft.operations.values().stream()
-                .sorted(Comparator.comparingLong(operation -> operation.sequence))
-                .forEach(operation -> {
-                    JsonObject encoded = new JsonObject();
-                    encoded.add(
-                            "ackRootHash",
-                            operation.ackRootHash == null
-                                    ? JsonNull.INSTANCE
-                                    : new com.google.gson.JsonPrimitive(
-                                    operation.ackRootHash.value()
-                            )
-                    );
-                    encoded.addProperty(
-                            "ackCursor", Long.toString(operation.originalAckCursor)
-                    );
-                    encoded.addProperty(
-                            "originalAckRootHash", operation.originalAckRootHash.value()
-                    );
-                    encoded.addProperty("payloadHash", operation.payloadHash.value());
-                    encoded.addProperty("sequence", Long.toString(operation.sequence));
-                    operations.add(encoded);
-                });
-        root.add("operations", operations);
+    private byte[] readPayload(UUID draftId, Sha256 hash) {
         try {
-            Path directory = draftDirectory(draft.draftId);
-            ensureDirectory(directory, "Draft directory");
-            fileSystem.writeAtomically(
-                    directory.resolve(STATE_FILE),
-                    JcsCanonicalizer.canonicalize(root)
-            );
+            return persistence.readPayload(draftId, hash);
+        } catch (IOException exception) {
+            throw failure("Unable to read draft entry", exception);
+        }
+    }
+
+    private void persist(MutableDraft draft) {
+        try {
+            persistence.write(new DraftStorePersistence.PersistedDraft(
+                    draft.draftId,
+                    draft.mapKey,
+                    draft.dimension,
+                    draft.documentId,
+                    draft.baseRevision,
+                    draft.baseSourceHash,
+                    draft.initialRootHash,
+                    draft.draftRootHash,
+                    draft.ackCursor,
+                    draft.expiresAt,
+                    draft.lifecycle.name(),
+                    draft.operations.values().stream()
+                            .map(operation -> new DraftStorePersistence.PersistedOperation(
+                                    operation.sequence,
+                                    operation.payloadHash,
+                                    operation.ackRootHash,
+                                    operation.originalAckCursor,
+                                    operation.originalAckRootHash,
+                                    operation.referencedContentHashes
+                            ))
+                            .toList()
+            ));
         } catch (IOException exception) {
             throw failure("Unable to persist draft state", exception);
         }
     }
 
     private MutableDraft read(UUID draftId) {
-        Path state = requireDraftDirectory(draftId).resolve(STATE_FILE);
         try {
-            byte[] bytes = readBoundedRegularFile(
-                    state, MAX_STATE_BYTES, "Draft state"
-            );
-            JsonElement parsed = StrictJsonParser.parse(bytes);
-            if (!parsed.isJsonObject()
-                    || !Arrays.equals(bytes, JcsCanonicalizer.canonicalize(parsed))) {
-                throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft state is not canonical");
-            }
-            JsonObject root = parsed.getAsJsonObject();
-            if (!root.keySet().equals(STATE_FIELDS)
-                    && !root.keySet().equals(PRE_CHAIN_STATE_FIELDS)
-                    && !root.keySet().equals(LEGACY_STATE_FIELDS)) {
-                throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft state fields are invalid");
-            }
-            UUID persistedId = UUID.fromString(string(root, "draftId"));
-            if (!persistedId.equals(draftId)) {
-                throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft ID does not match its path");
-            }
-            JsonObject map = root.getAsJsonObject("mapKey");
-            if (map == null || !map.keySet().equals(Set.of("gameType", "mapName"))) {
-                throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft map key is invalid");
-            }
+            DraftStorePersistence.PersistedDraft persisted = persistence.read(draftId);
             Map<Long, Operation> operations = new HashMap<>();
-            JsonArray persistedOperations = root.getAsJsonArray("operations");
-            if (persistedOperations == null
-                    || persistedOperations.size() > limits.maximumOperationsPerDraft()) {
-                throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft operation quota is exceeded");
-            }
-            for (JsonElement element : persistedOperations) {
-                JsonObject operation = element.getAsJsonObject();
-                if (operation == null || !operation.keySet().equals(OPERATION_FIELDS)) {
-                    throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft operation is invalid");
+            long previousSequence = 0;
+            for (DraftStorePersistence.PersistedOperation operation
+                    : persisted.operations()) {
+                if (operation.sequence() <= previousSequence) {
+                    throw error(
+                            MinimapErrorCode.VALIDATION_FAILED,
+                            "Draft operations are not strictly ordered"
+                    );
                 }
-                long sequence = count(operation, "sequence");
-                Sha256 payloadHash = Sha256.parse(string(operation, "payloadHash"));
-                JsonElement ack = operation.get("ackRootHash");
-                Sha256 ackRoot = ack.isJsonNull() ? null : Sha256.parse(ack.getAsString());
-                long originalAckCursor = count(operation, "ackCursor");
-                Sha256 originalAckRoot = Sha256.parse(
-                        string(operation, "originalAckRootHash")
-                );
+                previousSequence = operation.sequence();
                 if (operations.put(
-                        sequence,
+                        operation.sequence(),
                         new Operation(
-                                sequence, payloadHash, ackRoot,
-                                originalAckCursor, originalAckRoot
+                                operation.sequence(),
+                                operation.payloadHash(),
+                                operation.ackRootHash(),
+                                operation.originalAckCursor(),
+                                operation.originalAckRootHash(),
+                                operation.referencedContentHashes()
                         )
                 ) != null) {
                     throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft operation is duplicated");
                 }
             }
-            Sha256 persistedRoot = Sha256.parse(string(root, "draftRootHash"));
-            Sha256 initialRoot;
-            if (root.has("initialRootHash")) {
-                initialRoot = Sha256.parse(string(root, "initialRootHash"));
-            } else if (operations.isEmpty()) {
-                initialRoot = persistedRoot;
-            } else {
-                throw error(
-                        MinimapErrorCode.VALIDATION_FAILED,
-                        "Draft operation chain is missing its initial root"
-                );
-            }
-            long ackCursor = count(root, "ackCursor");
-            validateOperationChain(initialRoot, persistedRoot, ackCursor, operations);
-            long contentBytes = contentBytes(persistedId, operations.values());
+            validateOperationChain(
+                    persisted.initialRootHash(),
+                    persisted.draftRootHash(),
+                    persisted.ackCursor(),
+                    operations
+            );
+            long contentBytes = contentBytes(persisted.draftId(), operations.values());
             if (contentBytes > limits.maximumContentBytesPerDraft()) {
                 throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft content quota is exceeded");
             }
             return new MutableDraft(
-                    persistedId,
-                    new MapKey(map.get("gameType").getAsString(), map.get("mapName").getAsString()),
-                    NamespacedId.parse(string(root, "dimension")),
-                    NamespacedId.parse(string(root, "documentId")),
-                    count(root, "baseRevision"),
-                    Sha256.parse(string(root, "baseSourceHash")),
-                    initialRoot,
-                    persistedRoot,
-                    ackCursor,
-                    Instant.ofEpochMilli(count(root, "expiresAtEpochMillis")),
-                    root.has("lifecycle")
-                            ? DraftLifecycle.valueOf(string(root, "lifecycle"))
-                            : DraftLifecycle.ACTIVE,
+                    persisted.draftId(),
+                    persisted.mapKey(),
+                    persisted.dimension(),
+                    persisted.documentId(),
+                    persisted.baseRevision(),
+                    persisted.baseSourceHash(),
+                    persisted.initialRootHash(),
+                    persisted.draftRootHash(),
+                    persisted.ackCursor(),
+                    persisted.expiresAt(),
+                    DraftLifecycle.valueOf(persisted.lifecycle()),
                     operations,
                     contentBytes
             );
@@ -639,6 +706,13 @@ public final class DraftStore {
             long ackCursor,
             Map<Long, Operation> operations
     ) {
+        if (ackCursor > operations.size()
+                || ackCursor > limits.maximumOperationsPerDraft()) {
+            throw error(
+                    MinimapErrorCode.VALIDATION_FAILED,
+                    "Draft ACK cursor exceeds its bounded operation prefix"
+            );
+        }
         Sha256 replayedRoot = initialRoot;
         Map<Long, Sha256> rootsByCursor = new HashMap<>();
         rootsByCursor.put(0L, initialRoot);
@@ -689,94 +763,6 @@ public final class DraftStore {
         }
     }
 
-    private static byte[] readBoundedRegularFile(
-            Path path,
-            long maximumBytes,
-            String label
-    ) throws IOException {
-        try (FileChannel channel = FileChannel.open(
-                path, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS
-        )) {
-            if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-                throw new IOException(label + " is not a regular file");
-            }
-            long size = channel.size();
-            if (size > maximumBytes) {
-                throw error(
-                        MinimapErrorCode.QUOTA_EXCEEDED,
-                        label + " exceeds its byte hard limit"
-                );
-            }
-            byte[] bytes = new byte[Math.toIntExact(size)];
-            ByteBuffer destination = ByteBuffer.wrap(bytes);
-            while (destination.hasRemaining()) {
-                if (channel.read(destination) <= 0) {
-                    throw new IOException(label + " changed while being read");
-                }
-            }
-            ByteBuffer trailing = ByteBuffer.allocate(1);
-            if (channel.read(trailing) != -1) {
-                throw new IOException(label + " changed while being read");
-            }
-            return bytes;
-        }
-    }
-
-    private static String string(JsonObject root, String key) {
-        JsonElement value = root.get(key);
-        if (value == null || !value.isJsonPrimitive()
-                || !value.getAsJsonPrimitive().isString()) {
-            throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft string is invalid: " + key);
-        }
-        return value.getAsString();
-    }
-
-    private static long count(JsonObject root, String key) {
-        String value = string(root, key);
-        if (!value.matches("0|[1-9][0-9]{0,18}")) {
-            throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft count is invalid: " + key);
-        }
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException exception) {
-            throw error(MinimapErrorCode.VALIDATION_FAILED, "Draft count is invalid: " + key);
-        }
-    }
-
-    private Path draftDirectory(UUID draftId) {
-        return root.resolve(draftId.toString()).normalize();
-    }
-
-    private Path requireDraftDirectory(UUID draftId) {
-        Path directory = draftDirectory(draftId);
-        try {
-            if (!Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) {
-                if (!Files.exists(directory, LinkOption.NOFOLLOW_LINKS)) {
-                    throw error(MinimapErrorCode.SESSION_NOT_FOUND, "Draft was not found");
-                }
-                throw new IOException("Draft path is not a regular directory");
-            }
-            return directory;
-        } catch (DraftException exception) {
-            throw exception;
-        } catch (IOException exception) {
-            throw failure("Unable to validate draft directory", exception);
-        }
-    }
-
-    private void ensureDirectory(Path directory, String label) throws IOException {
-        if (Files.exists(directory, LinkOption.NOFOLLOW_LINKS)) {
-            if (!Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) {
-                throw new IOException(label + " is not a regular directory");
-            }
-            return;
-        }
-        fileSystem.createDirectories(directory);
-        if (!Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) {
-            throw new IOException(label + " is not a regular directory");
-        }
-    }
-
     private Object lockFor(UUID draftId) {
         int index = (draftId.hashCode() & Integer.MAX_VALUE) % locks.length;
         return locks[index];
@@ -784,42 +770,99 @@ public final class DraftStore {
 
     private long contentBytes(UUID draftId, java.util.Collection<Operation> operations)
             throws IOException {
-        Set<Sha256> unique = new HashSet<>();
+        Set<Sha256> unique = contentAddresses(operations);
+        if (unique.size() > DraftStorePersistence.MAX_CONTENT_ENTRIES_PER_DRAFT) {
+            throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft content entry quota is exceeded");
+        }
+        Map<Sha256, byte[]> loaded = new HashMap<>();
         long total = 0;
-        for (Operation operation : operations) {
-            if (!unique.add(operation.payloadHash)) {
-                continue;
-            }
-            Path entry = draftDirectory(draftId).resolve("entries")
-                    .resolve(operation.payloadHash.value() + ".bin");
-            byte[] content;
-            try {
-                content = readBoundedRegularFile(
-                        entry,
-                        limits.maximumContentBytesPerDraft(),
-                        "Draft content entry"
-                );
-            } catch (NoSuchFileException missingEntry) {
-                throw new IOException("Draft content entry is missing", missingEntry);
-            }
-            if (!Sha256Digest.of(content).equals(operation.payloadHash)) {
-                throw error(
-                        MinimapErrorCode.HASH_MISMATCH,
-                        "Draft content entry does not match its address hash"
-                );
-            }
+        for (Sha256 hash : unique) {
+            byte[] content = persistence.readPayload(draftId, hash);
+            loaded.put(hash, content);
             try {
                 total = Math.addExact(total, content.length);
             } catch (ArithmeticException overflow) {
                 throw new IOException("Draft content byte count overflowed", overflow);
             }
         }
+        for (Operation operation : operations) {
+            if (operation.referencedContentHashes == null) {
+                continue;
+            }
+            Map<Sha256, byte[]> references = new LinkedHashMap<>();
+            for (Sha256 hash : operation.referencedContentHashes) {
+                references.put(hash, loaded.get(hash));
+            }
+            DraftOperationDescriptor descriptor = DraftOperationDescriptor.validate(
+                    operation.payloadHash,
+                    loaded.get(operation.payloadHash),
+                    references,
+                    limits.maximumContentBytesPerDraft()
+            );
+            descriptor.requireCompleteContent();
+            if (!descriptor.referencedContentHashes().equals(
+                    operation.referencedContentHashes
+            )) {
+                throw error(
+                        MinimapErrorCode.VALIDATION_FAILED,
+                        "Draft descriptor references do not match persisted metadata"
+                );
+            }
+        }
         return total;
+    }
+
+    private Set<Sha256> contentAddresses(java.util.Collection<Operation> operations) {
+        Set<Sha256> addresses = new HashSet<>();
+        for (Operation operation : operations) {
+            addresses.add(operation.payloadHash);
+            if (operation.referencedContentHashes != null) {
+                addresses.addAll(operation.referencedContentHashes);
+            }
+        }
+        return addresses;
+    }
+
+    private long ensureContentQuota(MutableDraft draft, Map<Sha256, byte[]> entries) {
+        Set<Sha256> existing = contentAddresses(draft.operations.values());
+        Set<Sha256> combined = new HashSet<>(existing);
+        combined.addAll(entries.keySet());
+        if (combined.size() > DraftStorePersistence.MAX_CONTENT_ENTRIES_PER_DRAFT) {
+            throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft content entry quota is exhausted");
+        }
+        long additionalBytes = 0;
+        int additionalFiles = 0;
+        try {
+            for (Map.Entry<Sha256, byte[]> entry : entries.entrySet()) {
+                if (existing.contains(entry.getKey())) {
+                    continue;
+                }
+                additionalBytes = Math.addExact(additionalBytes, entry.getValue().length);
+                if (!persistence.payloadExists(draft.draftId, entry.getKey())) {
+                    additionalFiles++;
+                }
+            }
+            if (persistence.payloadEntryCount(draft.draftId)
+                    > DraftStorePersistence.MAX_CONTENT_ENTRIES_PER_DRAFT - additionalFiles) {
+                throw error(
+                        MinimapErrorCode.QUOTA_EXCEEDED,
+                        "Draft content entry quota is exhausted"
+                );
+            }
+        } catch (ArithmeticException overflow) {
+            throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft content size overflowed");
+        } catch (IOException exception) {
+            throw failure("Unable to inspect draft content quota", exception);
+        }
+        if (additionalBytes > limits.maximumContentBytesPerDraft() - draft.contentBytes) {
+            throw error(MinimapErrorCode.QUOTA_EXCEEDED, "Draft content byte quota is exhausted");
+        }
+        return additionalBytes;
     }
 
     private int countDraftDirectories() {
         int count = 0;
-        for (Path directory : listDirectories(root)) {
+        for (Path directory : persistence.listDraftDirectories()) {
             try {
                 UUID.fromString(directory.getFileName().toString());
                 count++;
@@ -848,79 +891,6 @@ public final class DraftStore {
         return "draft:" + draftId;
     }
 
-    private static List<Path> listDirectories(Path directory) {
-        try (var paths = Files.list(directory)) {
-            List<Path> entries = paths.limit(MAX_ROOT_ENTRIES + 1L).toList();
-            if (entries.size() > MAX_ROOT_ENTRIES) {
-                throw new IOException("Draft store directory exceeds its entry limit");
-            }
-            return entries.stream().filter(path -> Files.isDirectory(
-                    path, LinkOption.NOFOLLOW_LINKS
-            )).toList();
-        } catch (IOException exception) {
-            throw failure("Unable to list draft store", exception);
-        }
-    }
-
-    private static void writeAtomic(Path target, byte[] bytes) throws IOException {
-        Path temporary = target.resolveSibling(
-                target.getFileName() + "." + UUID.randomUUID() + ".tmp"
-        );
-        try {
-            Files.write(
-                    temporary,
-                    bytes,
-                    StandardOpenOption.CREATE_NEW,
-                    StandardOpenOption.WRITE
-            );
-            try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
-                channel.force(true);
-            }
-            try {
-                Files.move(
-                        temporary,
-                        target,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING
-                );
-            } catch (AtomicMoveNotSupportedException unsupported) {
-                throw new IOException("Draft store requires atomic file replacement", unsupported);
-            }
-            syncDirectory(target.getParent());
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
-    }
-
-    private static void syncDirectory(Path directory) throws IOException {
-        try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
-            channel.force(true);
-        } catch (AccessDeniedException unsupportedOnWindows) {
-            if (!System.getProperty("os.name", "").startsWith("Windows")) {
-                throw unsupportedOnWindows;
-            }
-        }
-    }
-
-    private void deleteTree(Path root) throws IOException {
-        Path state = root.resolve(STATE_FILE);
-        List<Path> paths = fileSystem.listTree(root);
-        if (paths.size() > MAX_DELETE_TREE_NODES) {
-            throw new IOException("Draft cleanup tree exceeds its node limit");
-        }
-        if (paths.stream().anyMatch(path -> root.relativize(path).getNameCount()
-                > MAX_DELETE_TREE_DEPTH)) {
-            throw new IOException("Draft cleanup tree exceeds its depth limit");
-        }
-        for (Path path : paths.stream()
-                .filter(path -> !path.equals(root) && !path.equals(state))
-                .sorted(Comparator.reverseOrder()).toList()) {
-            fileSystem.deleteIfExists(path);
-        }
-        fileSystem.deleteIfExists(state);
-        fileSystem.deleteIfExists(root);
-    }
-
     interface FileSystem {
         static FileSystem nio() {
             return NioFileSystem.INSTANCE;
@@ -947,14 +917,12 @@ public final class DraftStore {
 
         @Override
         public void writeAtomically(Path target, byte[] bytes) throws IOException {
-            writeAtomic(target, bytes);
+            DraftStorePersistence.writeAtomic(target, bytes);
         }
 
         @Override
         public List<Path> listTree(Path root) throws IOException {
-            try (var paths = Files.walk(root, MAX_DELETE_TREE_DEPTH + 1)) {
-                return paths.limit(MAX_DELETE_TREE_NODES + 1L).toList();
-            }
+            return DraftStorePersistence.listTree(root);
         }
 
         @Override
@@ -964,7 +932,7 @@ public final class DraftStore {
 
         @Override
         public void syncDirectory(Path directory) throws IOException {
-            DraftStore.syncDirectory(directory);
+            DraftStorePersistence.syncDirectory(directory);
         }
     }
 
@@ -976,19 +944,21 @@ public final class DraftStore {
         return new DraftException(MinimapErrorCode.PUBLISH_IO_FAILED, message, cause);
     }
 
-    private static final class Operation {
+    static final class Operation {
         private final long sequence;
         private final Sha256 payloadHash;
         private Sha256 ackRootHash;
         private long originalAckCursor;
         private Sha256 originalAckRootHash;
+        private final List<Sha256> referencedContentHashes;
 
         private Operation(
                 long sequence,
                 Sha256 payloadHash,
                 Sha256 ackRootHash,
                 long originalAckCursor,
-                Sha256 originalAckRootHash
+                Sha256 originalAckRootHash,
+                List<Sha256> referencedContentHashes
         ) {
             if (sequence <= 0 || originalAckCursor < 0) {
                 throw new IllegalArgumentException("Draft operation sequence must be positive");
@@ -1000,6 +970,8 @@ public final class DraftStore {
             this.originalAckRootHash = Objects.requireNonNull(
                     originalAckRootHash, "originalAckRootHash"
             );
+            this.referencedContentHashes = referencedContentHashes == null
+                    ? null : List.copyOf(referencedContentHashes);
         }
 
         private DraftAck originalAck(UUID draftId) {
@@ -1007,72 +979,4 @@ public final class DraftStore {
         }
     }
 
-    private enum DraftLifecycle {
-        CREATING,
-        ACTIVE,
-        DELETING
-    }
-
-    private static final class MutableDraft {
-        private final UUID draftId;
-        private final MapKey mapKey;
-        private final NamespacedId dimension;
-        private final NamespacedId documentId;
-        private final long baseRevision;
-        private final Sha256 baseSourceHash;
-        private final Sha256 initialRootHash;
-        private Sha256 draftRootHash;
-        private long ackCursor;
-        private Instant expiresAt;
-        private DraftLifecycle lifecycle;
-        private final Map<Long, Operation> operations;
-        private long contentBytes;
-
-        private MutableDraft(
-                UUID draftId,
-                MapKey mapKey,
-                NamespacedId dimension,
-                NamespacedId documentId,
-                long baseRevision,
-                Sha256 baseSourceHash,
-                Sha256 initialRootHash,
-                Sha256 draftRootHash,
-                long ackCursor,
-                Instant expiresAt,
-                DraftLifecycle lifecycle,
-                Map<Long, Operation> operations,
-                long contentBytes
-        ) {
-            if (baseRevision < 0 || ackCursor < 0 || contentBytes < 0) {
-                throw new IllegalArgumentException("Draft counters must be non-negative");
-            }
-            this.draftId = Objects.requireNonNull(draftId, "draftId");
-            this.mapKey = Objects.requireNonNull(mapKey, "mapKey");
-            this.dimension = Objects.requireNonNull(dimension, "dimension");
-            this.documentId = Objects.requireNonNull(documentId, "documentId");
-            this.baseRevision = baseRevision;
-            this.baseSourceHash = Objects.requireNonNull(baseSourceHash, "baseSourceHash");
-            this.initialRootHash = Objects.requireNonNull(
-                    initialRootHash, "initialRootHash"
-            );
-            this.draftRootHash = Objects.requireNonNull(draftRootHash, "draftRootHash");
-            this.ackCursor = ackCursor;
-            this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt");
-            this.lifecycle = Objects.requireNonNull(lifecycle, "lifecycle");
-            this.operations = Objects.requireNonNull(operations, "operations");
-            this.contentBytes = contentBytes;
-        }
-
-        private DraftState snapshot() {
-            return new DraftState(
-                    draftId, mapKey, dimension, documentId,
-                    baseRevision, baseSourceHash,
-                    draftRootHash, ackCursor, expiresAt
-            );
-        }
-
-        private DraftAck ack() {
-            return new DraftAck(draftId, ackCursor, draftRootHash);
-        }
-    }
 }

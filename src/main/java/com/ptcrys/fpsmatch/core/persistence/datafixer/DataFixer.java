@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.core.persistence.datafixer;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.ptcrys.fpsmatch.core.persistence.DataPersistenceException;
 
 import java.util.HashMap;

@@ -183,9 +183,12 @@ public class FPSMapCommand {
         Function3<ServerLevel, String, AreaData, BaseMap> game = FPSMCore.getInstance().getPreBuildGame(type);
         if (game != null) {
             BaseMap newMap = game.apply(context.getSource().getLevel(), mapName, new AreaData(pos1, pos2));
-            FPSMCore.getInstance().registerMap(type, newMap);
-            FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.create.success", mapName));
-            return 1;
+            if (FPSMCore.getInstance().registerMap(type, newMap)) {
+                FPSMCommand.sendSuccess(context.getSource(), Component.translatable("commands.fpsm.create.success", mapName));
+                return 1;
+            }
+            FPSMCommand.sendFailure(context.getSource(), Component.translatable("commands.fpsm.create.failure.duplicate", mapName));
+            return 0;
         }
         return 0;
     }

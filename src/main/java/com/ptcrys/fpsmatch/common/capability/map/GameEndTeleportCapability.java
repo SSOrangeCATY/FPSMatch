@@ -1,9 +1,11 @@
 package com.ptcrys.fpsmatch.common.capability.map;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.Codec;
 import com.ptcrys.fpsmatch.common.command.FPSMCommand;
+import com.ptcrys.fpsmatch.common.command.FPSMCommandSuggests;
 import com.ptcrys.fpsmatch.common.command.FPSMHelpManager;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;

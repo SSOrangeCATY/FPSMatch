@@ -46,8 +46,19 @@ public final class SamplerProfile {
     }
 
     public SampleDecision sample(String blockId, List<String> tags, String property) {
+        return sampleOrDefault(blockId, tags, property, SampleDecision.ignore());
+    }
+
+    /** Applies matching rules and returns {@code unmatched} only when none match. */
+    public SampleDecision sampleOrDefault(
+            String blockId,
+            List<String> tags,
+            String property,
+            SampleDecision unmatched
+    ) {
         Objects.requireNonNull(blockId, "blockId");
         Objects.requireNonNull(tags, "tags");
+        Objects.requireNonNull(unmatched, "unmatched");
         for (BlockSampleRule rule : rules) {
             switch (rule.matchKind()) {
                 case IGNORE -> {
@@ -70,6 +81,6 @@ public final class SamplerProfile {
                 }
             }
         }
-        return SampleDecision.ignore();
+        return unmatched;
     }
 }

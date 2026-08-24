@@ -5,6 +5,7 @@ import com.ptcrys.fpsmatch.core.minimap.view.MapDrawCommand;
 import com.ptcrys.fpsmatch.core.minimap.view.PlaceholderKind;
 import com.ptcrys.fpsmatch.core.minimap.view.ShapeMode;
 import com.ptcrys.fpsmatch.core.minimap.view.ViewportCamera;
+import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ public final class MinimapFrame {
     private final FloorViewState floor;
     private final List<MapDrawCommand> commands;
     private final Optional<PlaceholderKind> placeholder;
+    private final Optional<HudOverlay> hudOverlay;
 
     private MinimapFrame(
             ViewportCamera camera,
@@ -28,7 +30,8 @@ public final class MinimapFrame {
             float backgroundOpacity,
             FloorViewState floor,
             List<MapDrawCommand> commands,
-            Optional<PlaceholderKind> placeholder
+            Optional<PlaceholderKind> placeholder,
+            Optional<HudOverlay> hudOverlay
     ) {
         this.camera = Objects.requireNonNull(camera, "camera");
         this.shape = Objects.requireNonNull(shape, "shape");
@@ -43,6 +46,12 @@ public final class MinimapFrame {
         this.floor = Objects.requireNonNull(floor, "floor");
         this.commands = List.copyOf(commands);
         this.placeholder = Objects.requireNonNull(placeholder, "placeholder");
+        this.hudOverlay = Objects.requireNonNull(hudOverlay, "hudOverlay");
+        if (placeholder.isPresent() && hudOverlay.isPresent()) {
+            throw new IllegalArgumentException(
+                    "Placeholder frames cannot carry HUD overlays"
+            );
+        }
     }
 
     public static Builder builder() {
@@ -55,6 +64,26 @@ public final class MinimapFrame {
     public FloorViewState floor() { return floor; }
     public List<MapDrawCommand> commands() { return commands; }
     public Optional<PlaceholderKind> placeholder() { return placeholder; }
+    public Optional<HudOverlay> hudOverlay() { return hudOverlay; }
+
+    public record HudOverlay(
+            Optional<DisplayLabel> floorLabel,
+            Optional<Float> compassRotationDegrees
+    ) {
+        public HudOverlay {
+            floorLabel = Objects.requireNonNull(floorLabel, "floorLabel");
+            compassRotationDegrees = Objects.requireNonNull(
+                    compassRotationDegrees, "compassRotationDegrees"
+            );
+            compassRotationDegrees.ifPresent(rotation -> {
+                if (!Float.isFinite(rotation)) {
+                    throw new IllegalArgumentException(
+                            "Compass rotation must be finite"
+                    );
+                }
+            });
+        }
+    }
 
     public static final class Builder {
         private ViewportCamera camera;
@@ -63,6 +92,7 @@ public final class MinimapFrame {
         private FloorViewState floor = FloorViewState.automatic("ground");
         private final List<MapDrawCommand> commands = new ArrayList<>();
         private Optional<PlaceholderKind> placeholder = Optional.empty();
+        private Optional<HudOverlay> hudOverlay = Optional.empty();
 
         public Builder camera(ViewportCamera camera) {
             this.camera = camera;
@@ -94,6 +124,13 @@ public final class MinimapFrame {
             return this;
         }
 
+        public Builder hudOverlay(HudOverlay hudOverlay) {
+            this.hudOverlay = Optional.of(
+                    Objects.requireNonNull(hudOverlay, "hudOverlay")
+            );
+            return this;
+        }
+
         public MinimapFrame build() {
             return new MinimapFrame(
                     camera,
@@ -101,7 +138,8 @@ public final class MinimapFrame {
                     backgroundOpacity,
                     floor,
                     commands,
-                    placeholder
+                    placeholder,
+                    hudOverlay
             );
         }
     }

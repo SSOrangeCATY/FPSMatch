@@ -17,6 +17,9 @@ public record CurrentPointer(
         long revision,
         Sha256 descriptorChecksum
 ) {
+    static final CurrentPointer RESET_TOMBSTONE = new CurrentPointer(
+            0, 0, Sha256.parse("0".repeat(64))
+    );
     private static final Set<String> FIELDS = Set.of(
             "descriptorChecksum", "expectedBaseRevision", "revision"
     );
@@ -33,6 +36,12 @@ public record CurrentPointer(
         }
         if (descriptorChecksum == null) {
             throw new NullPointerException("descriptorChecksum");
+        }
+    }
+
+    static void requireResetTombstone(CurrentPointer pointer) {
+        if (!RESET_TOMBSTONE.equals(pointer)) {
+            throw new ContainerStorageException("CURRENT reset tombstone is invalid");
         }
     }
 

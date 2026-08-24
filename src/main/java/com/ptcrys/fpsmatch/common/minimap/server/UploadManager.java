@@ -2,7 +2,9 @@ package com.ptcrys.fpsmatch.common.minimap.server;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import com.ptcrys.fpsmatch.core.minimap.format.Sha256Digest;
+import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
+import com.ptcrys.fpsmatch.core.minimap.wire.WireEditor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +25,10 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 public final class UploadManager {
     private static final int FRAGMENT_BYTES = 256 * 1024;
@@ -109,7 +113,22 @@ public final class UploadManager {
             throw failure(MinimapErrorCode.QUOTA_EXCEEDED, "Upload has too many fragments");
         }
         return beginInternal(
-                ownerScope, totalLength, Math.toIntExact(fragmentCount), expectedHash
+                ownerScope, totalLength, Math.toIntExact(fragmentCount), expectedHash, null
+        );
+    }
+
+    public UploadReservation begin(
+            UploadOwnerScope ownerScope,
+            WireEditor.UploadBegin metadata
+    ) {
+        Objects.requireNonNull(ownerScope, "ownerScope");
+        Objects.requireNonNull(metadata, "metadata");
+        return beginInternal(
+                ownerScope,
+                metadata.totalLength(),
+                metadata.fragmentCount(),
+                metadata.expectedHash(),
+                metadata
         );
     }
 
@@ -117,7 +136,8 @@ public final class UploadManager {
             UploadOwnerScope ownerScope,
             long totalLength,
             int fragmentCount,
-            Sha256 expectedHash
+            Sha256 expectedHash,
+            WireEditor.UploadBegin metadata
     ) {
         Objects.requireNonNull(expectedHash, "expectedHash");
         if (totalLength <= 0 || fragmentCount <= 0 || fragmentCount > totalLength) {
@@ -147,7 +167,8 @@ public final class UploadManager {
                             fragmentCount,
                             expectedHash,
                             ownerScope,
-                            budgetReservation
+                            budgetReservation,
+                            metadata
                     );
                 } catch (UploadDirectoryCollisionException collision) {
                     continue;
@@ -178,31 +199,20 @@ public final class UploadManager {
         if (state == null) {
             return false;
         }
+        DetachedUpload detached;
         synchronized (state) {
             if (!ownerScope.equals(state.ownerScope)) {
                 throw failure(MinimapErrorCode.SESSION_NOT_FOUND, "Upload was not found");
             }
-            if (uploads.get(uploadId) != state || state.phase != UploadPhase.RECEIVING) {
+            if (uploads.get(uploadId) != state
+                    || (state.phase != UploadPhase.RECEIVING
+                    && state.phase != UploadPhase.COMPLETED)) {
                 return false;
             }
-            IOException cleanupFailure = null;
-            try {
-                deleteTypedFiles(state);
-            } catch (IOException exception) {
-                cleanupFailure = exception;
-            }
-            synchronized (budgetLock) {
-                if (!uploads.remove(uploadId, state)) {
-                    return false;
-                }
-                releaseBudget(state);
-                state.phase = UploadPhase.CLOSED;
-            }
-            if (cleanupFailure != null) {
-                throw storageFailure("Unable to abort upload payload", cleanupFailure);
-            }
-            return true;
+            detached = Objects.requireNonNull(detachState(state), "Upload state disappeared during abort");
         }
+        UploadCleanupFailures.rethrow(closeDetached(detached));
+        return true;
     }
 
     public UploadProgress accept(
@@ -272,7 +282,7 @@ public final class UploadManager {
                 FileChannel channel = FileChannel.open(
                         state.payloadFile, StandardOpenOption.READ
                 );
-                state.phase = UploadPhase.CLAIMED;
+                state.phase = UploadPhase.COMPLETED;
                 state.renew(clock.instant().plus(idleTtl));
                 CompletedUpload completed = new CompletedUpload(
                         uploadId,
@@ -280,6 +290,7 @@ public final class UploadManager {
                         state.reservation.totalLength(),
                         state.reservation.expectedHash(),
                         channel,
+                        state.metadata == null,
                         () -> closeClaim(state)
                 );
                 state.completedUpload = completed;
@@ -293,6 +304,96 @@ public final class UploadManager {
         }
     }
 
+    public CompletedUpload claimCompleted(
+            UUID uploadId,
+            UploadOwnerScope ownerScope,
+            WireEditor.UploadPurpose purpose,
+            Optional<ContainerPath> path,
+            Sha256 expectedHash
+    ) {
+        Objects.requireNonNull(uploadId, "uploadId");
+        Objects.requireNonNull(ownerScope, "ownerScope");
+        Objects.requireNonNull(purpose, "purpose");
+        Objects.requireNonNull(path, "path");
+        Objects.requireNonNull(expectedHash, "expectedHash");
+
+        UploadState state = requirePresent(uploadId);
+        CompletedUpload completed;
+        UploadException rejection = null;
+        synchronized (state) {
+            if (uploads.get(uploadId) != state || !ownerScope.equals(state.ownerScope)) {
+                throw failure(MinimapErrorCode.SESSION_NOT_FOUND, "Upload was not found");
+            }
+            if (state.phase != UploadPhase.COMPLETED) {
+                throw failure(MinimapErrorCode.SESSION_NOT_FOUND, "Upload was not found");
+            }
+            completed = Objects.requireNonNull(
+                    state.completedUpload, "Completed upload handle is missing"
+            );
+            if (!clock.instant().isBefore(state.expiresAt)) {
+                rejection = failure(MinimapErrorCode.SESSION_NOT_FOUND, "Upload has expired");
+            } else if (state.metadata == null
+                    || state.metadata.purpose() != purpose
+                    || !state.metadata.path().equals(path)) {
+                rejection = failure(
+                        MinimapErrorCode.VALIDATION_FAILED,
+                        "Upload metadata does not match its reservation"
+                );
+            } else if (!state.metadata.expectedHash().equals(expectedHash)
+                    || !state.reservation.expectedHash().equals(expectedHash)) {
+                rejection = failure(
+                        MinimapErrorCode.HASH_MISMATCH,
+                        "Upload hash does not match its reservation"
+                );
+            }
+            // Reserve the claim before I/O; handle close always happens after releasing state.
+            state.phase = UploadPhase.CLAIMING;
+        }
+
+        if (rejection != null) {
+            throw closeCompletedWithFailure(completed, rejection);
+        }
+
+        try {
+            if (!completed.hasExpectedLength()) {
+                throw closeCompletedWithFailure(
+                        completed,
+                        failure(
+                                MinimapErrorCode.VALIDATION_FAILED,
+                                "Upload length does not match its declaration"
+                        )
+                );
+            }
+            if (!completed.hasExpectedHash()) {
+                throw closeCompletedWithFailure(
+                        completed,
+                        failure(MinimapErrorCode.HASH_MISMATCH, "Upload hash does not match")
+                );
+            }
+            completed.activate();
+        } catch (IOException exception) {
+            synchronized (state) {
+                rejection = uploads.get(uploadId) != state || state.phase == UploadPhase.CLOSED
+                        ? failure(MinimapErrorCode.SESSION_NOT_FOUND, "Upload was not found")
+                        : storageFailure("Unable to verify completed upload payload", exception);
+            }
+            throw closeCompletedWithFailure(completed, rejection);
+        }
+
+        synchronized (state) {
+            if (uploads.get(uploadId) != state
+                    || state.phase != UploadPhase.CLAIMING
+                    || !clock.instant().isBefore(state.expiresAt)) {
+                rejection = failure(MinimapErrorCode.SESSION_NOT_FOUND, "Upload was not found");
+            } else {
+                state.phase = UploadPhase.CLAIMED;
+                state.renew(clock.instant().plus(idleTtl));
+                return completed;
+            }
+        }
+        throw closeCompletedWithFailure(completed, rejection);
+    }
+
     public int removeExpired() {
         Instant now = clock.instant();
         int removed = 0;
@@ -303,7 +404,9 @@ public final class UploadManager {
                 if (uploads.get(entry.getKey()) != state || now.isBefore(state.expiresAt)) {
                     continue;
                 }
-                if (state.phase == UploadPhase.CLAIMED) {
+                if (state.phase == UploadPhase.COMPLETED
+                        || state.phase == UploadPhase.CLAIMING
+                        || state.phase == UploadPhase.CLAIMED) {
                     claimed = state.completedUpload;
                 } else {
                     IOException cleanupFailure = null;
@@ -338,6 +441,35 @@ public final class UploadManager {
             }
         }
         return removed;
+    }
+
+    public void closeScope(UploadOwnerScope ownerScope) {
+        Objects.requireNonNull(ownerScope, "ownerScope");
+        cleanupStates(state -> ownerScope.equals(state.ownerScope));
+    }
+
+    public boolean tracks(UploadOwnerScope ownerScope, UUID uploadId) {
+        Objects.requireNonNull(ownerScope, "ownerScope");
+        UploadState state = uploads.get(Objects.requireNonNull(uploadId, "uploadId"));
+        if (state == null) return false;
+        synchronized (state) {
+            return uploads.get(uploadId) == state && ownerScope.equals(state.ownerScope)
+                    && state.phase != UploadPhase.CLOSED;
+        }
+    }
+
+    public void closeAll() {
+        cleanupStates(state -> true);
+    }
+
+    private void cleanupStates(Predicate<UploadState> selected) {
+        Throwable failure = null;
+        for (UploadState state : uploads.values().stream().toList()) {
+            if (selected.test(state)) {
+                failure = UploadCleanupFailures.merge(failure, closeState(state));
+            }
+        }
+        UploadCleanupFailures.rethrow(failure);
     }
 
     private UploadState requirePresent(UUID uploadId) {
@@ -396,7 +528,8 @@ public final class UploadManager {
             int fragmentCount,
             Sha256 expectedHash,
             UploadOwnerScope ownerScope,
-            BudgetReservation budgetReservation
+            BudgetReservation budgetReservation,
+            WireEditor.UploadBegin metadata
     ) throws IOException {
         Path uploadDirectory = root.resolve(uploadId.toString());
         Path payloadFile = uploadDirectory.resolve("payload.bin");
@@ -414,6 +547,7 @@ public final class UploadManager {
                     reservation,
                     ownerScope,
                     budgetReservation,
+                    metadata,
                     uploadDirectory,
                     payloadFile
             );
@@ -611,6 +745,50 @@ public final class UploadManager {
         }
     }
 
+    private Throwable closeState(UploadState state) { return closeDetached(detachState(state)); }
+
+    private DetachedUpload detachState(UploadState state) {
+        Throwable failure = null;
+        synchronized (state) {
+            UUID uploadId = state.reservation.uploadId();
+            if (uploads.get(uploadId) != state) {
+                return null;
+            }
+            synchronized (budgetLock) {
+                if (!uploads.remove(uploadId, state)) {
+                    return null;
+                }
+                state.phase = UploadPhase.CLOSED;
+                try {
+                    releaseBudget(state);
+                } catch (RuntimeException | Error budgetFailure) {
+                    failure = budgetFailure;
+                }
+            }
+            return new DetachedUpload(state, state.completedUpload, failure);
+        }
+    }
+
+    private Throwable closeDetached(DetachedUpload detached) {
+        if (detached == null) {
+            return null;
+        }
+        Throwable failure = detached.failure();
+        if (detached.completed() != null) {
+            try {
+                detached.completed().close();
+            } catch (IOException | RuntimeException | Error closeFailure) {
+                failure = UploadCleanupFailures.merge(failure, closeFailure);
+            }
+        }
+        try {
+            deleteTypedFiles(detached.state());
+        } catch (IOException | RuntimeException | Error deleteFailure) {
+            failure = UploadCleanupFailures.merge(failure, deleteFailure);
+        }
+        return failure;
+    }
+
     private UploadException closeTypedWithFailure(
             UploadState state,
             UploadException failure
@@ -629,6 +807,20 @@ public final class UploadManager {
         }
         if (cleanupFailure != null) {
             failure.addSuppressed(cleanupFailure);
+        }
+        return failure;
+    }
+
+    private static UploadException closeCompletedWithFailure(
+            CompletedUpload completed,
+            UploadException failure
+    ) {
+        try {
+            completed.close();
+        } catch (Throwable cleanupFailure) {
+            if (cleanupFailure != failure) {
+                failure.addSuppressed(cleanupFailure);
+            }
         }
         return failure;
     }
@@ -743,8 +935,13 @@ public final class UploadManager {
         UUID next();
     }
 
+    private record DetachedUpload(UploadState state, CompletedUpload completed,
+                                  Throwable failure) { }
+
     private enum UploadPhase {
         RECEIVING,
+        COMPLETED,
+        CLAIMING,
         CLAIMED,
         CLOSED
     }
@@ -752,6 +949,7 @@ public final class UploadManager {
     private static final class UploadState {
         private final UploadReservation reservation;
         private final UploadOwnerScope ownerScope;
+        private final WireEditor.UploadBegin metadata;
         private final BitSet received;
         private final Path uploadDirectory;
         private final Path payloadFile;
@@ -766,11 +964,13 @@ public final class UploadManager {
                 UploadReservation reservation,
                 UploadOwnerScope ownerScope,
                 BudgetReservation budgetReservation,
+                WireEditor.UploadBegin metadata,
                 Path uploadDirectory,
                 Path payloadFile
         ) {
             this.reservation = reservation;
             this.ownerScope = Objects.requireNonNull(ownerScope, "ownerScope");
+            this.metadata = metadata;
             this.received = new BitSet(reservation.fragmentCount());
             this.uploadDirectory = uploadDirectory;
             this.payloadFile = payloadFile;

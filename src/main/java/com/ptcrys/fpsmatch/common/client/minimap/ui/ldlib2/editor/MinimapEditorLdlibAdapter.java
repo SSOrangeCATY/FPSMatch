@@ -35,20 +35,6 @@ public final class MinimapEditorLdlibAdapter {
     }
 
     public EditorUiLayoutModel layoutModel(int width, int height) {
-        if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException("Layout dimensions must be positive");
-        }
-        int toolbar = 48;
-        int status = 28;
-        int side = Math.max(160, width / 5);
-        int floor = 36;
-        return new EditorUiLayoutModel(
-                new EditorUiLayoutModel.Rect(toolbar, 0, width - toolbar - side, height - status - floor),
-                new EditorUiLayoutModel.Rect(0, 0, toolbar, height - status),
-                new EditorUiLayoutModel.Rect(width - side, 0, side, (height - status) / 2),
-                new EditorUiLayoutModel.Rect(width - side, (height - status) / 2, side, (height - status) / 2),
-                new EditorUiLayoutModel.Rect(toolbar, height - status - floor, width - toolbar - side, floor),
-                new EditorUiLayoutModel.Rect(0, height - status, width, status)
-        );
+        return EditorUiLayoutModel.responsive(width, height);
     }
 }

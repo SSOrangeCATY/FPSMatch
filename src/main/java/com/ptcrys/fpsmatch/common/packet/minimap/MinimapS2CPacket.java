@@ -5,7 +5,6 @@ import com.ptcrys.fpsmatch.core.minimap.wire.MinimapWireCodec;
 import com.ptcrys.fpsmatch.core.minimap.wire.MinimapWireError;
 import com.ptcrys.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import com.ptcrys.fpsmatch.core.minimap.wire.MarkerWireMessage;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -46,7 +45,8 @@ public final class MinimapS2CPacket {
         Objects.requireNonNull(message, "message");
         if (message.opcode().direction() != MinimapMessageDirection.S2C) {
             throw new MinimapWireError(
-                    MinimapErrorCode.WRONG_DIRECTION,
+                    com.ptcrys.fpsmatch.core.minimap.contract
+                            .MinimapErrorCode.WRONG_DIRECTION,
                     "Wrong minimap envelope direction"
             );
         }

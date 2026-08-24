@@ -12,6 +12,8 @@ public final class TacticalMapWidgetCatalog {
     public static final String REGION_DETAIL = "minimap.tactical.region_detail";
     public static final String FIT = "minimap.tactical.fit";
     public static final String CLOSE = "minimap.tactical.close";
+    public static final String CONTROLS_TOGGLE = "minimap.tactical.controls_toggle";
+    public static final String STATE = "minimap.tactical.state";
 
     private TacticalMapWidgetCatalog() {
     }
@@ -30,7 +32,9 @@ public final class TacticalMapWidgetCatalog {
                 LEGEND,
                 REGION_DETAIL,
                 FIT,
-                CLOSE
+                CLOSE,
+                CONTROLS_TOGGLE,
+                STATE
         );
     }
 }

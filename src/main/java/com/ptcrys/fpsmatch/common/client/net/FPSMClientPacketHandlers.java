@@ -30,7 +30,9 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
+import com.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.shop.ShopActionResultS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopMoneyS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.team.FPSMAddTeamS2CPacket;
@@ -41,8 +43,6 @@ import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.team.ClientTeam;
 import com.ptcrys.fpsmatch.util.RenderUtil;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
@@ -158,6 +158,10 @@ public final class FPSMClientPacketHandlers {
         }
     }
 
+    public static void handleShopActionResult(ShopActionResultS2CPacket packet) {
+        ShopActionResultListener.dispatch(packet);
+    }
+
     public static void handleShopMoney(ShopMoneyS2CPacket packet) {
         if (Minecraft.getInstance().player != null) {
             FPSMClient.getGlobalData().setPlayerMoney(packet.owner(), packet.money());
@@ -235,7 +239,7 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleMapRoomReadyState(MapRoomReadyStateS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof Ldlib2TeamManageScreen screen) {
+        if (minecraft.screen instanceof com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2TeamManageScreen screen) {
             screen.applyReadyState(packet.gameType(), packet.mapName(), packet.countdownSeconds(), packet.readyPlayers());
         }
     }
@@ -243,7 +247,7 @@ public final class FPSMClientPacketHandlers {
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
         FPSMClient.getGlobalData().setMapRoomToast(packet);
-        if (minecraft.screen instanceof Ldlib2MapSelectionScreen screen) {
+        if (minecraft.screen instanceof com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSelectionScreen screen) {
             screen.applyToast();
         }
         if (minecraft.player != null) {

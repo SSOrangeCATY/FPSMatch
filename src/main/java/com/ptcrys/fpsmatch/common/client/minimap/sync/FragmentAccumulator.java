@@ -27,6 +27,19 @@ public final class FragmentAccumulator {
     }
 
     public Optional<byte[]> accept(TransferKey key, int fragmentIndex, byte[] fragmentBytes, long nowMillis) {
+        return acceptDetailed(key, fragmentIndex, fragmentBytes, nowMillis).assembled();
+    }
+
+    /**
+     * Records whether this packet advanced an assembly. Identical duplicates are
+     * deliberately inert so callers cannot keep an abandoned transfer alive.
+     */
+    Acceptance acceptDetailed(
+            TransferKey key,
+            int fragmentIndex,
+            byte[] fragmentBytes,
+            long nowMillis
+    ) {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(fragmentBytes, "fragmentBytes");
         if (fragmentBytes.length > MinimapHardLimits.MAX_WIRE_FRAGMENT_BYTES) {
@@ -48,7 +61,7 @@ public final class FragmentAccumulator {
         byte[] existing = assembly.segments[fragmentIndex];
         if (existing != null) {
             if (Arrays.equals(existing, fragmentBytes)) {
-                return Optional.empty();
+                return Acceptance.DUPLICATE;
             }
             throw new FragmentAssemblyException("Duplicate fragment conflict");
         }
@@ -56,14 +69,14 @@ public final class FragmentAccumulator {
         assembly.received++;
         assembly.lastProgressMillis = nowMillis;
         if (assembly.received < key.fragmentCount()) {
-            return Optional.empty();
+            return Acceptance.PROGRESS;
         }
         byte[] full = assemble(assembly);
         remove(key, assembly);
         if (!Sha256Digest.of(full).equals(key.objectHash())) {
             throw new FragmentAssemblyException("Assembled object hash mismatch");
         }
-        return Optional.of(full);
+        return new Acceptance(Optional.of(full), true);
     }
 
     public int discardExpired(long nowMillis) {
@@ -78,6 +91,11 @@ public final class FragmentAccumulator {
             }
         }
         return removed;
+    }
+
+    public void clear() {
+        assemblies.clear();
+        declaredBytes = 0L;
     }
 
     private void remove(TransferKey key, Assembly assembly) {
@@ -114,6 +132,15 @@ public final class FragmentAccumulator {
             this.key = key;
             this.segments = new byte[key.fragmentCount()][];
             this.lastProgressMillis = nowMillis;
+        }
+    }
+
+    record Acceptance(Optional<byte[]> assembled, boolean progressed) {
+        private static final Acceptance PROGRESS = new Acceptance(Optional.empty(), true);
+        private static final Acceptance DUPLICATE = new Acceptance(Optional.empty(), false);
+
+        Acceptance {
+            Objects.requireNonNull(assembled, "assembled");
         }
     }
 }

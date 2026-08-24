@@ -8,6 +8,7 @@ import com.ptcrys.fpsmatch.common.client.event.FPSMClientResetEvent;
 import com.ptcrys.fpsmatch.common.client.minimap.hud.GlobalHudCatalog;
 import com.ptcrys.fpsmatch.common.client.minimap.hud.HudRenderContext;
 import com.ptcrys.fpsmatch.common.client.minimap.ClientMinimapServices;
+import com.ptcrys.fpsmatch.common.client.minimap.ClientMinimapSubscriptionCoordinator;
 import com.ptcrys.fpsmatch.common.client.minimap.render.ForgeMinimapClientSettings;
 import com.ptcrys.fpsmatch.common.client.minimap.render.MinimapClientSettings;
 import com.ptcrys.fpsmatch.common.client.minimap.render.MinimapViewerPose;
@@ -49,6 +50,7 @@ public class FPSMGameHudManager implements IGuiOverlay {
     private ClientMinimapServices minimapServices;
     private Ldlib2MinimapHudPresentation minimapHud;
     private MinimapRenderFrame minimapRenderFrame;
+    private volatile long renderFrameSequence;
 
     public FPSMGameHudManager() {
     }
@@ -140,6 +142,10 @@ public class FPSMGameHudManager implements IGuiOverlay {
         return minimapHud;
     }
 
+    public long currentRenderFrameSequence() {
+        return renderFrameSequence;
+    }
+
     @SubscribeEvent
     public static void onMinimapLogin(ClientPlayerNetworkEvent.LoggingIn event) {
         INSTANCE.resetMinimapPresentation();
@@ -168,6 +174,8 @@ public class FPSMGameHudManager implements IGuiOverlay {
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        long frameSequence = ++renderFrameSequence;
+        gui.setupOverlayRenderState(true, false);
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
         String gameType = data.getCurrentGameType();
         boolean isSpectator = data.isSpectator();
@@ -183,50 +191,52 @@ public class FPSMGameHudManager implements IGuiOverlay {
         if (services == null) {
             return;
         }
-        services.runtime().currentGeneration().ifPresent(generation -> {
-            MinimapClientSettings settings = ForgeMinimapClientSettings.read(
-                    FPSMConfig.client
-            );
-            Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-            Vec3 position = camera.getPosition();
-            minimapRenderFrame = new MinimapRenderFrame(
-                    gui,
-                    guiGraphics,
-                    partialTick,
+        ClientMinimapSubscriptionCoordinator.HudProjection projection =
+                services.subscriptions().matchHudProjection();
+        if (!projection.visible()) {
+            return;
+        }
+        MinimapClientSettings settings = ForgeMinimapClientSettings.read(
+                FPSMConfig.client
+        );
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vec3 position = camera.getPosition();
+        minimapRenderFrame = new MinimapRenderFrame(
+                gui,
+                guiGraphics,
+                partialTick,
+                screenWidth,
+                screenHeight,
+                frameSequence,
+                settings,
+                new MinimapViewerPose(
+                        position.x,
+                        position.y,
+                        position.z,
+                        camera.getYRot()
+                )
+        );
+        try {
+            globalHudCatalog.renderRegistered(
+                    projection.target().orElseThrow().mapKey(),
                     screenWidth,
                     screenHeight,
-                    settings,
-                    new MinimapViewerPose(
-                            position.x,
-                            position.y,
-                            position.z,
-                            camera.getYRot()
-                    )
+                    new HudRenderContext(
+                            true,
+                            enable,
+                            settings.enabled(),
+                            gameType,
+                            isSpectator,
+                            services.hasActiveScope(
+                                    WireIdentity.Scope.TACTICAL_SCREEN
+                            )
+                    ),
+                    ignored -> {
+                    }
             );
-            try {
-                globalHudCatalog.renderRegistered(
-                        generation.mapKey(),
-                        screenWidth,
-                        screenHeight,
-                        new HudRenderContext(
-                                services.hasActiveScope(
-                                        WireIdentity.Scope.MATCH_HUD
-                                ),
-                                enable,
-                                settings.enabled(),
-                                gameType,
-                                isSpectator,
-                                services.hasActiveScope(
-                                        WireIdentity.Scope.TACTICAL_SCREEN
-                                )
-                        ),
-                        ignored -> {
-                        }
-                );
-            } finally {
-                minimapRenderFrame = null;
-            }
-        });
+        } finally {
+            minimapRenderFrame = null;
+        }
     }
 
     /**
@@ -255,10 +265,11 @@ public class FPSMGameHudManager implements IGuiOverlay {
                         frame.graphics(),
                         frame.partialTick(),
                         frame.screenWidth(),
-                        frame.screenHeight(),
-                        placement,
-                        frame.viewer(),
-                        frame.settings()
+                    frame.screenHeight(),
+                    placement,
+                    frame.viewer(),
+                    frame.settings(),
+                    frame.frameSequence()
                 ));
     }
 
@@ -294,6 +305,7 @@ public class FPSMGameHudManager implements IGuiOverlay {
             float partialTick,
             int screenWidth,
             int screenHeight,
+            long frameSequence,
             MinimapClientSettings settings,
             MinimapViewerPose viewer
     ) {

@@ -5,8 +5,6 @@ import com.ptcrys.fpsmatch.core.minimap.view.PlaceholderKind;
 import com.ptcrys.fpsmatch.core.minimap.view.ProjectedPose;
 import com.ptcrys.fpsmatch.core.minimap.view.ShapeMode;
 import com.ptcrys.fpsmatch.core.minimap.view.ViewportCamera;
-import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
-import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -126,6 +124,20 @@ public final class GuiGraphicsMinimapDrawBackend implements MinimapDrawBackend {
             frame.placeholder().ifPresent(placeholder ->
                     target.placeholder(placeholder, centerX, centerY)
             );
+            frame.hudOverlay().ifPresent(overlay -> {
+                overlay.floorLabel().ifPresent(label -> target.floorLabel(
+                        label,
+                        centerX,
+                        y + height - 8
+                ));
+                overlay.compassRotationDegrees().ifPresent(rotation ->
+                        target.compass(
+                                rotation,
+                                x + width - 12,
+                                y + 12
+                        )
+                );
+            });
         } finally {
             target.end();
         }
@@ -155,8 +167,8 @@ public final class GuiGraphicsMinimapDrawBackend implements MinimapDrawBackend {
 
         void marker(
                 String markerId,
-                NamespacedId typeId,
-                NamespacedId styleId,
+                com.ptcrys.fpsmatch.core.minimap.model.NamespacedId typeId,
+                com.ptcrys.fpsmatch.core.minimap.model.NamespacedId styleId,
                 double x,
                 double y,
                 float yawDegrees,
@@ -168,7 +180,7 @@ public final class GuiGraphicsMinimapDrawBackend implements MinimapDrawBackend {
         void label(String text, double x, double y, float opacity);
 
         default void label(
-                DisplayLabel label,
+                com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel label,
                 double x,
                 double y,
                 int color,
@@ -181,6 +193,18 @@ public final class GuiGraphicsMinimapDrawBackend implements MinimapDrawBackend {
         void region(String regionId, double[] pointsXY, float opacity);
 
         void placeholder(PlaceholderKind placeholder, double centerX, double centerY);
+
+        void floorLabel(
+                com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel label,
+                double centerX,
+                double baselineY
+        );
+
+        void compass(
+                float rotationDegrees,
+                double centerX,
+                double centerY
+        );
 
         void end();
     }

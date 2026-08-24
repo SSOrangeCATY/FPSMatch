@@ -2,9 +2,9 @@ package com.ptcrys.fpsmatch.core.minimap.format;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.model.CompilerProfile;
+import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
-import com.ptcrys.fpsmatch.core.minimap.model.SourceManifest;
 
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +56,7 @@ public record RuntimeCompileRequest(
     }
 
     public static RuntimeCompileRequest forSource(
-            SourceManifest source,
+            com.ptcrys.fpsmatch.core.minimap.model.SourceManifest source,
             long publishRevision,
             CompilerProfile compilerProfile,
             List<? extends CanonicalZipWriter.EntrySource> tileEntries

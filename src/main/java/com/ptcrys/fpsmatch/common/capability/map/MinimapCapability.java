@@ -32,11 +32,6 @@ public final class MinimapCapability extends MapCapability
                 MinimapCapability.class,
                 new Factory<>() {
                     @Override
-                    public boolean isOriginal() {
-                        return true;
-                    }
-
-                    @Override
                     public MinimapCapability create(BaseMap map) {
                         return new MinimapCapability(map);
                     }
@@ -50,29 +45,52 @@ public final class MinimapCapability extends MapCapability
     }
 
     @Override
-    public Binding write(Binding value) {
+    public synchronized Binding write(Binding value) {
         binding = Objects.requireNonNull(value, "value");
         return binding;
     }
 
     @Override
-    public Binding read() {
+    public synchronized Binding read() {
         return binding;
     }
 
-    public Optional<Binding> binding() {
+    public synchronized Optional<Binding> binding() {
         return Optional.ofNullable(binding);
     }
 
     /**
      * True only when a published binding is present. Mounted-but-unbound maps stay inactive for runtime sync.
      */
-    public boolean isPublished() {
+    public synchronized boolean isPublished() {
         return binding != null;
     }
 
-    public void clearBinding() {
+    public synchronized void clearBinding() {
         binding = null;
+    }
+
+    /**
+     * Clears only the binding this caller owns. The capability monitor is the shared authority
+     * across coordinator/store instances, so a later foreign binding cannot be cleared.
+     */
+    public synchronized BindingClearResult compareAndClearBinding(Binding expected) {
+        Objects.requireNonNull(expected, "expected");
+        if (binding == null) {
+            return BindingClearResult.ALREADY_ABSENT;
+        }
+        if (!binding.equals(expected)) {
+            return BindingClearResult.MISMATCH;
+        }
+        binding = null;
+        return BindingClearResult.CLEARED;
+    }
+
+    public enum BindingClearResult {
+        CLEARED,
+        ALREADY_ABSENT,
+        MISMATCH,
+        UNAVAILABLE
     }
 
     public record Binding(

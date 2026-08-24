@@ -6,16 +6,18 @@ import com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatContract;
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
 import com.ptcrys.fpsmatch.core.minimap.model.ConnectionsFile;
 import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
+import com.ptcrys.fpsmatch.core.minimap.model.MediaType;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeDefinition;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeManifest;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeRegionsFile;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeStylesFile;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,7 +51,7 @@ public final class RuntimeMapReader {
         Objects.requireNonNull(migrations, "migrations");
         CanonicalZipReader.Archive archive = CanonicalZipReader.read(container, limits);
         try {
-            MinimapFormatVersion version =
+            com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion version =
                     readFormatVersion(archive);
             if (version.major() == MinimapFormatContract.CURRENT.major()
                     && version.minor() >= MinimapFormatContract.CURRENT.minor()) {
@@ -163,7 +165,7 @@ public final class RuntimeMapReader {
         }
     }
 
-    private static MinimapFormatVersion
+    private static com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion
     readFormatVersion(CanonicalZipReader.Archive archive) {
         if (archive.entryLength(MinimapContainerLayout.RUNTIME_MANIFEST)
                 > MinimapHardLimits.MAX_RUNTIME_MANIFEST_BYTES) {
@@ -180,7 +182,7 @@ public final class RuntimeMapReader {
             throw new ContainerValidationException("Runtime manifest formatVersion is missing");
         }
         try {
-            return MinimapFormatVersion.parse(
+            return com.ptcrys.fpsmatch.core.minimap.contract.MinimapFormatVersion.parse(
                     value.getAsString()
             );
         } catch (IllegalArgumentException exception) {

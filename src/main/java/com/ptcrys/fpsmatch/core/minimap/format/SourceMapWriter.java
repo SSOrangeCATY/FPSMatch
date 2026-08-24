@@ -220,7 +220,7 @@ public final class SourceMapWriter {
                     && kind != MinimapContainerLayout.SourceEntryKind.VECTORS) {
                 continue;
             }
-            if (source.size() > MinimapHardLimits.MAX_JSON_ENTRY_BYTES
+            if (source.size() > com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits.MAX_JSON_ENTRY_BYTES
                     || source.size() > Integer.MAX_VALUE) {
                 throw new ContainerValidationException("Opaque source JSON exceeds its byte limit");
             }
@@ -237,7 +237,7 @@ public final class SourceMapWriter {
 
     private static byte[] readEntryBytes(CanonicalZipWriter.EntrySource source) {
         if (source.size() < 0
-                || source.size() > MinimapHardLimits.MAX_ZIP_ENTRY_BYTES
+                || source.size() > com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits.MAX_ZIP_ENTRY_BYTES
                 || source.size() > Integer.MAX_VALUE) {
             throw new ContainerValidationException("Source entry exceeds its byte limit");
         }

@@ -34,7 +34,13 @@ public final class IncrementalBakeEngine {
             SampleDecision decision = sample(blockId);
             pixels[index] = decision.kind() == SampleDecision.Kind.COLOR ? decision.argb() : 0;
         }
-        document.putTilePixels(floorId, layerId, 0, 0, pixels);
+        document.putTilePixels(
+                floorId,
+                layerId,
+                section.coord().sectionX(),
+                section.coord().sectionZ(),
+                pixels
+        );
         generation.next();
     }
 

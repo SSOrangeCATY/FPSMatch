@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
 import com.tacz.guns.api.entity.IGunOperator;
@@ -19,7 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * Mirrors gun firing animation and muzzle flash for the spectated player.
- * Registered by {@link TACZBootstrap} when TACZ is loaded.
+ * Registered by {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
 public final class SpectatorGunFireMirror {
     private static final Map<Integer, Integer> LAST_SYN_CD = new HashMap<>();

@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.client.animation.statemachine.LuaAnimationStateMachine;
 import com.tacz.guns.client.animation.statemachine.GunAnimationStateContext;
@@ -15,7 +14,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * Mirrors spectated player movement into TACZ gun animation states.
- * Registered by {@link TACZBootstrap} when TACZ is loaded.
+ * Registered by {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
 public final class SpectatorGunMovementMirror {
     private SpectatorGunMovementMirror() {

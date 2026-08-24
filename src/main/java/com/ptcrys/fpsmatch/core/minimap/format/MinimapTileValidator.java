@@ -1,11 +1,17 @@
 package com.ptcrys.fpsmatch.core.minimap.format;
 
 import com.ptcrys.fpsmatch.core.minimap.contract.MinimapHardLimits;
-import com.ptcrys.fpsmatch.core.minimap.model.*;
+import com.ptcrys.fpsmatch.core.minimap.model.CanvasBounds;
+import com.ptcrys.fpsmatch.core.minimap.model.ContainerPath;
+import com.ptcrys.fpsmatch.core.minimap.model.ImportedImageLayer;
+import com.ptcrys.fpsmatch.core.minimap.model.MinimapDefinition;
+import com.ptcrys.fpsmatch.core.minimap.model.MinimapFloor;
 import com.ptcrys.fpsmatch.core.minimap.model.MinimapLayer;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeFloor;
 import com.ptcrys.fpsmatch.core.minimap.model.RuntimeManifest;
 import com.ptcrys.fpsmatch.core.minimap.model.SourceFloor;
+import com.ptcrys.fpsmatch.core.minimap.model.SourceManifest;
+import com.ptcrys.fpsmatch.core.minimap.model.CutoutLayer;
 import com.ptcrys.fpsmatch.core.minimap.model.RasterPaintLayer;
 import com.ptcrys.fpsmatch.core.minimap.model.WorldBakeLayer;
 
@@ -204,7 +210,7 @@ public final class MinimapTileValidator {
         Objects.requireNonNull(manifest, "manifest");
         validateRuntimeCoverageBudget(manifest);
         Set<RuntimeTileCoordinate> declared = new HashSet<>();
-        for (RuntimeEntryDescriptor entry
+        for (com.ptcrys.fpsmatch.core.minimap.model.RuntimeEntryDescriptor entry
                 : manifest.entries()) {
             if (MinimapContainerLayout.classifyRuntime(entry.path()).orElse(null)
                     != MinimapContainerLayout.RuntimeEntryKind.FLOOR_TILE) {

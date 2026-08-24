@@ -2,6 +2,7 @@ package com.ptcrys.fpsmatch.core.capability.map;
 
 import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
 
 /**
  * 地图专属能力接口

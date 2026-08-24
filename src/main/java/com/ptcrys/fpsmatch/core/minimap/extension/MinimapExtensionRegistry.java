@@ -5,6 +5,8 @@ import com.ptcrys.fpsmatch.core.minimap.marker.MinimapViewerContext;
 import com.ptcrys.fpsmatch.core.minimap.marker.MinimapVisibilityPolicy;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
+import com.ptcrys.fpsmatch.core.minimap.region.MinimapRegionProvider;
+import com.ptcrys.fpsmatch.core.minimap.region.RegionPresentation;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -122,6 +124,47 @@ public final class MinimapExtensionRegistry {
             }
         }
         return Optional.empty();
+    }
+
+    public static synchronized List<MinimapRegionProvider> regionProviders(MapKey mapKey) {
+        Objects.requireNonNull(mapKey, "mapKey");
+        List<MinimapRegionProvider> providers = new ArrayList<>();
+        for (MinimapGameplayExtension extension : supporting(mapKey)) {
+            List<MinimapRegionProvider> declared = Objects.requireNonNull(
+                    extension.regionProviders(mapKey), "region providers"
+            );
+            for (MinimapRegionProvider provider : declared) {
+                providers.add(Objects.requireNonNull(provider, "region provider"));
+            }
+        }
+        return List.copyOf(providers);
+    }
+
+    public static synchronized List<RegionPresentation> regionPresentations(MapKey mapKey) {
+        Objects.requireNonNull(mapKey, "mapKey");
+        Map<NamespacedId, RegionPresentation> presentations = new LinkedHashMap<>();
+        for (MinimapGameplayExtension extension : supporting(mapKey)) {
+            List<RegionPresentation> declared = Objects.requireNonNull(
+                    extension.regionPresentations(mapKey), "region presentations"
+            );
+            for (RegionPresentation presentation : declared) {
+                Objects.requireNonNull(presentation, "region presentation");
+                RegionPresentation previous = presentations.putIfAbsent(
+                        presentation.semanticType(), presentation
+                );
+                if (previous != null && !previous.equals(presentation)) {
+                    throw new IllegalStateException(
+                            "conflicting region presentation: "
+                                    + presentation.semanticType()
+                    );
+                }
+            }
+        }
+        return presentations.values().stream()
+                .sorted(java.util.Comparator.comparing(
+                        presentation -> presentation.semanticType().toString()
+                ))
+                .toList();
     }
 
     public static synchronized boolean hasExtension(String id) {

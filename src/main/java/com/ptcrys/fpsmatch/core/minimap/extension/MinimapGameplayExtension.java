@@ -4,6 +4,8 @@ import com.ptcrys.fpsmatch.core.minimap.marker.MinimapMarkerProvider;
 import com.ptcrys.fpsmatch.core.minimap.marker.MinimapViewerContext;
 import com.ptcrys.fpsmatch.core.minimap.marker.MinimapVisibilityPolicy;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
+import com.ptcrys.fpsmatch.core.minimap.region.MinimapRegionProvider;
+import com.ptcrys.fpsmatch.core.minimap.region.RegionPresentation;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,5 +36,20 @@ public interface MinimapGameplayExtension {
 
     default Optional<MinimapVisibilityPolicy> visibilityPolicy(MapKey mapKey) {
         return Optional.empty();
+    }
+
+    /**
+     * Gameplay-owned regions are an optional overlay on the committed map document.
+     * The default keeps existing third-party extensions source and binary compatible.
+     */
+    default List<MinimapRegionProvider> regionProviders(MapKey mapKey) {
+        return List.of();
+    }
+
+    /**
+     * Supplies visuals only for gameplay semantics absent from the published map.
+     */
+    default List<RegionPresentation> regionPresentations(MapKey mapKey) {
+        return List.of();
     }
 }

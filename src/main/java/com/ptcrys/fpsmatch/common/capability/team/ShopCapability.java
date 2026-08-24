@@ -30,6 +30,7 @@ import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.util.FPSMUtil;
 import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
+import com.ptcrys.fpsmatch.compat.gun.IGunProvider;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;

@@ -1,11 +1,13 @@
 package com.ptcrys.fpsmatch.common.mapselect;
 
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.capability.map.MinimapCapability;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomMinimapIdentity;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomTeamInfo;
 import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class MapRoomQueryService {
     private MapRoomQueryService() {
@@ -93,6 +96,13 @@ public final class MapRoomQueryService {
                 .sum();
         boolean joinedMap = map.checkGameHasPlayer(viewer);
         boolean spectating = map.checkSpecHasPlayer(viewer);
+        Optional<MapRoomMinimapIdentity> minimapIdentity = map.getCapabilityMap()
+                .get(MinimapCapability.class)
+                .flatMap(MinimapCapability::binding)
+                .map(binding -> new MapRoomMinimapIdentity(
+                        binding.dimension(), binding.documentId(), binding.revision(),
+                        binding.sourceHash(), binding.runtimeHash()
+                ));
         return new MapRoomSummary(
                 map.getGameType(),
                 map.getMapName(),
@@ -107,7 +117,8 @@ public final class MapRoomQueryService {
                 joinedMap,
                 spectating,
                 viewer.hasPermissions(2),
-                map.getReadyCountdownSeconds()
+                map.getReadyCountdownSeconds(),
+                minimapIdentity
         );
     }
 

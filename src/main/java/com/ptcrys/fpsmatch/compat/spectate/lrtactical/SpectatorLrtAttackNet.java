@@ -2,7 +2,7 @@ package com.ptcrys.fpsmatch.compat.spectate.lrtactical;
 
 import com.tacz.guns.client.renderer.item.AnimateGeoItemRenderer;
 import java.util.UUID;
-
+import java.util.function.Supplier;
 import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets.S2CWatchedPlayerLrtAttackPacket;
 import com.ptcrys.fpsmatch.compat.spectate.tacz.SpectatorGunItemMirror;

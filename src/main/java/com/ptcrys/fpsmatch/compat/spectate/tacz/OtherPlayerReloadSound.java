@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.event.common.GunReloadEvent;
 import com.tacz.guns.api.item.IGun;
@@ -22,7 +21,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * Plays TACZ reload sounds for other players on the client.
- * Registered by {@link TACZBootstrap} when TACZ is loaded.
+ * Registered by {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
 public final class OtherPlayerReloadSound {
     private OtherPlayerReloadSound() {

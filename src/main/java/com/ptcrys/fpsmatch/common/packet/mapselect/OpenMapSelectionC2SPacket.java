@@ -3,7 +3,6 @@ package com.ptcrys.fpsmatch.common.packet.mapselect;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,7 +31,7 @@ public record OpenMapSelectionC2SPacket() {
                 return;
             }
             FPSMatch.sendToPlayer(player, new MapSelectionSnapshotS2CPacket(MapRoomQueryService.summaries(player), viewerOp, nonOpButtonEnabled));
-            MapRoomSyncManager.watchList(player.getUUID());
+            com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager.watchList(player.getUUID());
         });
         ctx.get().setPacketHandled(true);
     }

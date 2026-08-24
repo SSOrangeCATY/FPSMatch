@@ -1,7 +1,10 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect;
 
 import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.packet.mapselect.*;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -102,7 +105,7 @@ public class FPSMMapSelectionScreen extends FPSMMapScreenBase {
 
     @Override
     public void onClose() {
-        FPSMatch.sendToServer(new CloseMapViewC2SPacket());
+        FPSMatch.sendToServer(new com.ptcrys.fpsmatch.common.packet.mapselect.CloseMapViewC2SPacket());
         minecraft.setScreen(parent);
     }
 

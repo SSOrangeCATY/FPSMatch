@@ -3,7 +3,6 @@ package com.ptcrys.fpsmatch.core.minimap.wire;
 import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
 import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import com.ptcrys.fpsmatch.core.minimap.model.Sha256;
-import com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -35,7 +34,7 @@ public final class WireIdentity {
                 }
             }
             throw new MinimapWireError(
-                    MinimapErrorCode.MALFORMED_MESSAGE,
+                    com.ptcrys.fpsmatch.core.minimap.contract.MinimapErrorCode.MALFORMED_MESSAGE,
                     "unknown minimap scope"
             );
         }

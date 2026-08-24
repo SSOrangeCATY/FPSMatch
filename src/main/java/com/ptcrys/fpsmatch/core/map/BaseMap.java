@@ -27,7 +27,6 @@ import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.core.team.TeamData;
 import com.ptcrys.fpsmatch.util.FPSMUtil;
 import com.ptcrys.fpsmatch.util.PreviewColorUtil;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -228,7 +227,7 @@ public abstract class BaseMap {
      * 广播准备倒计时。
      */
     protected void broadcastReadyCountdown(int seconds) {
-        var packet = new MapRoomReadyStateS2CPacket(
+        var packet = new com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket(
                 getGameType(), getMapName(), seconds, getReadyPlayers());
         sendPacketToAllPlayer(packet);
     }

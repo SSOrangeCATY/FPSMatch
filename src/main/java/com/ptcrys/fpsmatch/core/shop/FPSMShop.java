@@ -586,11 +586,23 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
      * @param index 槽位索引
      * @param action 操作类型
      */
-    public void handleButton(ServerPlayer serverPlayer, INamedType type, int index, ShopAction action) {
-        if (!serverPlayer.isAlive()) return;
-        this.getPlayerShopData(serverPlayer.getUUID()).handleButton(serverPlayer, valueOf(type.name()), index, action);
-        this.syncShopData(serverPlayer);
-        this.syncShopMoneyData(serverPlayer);
+    public ShopActionResult handleButton(ServerPlayer serverPlayer, INamedType type, int index, ShopAction action) {
+        if (!serverPlayer.isAlive()) {
+            return ShopActionResult.failure(ShopActionResult.Code.NOT_ALLOWED);
+        }
+        final T resolvedType;
+        try {
+            resolvedType = valueOf(type.name());
+        } catch (IllegalArgumentException invalidType) {
+            return ShopActionResult.failure(ShopActionResult.Code.INVALID_REQUEST);
+        }
+        ShopActionResult result = this.getPlayerShopData(serverPlayer.getUUID())
+                .handleButton(serverPlayer, resolvedType, index, action);
+        if (result.accepted()) {
+            this.syncShopData(serverPlayer);
+            this.syncShopMoneyData(serverPlayer);
+        }
+        return result;
     }
 
     public static <E extends Enum<E> & INamedType> Codec<FPSMShop<E>> withCodec(Class<E> enumClass){

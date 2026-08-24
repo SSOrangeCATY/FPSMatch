@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.core.network;
 
 import com.mojang.serialization.Codec;
+import com.ptcrys.fpsmatch.core.network.download.DownloadBuilder;
 import com.ptcrys.fpsmatch.core.network.interceptor.Interceptor;
 import com.ptcrys.fpsmatch.core.network.interceptor.LoggingInterceptor;
 

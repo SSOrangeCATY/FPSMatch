@@ -1,6 +1,7 @@
 package com.ptcrys.fpsmatch.common.packet.team;
 
 import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
+import com.ptcrys.fpsmatch.core.team.ClientTeam;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.core.team.TeamData;
 import net.minecraft.network.FriendlyByteBuf;

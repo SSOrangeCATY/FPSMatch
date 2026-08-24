@@ -4,7 +4,6 @@ import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomActionService;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
 import com.ptcrys.fpsmatch.common.mapselect.MapSelectionAccessSync;
-import com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -87,7 +86,7 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
             };
             MapRoomActionService.sendMessage(player, result);
             if (result.success() && result.detail().isPresent() && action != Action.LEAVE) {
-                MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
+                com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
             }
             result.detail().ifPresentOrElse(
                     detail -> FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(detail)),
@@ -101,7 +100,7 @@ public record MapRoomActionC2SPacket(Action action, String gameType, String mapN
         MapRoomQueryService.findMap(gameType, mapName).ifPresentOrElse(
                 map -> {
                     FPSMatch.sendToPlayer(player, new MapRoomDetailS2CPacket(MapRoomQueryService.detail(player, map)));
-                    MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
+                    com.ptcrys.fpsmatch.common.mapselect.MapRoomSyncManager.watchDetail(player.getUUID(), gameType, mapName);
                 },
                 () -> FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(Component.translatable("gui.fpsm.map_select.action.map_not_found"), true))
         );

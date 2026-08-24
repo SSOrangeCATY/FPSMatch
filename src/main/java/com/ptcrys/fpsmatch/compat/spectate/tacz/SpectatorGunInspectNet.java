@@ -2,7 +2,7 @@ package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
 import com.mojang.logging.LogUtils;
 import java.util.UUID;
-
+import java.util.function.Supplier;
 import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorInspectPackets.S2CWatchedPlayerInspectPacket;
 import net.minecraft.client.Minecraft;

@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.compat.spectate.tacz;
 
-import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.ptcrys.fpsmatch.compat.spectate.SpectatorView;
 import net.minecraft.client.Minecraft;
@@ -12,7 +11,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * Applies a local camera shake that mirrors the spectated player's recoil.
- * Registered by {@link TACZBootstrap} when TACZ is loaded.
+ * Registered by {@link com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap} when TACZ is loaded.
  */
 public final class SpectatorGunRecoil {
     public static boolean ENABLE = true;
