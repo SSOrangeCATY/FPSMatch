@@ -10,9 +10,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,8 +22,10 @@ public class FPSMDataManager {
         thread.setDaemon(true);
         return thread;
     });
+    private static final Gson GSON = new Gson();
 
-    private final Map<Class<?>, DataEntry<?>> registry = new HashMap<>();
+    // 注册表会被异步保存线程与主线程同时读写，用并发容器避免竞态
+    private final Map<Class<?>, DataEntry<?>> registry = new ConcurrentHashMap<>();
     private final Path levelDataPath;
     private final Path globalDataPath;
 
@@ -72,7 +74,7 @@ public class FPSMDataManager {
         Path filePath = dirPath.resolve(PersistenceUtils.fixFileName(fileName) + "." + entry.holder.getFileType());
         try {
             String content = Files.readString(filePath);
-            JsonElement element = new Gson().fromJson(content, JsonElement.class);
+            JsonElement element = GSON.fromJson(content, JsonElement.class);
             return entry.holder.decodeFromJson(element);
         } catch (Exception e) {
             throw new DataPersistenceException("Failed to read data: " + clazz.getName(), e);

@@ -39,7 +39,7 @@ public class FPSMItemRegister {
     public static final RegistryObject<ShopConfigTool> SHOP_CONFIG_TOOL = ITEMS.register("shop_config_tool", () -> new ShopConfigTool(new Item.Properties()));
 
     static {
-        TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, "fpsmatch");
+        TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, FPSMatch.MODID);
         FPSM_TAB = TABS.register("other", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.tab.fpsm"))
                 .icon(() -> T_INCENDIARY_GRENADE.get().getDefaultInstance()).displayItems((parameters, output) -> {
             ITEMS.getEntries().forEach((entry) -> {

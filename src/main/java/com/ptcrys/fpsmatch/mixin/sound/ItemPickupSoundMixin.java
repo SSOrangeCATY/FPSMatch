@@ -1,4 +1,4 @@
-package com.ptcrys.fpsmatch.mixin;
+package com.ptcrys.fpsmatch.mixin.sound;
 
 import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
 import com.ptcrys.fpsmatch.compat.LrtacticalCompat;

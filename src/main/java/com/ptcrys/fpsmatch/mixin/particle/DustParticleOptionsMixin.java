@@ -1,4 +1,4 @@
-package com.ptcrys.fpsmatch.mixin;
+package com.ptcrys.fpsmatch.mixin.particle;
 
 import net.minecraft.core.particles.DustParticleOptionsBase;
 import org.joml.Vector3f;
@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DustParticleOptionsBase.class)
-public class MixinDustParticleOptionsBase {
+public class DustParticleOptionsMixin {
     @Mutable
     @Final
     @Shadow

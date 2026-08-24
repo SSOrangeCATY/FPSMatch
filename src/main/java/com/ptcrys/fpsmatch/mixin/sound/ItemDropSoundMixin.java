@@ -1,4 +1,4 @@
-package com.ptcrys.fpsmatch.mixin;
+package com.ptcrys.fpsmatch.mixin.sound;
 
 import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
 import com.ptcrys.fpsmatch.compat.LrtacticalCompat;
@@ -28,22 +28,22 @@ public abstract class ItemDropSoundMixin extends Entity {
     @Shadow
     public abstract ItemStack getItem();
     @Unique
-    private boolean fPSMatch$hasPlayedLandSound = false;
+    private boolean fpsmatch$hasPlayedLandSound = false;
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
         if(this.level().isClientSide) return;
 
-        if (this.onGround() && !fPSMatch$hasPlayedLandSound) {
-            fpsMatch$playLandSound(this.getItem());
-            fPSMatch$hasPlayedLandSound = true;
+        if (this.onGround() && !fpsmatch$hasPlayedLandSound) {
+            fpsmatch$playLandSound(this.getItem());
+            fpsmatch$hasPlayedLandSound = true;
         }else{
-            if(!this.onGround()) fPSMatch$hasPlayedLandSound = false;
+            if(!this.onGround()) fpsmatch$hasPlayedLandSound = false;
         }
     }
 
     @Unique
-    private void fpsMatch$playLandSound(ItemStack itemStack) {
+    private void fpsmatch$playLandSound(ItemStack itemStack) {
         if (!this.level().isClientSide) {
             IGunProvider provider = GunCompatManager.findProvider(itemStack);
             if (provider.isGun(itemStack)) {

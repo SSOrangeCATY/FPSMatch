@@ -37,11 +37,16 @@ public class ShopActionC2SPacket {
     }
 
     public static ShopActionC2SPacket decode(FriendlyByteBuf buf) {
+        int actionOrdinal = buf.readInt();
+        if (actionOrdinal < 0 || actionOrdinal >= ShopAction.values().length) {
+            // 拒绝畸形/恶意客户端，避免 decode 阶段越界崩溃导致连接断开
+            throw new IllegalArgumentException("Invalid ShopAction ordinal: " + actionOrdinal);
+        }
         return new ShopActionC2SPacket(
                 buf.readUtf(),
                 new UnknownShopType(buf.readUtf()),
                 buf.readInt(),
-                ShopAction.values()[buf.readInt()]
+                ShopAction.values()[actionOrdinal]
         );
     }
 

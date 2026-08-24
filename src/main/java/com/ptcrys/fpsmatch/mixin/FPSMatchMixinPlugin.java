@@ -38,14 +38,16 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
         boolean taczTweaksLoaded = FPSMImpl.findTaczTweaks();
         boolean taczLoaded = FPSMImpl.findTacz();
 
-        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.DefaultAmmoMixin")) {
-            return taczLoaded && !taczTweaksLoaded;
-        }
-        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.ammo.TweakAmmoMixin")) {
-            return taczLoaded && taczTweaksLoaded;
-        }
-        if (mixinClassName.equals("com.phasetranscrystal.fpsmatch.mixin.LivingEntityIsDeadOrDyingMixin")) {
-            return taczLoaded;
+        switch (mixinClassName) {
+            case "com.ptcrys.fpsmatch.mixin.ammo.DefaultAmmoMixin" -> {
+                return taczLoaded && !taczTweaksLoaded;
+            }
+            case "com.ptcrys.fpsmatch.mixin.ammo.TweakAmmoMixin" -> {
+                return taczLoaded && taczTweaksLoaded;
+            }
+            case "com.ptcrys.fpsmatch.mixin.combat.DeadOrDyingMixin" -> {
+                return taczLoaded;
+            }
         }
         if (mixinClassName.contains("compat.spectate.lrt")) {
             return FPSMImpl.findLrtacticalMod();
@@ -53,7 +55,7 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
         if (mixinClassName.contains("compat.spectate.tacz") || mixinClassName.contains("mixin.ammo.")) {
             return taczLoaded;
         }
-        if (mixinClassName.contains("collisiobox.MixinRenderHeadShotAABB")) {
+        if (mixinClassName.contains("render.HeadShotAabbMixin")) {
             return taczLoaded;
         }
         return true;

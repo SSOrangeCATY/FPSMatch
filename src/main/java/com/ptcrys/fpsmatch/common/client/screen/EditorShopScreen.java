@@ -1,8 +1,10 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.ModularMenuUiSupport;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2ShopEditorUi;
+import com.ptcrys.fpsmatch.common.packet.shop.ShopConfigToolActionC2SPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -65,5 +67,17 @@ public final class EditorShopScreen extends AbstractContainerScreen<EditorShopCo
             modularUI = null;
         }
         super.removed();
+    }
+
+    @Override
+    public void onClose() {
+        // 关闭编辑器时返回商店配置列表，使玩家可以继续选择/编辑其它商店条目（否则会被困在当前商店内，必须重进才可再编辑）
+        minecraft.player.closeContainer();
+        FPSMatch.sendToServer(new ShopConfigToolActionC2SPacket(
+                ShopConfigToolActionC2SPacket.Action.REFRESH,
+                menu.getGameType(),
+                menu.getMapName()
+        ));
+        minecraft.setScreen(null);
     }
 }

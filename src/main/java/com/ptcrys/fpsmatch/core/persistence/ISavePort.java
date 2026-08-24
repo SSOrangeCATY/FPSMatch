@@ -26,6 +26,10 @@ import java.util.function.Supplier;
  * 实现该接口的类需要提供一个具体的 {@link Codec} 实例，用于定义数据的编解码逻辑。
  */
 public interface    ISavePort<T> {
+    /** Gson 线程安全，跨读写复用，避免每次构建新实例。 */
+    Gson GSON = new Gson();
+    Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().create();
+
     Codec<T> codec();   // 获取数据的编解码器
 
     /**
@@ -149,7 +153,7 @@ public interface    ISavePort<T> {
                 return false;
             }
 
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Gson gson = PRETTY_GSON;
             String jsonStr = gson.toJson(this.encodeToJson(initialData));
 
             try (FileWriter writer = new FileWriter(file)) {
@@ -184,7 +188,7 @@ public interface    ISavePort<T> {
                     if (file.isFile() && file.getName().endsWith("."+this.getFileType())) {
                         try {
                             FileReader reader = new FileReader(file);
-                            JsonElement element = new Gson().fromJson(reader, JsonElement.class);
+                            JsonElement element = GSON.fromJson(reader, JsonElement.class);
                             T data = this.decodeFromJson(element);
                             this.readHandler().accept(data);
                         } catch (Exception e) {
@@ -226,7 +230,7 @@ public interface    ISavePort<T> {
                     T merged = data;
                     if (!overwrite && file.length() > 0) {
                         try (FileReader reader = new FileReader(file)) {
-                            JsonElement element = new Gson().fromJson(reader, JsonElement.class);
+                            JsonElement element = GSON.fromJson(reader, JsonElement.class);
                             if (element != null) {
                                 T old = this.decodeFromJson(element);
                                 merged = this.mergeHandler(old, data);
@@ -234,7 +238,7 @@ public interface    ISavePort<T> {
                         }
                     }
 
-                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                    Gson gson = PRETTY_GSON;
                     String jsonStr = gson.toJson(this.encodeToJson(merged));
                     try (FileWriter writer = new FileWriter(file)) {
                         writer.write(jsonStr);

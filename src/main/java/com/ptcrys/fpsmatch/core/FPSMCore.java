@@ -219,8 +219,8 @@ public class FPSMCore {
             try{
                 map.mapTick();
             }catch(Exception e){
+                // 记录错误并继续，不要调用 map.reset() 丢弃整局对局/积分数据
                 FPSMatch.LOGGER.error("FPSMatch Core -> {} map error: ", map.getMapName(), e);
-                map.reset();
             }
         }));
         MapRoomSyncManager.tick(getServer());

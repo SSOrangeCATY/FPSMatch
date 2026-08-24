@@ -86,6 +86,12 @@ public class FPSMatch {
     private static volatile boolean DEBUG_ENABLED =
             Boolean.parseBoolean(System.getProperty(DEBUG_SYS_PROP, "false"));
 
+    @SuppressWarnings("removal")
+    public FPSMatch()
+    {
+        this(FMLJavaModLoadingContext.get());
+    }
+
     public FPSMatch(FMLJavaModLoadingContext context)
     {
         IEventBus modEventBus = context.getModEventBus();

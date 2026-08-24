@@ -391,6 +391,27 @@ public class CapabilityMap<H, T extends FPSMCapability<H>> {
         }
     }
 
+    /**
+     * 强制将所有已注册到全局事件总线的能力实例反注册。
+     * <p>
+     * 用于队伍/地图彻底销毁(删除/服务器关停)时清理各能力维持的 {@code @SubscribeEvent}
+     * 监听器，避免事件总线长期强引用对象造成监听器累积内存泄漏。不可变能力同样在此清理。
+     */
+    public void unregisterAllFromBus() {
+        lifecycleLock.lock();
+        try {
+            for (T capability : capabilities.values()) {
+                try {
+                    MinecraftForge.EVENT_BUS.unregister(capability);
+                } catch (RuntimeException | Error ignored) {
+                    // 从未注册过或已反注册的对象直接忽略，safeUnregister 语义
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
     private void destroyAndUnregister(T capability) {
         Throwable cleanupFailure = null;
         try {

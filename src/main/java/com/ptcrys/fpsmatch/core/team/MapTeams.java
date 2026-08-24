@@ -280,7 +280,11 @@ public class MapTeams {
             }
         }
         if (teamName == null) return;
-        this.teams.remove(teamName);
+        ServerTeam removedTeam = this.teams.remove(teamName);
+        // 队伍被彻底删除时，反注册其各能力在全局事件总线上的监听器，防止泄漏
+        if (removedTeam != null) {
+            removedTeam.getCapabilityMap().unregisterAllFromBus();
+        }
         this.level.getScoreboard().removePlayerTeam(team);
     }
 
@@ -991,6 +995,8 @@ public class MapTeams {
     // 删除队伍使用
     public void shutdown(Scoreboard scoreboard) {
         for (ServerTeam team : teams.values()) {
+            // 关停时反注册能力在全局事件总线上的监听器，避免事件总线累积持有对象
+            team.getCapabilityMap().unregisterAllFromBus();
             scoreboard.removePlayerTeam(team.getPlayerTeam());
         }
     }

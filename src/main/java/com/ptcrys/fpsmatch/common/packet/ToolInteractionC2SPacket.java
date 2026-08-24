@@ -4,6 +4,7 @@ import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
 import com.ptcrys.fpsmatch.common.item.tool.WorldToolItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
@@ -35,6 +36,14 @@ public record ToolInteractionC2SPacket(ToolInteractionAction action, @Nullable B
 
             ItemStack stack = player.getMainHandItem();
             if (stack.getItem() instanceof WorldToolItem worldToolItem) {
+                // 地图工具(建筑/编辑)只允许 OP(权限等级>=2) 使用，防止普通玩家篡改服务端地图/配置
+                if (!player.hasPermissions(2)) {
+                    player.displayClientMessage(
+                            Component.literal("需要管理员(OP)权限才能使用地图工具"),
+                            false
+                    );
+                    return;
+                }
                 worldToolItem.handleWorldInteraction(player, stack, action, clickedPos);
             }
         });

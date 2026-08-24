@@ -15,7 +15,7 @@ public abstract class CameraRestrictedSpectatorMixin {
     private void fpsmatch$applyRestrictedCamera(net.minecraft.world.level.BlockGetter level, net.minecraft.world.entity.Entity entity, boolean detached, boolean thirdPerson, float partialTick, CallbackInfo ci) {
         SpectateMode mode = SpectateState.get();
         if (mode != SpectateMode.C4_ORBIT && mode != SpectateMode.DEATH_SPOT) return;
+        // 位置与朝向全部由控制器统一计算(环绕锚点+墙体收近+平滑旋转)，此处不再额外覆盖
         SpectatorCameraController.applyToCamera((Camera) (Object) this, partialTick);
-        ((CameraInvokerMixin) (Object) this).invokeSetRotation(SpectatorCameraController.yaw(), SpectatorCameraController.pitch());
     }
 }

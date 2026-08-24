@@ -6,9 +6,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.*;
+import java.util.function.LongSupplier;
 
 public class VoteObj {
     private final long endVoteTimer;
+    private final LongSupplier clock;
+    /** 时钟每秒对应的单位数：墙钟毫秒=1000，游戏 tick=20。 */
+    private final long unitsPerSecond;
     private final String voteTitle;
     private final Component message;
     private final float requiredPercent;
@@ -67,10 +71,26 @@ public class VoteObj {
      * {@link AbstentionPolicy#COUNT_AS_NO} 委托到此处，保证向后兼容。
      */
     public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
-                   Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
-                   TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy) {
-        this.endVoteTimer = System.currentTimeMillis() + duration * 1000L;
-        this.voteTitle = voteTitle;
+               Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
+               TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy) {
+    // 向后兼容：默认使用墙钟(毫秒)作为计时源
+    this(voteTitle, message, duration, requiredPercent, onSuccess, onFailure, eligiblePlayers,
+            timeoutPolicy, abstentionPolicy, System::currentTimeMillis, 1000L);
+}
+
+/**
+ * 使用自定义时钟的完整构造。
+ * <p>服务端可传入基于游戏时间(tick)的时钟与 {@code unitsPerSecond=20L}，
+ * 使投票计时跟随游戏节奏而非墙钟，避免服务器暂停/卡顿时计时漂移。
+ */
+public VoteObj(String voteTitle, Component message, int duration, float requiredPercent,
+               Runnable onSuccess, Runnable onFailure, Collection<UUID> eligiblePlayers,
+               TimeoutPolicy timeoutPolicy, AbstentionPolicy abstentionPolicy,
+               LongSupplier clock, long unitsPerSecond) {
+    this.endVoteTimer = clock.getAsLong() + duration * unitsPerSecond;
+    this.clock = clock;
+    this.unitsPerSecond = unitsPerSecond;
+    this.voteTitle = voteTitle;
         this.message = message;
         this.requiredPercent = Math.min(Math.max(requiredPercent, 0f), 1f); // 确保在0-1范围内
         this.onSuccess = onSuccess;
@@ -149,7 +169,7 @@ public class VoteObj {
         }
 
         // 超时：按配置的超时/弃权策略结算
-        if (System.currentTimeMillis() >= endVoteTimer) {
+        if (clock.getAsLong() >= endVoteTimer) {
             status = resolveTimeout(agree, voted, eligibleOnline) ? VoteStatus.SUCCESS : VoteStatus.FAILED;
             executeCallback();
             return true;
@@ -288,7 +308,7 @@ public class VoteObj {
     }
 
     public long getRemainingTime() {
-        return Math.max(0, (endVoteTimer - System.currentTimeMillis()) / 1000);
+        return Math.max(0, (endVoteTimer - clock.getAsLong()) / unitsPerSecond);
     }
 
     public int getAgreeCount() {

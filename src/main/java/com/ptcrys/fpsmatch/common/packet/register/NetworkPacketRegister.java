@@ -53,7 +53,20 @@ public class NetworkPacketRegister {
 
     @SuppressWarnings("unchecked")
     public <T> void registerPacket(Class<T> packetClass) {
-        registerPacketInternal(packetClass, null);
+        // 依据包类名自动推导方向（C2S=PLAY_TO_SERVER、S2C=PLAY_TO_CLIENT），
+        // 对齐 Forge/主流模组显式声明 NetworkDirection 的规范；无法从命名判定的退回双向注册。
+        registerPacketInternal(packetClass, inferDirection(packetClass));
+    }
+
+    private static NetworkDirection inferDirection(Class<?> packetClass) {
+        String simpleName = packetClass.getSimpleName();
+        if (simpleName.endsWith("C2SPacket") || simpleName.endsWith("C2S")) {
+            return NetworkDirection.PLAY_TO_SERVER;
+        }
+        if (simpleName.endsWith("S2CPacket") || simpleName.endsWith("S2C")) {
+            return NetworkDirection.PLAY_TO_CLIENT;
+        }
+        return null;
     }
 
     public <T> void registerPacket(Class<T> packetClass, NetworkDirection direction) {

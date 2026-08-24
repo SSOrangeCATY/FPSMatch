@@ -1,4 +1,4 @@
-package com.ptcrys.fpsmatch.mixin.collisiobox;
+package com.ptcrys.fpsmatch.mixin.render;
 
 import com.ptcrys.fpsmatch.config.FPSMConfig;
 import com.tacz.guns.client.event.RenderHeadShotAABB;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = RenderHeadShotAABB.class, remap = false)
-public abstract class MixinRenderHeadShotAABB {
+public abstract class HeadShotAabbMixin {
 
     @Inject(
             method = "onRenderEntity(Lnet/minecraftforge/client/event/RenderLivingEvent$Post;)V",

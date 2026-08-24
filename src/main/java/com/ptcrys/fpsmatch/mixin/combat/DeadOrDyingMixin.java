@@ -1,4 +1,4 @@
-package com.ptcrys.fpsmatch.mixin;
+package com.ptcrys.fpsmatch.mixin.combat;
 
 import com.ptcrys.fpsmatch.common.event.FPSMDeathPipelineEventHook;
 import com.tacz.guns.entity.EntityKineticBullet;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(value = EntityKineticBullet.class, remap = false)
-public class LivingEntityIsDeadOrDyingMixin {
+public class DeadOrDyingMixin {
 
     @Redirect(
             method = "onHitEntity(Lcom/tacz/guns/util/TacHitResult;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;)V",

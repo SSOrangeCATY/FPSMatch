@@ -63,6 +63,15 @@ public record MapCreatorToolActionC2SPacket(
             if (!(stack.getItem() instanceof MapCreatorTool)) {
                 return;
             }
+            // CREATE/UPDATE 会写服务端地图注册表并落盘，仅允许 OP(权限等级>=2) 执行；
+            // SAVE_DRAFT 只修改工具自身的 NBT 存档，普通玩家可保留。
+            if ((action() == Action.CREATE || action() == Action.UPDATE) && !player.hasPermissions(2)) {
+                player.displayClientMessage(
+                        Component.literal("需要管理员(OP)权限才能创建/修改地图"),
+                        false
+                );
+                return;
+            }
 
             switch (action()) {
                 case SAVE_DRAFT -> saveDraft(stack);

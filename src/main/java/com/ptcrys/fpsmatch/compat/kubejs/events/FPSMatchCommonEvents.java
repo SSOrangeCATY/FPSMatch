@@ -21,6 +21,8 @@ public class FPSMatchCommonEvents {
     public static final FPSMatchCommonEvents INSTANCE = new FPSMatchCommonEvents();
 
     private final Map<Class<? extends Event>, Consumer<Event>> eventHandlers = new HashMap<>();
+    /** 幂等保护：防止 KubeJS 插件重复加载导致事件处理器被重复注册。 */
+    private boolean initialized = false;
 
     public static EventHandler START;
     public static EventHandler VICTORY;
@@ -62,7 +64,9 @@ public class FPSMatchCommonEvents {
         return true;
     }
 
-    public void init() {
+    public synchronized void init() {
+        if (initialized) return;
+        initialized = true;
         if (!ModList.get().isLoaded("kubejs")) return;
 
         START = registerFPSMatchEvent("mapStart",

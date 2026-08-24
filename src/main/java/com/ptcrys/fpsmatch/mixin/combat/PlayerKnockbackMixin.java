@@ -1,4 +1,4 @@
-package com.ptcrys.fpsmatch.mixin;
+package com.ptcrys.fpsmatch.mixin.combat;
 
 import com.ptcrys.fpsmatch.core.entity.BaseProjectileEntity;
 import net.minecraft.world.damagesource.DamageSource;
@@ -34,7 +34,7 @@ public abstract class PlayerKnockbackMixin extends Entity {
     }
 
     @Unique
-    private DamageSource getBlockoffensive$lastDamageSource(){
+    private DamageSource fpsmatch$getLastDamageSource(){
         if (level().getGameTime() - this.fpsmatch$lastDamageStamp > 40L) {
             this.fpsmatch$lastDamageSource = null;
         }
@@ -46,7 +46,7 @@ public abstract class PlayerKnockbackMixin extends Entity {
             at = @At("HEAD"),
             cancellable = true)
     private void injectKnockback(double pStrength, double pX, double pZ, CallbackInfo ci) {
-        DamageSource ds = getBlockoffensive$lastDamageSource();
+        DamageSource ds = fpsmatch$getLastDamageSource();
         if (ds != null && ds.getDirectEntity() instanceof BaseProjectileEntity) {
             ci.cancel();
         }

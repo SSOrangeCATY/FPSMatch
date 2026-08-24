@@ -14,9 +14,9 @@ import java.util.regex.Pattern;
 
 public final class Ldlib2ForgeCompatibility {
     public static final String INITIAL_FACTORIES_MIXIN =
-            "com.phasetranscrystal.fpsmatch.mixin.compat.forge.ResourceLocationFactoriesCompatMixin";
+            "com.ptcrys.fpsmatch.mixin.compat.forge.ResourceLocationFactoriesCompatMixin";
     public static final String DEFAULT_NAMESPACE_FACTORY_MIXIN =
-            "com.phasetranscrystal.fpsmatch.mixin.compat.forge.ResourceLocationDefaultNamespaceCompatMixin";
+            "com.ptcrys.fpsmatch.mixin.compat.forge.ResourceLocationDefaultNamespaceCompatMixin";
 
     private static final ForgeVersion INITIAL_FACTORIES_VERSION =
             new ForgeVersion(47, 3, 19);
