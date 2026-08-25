@@ -48,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.*;
@@ -892,12 +893,12 @@ public abstract class BaseMap {
         try {
             if (dataFile.exists()) {
                 Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                FileReader reader = new FileReader(dataFile);
-                this.configFromJson(gson.fromJson(reader, JsonElement.class));
-                reader.close();
+                try (FileReader reader = new FileReader(dataFile, StandardCharsets.UTF_8)) {
+                    this.configFromJson(gson.fromJson(reader, JsonElement.class));
+                }
             }
         } catch (Exception e) {
-            e.fillInStackTrace();
+            FPSMatch.LOGGER.error("Failed to load map config {}", dataFile.getAbsolutePath(), e);
         }
     }
 
@@ -916,11 +917,11 @@ public abstract class BaseMap {
                 return;
             }
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            FileWriter writer = new FileWriter(dataFile);
-            gson.toJson(this.configToJson(), writer);
-            writer.close();
+            try (FileWriter writer = new FileWriter(dataFile, StandardCharsets.UTF_8)) {
+                gson.toJson(this.configToJson(), writer);
+            }
         } catch (Exception e) {
-            e.fillInStackTrace();
+            FPSMatch.LOGGER.error("Failed to save map config {}", dataFile.getAbsolutePath(), e);
         }
     }
 
