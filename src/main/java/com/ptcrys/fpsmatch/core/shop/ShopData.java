@@ -135,7 +135,13 @@ public class ShopData<T extends Enum<T> & INamedType> {
      * @param money 玩家的金钱数量
      */
     public void setMoney(int money) {
-        this.money = Math.max(0, Math.min(16000, money));
+        // 保留 -1（无限金钱）哨兵，与 unlimited() 语义一致；
+        // 否则 addMoney/reduceMoney 中的 unlimited() 短路分支形同虚设（-1 在入口即被夹成 0）
+        if (money == -1) {
+            this.money = -1;
+        } else {
+            this.money = Math.max(0, Math.min(16000, money));
+        }
     }
 
     /**

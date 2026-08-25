@@ -617,8 +617,13 @@ public class FPSMShop<T extends Enum<T> & INamedType> {
         ).apply(instance, (n, defaultMoney, shopData, areas) -> {
             Map<E, ArrayList<ShopSlot>> d = new HashMap<>();
             shopData.forEach((t, l) -> {
-                ArrayList<ShopSlot> list = new ArrayList<>(l);
-                d.put(E.valueOf(enumClass,t), list);
+                try {
+                    ArrayList<ShopSlot> list = new ArrayList<>(l);
+                    d.put(E.valueOf(enumClass,t), list);
+                } catch (IllegalArgumentException e) {
+                    // 未知/已删除的商店类型：跳过不崩，避免整个商店配置加载失败
+                    FPSMatch.LOGGER.warn("FPSMShop: skipping unknown shop type '{}' while loading shop data", t);
+                }
             });
             return new FPSMShop<>(enumClass, n, d, defaultMoney,areas);
         }));
