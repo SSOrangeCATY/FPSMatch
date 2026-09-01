@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 抽象基类，用于表示 FPSMatch 的投掷物实体。
- * <p>
  * 该类继承自 Minecraft 的 {@link ThrowableItemProjectile}，并扩展了投掷物的碰撞逻辑和状态管理。
  * 提供了对地面碰撞、水平和垂直碰撞的处理，以及可扩展的激活逻辑。
  */
@@ -104,7 +103,6 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     // region 核心碰撞逻辑
     /**
      * 处理投掷物的碰撞逻辑。
-     * <p>
      * 该方法扩展了父类的碰撞逻辑，增加了对地面碰撞、水平和垂直碰撞的处理。
      * 同时支持激活逻辑和碰撞音效播放。
      *
@@ -195,7 +193,6 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
 
     /**
      * 处理水平方向的碰撞逻辑。
-     * <p>
      * 反转水平方向的速度，并根据减速系数调整速度大小。
      *
      * @param direction 碰撞方向
@@ -271,7 +268,6 @@ public abstract class BaseProjectileEntity extends ThrowableItemProjectile {
     // region 访问方法
     /**
      * 获取投掷物的当前状态。
-     * <p>
      * 状态值说明：
      * - 0: 初始状态（未碰撞）。
      * - 1: 碰撞后（未激活）。
