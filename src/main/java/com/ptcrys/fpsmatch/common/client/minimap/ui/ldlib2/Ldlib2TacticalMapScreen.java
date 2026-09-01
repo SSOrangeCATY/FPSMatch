@@ -15,6 +15,7 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleSelector;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleToggle;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.config.FPSMConfig;
 import com.ptcrys.fpsmatch.core.minimap.model.DisplayLabel;
 import com.ptcrys.fpsmatch.core.minimap.view.FloorViewMode;
@@ -145,6 +146,7 @@ public final class Ldlib2TacticalMapScreen extends AccessibleModularUIScreen {
             int mouseY,
             float partialTick
     ) {
+        FPSMLdlib2Backdrop.draw(graphics, this.width, this.height);
         ensureResponsiveLayout();
         resizeController();
         refreshFrame();

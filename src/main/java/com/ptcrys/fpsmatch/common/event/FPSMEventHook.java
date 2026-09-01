@@ -126,7 +126,9 @@ public class FPSMEventHook {
                         map.pullGameInfo(player);
                         map.getMapTeams().sync(player);
                         team.syncCapabilities(player);
-                        map.getMapTeams().broadcast();
+                        // The reconnecting player already received a full snapshot
+                        // above. Existing clients only need the dirty state change.
+                        map.getMapTeams().sync(map.getMapTeams().getOnlineWithSpec());
                     }));
     }
 

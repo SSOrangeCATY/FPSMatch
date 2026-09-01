@@ -41,6 +41,22 @@ final class MapSelectionUiView {
                 .left(18).right(18).top(10).height(22));
         FPSMLdlib2Theme.title(header);
 
+        Label system = label(
+                MapSelectionWidgetCatalog.HEADER + ".system",
+                Component.literal("FPSM // MAP SYSTEM  ·  TACTICAL INDEX")
+        );
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .left(18).right(18).top(2).height(10));
+        FPSMLdlib2Theme.systemLabel(system);
+
+        Label scope = label(
+                MapSelectionWidgetCatalog.HEADER + ".scope",
+                Component.literal("ROOM INDEX / LIVE OPERATIONS")
+        );
+        scope.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .left(18).right(18).top(27).height(10));
+        FPSMLdlib2Theme.systemLabel(scope);
+
         AccessibleTextField search = new AccessibleTextField();
         search.setId(MapSelectionWidgetCatalog.SEARCH);
         search.setAccessibleName(Component.translatable("gui.fpsm.map_select.search"));
@@ -55,11 +71,20 @@ final class MapSelectionUiView {
         roomList.setId(MapSelectionWidgetCatalog.ROOM_LIST);
         roomList.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(18).top(68).width(320).height(220));
-        FPSMLdlib2Theme.panel(roomList);
+        FPSMLdlib2Theme.virtualScroller(roomList);
         roomList.viewContainer(container -> container.layout(layout -> layout
-                .paddingHorizontal(4).paddingVertical(3)));
+                .paddingHorizontal(5).paddingVertical(5)));
         roomList.virtualScrollerViewStyle(style -> style
                 .estimatedItemHeight(ROW_HEIGHT).overscanPixels(ROW_HEIGHT * 2));
+
+        Label roomListHeading = label(
+                MapSelectionWidgetCatalog.ROOM_LIST_HEADING,
+                Component.translatable("gui.fpsm.map_select.rooms.title")
+        );
+        roomListHeading.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .left(6).right(6).top(3).height(13));
+        FPSMLdlib2Theme.sectionTitle(roomListHeading);
+        roomListHeading.textStyle(style -> style.fontSize(9));
 
         Label emptyState = label(
                 MapSelectionWidgetCatalog.EMPTY_STATE,
@@ -75,12 +100,20 @@ final class MapSelectionUiView {
         detailPanel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(350).top(68).width(260).height(220));
         FPSMLdlib2Theme.panel(detailPanel);
+        Label detailHeading = label(
+                "fpsmatch.map_selection.detail.heading",
+                Component.translatable("gui.fpsm.map_select.detail.title")
+        );
+        detailHeading.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .left(10).right(10).top(8).height(14));
+        FPSMLdlib2Theme.sectionTitle(detailHeading);
+        detailHeading.textStyle(style -> style.fontSize(10));
         Label detailLabel = label(
                 "fpsmatch.map_selection.detail.text",
                 Component.translatable("gui.fpsm.map_select.empty")
         );
         detailLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(12).right(12).top(12).height(120));
+                .left(10).right(10).top(28).height(104));
         FPSMLdlib2Theme.body(detailLabel);
         detailLabel.setOverflowVisible(false);
         detailLabel.textStyle(style -> style.fontSize(9).lineSpacing(1).textWrap(TextWrap.WRAP));
@@ -89,7 +122,7 @@ final class MapSelectionUiView {
         playerList.setId(MapSelectionWidgetCatalog.PLAYERS);
         playerList.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(12).right(12).top(138).bottom(12));
-        FPSMLdlib2Theme.elevated(playerList);
+        FPSMLdlib2Theme.virtualScroller(playerList);
         playerList.virtualScrollerViewStyle(style -> style
                 .estimatedItemHeight(24).overscanPixels(48));
         playerList.setItemUIProvider(info -> {
@@ -104,12 +137,21 @@ final class MapSelectionUiView {
                     0xFF182029, FPSMLdlib2Theme.BORDER_SOFT)));
             return row;
         });
-        detailPanel.addChildren(playerList, detailLabel);
+        detailPanel.addChildren(detailHeading, playerList, detailLabel);
 
         UIElement filters = new UIElement().setId(MapSelectionWidgetCatalog.FILTERS);
         filters.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(12).top(52).width(180).height(220));
         FPSMLdlib2Theme.panel(filters);
+
+        Label filterHeading = label(
+                MapSelectionWidgetCatalog.FILTER_HEADING,
+                Component.translatable("gui.fpsm.map_select.filters.title")
+        );
+        filterHeading.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .left(8).right(8).top(5).height(13));
+        FPSMLdlib2Theme.sectionTitle(filterHeading);
+        filterHeading.textStyle(style -> style.fontSize(9));
 
         AccessibleSelector<String> stateSelector = new AccessibleSelector<>();
         stateSelector.setId(MapSelectionWidgetCatalog.STATE_FILTER);
@@ -126,7 +168,7 @@ final class MapSelectionUiView {
         modeSelector.setCandidates(List.of("all"));
         modeSelector.setSelected("all", false);
         FPSMLdlib2Theme.selector(modeSelector);
-        filters.addChildren(stateSelector, modeSelector);
+        filters.addChildren(filterHeading, stateSelector, modeSelector);
 
         UIElement toast = new UIElement().setId(MapSelectionWidgetCatalog.TOAST);
         toast.setVisible(false);
@@ -142,7 +184,7 @@ final class MapSelectionUiView {
 
         AccessibleButton join = button(
                 MapSelectionWidgetCatalog.ACTIONS + ".join",
-                "gui.fpsm.map_select.join",
+                "gui.fpsm.map_select.detail",
                 8
         );
         AccessibleButton manage = button(
@@ -184,15 +226,15 @@ final class MapSelectionUiView {
         UIElement browserActions = new UIElement().setId(MapSelectionWidgetCatalog.BROWSER_ACTIONS);
         browserActions.addChildren(refresh, close);
         root.addChildren(
-                header, filters, search, roomList, emptyState, detailPanel, toast,
+                system, header, scope, filters, search, roomListHeading, roomList, emptyState, detailPanel, toast,
                 actions, browserActions
         );
 
         Parts parts = new Parts(
                 ModularUI.of(UI.of(root, screenSize -> Size.of(
                         screenSize.getWidth(), screenSize.getHeight()))),
-                roomList, emptyState, detailPanel, detailLabel, playerList, search,
-                filters, stateSelector, modeSelector, actions, browserActions, toast, label,
+                roomList, roomListHeading, emptyState, detailPanel, detailLabel, playerList, search,
+                filters, filterHeading, stateSelector, modeSelector, actions, browserActions, toast, label,
                 List.of(join, manage), List.of(refresh, close), refresh, close, join, manage
         );
         roomList.setItemUIProvider((UIElementProvider<MapRoomSummary>) summary -> {
@@ -323,12 +365,14 @@ final class MapSelectionUiView {
     record Parts(
             ModularUI ui,
             VirtualScrollerView<MapRoomSummary> roomList,
+            Label roomListHeading,
             Label emptyState,
             UIElement detailPanel,
             Label detailLabel,
             VirtualScrollerView<MapRoomPlayerInfo> playerList,
             AccessibleTextField search,
             UIElement filters,
+            Label filterHeading,
             AccessibleSelector<String> stateSelector,
             AccessibleSelector<String> modeSelector,
             UIElement actions,

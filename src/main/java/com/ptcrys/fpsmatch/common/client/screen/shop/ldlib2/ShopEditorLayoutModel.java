@@ -26,13 +26,18 @@ public record ShopEditorLayoutModel(
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("screen dimensions must be positive");
         }
-        int headerHeight = Math.min(54, Math.max(42, height / 8));
+        boolean shortViewport = height < 280;
+        int headerHeight = shortViewport ? 42 : Math.min(56, Math.max(46, height / 8));
         int actionHeight = Math.min(40, Math.max(32, height / 10));
         int contentTop = headerHeight;
         int contentHeight = Math.max(1, height - headerHeight - actionHeight);
         if (width < 640) {
-            int categoryHeight = 34;
-            int propertyHeight = Math.min(150, Math.max(112, contentHeight / 3));
+            int categoryHeight = shortViewport
+                    ? Math.min(26, Math.max(22, contentHeight / 5))
+                    : Math.min(42, Math.max(28, contentHeight / 6));
+            int propertyHeight = shortViewport
+                    ? Math.min(40, Math.max(32, contentHeight / 4))
+                    : Math.min(104, Math.max(72, contentHeight / 3));
             int slotHeight = Math.max(1, contentHeight - categoryHeight - propertyHeight);
             return new ShopEditorLayoutModel(
                     new Rect(0, 0, width, headerHeight),

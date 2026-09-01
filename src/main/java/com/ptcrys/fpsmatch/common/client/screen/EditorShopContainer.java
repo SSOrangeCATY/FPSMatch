@@ -2,6 +2,10 @@ package com.ptcrys.fpsmatch.common.client.screen;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
+import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
 import com.ptcrys.fpsmatch.core.shop.INamedType;
 import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
@@ -209,7 +213,12 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return true;
+        if (player.level().isClientSide) {
+            return true;
+        }
+        return player instanceof ServerPlayer serverPlayer
+                && MapRoomQueryService.isMapOperator(serverPlayer)
+                && resolveCurrentShop().isPresent();
     }
 
     @Override
@@ -253,6 +262,12 @@ public class EditorShopContainer extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotIndex, int button, @NotNull ClickType clickType, @NotNull Player player) {
+        if (player instanceof ServerPlayer serverPlayer
+                && (!MapRoomQueryService.isMapOperator(serverPlayer) || resolveCurrentShop().isEmpty())) {
+            FPSMatch.sendToPlayer(serverPlayer, new MapRoomToastS2CPacket(
+                    Component.translatable("gui.fpsm.shop_editor.open.no_permission"), true));
+            return;
+        }
         boolean isCustomContainer = slotIndex >= 0 && slotIndex < this.totalIndex;
         if (isCustomContainer) {
             ShopSlot targetShopSlot = getShopSlot(slotIndex);
@@ -300,6 +315,12 @@ public class EditorShopContainer extends AbstractContainerMenu {
                     }
             );
         }
+    }
+
+    private Optional<FPSMShop<?>> resolveCurrentShop() {
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .flatMap(map -> map.getMapTeams().getTeamByName(teamName))
+                .flatMap(ShopCapability::getShop);
     }
 
     private record SlotRef(String type, int slotNum) {

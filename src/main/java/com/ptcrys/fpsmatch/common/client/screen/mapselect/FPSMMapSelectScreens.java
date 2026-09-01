@@ -167,6 +167,10 @@ public final class FPSMMapSelectScreens {
 
         if (current instanceof Ldlib2MapSelectionScreen list) {
             list.applyDetail(packet.detail());
+            if (list.consumePendingDetailOpen()) {
+                openChild(new Ldlib2MapDetailScreen(packet.detail(), list));
+                return;
+            }
             if (list.consumePendingManageOpen()) {
                 openChild(new Ldlib2MapManageScreen(packet.detail(), list));
                 return;

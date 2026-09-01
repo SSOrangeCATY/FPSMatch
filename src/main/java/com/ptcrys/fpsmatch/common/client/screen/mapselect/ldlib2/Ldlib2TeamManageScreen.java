@@ -71,6 +71,14 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private int syncedCountdownSeconds;
     private UUID selectedPlayer;
     private String selectedPlayerTeam;
+    /** Last roster snapshot that has been materialized into LDLib2 rows. */
+    private List<MapRoomTeamInfo> renderedTeams = List.of();
+    private List<MapRoomPlayerInfo> renderedPlayers = List.of();
+    private boolean renderedStarted;
+    private boolean renderedAllowJoinInProgress;
+    private boolean renderedCurrentPlayerOp;
+    private boolean renderedCurrentPlayerJoined;
+    private boolean renderedCurrentPlayerSpectating;
 
     public Ldlib2TeamManageScreen(MapRoomDetail detail, Screen parent) {
         this(build(), detail, parent);
@@ -109,13 +117,44 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
 
     @Override
     protected void onDetailApplied() {
+        Set<UUID> nextReadyPlayers = detail.readyPlayers();
+        boolean readyChanged = !syncedReadyPlayers.equals(nextReadyPlayers);
         syncedReadyPlayers.clear();
-        syncedReadyPlayers.addAll(detail.readyPlayers());
+        syncedReadyPlayers.addAll(nextReadyPlayers);
         syncedCountdownSeconds = detail.summary().readyCountdownSeconds();
-        if (selectedPlayer != null && detail.players().stream().noneMatch(p -> p.uuid().equals(selectedPlayer))) {
-            clearSelection();
+
+        boolean selectionRemoved = selectedPlayer != null
+                && detail.players().stream().noneMatch(p -> p.uuid().equals(selectedPlayer));
+        if (selectionRemoved) {
+            selectedPlayer = null;
+            selectedPlayerTeam = null;
         }
-        rebuildDynamic();
+
+        boolean rosterChanged = readyChanged
+                || !detail.teams().equals(renderedTeams)
+                || !detail.players().equals(renderedPlayers);
+        boolean controlsChanged = !detail.teams().equals(renderedTeams)
+                || detail.summary().started() != renderedStarted
+                || detail.summary().allowJoinInProgress() != renderedAllowJoinInProgress
+                || detail.summary().currentPlayerOp() != renderedCurrentPlayerOp
+                || detail.summary().currentPlayerJoined() != renderedCurrentPlayerJoined
+                || detail.summary().currentPlayerSpectating() != renderedCurrentPlayerSpectating;
+
+        subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
+        if (controlsChanged) {
+            rebuildTeamButtons();
+        }
+        if (controlsChanged || rosterChanged || selectionRemoved) {
+            rebuildAdminMoveButtons();
+        }
+        if (rosterChanged) {
+            rebuildRosterLists();
+        }
+        updateReadySummary();
+        updateReadyButton();
+        updateSelectedLabel();
+        refreshDropTargets();
+        rememberRenderedState();
     }
 
     public void applyReadyState(String gameType, String mapName, int countdownSeconds, Set<UUID> readyPlayers) {
@@ -124,12 +163,20 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
                 || !detail.summary().mapName().equals(mapName)) {
             return;
         }
+        Set<UUID> nextReadyPlayers = readyPlayers == null ? Set.of() : readyPlayers;
+        boolean readyChanged = !syncedReadyPlayers.equals(nextReadyPlayers);
+        boolean countdownChanged = syncedCountdownSeconds != countdownSeconds;
+        if (!readyChanged && !countdownChanged) {
+            return;
+        }
         this.syncedCountdownSeconds = countdownSeconds;
         this.syncedReadyPlayers.clear();
-        this.syncedReadyPlayers.addAll(readyPlayers);
+        this.syncedReadyPlayers.addAll(nextReadyPlayers);
         updateReadySummary();
         updateReadyButton();
-        rebuildRosterLists();
+        if (readyChanged) {
+            rebuildRosterLists();
+        }
     }
 
     private void rebuildDynamic() {
@@ -141,6 +188,17 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         updateReadyButton();
         updateSelectedLabel();
         refreshDropTargets();
+        rememberRenderedState();
+    }
+
+    private void rememberRenderedState() {
+        renderedTeams = List.copyOf(detail.teams());
+        renderedPlayers = List.copyOf(detail.players());
+        renderedStarted = detail.summary().started();
+        renderedAllowJoinInProgress = detail.summary().allowJoinInProgress();
+        renderedCurrentPlayerOp = detail.summary().currentPlayerOp();
+        renderedCurrentPlayerJoined = detail.summary().currentPlayerJoined();
+        renderedCurrentPlayerSpectating = detail.summary().currentPlayerSpectating();
     }
 
     private void rebuildTeamButtons() {
@@ -729,6 +787,10 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
 
+        Label system = label("fpsmatch.team_manage.system", Component.literal("FPSM // MAP SYSTEM  ·  TEAM DEPLOYMENT"));
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(1).height(8));
+        FPSMLdlib2Theme.systemLabel(system);
+
         Label header = label("fpsmatch.team_manage.header", Component.translatable("gui.fpsm.team_manage.title"));
         header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(8).height(16));
         FPSMLdlib2Theme.title(header);
@@ -736,7 +798,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
 
         Label subtitle = label("fpsmatch.team_manage.subtitle", Component.empty());
         subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(26).height(12));
-        FPSMLdlib2Theme.muted(subtitle);
+        FPSMLdlib2Theme.mapIdentity(subtitle);
         subtitle.textStyle(style -> style.fontSize(8));
 
         UIElement teamButtons = new UIElement().setId("fpsmatch.team_manage.teams");
@@ -799,7 +861,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
         back.textStyle(style -> style.fontSize(8));
 
-        root.addChildren(header, subtitle, teamButtons, readySummary, roster, admin, ready, back);
+        root.addChildren(system, header, subtitle, teamButtons, readySummary, roster, admin, ready, back);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
                 header, subtitle, readySummary, selected, teamButtons, roster, columnPanels, teamLists,
                 spectators, spectatorList, ready, admin, back);
@@ -809,6 +871,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         VirtualScrollerView<Row> list = new VirtualScrollerView<>();
         list.setId(id);
         list.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(4).right(4).top(4).bottom(4));
+        FPSMLdlib2Theme.virtualScroller(list);
         list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(PLAYER_ROW_HEIGHT + ROW_GAP).overscanPixels(48));
         list.setItemUIProvider(row -> {
             if (Minecraft.getInstance().screen instanceof Ldlib2TeamManageScreen screen) {

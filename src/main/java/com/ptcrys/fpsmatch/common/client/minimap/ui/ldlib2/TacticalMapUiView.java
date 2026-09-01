@@ -43,6 +43,11 @@ final class TacticalMapUiView {
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
 
+        Label system = label(Component.literal("FPSM // MAP SYSTEM  ·  TACTICAL SURVEY"));
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .left(12).right(12).top(2).height(9));
+        FPSMLdlib2Theme.systemLabel(system);
+
         Ldlib2MinimapCanvasElement canvas = new Ldlib2MinimapCanvasElement(
                 TacticalMapWidgetCatalog.CANVAS,
                 presentation.textureResolver(),
@@ -276,7 +281,7 @@ final class TacticalMapUiView {
                 close
         );
         FPSMLdlib2Theme.panel(sidebar);
-        root.addChildren(canvas, stateLabel, sidebar, controlsToggle);
+        root.addChildren(canvas, stateLabel, sidebar, controlsToggle, system);
         return new Parts(
                 ModularUI.of(UI.of(root)),
                 canvas,

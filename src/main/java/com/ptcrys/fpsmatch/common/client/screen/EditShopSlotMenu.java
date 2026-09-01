@@ -3,8 +3,10 @@ package com.ptcrys.fpsmatch.common.client.screen;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
 import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
@@ -30,7 +32,7 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     private final ContainerData data;
     private final ItemStackHandler itemHandler;
-    private final ShopSlot shopSlot;
+    private ShopSlot shopSlot;
     private final String gameType;
     private final String mapName;
     private final String teamName;
@@ -93,8 +95,32 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (player instanceof ServerPlayer serverPlayer
+                && (!MapRoomQueryService.isMapOperator(serverPlayer)
+                || resolveCurrentShop().isEmpty())) {
+            FPSMatch.sendToPlayer(serverPlayer, new MapRoomToastS2CPacket(
+                    net.minecraft.network.chat.Component.translatable(
+                            "gui.fpsm.shop_editor.open.no_permission"), true));
+            return;
+        }
+        if (slotId == 0) {
+            if (clickType == ClickType.PICKUP && !getCarried().isEmpty()) {
+                itemHandler.setStackInSlot(0, getCarried().copy());
+            }
+            return;
+        }
+        super.clicked(slotId, button, clickType, player);
+    }
+
+    @Override
     public boolean stillValid(Player player) {
-        return true;
+        if (player.level().isClientSide) {
+            return true;
+        }
+        return player instanceof ServerPlayer serverPlayer
+                && MapRoomQueryService.isMapOperator(serverPlayer)
+                && resolveCurrentShop().isPresent();
     }
 
     @Override
@@ -103,23 +129,119 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
     }
 
     public void saveData(ServerPlayer serverPlayer) {
-        Optional<FPSMShop<?>> resolvedShop = MapRoomQueryService.findMap(gameType, mapName)
-                .flatMap(this::resolveTeam)
-                .flatMap(ShopCapability::getShop);
-        if (resolvedShop.isEmpty()) {
-            return;
+        trySaveData(serverPlayer, getAmmo(), getPrice(), getGroupId());
+    }
+
+    /**
+     * Validates and commits one slot edit using only the server-owned menu identity.
+     * The legacy packet remains three integers; map/team/type/index are never trusted from the client.
+     */
+    public SaveResult trySaveData(ServerPlayer serverPlayer, int ammoCount, int defaultCost, int groupId) {
+        if (serverPlayer == null || serverPlayer.containerMenu != this) {
+            return SaveResult.INVALID_MENU;
+        }
+        if (!MapRoomQueryService.isMapOperator(serverPlayer)) {
+            return SaveResult.NO_PERMISSION;
+        }
+        if (defaultCost < 0 || defaultCost > 1_000_000
+                || ammoCount < 0 || ammoCount > 999_999
+                || groupId < -1 || groupId > 999_999) {
+            return SaveResult.INVALID_VALUE;
+        }
+        ItemStack editedStack = itemHandler.getStackInSlot(0).copy();
+        if (editedStack.isEmpty() || editedStack.getCount() <= 0
+                || editedStack.getCount() > editedStack.getMaxStackSize()) {
+            return SaveResult.INVALID_ITEM;
         }
 
-        FPSMShop<?> shop = resolvedShop.get();
-        shopSlot.setItemSupplier(() -> itemHandler.getStackInSlot(0));
-        ItemStack slotStack = shopSlot.process();
-        shopSlot.setDefaultCost(this.getPrice());
-        shopSlot.setGroupId(this.getGroupId());
-        if (GunCompatManager.isGun(slotStack)) {
-            FPSMUtil.setTotalDummyAmmo(slotStack, GunCompatManager.findProvider(slotStack), this.getAmmo());
+        Optional<FPSMShop<?>> resolvedShop = resolveCurrentShop();
+        if (resolvedShop.isEmpty()) {
+            return SaveResult.SHOP_UNAVAILABLE;
         }
-        shop.replaceDefaultShopData(shopType, slotNum, shopSlot);
+        FPSMShop<?> shop = resolvedShop.get();
+        final List<ShopSlot> slots;
+        try {
+            slots = shop.getDefaultShopSlotListByType(shopType);
+        } catch (IllegalArgumentException invalidType) {
+            return SaveResult.INVALID_SLOT;
+        }
+        if (slots == null || slotNum < 0 || slotNum >= slots.size()) {
+            return SaveResult.INVALID_SLOT;
+        }
+        ShopSlot current = slots.get(slotNum);
+        if (current != shopSlot) {
+            return SaveResult.STALE_SLOT;
+        }
+
+        if (GunCompatManager.isGun(editedStack)) {
+            FPSMUtil.setTotalDummyAmmo(
+                    editedStack,
+                    GunCompatManager.findProvider(editedStack),
+                    ammoCount
+            );
+        }
+        if (sameConfiguration(current, editedStack, defaultCost, groupId)) {
+            setAmmo(ammoCount);
+            setPrice(defaultCost);
+            setGroupId(groupId);
+            return SaveResult.SUCCESS;
+        }
+
+        ShopSlot replacement = current.copy();
+        ItemStack savedStack = editedStack.copy();
+        replacement.setItemSupplier(savedStack::copy);
+        replacement.setDefaultCost(defaultCost);
+        replacement.setGroupId(groupId);
+        shop.replaceDefaultShopData(shopType, slotNum, replacement);
         shop.syncShopData();
+        this.shopSlot = replacement;
+        this.itemHandler.setStackInSlot(0, savedStack.copy());
+        setAmmo(ammoCount);
+        setPrice(defaultCost);
+        setGroupId(groupId);
+        return SaveResult.SUCCESS;
+    }
+
+    private Optional<FPSMShop<?>> resolveCurrentShop() {
+        return MapRoomQueryService.findMap(gameType, mapName)
+                .flatMap(this::resolveTeam)
+                .flatMap(ShopCapability::getShop);
+    }
+
+    private static boolean sameConfiguration(
+            ShopSlot current,
+            ItemStack editedStack,
+            int defaultCost,
+            int groupId
+    ) {
+        return current.getDefaultCost() == defaultCost
+                && current.getGroupId() == groupId
+                && ItemStack.matches(current.process(), editedStack);
+    }
+
+    public enum SaveResult {
+        SUCCESS("gui.fpsm.shop_editor.save.success"),
+        NO_PERMISSION("gui.fpsm.shop_editor.save.no_permission"),
+        INVALID_MENU("gui.fpsm.shop_editor.save.invalid_menu"),
+        SHOP_UNAVAILABLE("gui.fpsm.shop_editor.save.shop_unavailable"),
+        INVALID_SLOT("gui.fpsm.shop_editor.save.invalid_slot"),
+        STALE_SLOT("gui.fpsm.shop_editor.save.stale_slot"),
+        INVALID_ITEM("gui.fpsm.shop_editor.save.invalid_item"),
+        INVALID_VALUE("gui.fpsm.shop_editor.save.invalid_value");
+
+        private final String translationKey;
+
+        SaveResult(String translationKey) {
+            this.translationKey = translationKey;
+        }
+
+        public boolean success() {
+            return this == SUCCESS;
+        }
+
+        public String translationKey() {
+            return translationKey;
+        }
     }
 
     private Optional<ServerTeam> resolveTeam(BaseMap map) {
@@ -168,6 +290,14 @@ public class EditShopSlotMenu extends AbstractContainerMenu {
 
     public String getTeamName() {
         return teamName;
+    }
+
+    public String getShopType() {
+        return shopType;
+    }
+
+    public int getSlotNum() {
+        return slotNum;
     }
 
     public ContainerData getData() {

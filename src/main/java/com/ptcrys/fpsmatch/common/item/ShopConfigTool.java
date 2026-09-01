@@ -18,7 +18,7 @@ import java.util.List;
  * 商店配置工具。
  * <p>
  * 右键打开指定地图的商店编辑界面，可选择游戏类型和地图。
- * 复用已有的 EditorShopScreen/EditorShopContainer 进行商店编辑。
+ * 通过 LDLib2 商店配置总览进入服务端拥有的编辑菜单。
  */
 public class ShopConfigTool extends CreatorToolItem {
     public ShopConfigTool(Properties properties) {

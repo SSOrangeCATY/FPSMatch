@@ -44,17 +44,29 @@ public record TeamManageActionC2SPacket(String mapName, UUID targetPlayer, Strin
                 return;
             }
 
-            MapTeams mapTeams = map.getMapTeams();
             ServerPlayer target = sender.getServer().getPlayerList().getPlayer(targetPlayer);
             if (target == null) {
                 FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(false, Component.translatable("gui.fpsm.team_manage.player_not_found")));
                 return;
             }
 
+            if (map.getMapTeams().getTeamByPlayer(target)
+                    .filter(team -> team.getName().equals(targetTeam))
+                    .isPresent()) {
+                FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(true,
+                        Component.translatable("gui.fpsm.team_manage.move_success",
+                                target.getDisplayName().getString(), targetTeam)));
+                return;
+            }
+
             // 先让玩家离开当前队伍，再加入目标队伍
             MapTeams.JoinTeamResult result = map.join(targetTeam, target);
             if (result.status() == MapTeams.JoinTeamResult.Status.JOINED) {
-                mapTeams.broadcast();
+                // MapTeams.join already sends the joining player's full snapshot and
+                // the changed team/player packets to the other clients. A forced
+                // broadcast here repeats every team definition and every player
+                // stat for every online player, turning a single move into an
+                // O(teams * players * online) packet burst.
                 FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(true, Component.translatable("gui.fpsm.team_manage.move_success", target.getDisplayName().getString(), targetTeam)));
             } else {
                 FPSMatch.sendToPlayer(sender, new TeamManageResultS2CPacket(false, Component.translatable("gui.fpsm.team_manage.move_failed", result.status().name())));

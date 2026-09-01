@@ -10,6 +10,7 @@ import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
@@ -45,7 +46,7 @@ public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
-        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
+        FPSMLdlib2Backdrop.draw(graphics, this.width, this.height);
     }
 
     @Override
@@ -94,6 +95,10 @@ public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
 
+        Label system = label("fpsmatch.map_invitation.system", Component.literal("FPSM // MAP SYSTEM  ·  INCOMING SIGNAL"));
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(2).height(10));
+        FPSMLdlib2Theme.systemLabel(system);
+
         UIElement panel = new UIElement().setId("fpsmatch.map_invitation.panel");
         panel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .leftPercent(50).topPercent(50).width(340).height(150)
@@ -126,7 +131,7 @@ public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
         FPSMLdlib2Theme.button(reject, FPSMLdlib2Theme.ButtonKind.DANGER);
 
         panel.addChildren(title, message, room, accept, reject);
-        root.addChild(panel);
+        root.addChildren(system, panel);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))), accept, reject);
     }
 

@@ -484,7 +484,7 @@ public final class Ldlib2EditorCanvasElement extends AccessiblePanel {
         String floorDigest = Sha256Digest.of(
                 key.floorId().getBytes(StandardCharsets.UTF_8)
         ).value().substring(0, 16);
-        return new ResourceLocation(
+        return ResourceLocation.tryBuild(
                 "fpsmatch",
                 "minimap/editor/" + instanceId + "/" + floorDigest + "/"
                         + key.tileX() + "_" + key.tileY()

@@ -52,6 +52,9 @@ public final class Ldlib2MapInviteScreen extends Ldlib2MapChildScreen {
         UIElement root = new UIElement().setId("fpsmatch.map_invite.root");
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
+        Label system = label("fpsmatch.map_invite.system", Component.literal("FPSM // MAP SYSTEM  ·  REINFORCEMENT LINK"));
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(2).height(10));
+        FPSMLdlib2Theme.systemLabel(system);
 
         Label header = label("fpsmatch.map_invite.header", Component.translatable("gui.fpsm.map_select.invite.title"));
         header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(12).height(20));
@@ -59,7 +62,7 @@ public final class Ldlib2MapInviteScreen extends Ldlib2MapChildScreen {
 
         Label subtitle = label("fpsmatch.map_invite.subtitle", Component.empty());
         subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(34).height(16));
-        FPSMLdlib2Theme.muted(subtitle);
+        FPSMLdlib2Theme.mapIdentity(subtitle);
 
         UIElement panel = new UIElement().setId("fpsmatch.map_invite.panel");
         panel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(56).bottom(56));
@@ -72,6 +75,7 @@ public final class Ldlib2MapInviteScreen extends Ldlib2MapChildScreen {
         VirtualScrollerView<MapRoomPlayerInfo> list = new VirtualScrollerView<>();
         list.setId("fpsmatch.map_invite.list");
         list.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(8).right(8).top(8).bottom(8));
+        FPSMLdlib2Theme.virtualScroller(list);
         list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(28f));
         list.setItemUIProvider(player -> {
             UIElement row = new UIElement().setId("fpsmatch.map_invite.row." + player.uuid());
@@ -109,7 +113,7 @@ public final class Ldlib2MapInviteScreen extends Ldlib2MapChildScreen {
         back.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).bottom(16).width(96).height(24));
         FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
 
-        root.addChildren(header, subtitle, panel, back);
+        root.addChildren(system, header, subtitle, panel, back);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))), subtitle, list, empty, back);
     }
 

@@ -256,7 +256,7 @@ public final class MinecraftMinimapTextureManager
                 + '\n' + generation.runtimeHash()
                 + '\n' + textureKey;
         String digest = Sha256Digest.of(identity.getBytes(StandardCharsets.UTF_8)).value();
-        return new ResourceLocation("fpsmatch", "minimap/runtime/" + digest);
+        return ResourceLocation.tryBuild("fpsmatch", "minimap/runtime/" + digest);
     }
 
     public interface TexturePlatform {

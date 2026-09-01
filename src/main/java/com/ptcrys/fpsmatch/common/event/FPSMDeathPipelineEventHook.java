@@ -315,7 +315,7 @@ public class FPSMDeathPipelineEventHook {
                 }
             });
 
-            FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map, killer, player, context.getDamageSource());
+            FPSMapEvent.PlayerEvent.KillEvent killEvent = new FPSMapEvent.PlayerEvent.KillEvent(map, killer, player, context.getDamageSource(), context.isHeadShot());
             MinecraftForge.EVENT_BUS.post(killEvent);
         }
     }

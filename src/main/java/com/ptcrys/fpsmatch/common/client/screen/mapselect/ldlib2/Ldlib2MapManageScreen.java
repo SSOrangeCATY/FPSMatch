@@ -43,6 +43,8 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     private final List<AccessibleButton> toolButtons;
     private MinimapPublishRefreshGate minimapRefreshGate;
     private boolean pendingMinimapFocusRestore;
+    private Component transientStatus;
+    private int transientStatusTicks;
 
     public Ldlib2MapManageScreen(MapRoomDetail detail, Screen parent) {
         this(build(), detail, parent);
@@ -89,6 +91,32 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
             requestMinimapRefresh();
         }
         restoreMinimapFocusIfReady();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (transientStatusTicks <= 0) {
+            return;
+        }
+        transientStatusTicks--;
+        if (transientStatusTicks == 0) {
+            transientStatus = null;
+            refreshContent();
+            applyResponsiveLayout();
+        }
+    }
+
+    public void showSettingsSaveSuccess(int changeCount) {
+        transientStatus = Component.translatable(
+                "gui.fpsm.map_select.settings.save_success",
+                Math.max(1, changeCount)
+        );
+        transientStatusTicks = 100;
+        refreshContent();
+        if (width > 0 && height > 0) {
+            applyResponsiveLayout();
+        }
     }
 
     @Override
@@ -171,7 +199,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         int totalRows = debugRows + toolRows;
         int groupGap = 6;
         int permissionReserve = detail.summary().currentPlayerOp()
-                && minimapRefreshGate == null ? 0 : 22;
+                && minimapRefreshGate == null && transientStatus == null ? 0 : 22;
         int interRowGaps = Math.max(0, debugRows - 1) + Math.max(0, toolRows - 1);
         int availableGridHeight = Math.max(1,
                 panelHeight - 26 - padding - permissionReserve - groupGap - interRowGaps * gap);
@@ -216,13 +244,21 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
         boolean op = detail.summary().currentPlayerOp();
         boolean awaitingMinimap = minimapRefreshGate != null;
-        permissionLabel.setVisible(!op || awaitingMinimap);
-        permissionLabel.setValue(op && awaitingMinimap
-                ? Component.translatable(
-                        "gui.fpsm.minimap.editor.publish.refreshing",
-                        minimapRefreshGate.minimumRevision()
-                )
-                : Component.translatable("gui.fpsm.map_select.manage.no_permission"));
+        boolean showTransientStatus = op && !awaitingMinimap && transientStatus != null;
+        permissionLabel.setVisible(!op || awaitingMinimap || showTransientStatus);
+        if (!op) {
+            permissionLabel.setValue(Component.translatable("gui.fpsm.map_select.manage.no_permission"));
+        } else if (awaitingMinimap) {
+            permissionLabel.setValue(Component.translatable(
+                    "gui.fpsm.minimap.editor.publish.refreshing",
+                    minimapRefreshGate.minimumRevision()
+            ));
+        } else if (showTransientStatus) {
+            permissionLabel.setValue(transientStatus);
+        }
+        permissionLabel.textStyle(style -> style
+                .fontSize(8)
+                .textColor(showTransientStatus ? FPSMLdlib2Theme.SUCCESS : FPSMLdlib2Theme.WARNING));
         FPSMLdlib2Theme.buttonState(startButton, FPSMLdlib2Theme.ButtonKind.PRIMARY, op);
         FPSMLdlib2Theme.buttonState(resetButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
         FPSMLdlib2Theme.buttonState(newRoundButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
@@ -302,12 +338,15 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         UIElement root = new UIElement().setId("fpsmatch.map_manage.root");
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
+        Label system = label("fpsmatch.map_manage.system", Component.literal("FPSM // MAP SYSTEM  ·  CONTROL DECK"));
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(2).height(10));
+        FPSMLdlib2Theme.systemLabel(system);
         Label header = label("fpsmatch.map_manage.header", Component.translatable("gui.fpsm.map_select.manage.title"));
         header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(12).height(20));
         FPSMLdlib2Theme.title(header);
         Label subtitle = label("fpsmatch.map_manage.subtitle", Component.empty());
         subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(34).height(16));
-        FPSMLdlib2Theme.muted(subtitle);
+        FPSMLdlib2Theme.mapIdentity(subtitle);
         UIElement panel = new UIElement().setId("fpsmatch.map_manage.panel");
         panel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(56).bottom(56));
         FPSMLdlib2Theme.panel(panel);
@@ -337,7 +376,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         back.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).bottom(16).width(96).height(24));
         FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
         back.textStyle(style -> style.fontSize(8));
-        root.addChildren(header, subtitle, panel, back);
+        root.addChildren(system, header, subtitle, panel, back);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
                 panel, debugTitle, subtitle, permission, start, reset, newRound, cleanup,
                 switchBtn, settings, shop, minimap, back);

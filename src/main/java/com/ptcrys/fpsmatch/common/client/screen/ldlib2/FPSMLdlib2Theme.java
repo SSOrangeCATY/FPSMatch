@@ -13,30 +13,36 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import net.minecraft.network.chat.Component;
 
 /** Shared visual language for FPSMatch LDLib2 work surfaces. */
 public final class FPSMLdlib2Theme {
-    public static final int BG = 0xF20B1016;
-    public static final int SURFACE = 0xF2151B23;
-    public static final int ELEVATED = 0xF21C242E;
-    public static final int BORDER = 0xFF34404D;
-    public static final int BORDER_SOFT = 0xFF28323D;
-    public static final int ACCENT = 0xFF4BB3FD;
-    public static final int ACCENT_DARK = 0xFF246C9D;
-    public static final int SUCCESS = 0xFF5CC68A;
-    public static final int WARNING = 0xFFF0C45B;
-    public static final int DANGER = 0xFFEA6262;
-    public static final int TEXT = 0xFFF2F5F7;
-    public static final int MUTED = 0xFF9AA7B3;
-    public static final int DISABLED = 0xFF65717D;
-    public static final int SETTINGS_CATEGORY = 0xFF2A3641;
-    public static final int SETTINGS_ENTRY = 0xFF111820;
-    public static final int SETTINGS_CATEGORY_TEXT = 0xFFE4ECF2;
-    public static final int SETTINGS_ENTRY_TEXT = 0xFFBAC5CE;
-    public static final int HOLD_ACTION_PROGRESS = 0xFFEA6262;
+    public static final int BG = 0xF20D1110;
+    public static final int SURFACE = 0xF2171D1C;
+    public static final int ELEVATED = 0xF2202826;
+    public static final int BORDER = 0xFF40504C;
+    public static final int BORDER_SOFT = 0xFF2B3734;
+    public static final int ACCENT = 0xFF53C9C2;
+    public static final int ACCENT_DARK = 0xFF287C78;
+    public static final int SUCCESS = 0xFF70CE96;
+    public static final int WARNING = 0xFFF0BF57;
+    public static final int DANGER = 0xFFE36B5F;
+    public static final int TEXT = 0xFFF0F3EC;
+    public static final int MUTED = 0xFF98A59F;
+    public static final int DISABLED = 0xFF68746F;
+    public static final int SETTINGS_CATEGORY = 0xFF293532;
+    public static final int SETTINGS_ENTRY = 0xFF121917;
+    public static final int SETTINGS_CATEGORY_TEXT = 0xFFE4ECE7;
+    public static final int SETTINGS_ENTRY_TEXT = 0xFFBEC9C3;
+    public static final int HOLD_ACTION_PROGRESS = 0xFFE36B5F;
     public static final int FOCUS_RING_WIDTH = 2;
+    /** Shared map-system geometry tokens: restrained measurement lines, not decoration. */
+    public static final int GRID_LINE = 0x183A5D55;
+    public static final int SYSTEM_LABEL = 0xFF86A49C;
+    public static final int MAP_IDENTITY = 0xFFC6D7D0;
+    public static final int FOCUS_ACCENT = ACCENT;
     private static final IGuiTexture FOCUS_RING =
             new ColorBorderTexture(FOCUS_RING_WIDTH, ACCENT);
 
@@ -51,8 +57,30 @@ public final class FPSMLdlib2Theme {
         element.style(style -> style.background(panelTexture(BG, BORDER_SOFT)));
     }
 
+    /** Compact technical label used for breadcrumbs, coordinates and map identity lines. */
+    public static void systemLabel(Label label) {
+        label.textStyle(style -> style.fontSize(7).textColor(SYSTEM_LABEL).textShadow(false));
+    }
+
+    /** Primary map identity line; deliberately readable above the technical annotation tier. */
+    public static void mapIdentity(Label label) {
+        label.textStyle(style -> style.fontSize(9).textColor(MAP_IDENTITY).textShadow(false));
+    }
+
     public static void panel(UIElement element) {
         element.style(style -> style.background(panelTexture(SURFACE, BORDER)));
+    }
+
+    /**
+     * Opaque list surface shared by every map-room roster and settings list. LDLib2's default
+     * viewport texture is purple on some Forge versions, so all three scroll layers are explicit.
+     */
+    public static void virtualScroller(VirtualScrollerView<?> scroller) {
+        scroller.style(style -> style.background(panelTexture(0xFF111A18, BORDER_SOFT)));
+        scroller.viewPort(element -> element.style(style ->
+                style.background(new ColorRectTexture(0xFF111A18))));
+        scroller.viewContainer(element -> element.style(style ->
+                style.background(new ColorRectTexture(0x00111A18))));
     }
 
     public static void elevated(UIElement element) {

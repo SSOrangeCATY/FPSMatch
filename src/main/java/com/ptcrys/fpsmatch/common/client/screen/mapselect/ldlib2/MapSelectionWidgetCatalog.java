@@ -8,9 +8,11 @@ public final class MapSelectionWidgetCatalog {
     public static final String HEADER = "fpsmatch.map_selection.header";
     public static final String SEARCH = "fpsmatch.map_selection.search";
     public static final String FILTERS = "fpsmatch.map_selection.filters";
+    public static final String FILTER_HEADING = "fpsmatch.map_selection.filters.heading";
     public static final String STATE_FILTER = "fpsmatch.map_selection.filters.status";
     public static final String MODE_FILTER = "fpsmatch.map_selection.filters.mode";
     public static final String ROOM_LIST = "fpsmatch.map_selection.room_list";
+    public static final String ROOM_LIST_HEADING = "fpsmatch.map_selection.room_list.heading";
     public static final String EMPTY_STATE = "fpsmatch.map_selection.empty";
     public static final String ROOM_DETAIL = "fpsmatch.map_selection.room_detail";
     public static final String PLAYERS = "fpsmatch.map_selection.players";
@@ -22,7 +24,8 @@ public final class MapSelectionWidgetCatalog {
     }
 
     public static List<String> ids() {
-        return List.of(ROOT, HEADER, SEARCH, FILTERS, STATE_FILTER, MODE_FILTER, ROOM_LIST, EMPTY_STATE, ROOM_DETAIL,
+        return List.of(ROOT, HEADER, SEARCH, FILTERS, FILTER_HEADING, STATE_FILTER, MODE_FILTER, ROOM_LIST,
+                ROOM_LIST_HEADING, EMPTY_STATE, ROOM_DETAIL,
                 PLAYERS, ACTIONS, BROWSER_ACTIONS, TOAST);
     }
 }

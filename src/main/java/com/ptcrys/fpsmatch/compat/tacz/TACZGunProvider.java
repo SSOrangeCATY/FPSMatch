@@ -40,7 +40,7 @@ public class TACZGunProvider implements IGunProvider {
     @Override
     public ResourceLocation getGunId(ItemStack stack) {
         IGun iGun = IGun.getIGunOrNull(stack);
-        return iGun != null ? iGun.getGunId(stack) : new ResourceLocation("empty", "empty");
+        return iGun != null ? iGun.getGunId(stack) : ResourceLocation.tryBuild("empty", "empty");
     }
 
     @Override

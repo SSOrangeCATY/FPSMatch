@@ -199,8 +199,7 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW_KEY_TAB
-                && accessibility.moveFocus((modifiers & GLFW_MOD_SHIFT) != 0)) {
+        if (accessibility.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

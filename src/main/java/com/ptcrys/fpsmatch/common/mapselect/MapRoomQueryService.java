@@ -77,7 +77,7 @@ public final class MapRoomQueryService {
                 players(map),
                 settings(viewer, map),
                 availableInviteTargets(viewer, map),
-                editableShops(map),
+                viewer != null && isMapOperator(viewer) ? editableShops(map) : List.of(),
                 teams(map),
                 map.getReadyPlayers(),
                 "gui.fpsm.map_select.rules." + map.getGameType(),

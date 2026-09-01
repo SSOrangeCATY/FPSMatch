@@ -1,7 +1,10 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.EditShopSlotMenu;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraftforge.network.NetworkEvent;
@@ -45,14 +48,16 @@ public class SaveSlotDataC2SPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();  // 获取当前玩家
-            if (player != null && player.containerMenu instanceof EditShopSlotMenu menu) {
-                // 将接收到的数据保存到 ContainerData 中
-                ContainerData data = menu.getData(); // 获取当前菜单的 ContainerData
-                data.set(0, ammoCount); // 设置 ammoCount
-                data.set(1, defaultCost); // 设置 defaultCost
-                data.set(2, groupId); // 设置 groupId
-                menu.saveData(player); // 调用保存方法保存数据
+            if (player == null) {
+                return;
             }
+            EditShopSlotMenu.SaveResult result = player.containerMenu instanceof EditShopSlotMenu menu
+                    ? menu.trySaveData(player, ammoCount, defaultCost, groupId)
+                    : EditShopSlotMenu.SaveResult.INVALID_MENU;
+            FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(
+                    Component.translatable(result.translationKey()),
+                    !result.success()
+            ));
         });
         ctx.get().setPacketHandled(true); // 标记数据包已处理
     }

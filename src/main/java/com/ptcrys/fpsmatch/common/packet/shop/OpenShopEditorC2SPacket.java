@@ -1,9 +1,11 @@
 package com.ptcrys.fpsmatch.common.packet.shop;
 
 import com.google.gson.Gson;
+import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.ShopCapability;
 import com.ptcrys.fpsmatch.common.client.screen.EditorShopContainer;
 import com.ptcrys.fpsmatch.common.mapselect.MapRoomQueryService;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
 import com.ptcrys.fpsmatch.core.shop.INamedType;
@@ -41,18 +43,18 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
                 return;
             }
             if (!isValidId(gameType) || !isValidId(mapName) || !isValidId(teamName)) {
-                player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
+                reject(player, "gui.fpsm.shop_editor.open.invalid_id");
                 return;
             }
             if (!MapRoomQueryService.isMapOperator(player)) {
-                player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
+                reject(player, "gui.fpsm.shop_editor.open.no_permission");
                 return;
             }
             Optional<BaseMap> map = MapRoomQueryService.findMap(gameType, mapName);
             Optional<ServerTeam> team = map.flatMap(this::findTeam);
             Optional<FPSMShop<?>> shopOpt = team.flatMap(ShopCapability::getShop);
             if (shopOpt.isEmpty()) {
-                player.sendSystemMessage(Component.translatable("message.fpsm.shop_editor.invalid"));
+                reject(player, "gui.fpsm.shop_editor.open.shop_unavailable");
                 return;
             }
             FPSMShop<?> shop = shopOpt.get();
@@ -97,6 +99,11 @@ public record OpenShopEditorC2SPacket(String gameType, String mapName, String te
 
     private static boolean isValidId(String value) {
         return value != null && !value.isBlank() && value.length() <= ID_MAX_LENGTH;
+    }
+
+    private static void reject(ServerPlayer player, String translationKey) {
+        FPSMatch.sendToPlayer(player, new MapRoomToastS2CPacket(
+                Component.translatable(translationKey), true));
     }
 
     private Optional<ServerTeam> findTeam(BaseMap map) {

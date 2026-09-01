@@ -22,6 +22,7 @@ import com.ptcrys.fpsmatch.core.minimap.view.PlaceholderKind;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 
 import java.util.Objects;
@@ -95,9 +96,9 @@ public final class Ldlib2MinimapHudPresentation {
                         services.runtime()::currentGeneration,
                         textureId -> Minecraft.getInstance()
                                 .getResourceManager()
-                                .getResource(new net.minecraft.resources.ResourceLocation(
+                                .getResource(Objects.requireNonNull(ResourceLocation.tryBuild(
                                         textureId.namespace(), textureId.path()
-                                ))
+                                )))
                                 .isPresent()
                 );
         return new Ldlib2MinimapHudPresentation(

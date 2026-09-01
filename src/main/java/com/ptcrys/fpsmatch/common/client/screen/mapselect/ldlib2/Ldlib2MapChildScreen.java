@@ -6,6 +6,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.minecraft.client.Minecraft;
@@ -29,7 +30,14 @@ public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen imp
 
     @Override
     public void applyDetail(MapRoomDetail detail) {
-        this.detail = Objects.requireNonNull(detail, "detail");
+        MapRoomDetail next = Objects.requireNonNull(detail, "detail");
+        // A successful action sends an authoritative detail immediately and the
+        // subscription may send the same snapshot on the next server tick. Avoid
+        // rebuilding the LDLib2 tree for an unchanged snapshot.
+        if (next.equals(this.detail)) {
+            return;
+        }
+        this.detail = next;
         onDetailApplied();
     }
 
@@ -48,7 +56,7 @@ public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen imp
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
-        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
+        FPSMLdlib2Backdrop.draw(graphics, this.width, this.height);
     }
 
     @Override

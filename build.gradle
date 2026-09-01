@@ -212,6 +212,15 @@ sourceSets {
 }
 legacyForge.ideSyncTask generateModMetadata
 
+def syncGameTestStructures = tasks.register('syncGameTestStructures', Sync) {
+    from "src/main/resources/data/${mod_id}/gameteststructures"
+    into layout.buildDirectory.dir('run-gametest/gameteststructures')
+}
+
+tasks.named('runGameTestServer') {
+    dependsOn syncGameTestStructures
+}
+
 tasks.named('jar', Jar) {
     manifest.attributes('MixinConfigs': "${mod_id}.mixins.json")
 }

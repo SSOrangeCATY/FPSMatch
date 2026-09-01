@@ -10,6 +10,7 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleSelector;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
@@ -50,6 +51,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private final Screen parent;
     private final VirtualScrollerView<MapRoomSummary> roomList;
+    private final Label roomListHeading;
     private final Label emptyState;
     private final UIElement detailPanel;
     private final Label detailLabel;
@@ -81,6 +83,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private enum PendingOpen {
         NONE,
+        DETAIL,
         MANAGE,
         TEAM
     }
@@ -98,6 +101,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         this.parent = parent;
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
         this.roomList = parts.roomList();
+        this.roomListHeading = parts.roomListHeading();
         this.emptyState = parts.emptyState();
         this.detailPanel = parts.detailPanel();
         this.detailLabel = parts.detailLabel();
@@ -114,7 +118,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         this.browserActionButtons = parts.browserActionButtons();
         parts.refresh().setOnClick(event -> refresh());
         parts.close().setOnClick(event -> onClose());
-        parts.join().setOnClick(event -> joinOrOpenManage());
+        parts.join().setOnClick(event -> openSelectedDetail());
         parts.manage().setOnClick(event -> openMapManage());
         stateSelector.setOnValueChanged(value -> setStateFilter(value == null ? "all" : value));
         modeSelector.setOnValueChanged(value -> setGameModeFilter(value == null ? "all" : value));
@@ -187,8 +191,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
-        // ModularUIScreen leaves the world undimmed; map select needs a readable backdrop.
-        graphics.fill(0, 0, this.width, this.height, 0xC0101010);
+        FPSMLdlib2Backdrop.draw(graphics, this.width, this.height);
     }
 
     @Override
@@ -340,7 +343,8 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int originY = verticalMargin;
         place(toast, layout.toast(), originX, originY);
         place(filters, layout.filters(), originX, originY);
-        place(roomList, layout.roomList(), originX, originY);
+        placeRoomList(layout.roomList(), originX, originY);
+        placeRoomListHeading(layout.roomList(), originX, originY);
         placeEmptyState(layout.roomList(), originX, originY);
         if (!compactLayout) {
             place(detailPanel, layout.detail(), originX, originY);
@@ -355,7 +359,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int filterPanelWidth = placedDimension(layout.filters().width(), PANEL_HORIZONTAL_INSET);
         int filterPanelHeight = placedDimension(layout.filters().height(), PANEL_VERTICAL_INSET);
         int searchPadding = Math.min(8, Math.max(2, (filterPanelWidth - 1) / 8));
-        int searchTop = Math.min(layout.compact() ? 4 : 8, Math.max(0, filterPanelHeight - 1));
+        int searchTop = Math.min(layout.compact() ? 22 : 24, Math.max(0, filterPanelHeight - 1));
         int searchHeight = Math.max(1, Math.min(18, filterPanelHeight - searchTop));
         search.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
@@ -393,14 +397,44 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
                 .height(placedDimension(rect.height(), PANEL_VERTICAL_INSET)));
     }
 
+    private void placeRoomList(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
+        int horizontalInset = insetFor(rect.width(), PANEL_HORIZONTAL_INSET);
+        int verticalInset = insetFor(rect.height(), PANEL_VERTICAL_INSET);
+        int headerHeight = roomListHeaderHeight(rect.height());
+        int width = placedDimension(rect.width(), PANEL_HORIZONTAL_INSET);
+        int height = Math.max(1, placedDimension(rect.height(), PANEL_VERTICAL_INSET) - headerHeight);
+        roomList.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(originX + rect.x() + horizontalInset)
+                .top(originY + rect.y() + verticalInset + headerHeight)
+                .width(width).height(height));
+    }
+
+    private void placeRoomListHeading(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
+        int horizontalInset = insetFor(rect.width(), PANEL_HORIZONTAL_INSET);
+        int verticalInset = insetFor(rect.height(), PANEL_VERTICAL_INSET);
+        roomListHeading.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto()
+                .left(originX + rect.x() + horizontalInset + 7)
+                .top(originY + rect.y() + verticalInset + 3)
+                .width(Math.max(1, placedDimension(rect.width(), PANEL_HORIZONTAL_INSET) - 14))
+                .height(Math.min(14, roomListHeaderHeight(rect.height()) - 2)));
+    }
+
+    private static int roomListHeaderHeight(int rectHeight) {
+        return Math.min(20, Math.max(14, rectHeight / 10));
+    }
+
     private void placeEmptyState(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
         int listWidth = placedDimension(rect.width(), PANEL_HORIZONTAL_INSET);
-        int listHeight = placedDimension(rect.height(), PANEL_VERTICAL_INSET);
+        int listHeight = Math.max(1, placedDimension(rect.height(), PANEL_VERTICAL_INSET)
+                - roomListHeaderHeight(rect.height()));
         int labelHeight = Math.min(20, Math.max(1, listHeight));
         emptyState.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
                 .left(originX + rect.x() + insetFor(rect.width(), PANEL_HORIZONTAL_INSET) + 4)
                 .top(originY + rect.y() + insetFor(rect.height(), PANEL_VERTICAL_INSET)
+                        + roomListHeaderHeight(rect.height())
                         + Math.max(0, (listHeight - labelHeight) / 2))
                 .width(Math.max(1, listWidth - 8))
                 .height(labelHeight));
@@ -482,7 +516,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int shortestSide = Math.min(panelWidth, panelHeight);
         int padding = Math.min(8, Math.max(2, (shortestSide - 1) / 8));
         int gap = Math.min(6, Math.max(2, panelHeight / 24));
-        int availableHeight = Math.max(1, panelHeight - padding * 2);
+        int headingHeight = Math.min(16, Math.max(1, panelHeight / 10));
+        int contentTop = padding + headingHeight + 4;
+        int availableHeight = Math.max(1, panelHeight - contentTop - padding);
         boolean showPlayers = availableHeight >= DETAIL_INFO_HEIGHT + gap + DETAIL_PLAYERS_MIN_HEIGHT;
         int labelHeight;
         int playerHeight;
@@ -498,11 +534,11 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int contentWidth = Math.max(1, panelWidth - padding * 2);
         detailLabel.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
-                .left(padding).top(padding).width(contentWidth).height(labelHeight));
+                .left(padding).top(contentTop).width(contentWidth).height(labelHeight));
         playerList.setVisible(showPlayers);
         playerList.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
-                .left(padding).top(padding + labelHeight + gap)
+                .left(padding).top(contentTop + labelHeight + gap)
                 .width(contentWidth).height(playerHeight));
     }
 
@@ -622,6 +658,14 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         return true;
     }
 
+    public boolean consumePendingDetailOpen() {
+        if (pendingOpen != PendingOpen.DETAIL) {
+            return false;
+        }
+        pendingOpen = PendingOpen.NONE;
+        return true;
+    }
+
     public boolean consumePendingTeamOpen() {
         if (pendingOpen != PendingOpen.TEAM) {
             return false;
@@ -635,33 +679,11 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         FPSMatch.sendToServer(new OpenMapSelectionC2SPacket());
     }
 
-    private void joinOrOpenManage() {
+    private void openSelectedDetail() {
         if (selected == null) {
             return;
         }
-        MapRoomSummary summary = summaryFor(selected);
-        if (summary == null) {
-            return;
-        }
-        boolean joined = summary.currentPlayerJoined() || summary.currentPlayerSpectating();
-        if (joined) {
-            // Free-for-all has no team lobby; non-FFA opens team management.
-            if (!"csdm".equalsIgnoreCase(summary.gameType())) {
-                openTeamManage();
-            }
-            return;
-        }
-        boolean canJoin = !summary.full()
-                && (!summary.started() || summary.allowJoinInProgress());
-        if (!canJoin) {
-            return;
-        }
-        FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.JOIN,
-                summary.gameType(), summary.mapName(), new UUID(0L, 0L)));
-        // After joining a team-based room, open lobby once detail is ready.
-        if (!"csdm".equalsIgnoreCase(summary.gameType())) {
-            requestDetailFor(PendingOpen.TEAM);
-        }
+        requestDetailFor(PendingOpen.DETAIL);
     }
 
     private boolean matchesQuery(MapRoomSummary summary) {
@@ -731,20 +753,13 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     private void refreshActionState() {
         MapRoomSummary summary = selected == null ? null : summaryFor(selected);
         boolean hasSelection = summary != null;
-        boolean joined = summary != null && (summary.currentPlayerJoined() || summary.currentPlayerSpectating());
-        boolean canJoin = hasSelection && !joined && !summary.full()
-                && (!summary.started() || summary.allowJoinInProgress());
-        // Map manage is room-admin tooling (settings/shop/minimap/debug), not team lobby.
-        // Allow OP viewers even if not currently joined; do not exclude free-for-all maps.
-        boolean canMapManage = hasSelection && (snapshot.viewerOp()
-                || (summary != null && summary.currentPlayerOp()));
-        // Team lobby entry only for non-FFA rooms after join (join button doubles as team manage).
-        boolean canTeamLobby = joined && !"csdm".equalsIgnoreCase(summary.gameType());
+        // 浏览页只负责选择与进入详情；加入、队伍和管理动作均在详情/子页面完成。
+        boolean canOpenDetail = hasSelection;
         FPSMLdlib2Theme.buttonState(
                 actionButtons.get(0), FPSMLdlib2Theme.ButtonKind.PRIMARY,
-                canJoin || canTeamLobby
+                canOpenDetail
         );
-        manageVisible = canMapManage;
+        manageVisible = false;
         actionButtons.get(1).setDisplay(manageVisible);
         actionButtons.get(1).setVisible(manageVisible);
         FPSMLdlib2Theme.buttonState(

@@ -27,6 +27,7 @@ public final class Ldlib2AccessibilityController {
     private final Supplier<Component> title;
     private final List<Supplier<List<FocusTarget>>> groups = new ArrayList<>();
     private final Ldlib2FocusModel<FocusTarget> focusModel;
+    private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private Component announcement;
     private boolean announcementIsError;
 
@@ -45,14 +46,27 @@ public final class Ldlib2AccessibilityController {
     }
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode != GLFW_KEY_TAB) {
+        if (keyCode == GLFW_KEY_TAB) {
+            activationLatch.reset();
+            return moveFocus((modifiers & GLFW_MOD_SHIFT) != 0);
+        }
+        if (!KeyboardActivationLatch.isActivationKey(keyCode)) {
             return false;
         }
-        return moveFocus((modifiers & GLFW_MOD_SHIFT) != 0);
+        refreshTargets();
+        Optional<FocusTarget> focused = focusModel.reconcile();
+        if (focused.isEmpty()) {
+            return false;
+        }
+        FocusTarget target = focused.get();
+        if (activationLatch.press(keyCode) && target.canActivate()) {
+            target.activate();
+        }
+        return true;
     }
 
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return false;
+        return activationLatch.release(keyCode);
     }
 
     public boolean moveFocus(boolean reverse) {
@@ -143,6 +157,7 @@ public final class Ldlib2AccessibilityController {
         if (previous.equals(next)) {
             return;
         }
+        activationLatch.reset();
         previous.ifPresent(target -> {
             target.resetActivationLatch();
             if (target.element().getModularUI() == modularUI) {

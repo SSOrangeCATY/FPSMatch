@@ -441,11 +441,18 @@ public class MapTeams {
             team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap -> cap.assignNextSpawnPoint(player.getUUID()));
         }
 
+        // The ServerTeam hook only sends the newly joined team's capability snapshot.
+        // Send the complete roster to the joining client so a client that reset its
+        // match state while leaving can recover every team without broadcasting that
+        // same O(players) payload to every existing client.
+        this.sync(player);
+        // Existing clients only need the changed team definition and the new player's
+        // stats below. A forced full broadcast here is O(players^2) and duplicates both
+        // packets, which can stall the client while switching teams.
+        this.syncToAll(FPSMAddTeamS2CPacket.of(team));
         team.getPlayerData(player.getUUID()).ifPresent(playerData ->
                 this.syncToAll(TeamPlayerStatsS2CPacket.of(team, playerData))
         );
-        // 同步其他玩家的计分板数据
-        broadcast();
         return true;
     }
 
@@ -489,9 +496,14 @@ public class MapTeams {
         Collection<ServerTeam> teams = this.teams.values();
 
         for (ServerTeam team : teams) {
-            FPSMAddTeamS2CPacket addTeamPacket = FPSMAddTeamS2CPacket.of(team);
-            for (ServerPlayer player : players) {
-                FPSMatch.sendToPlayer(player, addTeamPacket);
+            // Team definitions are sent on forced/full syncs (initial join, explicit
+            // recovery). The regular dirty sync runs every map tick and must not resend
+            // the same definition to every online player.
+            if (force) {
+                FPSMAddTeamS2CPacket addTeamPacket = FPSMAddTeamS2CPacket.of(team);
+                for (ServerPlayer player : players) {
+                    FPSMatch.sendToPlayer(player, addTeamPacket);
+                }
             }
             for (PlayerData playerData : team.getPlayersData()) {
                 if (force || playerData.isDirty()) {

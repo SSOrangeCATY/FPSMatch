@@ -308,11 +308,17 @@ public class FPSMapEvent extends Event {
         public static class KillEvent extends PlayerEvent {
             private final DamageSource source;
             private final ServerPlayer dead;
+            private final boolean headshot;
 
             public KillEvent(BaseMap map, ServerPlayer killer, ServerPlayer dead, DamageSource source) {
+                this(map, killer, dead, source, false);
+            }
+
+            public KillEvent(BaseMap map, ServerPlayer killer, ServerPlayer dead, DamageSource source, boolean headshot) {
                 super(map, killer);
                 this.source = source;
                 this.dead = dead;
+                this.headshot = headshot;
             }
 
             public DamageSource getSource() {
@@ -321,6 +327,13 @@ public class FPSMapEvent extends Event {
 
             public ServerPlayer getDead() {
                 return dead;
+            }
+
+            /**
+             * 本次击杀是否为爆头击杀（由死亡管线的爆头标记传递）
+             */
+            public boolean isHeadshot() {
+                return headshot;
             }
 
             @Override

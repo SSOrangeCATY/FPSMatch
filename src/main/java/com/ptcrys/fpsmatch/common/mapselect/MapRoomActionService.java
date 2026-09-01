@@ -7,6 +7,7 @@ import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.data.Setting;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.MapTeams;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -168,6 +169,19 @@ public final class MapRoomActionService {
             return Result.failure(Component.translatable("gui.fpsm.map_select.action.player_not_found"));
         }
         ServerPlayer targetServerPlayer = targetPlayer.get();
+
+        // Team-switch requests can be duplicated by double-clicks, retries, or
+        // delayed packets. Treat an already-satisfied request as a no-op so it
+        // does not run BaseMap.join's leave/rejoin path and emit reset/roster
+        // packets again.
+        Optional<ServerTeam> currentTeam = map.getMapTeams().getTeamByPlayer(targetServerPlayer);
+        if (currentTeam.isPresent() && currentTeam.get().getName().equals(teamName)) {
+            Component message = self
+                    ? Component.translatable("gui.fpsm.map_select.action.switch_team.success.self", teamName)
+                    : Component.translatable("gui.fpsm.map_select.action.switch_team.success.other", targetServerPlayer.getGameProfile().getName(), teamName);
+            return Result.success(message, map, player);
+        }
+
         MapTeams.JoinTeamResult result = map.join(teamName, targetServerPlayer);
         if (!result.isSuccess()) {
             Component message = switch (result.status()) {

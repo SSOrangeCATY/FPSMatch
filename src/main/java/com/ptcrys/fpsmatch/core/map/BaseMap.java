@@ -305,7 +305,10 @@ public abstract class BaseMap {
                     setReady(player.getUUID(), false);
                     player.getScoreboard().removePlayerFromTeam(player.getScoreboardName());
                 });
-        getMapTeams().broadcast();
+        // Disconnect only changes this reservation's online/living state. Send
+        // dirty player data to the remaining clients instead of forcing every
+        // team definition and roster entry across the whole map.
+        getMapTeams().sync(getMapTeams().getOnlineWithSpec());
     }
 
     /**

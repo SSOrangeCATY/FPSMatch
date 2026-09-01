@@ -18,6 +18,7 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingsC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
@@ -53,6 +54,12 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     private final Set<String> selectedCategories = new LinkedHashSet<>();
     private List<String> availableCategories = List.of();
     private String searchQuery = "";
+    private boolean saveInFlight;
+    private boolean closeAfterSave;
+    private int saveTicks;
+    private boolean saveFailed;
+    private Component saveFailureMessage;
+    private int submittedChangeCount;
 
     public Ldlib2MapSettingsScreen(MapRoomDetail detail, Screen parent) {
         this(build(), detail, parent);
@@ -94,11 +101,59 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (!saveInFlight) {
+            return;
+        }
+        saveTicks++;
+        if (saveTicks >= 200) {
+            saveInFlight = false;
+            closeAfterSave = false;
+            saveFailed = true;
+            saveFailureMessage = Component.translatable(
+                    "gui.fpsm.map_select.settings.save_timeout");
+            updatePendingState();
+        }
+    }
+
+    public boolean isSavePending() {
+        return saveInFlight;
+    }
+
+    public void applySaveFailure(MapRoomToastS2CPacket packet) {
+        if (!saveInFlight) {
+            return;
+        }
+        saveInFlight = false;
+        saveTicks = 0;
+        closeAfterSave = false;
+        saveFailed = true;
+        saveFailureMessage = packet.message();
+        updatePendingState();
+    }
+
+    @Override
     protected void onDetailApplied() {
         if (!detail.summary().currentPlayerOp()) {
             pendingValues.clear();
         }
         prunePendingValues();
+        if (saveInFlight && pendingValues.isEmpty()) {
+            saveInFlight = false;
+            saveTicks = 0;
+            saveFailed = false;
+            saveFailureMessage = null;
+            if (closeAfterSave) {
+                closeAfterSave = false;
+                if (parent instanceof Ldlib2MapManageScreen manageScreen) {
+                    manageScreen.showSettingsSaveSuccess(submittedChangeCount);
+                }
+                submittedChangeCount = 0;
+                super.onClose();
+                return;
+            }
+        }
         refreshContent();
     }
 
@@ -217,27 +272,37 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         if (pendingValues.isEmpty()) {
             return true;
         }
-        if (!detail.summary().currentPlayerOp() || !allPendingValuesValid()) {
+        if (saveInFlight || !detail.summary().currentPlayerOp() || !allPendingValuesValid()) {
             updatePendingState();
             return false;
         }
         List<Map.Entry<String, String>> changes = new ArrayList<>(pendingValues.entrySet());
+        submittedChangeCount = changes.size();
         for (Map.Entry<String, String> change : changes) {
             applySetting(change.getKey(), change.getValue());
         }
-        pendingValues.clear();
+        saveInFlight = true;
+        saveTicks = 0;
+        saveFailed = false;
+        saveFailureMessage = null;
         updatePendingState();
-        return true;
+        return false;
     }
 
     private void saveAndClose() {
+        closeAfterSave = true;
         if (saveChanges()) {
+            closeAfterSave = false;
             super.onClose();
         }
     }
 
     @Override
     public void onClose() {
+        if (saveInFlight) {
+            closeAfterSave = false;
+            return;
+        }
         saveAndClose();
     }
 
@@ -292,20 +357,28 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
 
     private void updatePendingState() {
         boolean invalid = !allPendingValuesValid();
-        if (pendingValues.isEmpty()) {
+        if (saveInFlight) {
+            pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.saving"));
+        } else if (saveFailed) {
+            pendingLabel.setValue(saveFailureMessage == null
+                    ? Component.translatable("gui.fpsm.map_select.settings.save_failed")
+                    : saveFailureMessage);
+        } else if (pendingValues.isEmpty()) {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.no_changes"));
         } else if (invalid) {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.invalid"));
         } else {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.pending", pendingValues.size()));
         }
-        pendingLabel.textStyle(style -> style.textColor(invalid ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.TEXT));
-        boolean canClear = detail.summary().currentPlayerOp() && !pendingValues.isEmpty();
+        pendingLabel.textStyle(style -> style.textColor(saveFailed
+                ? FPSMLdlib2Theme.DANGER
+                : invalid || saveInFlight ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.TEXT));
+        boolean canClear = detail.summary().currentPlayerOp() && !pendingValues.isEmpty() && !saveInFlight;
         clearButton.setActive(canClear);
         FPSMLdlib2Theme.holdActionButton(clearButton, canClear);
         clearButton.textStyle(style -> style.fontSize(7));
-        exitButton.setActive(pendingValues.isEmpty()
-                || detail.summary().currentPlayerOp() && !invalid);
+        exitButton.setActive(!saveInFlight && (pendingValues.isEmpty()
+                || detail.summary().currentPlayerOp() && !invalid));
     }
 
     private boolean allPendingValuesValid() {
@@ -340,6 +413,10 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
 
+        Label system = label("fpsmatch.map_settings.system", Component.literal("FPSM // MAP SYSTEM  ·  CONFIGURATION GRID"));
+        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(14).right(14).top(2).height(9));
+        FPSMLdlib2Theme.systemLabel(system);
+
         UIElement sidebar = new UIElement().setId("fpsmatch.map_settings.sidebar");
         sidebar.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(14).top(12).bottom(12).width(112));
@@ -351,7 +428,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
 
         Label subtitle = label("fpsmatch.map_settings.subtitle", Component.empty());
         subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(0).right(0).top(22).height(14));
-        FPSMLdlib2Theme.muted(subtitle);
+        FPSMLdlib2Theme.mapIdentity(subtitle);
         subtitle.textStyle(style -> style.fontSize(8).textWrap(TextWrap.HIDE));
 
         Label pending = label("fpsmatch.map_settings.pending", Component.empty());
@@ -416,7 +493,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         list.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(6).right(6).top(27).bottom(6));
         list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(21f).overscanPixels(42));
-        FPSMLdlib2Theme.settingsScroller(list);
+        FPSMLdlib2Theme.virtualScroller(list);
 
         UIElement categoryPopup = new UIElement().setId("fpsmatch.map_settings.category_filter.popup");
         categoryPopup.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
@@ -430,7 +507,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         categoryList.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(3).right(3).top(3).bottom(19));
         categoryList.virtualScrollerViewStyle(style -> style.estimatedItemHeight(16f).overscanPixels(32));
-        FPSMLdlib2Theme.settingsScroller(categoryList);
+        FPSMLdlib2Theme.virtualScroller(categoryList);
 
         Button clearCategorySelection = new Button();
         clearCategorySelection.setId("fpsmatch.map_settings.category_filter.clear");
@@ -445,7 +522,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         categoryPopup.addChildren(categoryList, clearCategorySelection);
 
         panel.addChildren(search, categoryFilter, empty, list, categoryPopup);
-        root.addChildren(sidebar, panel);
+        root.addChildren(system, sidebar, panel);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
                 sidebar, panel, subtitle, pending, search, categoryFilter, categoryPopup,
                 categoryList, clearCategorySelection, list, empty, clear, exit);

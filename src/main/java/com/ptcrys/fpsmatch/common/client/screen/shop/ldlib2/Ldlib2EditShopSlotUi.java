@@ -3,149 +3,403 @@ package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
-import com.ptcrys.fpsmatch.FPSMatch;
+import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.common.client.screen.EditShopSlotMenu;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
-import com.ptcrys.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
-import com.ptcrys.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import org.appliedenergistics.yoga.YogaPositionType;
 
-/** LDLib2 presentation tree for a single shop slot and player inventory. */
-public final class Ldlib2EditShopSlotUi {
-    private static final int ROOT_WIDTH = 360;
-    private static final int ROOT_HEIGHT = 260;
-    private static final int INV_LEFT = 18;
-    private static final int INV_TOP = 150; // absolute content origin inside root
+import java.util.ArrayList;
+import java.util.List;
+import java.util.OptionalInt;
+import java.util.function.IntConsumer;
 
+/** Responsive LDLib2 work surface for one server-owned shop slot. */
+public final class Ldlib2EditShopSlotUi {
     private Ldlib2EditShopSlotUi() {
     }
 
-    public static ModularUI create(EditShopSlotMenu menu, Runnable closeAction) {
-        UIElement root = new UIElement().setId(ShopEditorWidgetCatalog.SLOT_EDITOR);
+    public static View create(
+            EditShopSlotMenu menu,
+            Runnable saveAction,
+            Runnable closeAction,
+            Runnable copyHeldItemAction
+    ) {
+        UIElement root = element(ShopEditorWidgetCatalog.SLOT_EDITOR);
+        root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
-        root.layout(layout -> layout.width(ROOT_WIDTH).height(ROOT_HEIGHT));
 
-        Label title = new Label();
-        title.setId(ShopEditorWidgetCatalog.HEADER + ".slot");
-        title.setValue(Component.translatable("gui.fpsm.edit_shop_slot.title"));
-        title.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(12).top(8).right(12).height(20));
+        UIElement header = element(ShopEditorWidgetCatalog.HEADER + ".slot");
+        UIElement product = panel(ShopEditorWidgetCatalog.ITEM + ".panel");
+        UIElement form = panel(ShopEditorWidgetCatalog.SLOT_EDITOR + ".form");
+        UIElement inventory = panel(ShopEditorWidgetCatalog.SLOT_LIST + ".player");
+        UIElement actions = panel(ShopEditorWidgetCatalog.ACTIONS + ".slot");
+
+        Label system = label(ShopEditorWidgetCatalog.HEADER + ".slot.system",
+                Component.literal("FPSM // MAP SYSTEM  ·  SLOT CONFIGURATION"));
+        FPSMLdlib2Theme.systemLabel(system);
+        Label title = label(ShopEditorWidgetCatalog.HEADER + ".slot.title",
+                Component.translatable("gui.fpsm.edit_shop_slot.title"));
         FPSMLdlib2Theme.title(title);
+        Label identity = label(ShopEditorWidgetCatalog.HEADER + ".slot.identity",
+                Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / "
+                        + menu.getTeamName() + " / " + menu.getShopType() + " #"
+                        + (menu.getSlotNum() + 1)));
+        FPSMLdlib2Theme.mapIdentity(identity);
+        header.addChildren(system, title, identity);
 
-        UIElement selectedCard = new UIElement().setId(ShopEditorWidgetCatalog.ITEM + ".card");
-        selectedCard.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).top(36).width(88).height(96));
-        FPSMLdlib2Theme.elevated(selectedCard);
-        Label itemCaption = label(ShopEditorWidgetCatalog.ITEM + ".caption", Component.translatable("gui.fpsm.shop_editor.item_label"), 8, 6, 72, 14);
-        FPSMLdlib2Theme.muted(itemCaption);
+        AccessiblePanel productCard = new AccessiblePanel();
+        productCard.setId(ShopEditorWidgetCatalog.ITEM + ".card");
+        productCard.setAccessibleName(Component.translatable("gui.fpsm.shop_editor.item_label"));
+        productCard.setAccessibleState(() -> menu.slots.get(0).getItem().getHoverName());
+        productCard.setAccessibleHint(() -> Component.translatable(
+                "gui.fpsm.shop_editor.item.replace.hint"));
+        productCard.setOnActivate(copyHeldItemAction);
+        FPSMLdlib2Theme.elevated(productCard);
+        Label itemCaption = label(ShopEditorWidgetCatalog.ITEM + ".caption",
+                Component.translatable("gui.fpsm.shop_editor.item_label"));
+        FPSMLdlib2Theme.sectionTitle(itemCaption);
         ItemSlot item = new ItemSlot(menu.slots.get(0));
         item.setId(ShopEditorWidgetCatalog.ITEM + ".selected");
-        item.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(20).top(28).width(48).height(48));
+        item.setAllowHitTest(false);
+        item.setFocusable(false);
         FPSMLdlib2Theme.slot(item);
-        selectedCard.addChildren(itemCaption, item);
+        Label itemHint = label(ShopEditorWidgetCatalog.ITEM + ".hint",
+                Component.translatable("gui.fpsm.shop_editor.item.replace"));
+        FPSMLdlib2Theme.muted(itemHint);
+        productCard.addChildren(itemCaption, item, itemHint);
+        product.addChild(productCard);
 
-        TextField ammo = field(ShopEditorWidgetCatalog.AMMO, menu.getAmmo(), 188, 44, 0, menu);
-        TextField price = field(ShopEditorWidgetCatalog.PRICE + ".selected", menu.getPrice(), 188, 76, 1, menu);
-        TextField group = field(ShopEditorWidgetCatalog.GROUP + ".selected", menu.getGroupId(), 188, 108, 2, menu);
-        Label ammoLabel = label(ShopEditorWidgetCatalog.AMMO + ".label", Component.translatable("gui.fpsm.dummy_ammo"), 112, 48, 68, 18);
-        Label priceLabel = label(ShopEditorWidgetCatalog.PRICE + ".label", Component.translatable("gui.fpsm.price"), 112, 80, 68, 18);
-        Label groupLabel = label(ShopEditorWidgetCatalog.GROUP + ".label", Component.translatable("gui.fpsm.group"), 112, 112, 68, 18);
-        FPSMLdlib2Theme.muted(ammoLabel);
-        FPSMLdlib2Theme.muted(priceLabel);
-        FPSMLdlib2Theme.muted(groupLabel);
+        Label ammoLabel = caption(ShopEditorWidgetCatalog.AMMO + ".label", "gui.fpsm.dummy_ammo");
+        Label priceLabel = caption(ShopEditorWidgetCatalog.PRICE + ".label", "gui.fpsm.price");
+        Label groupLabel = caption(ShopEditorWidgetCatalog.GROUP + ".label", "gui.fpsm.group");
+        AccessibleTextField ammo = field(ShopEditorWidgetCatalog.AMMO, menu.getAmmo(), 0, 999_999,
+                menu::setAmmo, "gui.fpsm.dummy_ammo");
+        AccessibleTextField price = field(ShopEditorWidgetCatalog.PRICE + ".selected", menu.getPrice(),
+                0, 1_000_000, menu::setPrice, "gui.fpsm.price");
+        AccessibleTextField group = field(ShopEditorWidgetCatalog.GROUP + ".selected", menu.getGroupId(),
+                -1, 999_999, menu::setGroupId, "gui.fpsm.group");
         if (!menu.isGun()) {
             ammo.setVisible(false);
+            ammo.setActive(false);
+            ammo.setAllowHitTest(false);
+            ammo.setFocusable(false);
             ammoLabel.setVisible(false);
         }
+        form.addChildren(ammoLabel, ammo, priceLabel, price, groupLabel, group);
 
-        UIElement inventoryPanel = new UIElement().setId(ShopEditorWidgetCatalog.SLOT_LIST + ".player");
-        inventoryPanel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(12).top(136).width(336).height(90));
-        FPSMLdlib2Theme.panel(inventoryPanel);
-        Label invCaption = label(ShopEditorWidgetCatalog.SLOT_LIST + ".player.caption",
-                Component.translatable("container.inventory"), 8, 4, 120, 12);
-        FPSMLdlib2Theme.muted(invCaption);
-        inventoryPanel.addChild(invCaption);
-        for (int i = 1; i < menu.slots.size(); i++) {
-            Slot slot = menu.slots.get(i);
-            int playerIndex = i - 1;
-            int column = playerIndex % 9;
-            int row = playerIndex < 27 ? playerIndex / 9 : 3;
-            if (playerIndex >= 27) {
-                column = playerIndex - 27;
-            }
-            int left = INV_LEFT + column * 18 - 12;
-            int top = (playerIndex < 27 ? INV_TOP + row * 18 : INV_TOP + 58) - 136;
+        Label inventoryCaption = label(ShopEditorWidgetCatalog.SLOT_LIST + ".player.caption",
+                Component.translatable("container.inventory"));
+        FPSMLdlib2Theme.sectionTitle(inventoryCaption);
+        List<ItemSlot> playerSlots = new ArrayList<>();
+        for (int index = 1; index < menu.slots.size(); index++) {
+            Slot slot = menu.slots.get(index);
             ItemSlot playerSlot = new ItemSlot(slot);
-            playerSlot.setId(ShopEditorWidgetCatalog.ITEM + ".player." + playerIndex);
-            int finalLeft = left;
-            int finalTop = top;
-            playerSlot.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                    .left(finalLeft).top(finalTop).width(18).height(18));
+            playerSlot.setId(ShopEditorWidgetCatalog.ITEM + ".player." + (index - 1));
             playerSlot.slotStyle(style -> style.isPlayerSlot(true).acceptQuickMove(true));
             FPSMLdlib2Theme.slot(playerSlot);
-            inventoryPanel.addChild(playerSlot);
+            playerSlots.add(playerSlot);
+            inventory.addChild(playerSlot);
         }
+        inventory.addChild(inventoryCaption);
 
-        Button save = new Button();
+        Label status = label(ShopEditorWidgetCatalog.STATUS,
+                Component.translatable("gui.fpsm.shop_editor.state.editing"));
+        FPSMLdlib2Theme.status(status, FPSMLdlib2Theme.ACCENT);
+        AccessibleButton save = new AccessibleButton();
         save.setId(ShopEditorWidgetCatalog.SAVE);
         save.setText(Component.translatable("gui.fpsm.shop_editor.save_button"));
-        save.setOnClick(event -> {
-            FPSMatch.sendToServer(new SaveSlotDataC2SPacket(menu.getAmmo(), menu.getPrice(), menu.getGroupId()));
-            FPSMatch.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
-            closeAction.run();
-        });
-        FPSMLdlib2Theme.button(save, FPSMLdlib2Theme.ButtonKind.PRIMARY);
-        save.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(42).bottom(10).width(120).height(22));
-
-        Button close = new Button();
+        save.setAccessibleHint(() -> Component.translatable("gui.fpsm.shop_editor.save.hint"));
+        save.setOnClick(event -> saveAction.run());
+        AccessibleButton close = new AccessibleButton();
         close.setId(ShopEditorWidgetCatalog.CLOSE + ".slot");
         close.setText(Component.translatable("gui.back"));
-        close.setOnClick(event -> {
-            FPSMatch.sendToServer(new OpenShopEditorC2SPacket(menu.getGameType(), menu.getMapName(), menu.getTeamName()));
-            closeAction.run();
-        });
-        FPSMLdlib2Theme.button(close, FPSMLdlib2Theme.ButtonKind.QUIET);
-        close.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).right(42).bottom(10).width(120).height(22));
+        close.setOnClick(event -> closeAction.run());
+        actions.addChildren(status, save, close);
 
-        root.addChildren(title, selectedCard, ammoLabel, ammo, priceLabel, price, groupLabel, group, inventoryPanel, save, close);
-        ModularUI ui = ModularUI.of(UI.of(root));
+        root.addChildren(header, product, form, inventory, actions);
+        ModularUI ui = ModularUI.of(UI.of(root, size -> Size.of(
+                Math.max(280, size.getWidth() - 12),
+                Math.max(220, size.getHeight() - 12))));
         ui.setMenu(menu);
-        return ui;
+        return new View(ui, menu, header, product, form, inventory, actions, system, title,
+                identity, productCard, itemCaption, item, itemHint, ammoLabel, ammo, priceLabel,
+                price, groupLabel, group, inventoryCaption, playerSlots, status, save, close);
     }
 
-    private static TextField field(String id, int value, int left, int top, int index, EditShopSlotMenu menu) {
-        TextField field = new TextField();
+    private static UIElement element(String id) {
+        return new UIElement().setId(id);
+    }
+
+    private static UIElement panel(String id) {
+        UIElement panel = element(id);
+        FPSMLdlib2Theme.panel(panel);
+        return panel;
+    }
+
+    private static Label label(String id, Component value) {
+        Label label = new Label();
+        label.setId(id);
+        label.setValue(value);
+        label.setAllowHitTest(false);
+        label.setFocusable(false);
+        return label;
+    }
+
+    private static Label caption(String id, String key) {
+        Label label = label(id, Component.translatable(key));
+        FPSMLdlib2Theme.muted(label);
+        return label;
+    }
+
+    private static AccessibleTextField field(
+            String id,
+            int value,
+            int minimum,
+            int maximum,
+            IntConsumer responder,
+            String labelKey
+    ) {
+        AccessibleTextField field = new AccessibleTextField();
         field.setId(id);
-        field.setNumbersOnlyInt(-999999, 999999);
+        field.setAccessibleName(Component.translatable(labelKey));
+        field.setAccessibleHint(() -> Component.translatable(
+                "gui.fpsm.shop_editor.numeric.hint", minimum, maximum));
+        field.setNumbersOnlyInt(minimum, maximum);
         field.setText(Integer.toString(value));
-        FPSMLdlib2Theme.input(field, Component.literal("0"));
-        field.setTextResponder(text -> {
-            try {
-                if (!text.isBlank()) {
-                    if (index == 0) {
-                        menu.setAmmo(Integer.parseInt(text));
-                    } else if (index == 1) {
-                        menu.setPrice(Integer.parseInt(text));
-                    } else if (index == 2) {
-                        menu.setGroupId(Integer.parseInt(text));
-                    }
-                }
-            } catch (NumberFormatException ignored) {
-            }
-        });
-        field.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(left).top(top).width(90).height(22));
+        FPSMLdlib2Theme.input(field, Component.literal(Integer.toString(minimum)));
+        field.setTextResponder(text -> parse(text, minimum, maximum).ifPresent(responder));
         return field;
     }
 
-    private static Label label(String id, Component text, int left, int top, int width, int height) {
-        Label label = new Label();
-        label.setId(id);
-        label.setValue(text);
-        label.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(left).top(top).width(width).height(height));
-        return label;
+    private static OptionalInt parse(String text, int minimum, int maximum) {
+        try {
+            int value = Integer.parseInt(text);
+            return value >= minimum && value <= maximum
+                    ? OptionalInt.of(value) : OptionalInt.empty();
+        } catch (NumberFormatException ignored) {
+            return OptionalInt.empty();
+        }
+    }
+
+    public static final class View {
+        private final ModularUI ui;
+        private final EditShopSlotMenu menu;
+        private final UIElement header;
+        private final UIElement product;
+        private final UIElement form;
+        private final UIElement inventory;
+        private final UIElement actions;
+        private final Label system;
+        private final Label title;
+        private final Label identity;
+        private final AccessiblePanel productCard;
+        private final Label itemCaption;
+        private final ItemSlot item;
+        private final Label itemHint;
+        private final Label ammoLabel;
+        private final AccessibleTextField ammo;
+        private final Label priceLabel;
+        private final AccessibleTextField price;
+        private final Label groupLabel;
+        private final AccessibleTextField group;
+        private final Label inventoryCaption;
+        private final List<ItemSlot> playerSlots;
+        private final Label status;
+        private final AccessibleButton save;
+        private final AccessibleButton close;
+
+        private View(
+                ModularUI ui, EditShopSlotMenu menu, UIElement header, UIElement product,
+                UIElement form, UIElement inventory, UIElement actions, Label system, Label title,
+                Label identity, AccessiblePanel productCard, Label itemCaption, ItemSlot item,
+                Label itemHint, Label ammoLabel, AccessibleTextField ammo, Label priceLabel,
+                AccessibleTextField price, Label groupLabel, AccessibleTextField group,
+                Label inventoryCaption, List<ItemSlot> playerSlots, Label status,
+                AccessibleButton save, AccessibleButton close
+        ) {
+            this.ui = ui;
+            this.menu = menu;
+            this.header = header;
+            this.product = product;
+            this.form = form;
+            this.inventory = inventory;
+            this.actions = actions;
+            this.system = system;
+            this.title = title;
+            this.identity = identity;
+            this.productCard = productCard;
+            this.itemCaption = itemCaption;
+            this.item = item;
+            this.itemHint = itemHint;
+            this.ammoLabel = ammoLabel;
+            this.ammo = ammo;
+            this.priceLabel = priceLabel;
+            this.price = price;
+            this.groupLabel = groupLabel;
+            this.group = group;
+            this.inventoryCaption = inventoryCaption;
+            this.playerSlots = List.copyOf(playerSlots);
+            this.status = status;
+            this.save = save;
+            this.close = close;
+        }
+
+        public ModularUI modularUI() {
+            return ui;
+        }
+
+        public Label statusLabel() {
+            return status;
+        }
+
+        public AccessibleButton saveButton() {
+            return save;
+        }
+
+        public AccessibleButton closeButton() {
+            return close;
+        }
+
+        public List<Ldlib2AccessibilityController.FocusTarget> focusTargets() {
+            List<Ldlib2AccessibilityController.FocusTarget> targets = new ArrayList<>();
+            targets.add(productCard);
+            if (menu.isGun()) {
+                targets.add(ammo);
+            }
+            targets.add(price);
+            targets.add(group);
+            targets.add(save);
+            targets.add(close);
+            return List.copyOf(targets);
+        }
+
+        public boolean inputValid() {
+            return (!menu.isGun() || parse(ammo.getText(), 0, 999_999).isPresent())
+                    && parse(price.getText(), 0, 1_000_000).isPresent()
+                    && parse(group.getText(), -1, 999_999).isPresent();
+        }
+
+        public Draft draft() {
+            return new Draft(ammo.getText(), price.getText(), group.getText());
+        }
+
+        public void restoreDraft(Draft draft) {
+            if (draft == null) {
+                return;
+            }
+            ammo.setText(draft.ammo());
+            price.setText(draft.price());
+            group.setText(draft.group());
+        }
+
+        public void applyResponsiveLayout(int width, int height) {
+            boolean compact = width < 440 || height < 300;
+            int headerHeight = compact ? 42 : 48;
+            int actionHeight = compact ? 46 : 38;
+            int inventoryHeight = 90;
+            int mainHeight = Math.max(42, height - headerHeight - actionHeight - inventoryHeight);
+            int inventoryTop = Math.min(height - actionHeight - inventoryHeight,
+                    headerHeight + mainHeight);
+
+            absolute(header, 2, 2, width - 4, headerHeight - 4);
+            int productWidth = compact ? 98 : Math.min(132, width / 3);
+            absolute(product, 2, headerHeight + 2, productWidth - 4, mainHeight - 4);
+            absolute(form, productWidth + 2, headerHeight + 2,
+                    width - productWidth - 4, mainHeight - 4);
+            absolute(inventory, 2, inventoryTop + 2, width - 4, inventoryHeight - 4);
+            absolute(actions, 2, height - actionHeight + 2, width - 4, actionHeight - 4);
+
+            layoutHeader(width - 4, headerHeight - 4);
+            layoutProduct(productWidth - 4, mainHeight - 4, compact);
+            layoutForm(width - productWidth - 4, mainHeight - 4, compact);
+            layoutInventory(width - 4);
+            layoutActions(width - 4, actionHeight - 4, compact);
+        }
+
+        private void layoutHeader(int width, int height) {
+            absolute(system, 8, 2, Math.max(1, width - 16), 10);
+            absolute(title, 8, 13, Math.max(1, width - 16), 18);
+            absolute(identity, 8, Math.max(28, height - 14), Math.max(1, width - 16), 12);
+        }
+
+        private void layoutProduct(int width, int height, boolean compact) {
+            absolute(productCard, 4, 4, Math.max(1, width - 8), Math.max(1, height - 8));
+            absolute(itemCaption, 5, 3, Math.max(1, width - 10), 12);
+            int itemSize = Math.max(24, Math.min(compact ? 30 : 38, height - 23));
+            absolute(item, Math.max(4, (width - itemSize) / 2), 15, itemSize, itemSize);
+            absolute(itemHint, 5, Math.max(16, height - 14), Math.max(1, width - 10), 11);
+        }
+
+        private void layoutForm(int width, int height, boolean compact) {
+            if (compact) {
+                int cell = Math.max(1, width / 3);
+                layoutField(ammoLabel, ammo, 0, cell, height);
+                layoutField(priceLabel, price, cell, cell, height);
+                layoutField(groupLabel, group, cell * 2, width - cell * 2, height);
+                return;
+            }
+            int rowHeight = Math.max(18, Math.min(26, height / 3));
+            int labelWidth = Math.min(82, Math.max(58, width / 3));
+            layoutRow(ammoLabel, ammo, 6, 4, width, rowHeight, labelWidth);
+            layoutRow(priceLabel, price, 6, 4 + rowHeight, width, rowHeight, labelWidth);
+            layoutRow(groupLabel, group, 6, 4 + rowHeight * 2, width, rowHeight, labelWidth);
+        }
+
+        private static void layoutField(
+                Label label, AccessibleTextField field, int left, int width, int height
+        ) {
+            absolute(label, left + 4, 4, Math.max(1, width - 8), 12);
+            absolute(field, left + 4, 18, Math.max(1, width - 8), Math.max(18, height - 24));
+        }
+
+        private static void layoutRow(
+                Label label, AccessibleTextField field, int left, int top,
+                int width, int rowHeight, int labelWidth
+        ) {
+            absolute(label, left, top + 5, labelWidth, 14);
+            absolute(field, left + labelWidth, top + 1,
+                    Math.max(1, width - labelWidth - left - 6), Math.max(18, rowHeight - 3));
+        }
+
+        private void layoutInventory(int width) {
+            absolute(inventoryCaption, 8, 3, Math.max(1, width - 16), 12);
+            int gridWidth = 9 * 18;
+            int gridLeft = Math.max(6, (width - gridWidth) / 2);
+            for (int index = 0; index < playerSlots.size(); index++) {
+                int column = index % 9;
+                int row = index < 27 ? index / 9 : 3;
+                absolute(playerSlots.get(index), gridLeft + column * 18, 14 + row * 18, 18, 18);
+            }
+        }
+
+        private void layoutActions(int width, int height, boolean compact) {
+            int buttonHeight = compact ? 20 : Math.max(20, height - 8);
+            int closeWidth = Math.min(102, Math.max(76, width / 4));
+            int saveWidth = Math.min(132, Math.max(106, width / 3));
+            int buttonTop = compact ? Math.max(20, height - buttonHeight - 2)
+                    : Math.max(2, (height - buttonHeight) / 2);
+            absolute(close, width - closeWidth - 6, buttonTop, closeWidth, buttonHeight);
+            absolute(save, width - closeWidth - saveWidth - 12, buttonTop, saveWidth, buttonHeight);
+            int statusWidth = compact ? width - 12 : width - closeWidth - saveWidth - 24;
+            absolute(status, 8, compact ? 4 : buttonTop + 4,
+                    Math.max(1, statusWidth), compact ? 14 : Math.max(12, buttonHeight - 4));
+        }
+    }
+
+    public record Draft(String ammo, String price, String group) {
+    }
+
+    private static void absolute(UIElement element, int left, int top, int width, int height) {
+        element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(left).top(top)
+                .width(Math.max(1, width)).height(Math.max(1, height)));
     }
 }
