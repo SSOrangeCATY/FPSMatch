@@ -6,17 +6,12 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.minimap.editor.MinimapPublishRefreshGate;
-import com.ptcrys.fpsmatch.common.client.minimap.editor.MinimapPublishRefreshRegistry;
-import com.ptcrys.fpsmatch.common.client.minimap.ui.ldlib2.editor.MinimapEditorScreens;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
-import com.ptcrys.fpsmatch.core.minimap.model.MapKey;
-import com.ptcrys.fpsmatch.core.minimap.model.NamespacedId;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -37,12 +32,9 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     private final AccessibleButton switchButton;
     private final AccessibleButton settingsButton;
     private final AccessibleButton shopButton;
-    private final AccessibleButton minimapButton;
     private final AccessibleButton backButton;
     private final List<AccessibleButton> debugButtons;
     private final List<AccessibleButton> toolButtons;
-    private MinimapPublishRefreshGate minimapRefreshGate;
-    private boolean pendingMinimapFocusRestore;
     private Component transientStatus;
     private int transientStatusTicks;
 
@@ -63,13 +55,9 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         this.switchButton = parts.switchBtn();
         this.settingsButton = parts.settings();
         this.shopButton = parts.shop();
-        this.minimapButton = parts.minimap();
         this.backButton = parts.back();
         this.debugButtons = List.of(startButton, resetButton, newRoundButton, cleanupButton, switchButton);
-        this.toolButtons = List.of(settingsButton, shopButton, minimapButton);
-        this.minimapRefreshGate = MinimapPublishRefreshRegistry.global().pending(
-                new MapKey(detail.summary().gameType(), detail.summary().mapName())
-        ).orElse(null);
+        this.toolButtons = List.of(settingsButton, shopButton);
         startButton.setOnClick(e -> send(MapRoomActionC2SPacket.Action.DEBUG_START));
         resetButton.setOnClick(e -> send(MapRoomActionC2SPacket.Action.DEBUG_RESET));
         newRoundButton.setOnClick(e -> send(MapRoomActionC2SPacket.Action.DEBUG_NEW_ROUND));
@@ -77,7 +65,6 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         switchButton.setOnClick(e -> send(MapRoomActionC2SPacket.Action.DEBUG_SWITCH));
         settingsButton.setOnClick(e -> FPSMMapSelectScreens.openChild(new Ldlib2MapSettingsScreen(this.detail, this)));
         shopButton.setOnClick(e -> FPSMMapSelectScreens.openChild(new Ldlib2MapShopScreen(this.detail, this)));
-        minimapButton.setOnClick(e -> openMinimapEditor());
         parts.back().setOnClick(e -> onClose());
         registerFocusGroup(this::focusTargets);
         refreshContent();
@@ -87,10 +74,6 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     public void init() {
         super.init();
         applyResponsiveLayout();
-        if (minimapRefreshGate != null) {
-            requestMinimapRefresh();
-        }
-        restoreMinimapFocusIfReady();
     }
 
     @Override
@@ -121,63 +104,17 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
 
     @Override
     public void applyDetail(MapRoomDetail detail) {
-        if (minimapRefreshGate != null
-                && !minimapRefreshGate.sameMap(detail.summary())) {
-            return;
-        }
         super.applyDetail(detail);
-        if (MinimapPublishRefreshRegistry.global().acceptAuthoritativeDetail(detail)) {
-            minimapRefreshGate = null;
-        } else {
-            minimapRefreshGate = MinimapPublishRefreshRegistry.global().pending(
-                    new MapKey(detail.summary().gameType(), detail.summary().mapName())
-            ).orElse(minimapRefreshGate);
-        }
     }
 
     @Override
     protected void onDetailApplied() {
-        if (minimapRefreshGate != null
-                && minimapRefreshGate.accepts(detail.summary())) {
-            minimapRefreshGate = null;
-        }
         refreshContent();
         if (width > 0 && height > 0) {
             applyResponsiveLayout();
         }
     }
 
-    public void awaitMinimapRefresh(
-            MapKey mapKey,
-            NamespacedId documentId,
-            long minimumRevision
-    ) {
-        MinimapPublishRefreshGate gate = MinimapPublishRefreshGate.create(
-                mapKey, documentId, minimumRevision
-        );
-        MinimapPublishRefreshRegistry.global().await(gate);
-        minimapRefreshGate = gate;
-        refreshContent();
-        if (width > 0 && height > 0) {
-            applyResponsiveLayout();
-        }
-    }
-
-    public void requestMinimapRefresh() {
-        if (minimapRefreshGate == null) {
-            minimapRefreshGate = MinimapPublishRefreshRegistry.global().pending(
-                    new MapKey(detail.summary().gameType(), detail.summary().mapName())
-            ).orElse(null);
-            if (minimapRefreshGate == null) {
-                return;
-            }
-        }
-        MapKey mapKey = minimapRefreshGate.mapKey();
-        FPSMatch.sendToServer(new MapRoomActionC2SPacket(
-                MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
-                mapKey.gameType(), mapKey.mapName(), new UUID(0L, 0L)
-        ));
-    }
 
     private void applyResponsiveLayout() {
         int margin = Math.min(16, Math.max(8, width / 32));
@@ -198,8 +135,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         int toolRows = (toolButtons.size() + columns - 1) / columns;
         int totalRows = debugRows + toolRows;
         int groupGap = 6;
-        int permissionReserve = detail.summary().currentPlayerOp()
-                && minimapRefreshGate == null && transientStatus == null ? 0 : 22;
+        int permissionReserve = detail.summary().currentPlayerOp() && transientStatus == null ? 0 : 22;
         int interRowGaps = Math.max(0, debugRows - 1) + Math.max(0, toolRows - 1);
         int availableGridHeight = Math.max(1,
                 panelHeight - 26 - padding - permissionReserve - groupGap - interRowGaps * gap);
@@ -243,16 +179,10 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     private void refreshContent() {
         subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
         boolean op = detail.summary().currentPlayerOp();
-        boolean awaitingMinimap = minimapRefreshGate != null;
-        boolean showTransientStatus = op && !awaitingMinimap && transientStatus != null;
-        permissionLabel.setVisible(!op || awaitingMinimap || showTransientStatus);
+        boolean showTransientStatus = op && transientStatus != null;
+        permissionLabel.setVisible(!op || showTransientStatus);
         if (!op) {
             permissionLabel.setValue(Component.translatable("gui.fpsm.map_select.manage.no_permission"));
-        } else if (awaitingMinimap) {
-            permissionLabel.setValue(Component.translatable(
-                    "gui.fpsm.minimap.editor.publish.refreshing",
-                    minimapRefreshGate.minimumRevision()
-            ));
         } else if (showTransientStatus) {
             permissionLabel.setValue(transientStatus);
         }
@@ -269,15 +199,9 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
                 shopButton, FPSMLdlib2Theme.ButtonKind.SECONDARY,
                 op && !detail.editableShops().isEmpty()
         );
-        FPSMLdlib2Theme.buttonState(
-                minimapButton, FPSMLdlib2Theme.ButtonKind.SECONDARY,
-                op && !awaitingMinimap
-        );
         FPSMLdlib2Theme.buttonState(backButton, FPSMLdlib2Theme.ButtonKind.QUIET, true);
         if (!op) {
             fallbackFocusAfterPermissionLoss();
-        } else {
-            restoreMinimapFocusIfReady();
         }
     }
 
@@ -285,7 +209,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         List<Ldlib2AccessibilityController.FocusTarget> targets = new java.util.ArrayList<>();
         for (Ldlib2AccessibilityController.FocusTarget target : List.of(
                 startButton, resetButton, newRoundButton, cleanupButton, switchButton,
-                settingsButton, shopButton, minimapButton, backButton
+                settingsButton, shopButton, backButton
         )) {
             if (target.element().isVisible() && target.element().isActive()) {
                 targets.add(target);
@@ -294,31 +218,10 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         return List.copyOf(targets);
     }
 
-    private void openMinimapEditor() {
-        pendingMinimapFocusRestore = true;
-        MinimapEditorScreens.open(this.detail, this);
-        if (Minecraft.getInstance().screen == this) {
-            restoreMinimapFocusIfReady();
-        }
-    }
-
-    private void restoreMinimapFocusIfReady() {
-        if (!pendingMinimapFocusRestore || Minecraft.getInstance().screen != this) {
-            return;
-        }
-        if (!minimapButton.isActive()) {
-            return;
-        }
-        pendingMinimapFocusRestore = false;
-        modularUI.requestFocus(minimapButton);
-        accessibility().reconcileFocus();
-    }
-
     private void fallbackFocusAfterPermissionLoss() {
-        if (!pendingMinimapFocusRestore || Minecraft.getInstance().screen != this) {
+        if (Minecraft.getInstance().screen != this) {
             return;
         }
-        pendingMinimapFocusRestore = false;
         if (backButton.isActive()) {
             modularUI.requestFocus(backButton);
         } else {
@@ -360,18 +263,17 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         AccessibleButton switchBtn = medium("fpsmatch.map_manage.switch", "gui.fpsm.map_select.debug.switch", 430, 36);
         AccessibleButton settings = medium("fpsmatch.map_manage.settings", "gui.fpsm.map_select.settings", 14, 72);
         AccessibleButton shop = medium("fpsmatch.map_manage.shop", "gui.fpsm.map_detail.edit_shop", 118, 72);
-        AccessibleButton minimap = medium("fpsmatch.map_manage.minimap", "gui.fpsm.map_detail.edit_minimap", 222, 72);
         FPSMLdlib2Theme.button(start, FPSMLdlib2Theme.ButtonKind.PRIMARY);
-        for (AccessibleButton b : new AccessibleButton[]{reset, newRound, cleanup, switchBtn, settings, shop, minimap}) {
+        for (AccessibleButton b : new AccessibleButton[]{reset, newRound, cleanup, switchBtn, settings, shop}) {
             FPSMLdlib2Theme.button(b, FPSMLdlib2Theme.ButtonKind.SECONDARY);
         }
-        for (AccessibleButton b : new AccessibleButton[]{start, reset, newRound, cleanup, switchBtn, settings, shop, minimap}) {
+        for (AccessibleButton b : new AccessibleButton[]{start, reset, newRound, cleanup, switchBtn, settings, shop}) {
             b.textStyle(style -> style.fontSize(8));
         }
         Label permission = label("fpsmatch.map_manage.permission", Component.empty());
         permission.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(14).right(14).top(112).height(20));
         FPSMLdlib2Theme.status(permission, FPSMLdlib2Theme.WARNING);
-        panel.addChildren(debugTitle, start, reset, newRound, cleanup, switchBtn, settings, shop, minimap, permission);
+        panel.addChildren(debugTitle, start, reset, newRound, cleanup, switchBtn, settings, shop, permission);
         AccessibleButton back = medium("fpsmatch.map_manage.back", "gui.back", 18, 0);
         back.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).bottom(16).width(96).height(24));
         FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
@@ -379,7 +281,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         root.addChildren(system, header, subtitle, panel, back);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
                 panel, debugTitle, subtitle, permission, start, reset, newRound, cleanup,
-                switchBtn, settings, shop, minimap, back);
+                switchBtn, settings, shop, back);
     }
 
     private static Label label(String id, Component text) {
@@ -400,5 +302,5 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     private record Parts(ModularUI ui, UIElement panel, Label debugTitle, Label subtitle, Label permission,
                          AccessibleButton start, AccessibleButton reset, AccessibleButton newRound,
                          AccessibleButton cleanup, AccessibleButton switchBtn, AccessibleButton settings,
-                         AccessibleButton shop, AccessibleButton minimap, AccessibleButton back) {}
+                         AccessibleButton shop, AccessibleButton back) {}
 }

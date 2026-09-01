@@ -1,7 +1,6 @@
 package com.ptcrys.fpsmatch.mixin.spec.teammate;
 
 import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.key.MinimapTacticalKey;
 import com.ptcrys.fpsmatch.common.client.spec.SpecKeyHandler;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
@@ -42,7 +41,6 @@ public class KeyboardHandlerMixin {
 
         boolean allowEscape = keyCode == GLFW.GLFW_KEY_ESCAPE;
         boolean allowTeamSwitch = SpecKeyHandler.switchKeyMatches(keyCode, scanCode);
-        boolean allowTacticalMap = MinimapTacticalKey.KEY.matches(keyCode, scanCode);
 
         if (keyCode == GLFW.GLFW_KEY_SPACE
                 && action == GLFW.GLFW_PRESS
@@ -52,7 +50,7 @@ public class KeyboardHandlerMixin {
             return;
         }
 
-        if (!(allowEscape || allowTeamSwitch || allowTacticalMap)) {
+        if (!(allowEscape || allowTeamSwitch)) {
             ci.cancel();
         }
     }

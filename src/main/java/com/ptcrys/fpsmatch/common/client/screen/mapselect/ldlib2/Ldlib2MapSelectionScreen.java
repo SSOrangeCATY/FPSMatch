@@ -149,9 +149,6 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             return;
         }
         dismissToast();
-        // Consume the exact server-authored publication detail even when another room is selected;
-        // the UI guard below must not strand a shared reopen gate for a non-selected room.
-        MinimapPublishRefreshProjection.acceptAuthoritativeDetail(detail);
         List<MapRoomSummary> rooms = filteredRooms();
         retainSelection(rooms);
         if (selected == null || !sameRoom(selected, detail.summary())) {
@@ -175,7 +172,6 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         refreshFilterState();
         refreshList();
         refreshToast();
-        MinimapPublishRefreshProjection.requestPendingDetails(snapshot.maps());
     }
 
     @Override

@@ -11,11 +11,6 @@ import com.ptcrys.fpsmatch.common.packet.attribute.BulletproofArmorAttributeS2CP
 import com.ptcrys.fpsmatch.common.packet.effect.FlashBombAddonS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.entity.ThrowEntityC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.*;
-import com.ptcrys.fpsmatch.common.packet.minimap.MinimapPacketRegistration;
-import com.ptcrys.fpsmatch.common.packet.minimap.MinimapPacketLifecycle;
-import com.ptcrys.fpsmatch.common.packet.minimap.MinimapPacketSender;
-import com.ptcrys.fpsmatch.common.packet.minimap.ForgeMinimapServerLifecycleEventSource;
-import com.ptcrys.fpsmatch.common.packet.minimap.ForgeMinimapServerRuntimeRegistration;
 import com.ptcrys.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
 import com.ptcrys.fpsmatch.common.entity.EntityRegister;
@@ -32,7 +27,6 @@ import com.ptcrys.fpsmatch.compat.cloth.FPSMenuIntegration;
 import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import com.ptcrys.fpsmatch.compat.tacz.TACZBootstrap;
 import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.core.minimap.wire.MinimapWireMessage;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -55,7 +49,6 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.UUID;
 
 /*
     <FPSMatch>
@@ -98,12 +91,6 @@ public class FPSMatch {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onRegisterPackets);
         modEventBus.addListener(this::onEnqueue);
-        ForgeMinimapServerLifecycleEventSource minimapServerEvents =
-                new ForgeMinimapServerLifecycleEventSource(
-                        MinecraftForge.EVENT_BUS
-                );
-        MinimapPacketLifecycle.bindServer(minimapServerEvents);
-        ForgeMinimapServerRuntimeRegistration.install(minimapServerEvents);
         MinecraftForge.EVENT_BUS.register(this);
         VanillaGuiRegister.CONTAINERS.register(modEventBus);
         FPSMItemRegister.ITEMS.register(modEventBus);
@@ -231,8 +218,6 @@ public class FPSMatch {
         PACKET_REGISTER.registerPacket(MapRoomInvitationS2CPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(TeamManageResultS2CPacket.class);
-        MinimapPacketRegistration.register(PACKET_REGISTER);
-
         event.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> FPSMClientPacketRegistrar::registerAll));
     }
 
@@ -250,15 +235,6 @@ public class FPSMatch {
 
     public static <M> void sendToServer(M message){
         NetworkPacketRegister.getChannelFromCache(message.getClass()).sendToServer(message);
-    }
-
-    public static int sendMinimapToServer(
-            UUID frameId,
-            MinimapWireMessage message
-    ) {
-        return MinimapPacketSender.sendC2S(
-                frameId, message, FPSMatch::sendToServer
-        );
     }
 
     @SubscribeEvent

@@ -12,8 +12,6 @@ import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.capability.CapabilityMap;
 import com.ptcrys.fpsmatch.core.capability.map.MapCapability;
 import com.ptcrys.fpsmatch.core.data.AreaData;
-import com.ptcrys.fpsmatch.core.minimap.region.AreaDataRegionProjection;
-import com.ptcrys.fpsmatch.core.minimap.region.WorldAxisAlignedBounds;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.data.Setting;
 import com.ptcrys.fpsmatch.core.data.SpawnPointData;
@@ -708,13 +706,6 @@ public abstract class BaseMap {
      */
     public AreaData getMapArea() {
         return mapArea;
-    }
-
-    /**
-     * Pure minimap map-boundary box. Empty when map area is unset.
-     */
-    public Optional<WorldAxisAlignedBounds> minimapMapBoundary() {
-        return AreaDataRegionProjection.mapBoundary(mapArea);
     }
 
     public void setMapArea(AreaData mapArea) {

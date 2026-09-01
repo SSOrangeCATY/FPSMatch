@@ -2,7 +2,6 @@ package com.ptcrys.fpsmatch.common.capability;
 
 import com.ptcrys.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.ptcrys.fpsmatch.common.capability.map.GameEndTeleportCapability;
-import com.ptcrys.fpsmatch.common.capability.map.MinimapCapability;
 import com.ptcrys.fpsmatch.common.capability.team.*;
 
 public class FPSMCapabilityRegister {
@@ -18,6 +17,5 @@ public class FPSMCapabilityRegister {
         // MAP
         DemolitionModeCapability.register();
         GameEndTeleportCapability.register();
-        MinimapCapability.register();
     }
 }

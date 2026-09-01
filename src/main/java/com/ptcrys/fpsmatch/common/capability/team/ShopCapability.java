@@ -17,8 +17,6 @@ import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
 import com.ptcrys.fpsmatch.common.event.FPSMTeamEvent;
 import com.ptcrys.fpsmatch.common.event.FPSMapEvent;
 import com.ptcrys.fpsmatch.core.data.AreaData;
-import com.ptcrys.fpsmatch.core.minimap.region.AreaDataRegionProjection;
-import com.ptcrys.fpsmatch.core.minimap.region.WorldAxisAlignedBounds;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.shop.FPSMShop;
 import com.ptcrys.fpsmatch.core.shop.INamedType;
@@ -251,13 +249,6 @@ public class ShopCapability extends TeamCapability implements FPSMCapability.Sav
      */
     public Optional<FPSMShop<?>> getShopSafe() {
         return isInitialized() ? Optional.of(shop) : Optional.empty();
-    }
-
-    /**
-     * Pure minimap shop region union for this team. Empty when shop is missing or has no areas.
-     */
-    public Optional<WorldAxisAlignedBounds> minimapShopBounds() {
-        return getShopSafe().flatMap(s -> AreaDataRegionProjection.shopUnion(s.getAreas()));
     }
 
     /**

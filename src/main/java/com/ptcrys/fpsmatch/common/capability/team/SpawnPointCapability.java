@@ -11,8 +11,6 @@ import com.ptcrys.fpsmatch.core.FPSMCore;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.data.SpawnPointData;
-import com.ptcrys.fpsmatch.core.minimap.region.AreaDataRegionProjection;
-import com.ptcrys.fpsmatch.core.minimap.region.WorldAxisAlignedBounds;
 import com.ptcrys.fpsmatch.core.team.BaseTeam;
 import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
@@ -88,13 +86,6 @@ public class SpawnPointCapability extends TeamCapability implements FPSMCapabili
 
     public List<SpawnPointData> getSpawnPointsData() {
         return spawnPointsData;
-    }
-
-    /**
-     * Pure minimap spawn envelope for this team. Empty when no spawn points configured.
-     */
-    public Optional<WorldAxisAlignedBounds> minimapSpawnEnvelope() {
-        return AreaDataRegionProjection.spawnEnvelope(List.copyOf(spawnPointsData));
     }
 
     public boolean removeSpawnPointData(@Nonnull SpawnPointData data) {
