@@ -33,6 +33,7 @@ public class RenderUtil {
     private static List<PlayerInfo> cachedPlayerInfos = List.of();
     private static long cachedTeamListTick = Long.MIN_VALUE;
     private static Map<String, List<PlayerInfo>> cachedTeamPlayers = Map.of();
+    private static List<PlayerInfo> cachedProjectedInput = List.of();
 
     public static Vector3f color(int color) {
         float r = ((color >> 16) & 0xFF) / 255.0f;
@@ -102,6 +103,7 @@ public class RenderUtil {
         cachedPlayerListTick = Long.MIN_VALUE;
         cachedTeamListTick = Long.MIN_VALUE;
         cachedPlayerInfos = List.of();
+        cachedProjectedInput = List.of();
         cachedTeamPlayers = Map.of();
     }
 
@@ -118,6 +120,9 @@ public class RenderUtil {
     }
 
     public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo(List<PlayerInfo> playerInfoList) {
+        if (playerInfoList == cachedProjectedInput) {
+            return cachedTeamPlayers;
+        }
         Map<String, List<PlayerInfo>> teamPlayers = new HashMap<>();
 
         for (PlayerInfo info : playerInfoList) {
@@ -127,6 +132,10 @@ public class RenderUtil {
                     teamPlayers.computeIfAbsent(team.name,k -> new ArrayList<>()).add(info);
                 });
             });
+        }
+        if (playerInfoList == cachedPlayerInfos) {
+            cachedProjectedInput = playerInfoList;
+            cachedTeamPlayers = teamPlayers;
         }
         return teamPlayers;
     }
