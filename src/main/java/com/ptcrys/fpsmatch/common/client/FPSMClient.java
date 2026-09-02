@@ -6,6 +6,7 @@ import com.ptcrys.fpsmatch.common.client.key.*;
 import com.ptcrys.fpsmatch.common.client.renderer.*;
 import com.ptcrys.fpsmatch.common.client.screen.VanillaGuiRegister;
 import com.ptcrys.fpsmatch.common.client.screen.hud.FlashBombHud;
+import com.ptcrys.fpsmatch.util.RenderUtil;
 import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
 import com.ptcrys.fpsmatch.common.entity.EntityRegister;
 import net.minecraft.Optionull;
@@ -80,5 +81,6 @@ public class FPSMClient {
 
     public static void reset() {
         DATA.reset();
+        RenderUtil.invalidatePlayerInfoCache();
     }
 }

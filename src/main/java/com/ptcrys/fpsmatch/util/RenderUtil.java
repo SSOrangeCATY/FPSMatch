@@ -25,6 +25,15 @@ import static com.ptcrys.fpsmatch.common.client.FPSMClient.PLAYER_COMPARATOR;
 public class RenderUtil {
     public static int WHITE = 0xFFFFFFFF;
 
+    // Player-list ordering and team projection are shared by several HUDs in the same frame.
+    // Recompute them once per client tick instead of sorting and allocating for every overlay.
+    private static Minecraft cachedMinecraft;
+    private static net.minecraft.client.player.LocalPlayer cachedPlayer;
+    private static long cachedPlayerListTick = Long.MIN_VALUE;
+    private static List<PlayerInfo> cachedPlayerInfos = List.of();
+    private static long cachedTeamListTick = Long.MIN_VALUE;
+    private static Map<String, List<PlayerInfo>> cachedTeamPlayers = Map.of();
+
     public static Vector3f color(int color) {
         float r = ((color >> 16) & 0xFF) / 255.0f;
         float g = ((color >> 8) & 0xFF) / 255.0f;
@@ -49,8 +58,19 @@ public class RenderUtil {
 
     public static Map<String, List<PlayerInfo>> getTeamsPlayerInfo() {
         Minecraft mc = Minecraft.getInstance();
+        long tick = clientTick(mc);
         if (mc.player != null) {
-            return getTeamsPlayerInfo(getPlayerInfos());
+            if (cachedMinecraft == mc
+                    && cachedPlayer == mc.player
+                    && cachedTeamListTick == tick) {
+                return cachedTeamPlayers;
+            }
+            Map<String, List<PlayerInfo>> teams = getTeamsPlayerInfo(getPlayerInfos());
+            cachedMinecraft = mc;
+            cachedPlayer = mc.player;
+            cachedTeamListTick = tick;
+            cachedTeamPlayers = teams;
+            return teams;
         }
         return new HashMap<>();
     }
@@ -58,9 +78,35 @@ public class RenderUtil {
     public static List<PlayerInfo> getPlayerInfos(){
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            return mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList();
+            long tick = clientTick(mc);
+            if (cachedMinecraft == mc && cachedPlayer == mc.player && cachedPlayerListTick == tick) {
+                return cachedPlayerInfos;
+            }
+            cachedMinecraft = mc;
+            cachedPlayer = mc.player;
+            cachedPlayerListTick = tick;
+            cachedPlayerInfos = mc.player.connection.getListedOnlinePlayers().stream()
+                    .sorted(PLAYER_COMPARATOR)
+                    .limit(80L)
+                    .toList();
+            // The team projection depends on this exact list and must be rebuilt with it.
+            cachedTeamListTick = Long.MIN_VALUE;
+            return cachedPlayerInfos;
         }
         return new ArrayList<>();
+    }
+
+    public static void invalidatePlayerInfoCache() {
+        cachedMinecraft = null;
+        cachedPlayer = null;
+        cachedPlayerListTick = Long.MIN_VALUE;
+        cachedTeamListTick = Long.MIN_VALUE;
+        cachedPlayerInfos = List.of();
+        cachedTeamPlayers = Map.of();
+    }
+
+    private static long clientTick(Minecraft mc) {
+        return mc.level == null ? Long.MIN_VALUE : mc.level.getGameTime();
     }
 
     public static Optional<PlayerData> getPlayerData(PlayerInfo player) {
