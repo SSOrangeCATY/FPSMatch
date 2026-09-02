@@ -1,8 +1,9 @@
 package com.ptcrys.fpsmatch.mixin;
 
+import net.minecraftforge.fml.loading.FMLLoader;
+
 import com.ptcrys.fpsmatch.compat.impl.FPSMImpl;
 import com.ptcrys.fpsmatch.mixin.compat.forge.Ldlib2ForgeCompatibility;
-import net.minecraftforge.fml.loading.FMLLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -17,8 +18,7 @@ import java.util.Set;
 public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
 
     @Override
-    public void onLoad(String mixinPackage) {
-    }
+    public void onLoad(String mixinPackage) {}
 
     @Override
     public String getRefMapperConfig() {
@@ -29,8 +29,7 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         Boolean forgeCompatibilityDecision = Ldlib2ForgeCompatibility.decisionFor(
                 mixinClassName,
-                FMLLoader.versionInfo().forgeVersion()
-        );
+                FMLLoader.versionInfo().forgeVersion());
         if (forgeCompatibilityDecision != null) {
             return forgeCompatibilityDecision;
         }
@@ -62,8 +61,7 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
     }
 
     @Override
-    public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {
-    }
+    public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
 
     @Override
     public List<String> getMixins() {
@@ -80,6 +78,5 @@ public class FPSMatchMixinPlugin implements IMixinConfigPlugin {
     }
 
     @Override
-    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-    }
+    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {}
 }

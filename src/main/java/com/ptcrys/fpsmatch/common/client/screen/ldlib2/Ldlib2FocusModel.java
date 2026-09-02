@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 
 /** Pure ordered-focus state used by the LDLib2 screen adapter. */
 public final class Ldlib2FocusModel<T> {
+
     private final Predicate<? super T> available;
     private List<T> targets = List.of();
     private T focused;

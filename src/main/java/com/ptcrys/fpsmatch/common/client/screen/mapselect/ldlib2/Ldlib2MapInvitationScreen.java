@@ -1,5 +1,10 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
@@ -9,22 +14,19 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomInvitationS2CPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
-import java.util.UUID;
 import java.util.ConcurrentModificationException;
+import java.util.UUID;
 
 /** Incoming map-room invitation dialog. */
 public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
+
     private final MapRoomInvitationS2CPacket invitation;
     private final Screen parent;
 
@@ -119,14 +121,14 @@ public final class Ldlib2MapInvitationScreen extends ModularUIScreen {
         FPSMLdlib2Theme.muted(room);
 
         Button accept = new Button();
-            accept.setId("fpsmatch.map_invitation.accept");
-            accept.setText(Component.translatable("gui.fpsm.map_select.invitation.accept"));
+        accept.setId("fpsmatch.map_invitation.accept");
+        accept.setText(Component.translatable("gui.fpsm.map_select.invitation.accept"));
         accept.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(24).bottom(18).width(130).height(26));
         FPSMLdlib2Theme.button(accept, FPSMLdlib2Theme.ButtonKind.PRIMARY);
 
         Button reject = new Button();
-            reject.setId("fpsmatch.map_invitation.reject");
-            reject.setText(Component.translatable("gui.fpsm.map_select.invitation.reject"));
+        reject.setId("fpsmatch.map_invitation.reject");
+        reject.setText(Component.translatable("gui.fpsm.map_select.invitation.reject"));
         reject.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).right(24).bottom(18).width(130).height(26));
         FPSMLdlib2Theme.button(reject, FPSMLdlib2Theme.ButtonKind.DANGER);
 

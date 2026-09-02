@@ -1,14 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
 import net.minecraft.network.chat.Component;
+
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** LDLib2 toggle whose pointer and keyboard paths share the native toggle transition. */
 public class AccessibleToggle extends Toggle implements Ldlib2AccessibilityController.FocusTarget {
+
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private Supplier<Component> accessibleName = () -> toggleLabel.getText();
     private Supplier<Component> accessibleHint = Component::empty;
@@ -22,8 +24,7 @@ public class AccessibleToggle extends Toggle implements Ldlib2AccessibilityContr
                 this,
                 activationLatch,
                 this::canActivate,
-                this::activate
-        );
+                this::activate);
     }
 
     @Override

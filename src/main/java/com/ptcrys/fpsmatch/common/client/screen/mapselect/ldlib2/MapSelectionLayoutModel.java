@@ -2,17 +2,18 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
 /** Pure responsive layout calculation used by the LDLib2 map-room screen. */
 public record MapSelectionLayoutModel(
-        Rect header,
-        Rect toast,
-        Rect filters,
-        Rect roomList,
-        Rect detail,
-        Rect players,
-        Rect actions,
-        Rect browserActions,
-        boolean compact
-) {
+                                      Rect header,
+                                      Rect toast,
+                                      Rect filters,
+                                      Rect roomList,
+                                      Rect detail,
+                                      Rect players,
+                                      Rect actions,
+                                      Rect browserActions,
+                                      boolean compact) {
+
     public record Rect(int x, int y, int width, int height) {
+
         public Rect {
             if (width < 0 || height < 0) {
                 throw new IllegalArgumentException("layout dimensions must be non-negative");
@@ -20,8 +21,7 @@ public record MapSelectionLayoutModel(
         }
 
         public boolean intersects(Rect other) {
-            return x < other.x + other.width && other.x < x + width
-                    && y < other.y + other.height && other.y < y + height;
+            return x < other.x + other.width && other.x < x + width && y < other.y + other.height && other.y < y + height;
         }
     }
 
@@ -91,8 +91,7 @@ public record MapSelectionLayoutModel(
                     new Rect(filterWidth + listWidth, contentTop, rightWidth, contentHeight),
                     new Rect(0, actionsTop, filterWidth, actionHeight),
                     new Rect(0, browserTop, filterWidth, browserActionsHeight),
-                    false
-            );
+                    false);
         }
 
         // Narrow: preserve the filter/action rail on the left, give the room list the full-height
@@ -117,7 +116,6 @@ public record MapSelectionLayoutModel(
                 new Rect(width, contentTop, 0, 0),
                 new Rect(0, actionsTop, leftWidth, actionHeight),
                 new Rect(0, browserTop, leftWidth, browserActionsHeight),
-                true
-        );
+                true);
     }
 }

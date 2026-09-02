@@ -1,26 +1,25 @@
 package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.item.ItemStack;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.EditShopSlotMenu;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.ModularMenuUiSupport;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditShopSlotUi;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.ShopEditorWidgetCatalog;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.ModularMenuUiSupport;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.SaveSlotDataC2SPacket;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ClickType;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * Thin Forge menu adapter.
@@ -28,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
  * render/mouse chain for inventory, carried stack and menu sync.
  */
 public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<EditShopSlotMenu> {
+
     private static final int RETURN_TIMEOUT_TICKS = 200;
 
     private ModularUI modularUI;
@@ -94,12 +94,10 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-    }
+    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {}
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-    }
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {}
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -155,8 +153,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return accessibility != null && accessibility.keyReleased(keyCode, scanCode, modifiers)
-                || super.keyReleased(keyCode, scanCode, modifiers);
+        return accessibility != null && accessibility.keyReleased(keyCode, scanCode, modifiers) || super.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -231,17 +228,14 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         setStatus("gui.fpsm.shop_editor.state.saving", FPSMLdlib2Theme.WARNING);
         refreshButtons();
         FPSMatch.sendToServer(new SaveSlotDataC2SPacket(
-                menu.getAmmo(), menu.getPrice(), menu.getGroupId()
-        ));
+                menu.getAmmo(), menu.getPrice(), menu.getGroupId()));
     }
 
     private void returnToShop() {
         if (saving || returningToShop) {
             return;
         }
-        if ((isDirty() || (view != null && !view.inputValid()))
-                && (discardConfirmation == null
-                || !discardConfirmation.matches(menu, currentDraft()))) {
+        if ((isDirty() || (view != null && !view.inputValid())) && (discardConfirmation == null || !discardConfirmation.matches(menu, currentDraft()))) {
             discardConfirmation = DiscardSnapshot.capture(menu, currentDraft());
             setStatus("gui.fpsm.shop_editor.discard.confirm", FPSMLdlib2Theme.DANGER);
             closeButton.setText(Component.translatable("gui.fpsm.shop_editor.discard.button"));
@@ -280,10 +274,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
     }
 
     private boolean isDirty() {
-        return !ItemStack.matches(originalItem, menu.slots.get(0).getItem())
-                || originalAmmo != menu.getAmmo()
-                || originalPrice != menu.getPrice()
-                || originalGroup != menu.getGroupId();
+        return !ItemStack.matches(originalItem, menu.slots.get(0).getItem()) || originalAmmo != menu.getAmmo() || originalPrice != menu.getPrice() || originalGroup != menu.getGroupId();
     }
 
     private void refreshEditState() {
@@ -298,8 +289,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         boolean dirty = isDirty();
         setStatus(
                 dirty ? "gui.fpsm.shop_editor.state.pending" : "gui.fpsm.shop_editor.state.editing",
-                dirty ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.ACCENT
-        );
+                dirty ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.ACCENT);
         refreshButtons();
     }
 
@@ -310,9 +300,7 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
         FPSMLdlib2Theme.buttonState(
                 saveButton,
                 FPSMLdlib2Theme.ButtonKind.PRIMARY,
-                !saving && !returningToShop && isDirty()
-                        && view != null && view.inputValid()
-        );
+                !saving && !returningToShop && isDirty() && view != null && view.inputValid());
     }
 
     private void refreshButtons() {
@@ -360,30 +348,24 @@ public final class Ldlib2EditShopSlotScreen extends AbstractContainerScreen<Edit
     }
 
     private record DiscardSnapshot(
-            ItemStack item,
-            int ammo,
-            int price,
-            int group,
-            Ldlib2EditShopSlotUi.Draft draft
-    ) {
+                                   ItemStack item,
+                                   int ammo,
+                                   int price,
+                                   int group,
+                                   Ldlib2EditShopSlotUi.Draft draft) {
+
         private static DiscardSnapshot capture(
-                EditShopSlotMenu menu,
-                Ldlib2EditShopSlotUi.Draft draft
-        ) {
+                                               EditShopSlotMenu menu,
+                                               Ldlib2EditShopSlotUi.Draft draft) {
             return new DiscardSnapshot(
                     menu.slots.get(0).getItem().copy(),
                     menu.getAmmo(), menu.getPrice(), menu.getGroupId(), draft);
         }
 
         private boolean matches(
-                EditShopSlotMenu menu,
-                Ldlib2EditShopSlotUi.Draft currentDraft
-        ) {
-            return ItemStack.matches(item, menu.slots.get(0).getItem())
-                    && ammo == menu.getAmmo()
-                    && price == menu.getPrice()
-                    && group == menu.getGroupId()
-                    && java.util.Objects.equals(draft, currentDraft);
+                                EditShopSlotMenu menu,
+                                Ldlib2EditShopSlotUi.Draft currentDraft) {
+            return ItemStack.matches(item, menu.slots.get(0).getItem()) && ammo == menu.getAmmo() && price == menu.getPrice() && group == menu.getGroupId() && java.util.Objects.equals(draft, currentDraft);
         }
     }
 }

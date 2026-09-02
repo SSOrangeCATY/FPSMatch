@@ -9,6 +9,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 
 /** Suppresses keyboard auto-repeat until the matching activation key is released. */
 public final class KeyboardActivationLatch {
+
     private final Set<Integer> heldKeys = new HashSet<>();
 
     public boolean press(int keyCode) {
@@ -28,8 +29,6 @@ public final class KeyboardActivationLatch {
     }
 
     public static boolean isActivationKey(int keyCode) {
-        return keyCode == GLFW_KEY_ENTER
-                || keyCode == GLFW_KEY_KP_ENTER
-                || keyCode == GLFW_KEY_SPACE;
+        return keyCode == GLFW_KEY_ENTER || keyCode == GLFW_KEY_KP_ENTER || keyCode == GLFW_KEY_SPACE;
     }
 }

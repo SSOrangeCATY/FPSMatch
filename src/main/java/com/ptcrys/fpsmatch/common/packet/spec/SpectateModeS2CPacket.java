@@ -1,9 +1,10 @@
 package com.ptcrys.fpsmatch.common.packet.spec;
 
-import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
-import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
+import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
 
 import java.util.function.Supplier;
 

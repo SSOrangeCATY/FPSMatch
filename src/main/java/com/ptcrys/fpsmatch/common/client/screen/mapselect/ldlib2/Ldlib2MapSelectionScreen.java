@@ -1,5 +1,10 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
@@ -9,8 +14,8 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleSelector;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
@@ -23,10 +28,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,7 +44,8 @@ import java.util.UUID;
 
 /** LDLib2 map-room browser and detail view. */
 public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
-        implements FPSMMapDetailChildScreen {
+                                            implements FPSMMapDetailChildScreen {
+
     private static final int PANEL_HORIZONTAL_INSET = 3;
     private static final int PANEL_VERTICAL_INSET = 6;
     private static final int DETAIL_INFO_HEIGHT = 56;
@@ -66,8 +68,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     private final Label toastLabel;
     private final List<AccessibleButton> actionButtons;
     private final List<AccessibleButton> browserActionButtons;
-    private final Set<MapRoomToastS2CPacket> announcedToasts =
-            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<MapRoomToastS2CPacket> announcedToasts = Collections.newSetFromMap(new IdentityHashMap<>());
     private boolean compactLayout;
     private boolean manageVisible;
     private int actionPanelWidth;
@@ -93,10 +94,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private Ldlib2MapSelectionScreen(
-            MapSelectionUiView.Parts parts,
-            MapSelectionSnapshotS2CPacket snapshot,
-            Screen parent
-    ) {
+                                     MapSelectionUiView.Parts parts,
+                                     MapSelectionSnapshotS2CPacket snapshot,
+                                     Screen parent) {
         super(parts.ui(), Component.translatable("gui.fpsm.map_select.title"));
         this.parent = parent;
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
@@ -224,8 +224,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         if (search.isFocused() || stateSelector.isOpen() || modeSelector.isOpen()) {
             return false;
         }
-        if ((keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN)
-                && focusOutsideRoomRows()) {
+        if ((keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_DOWN) && focusOutsideRoomRows()) {
             return false;
         }
         if (keyCode == GLFW.GLFW_KEY_UP) {
@@ -423,15 +422,12 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private void placeEmptyState(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
         int listWidth = placedDimension(rect.width(), PANEL_HORIZONTAL_INSET);
-        int listHeight = Math.max(1, placedDimension(rect.height(), PANEL_VERTICAL_INSET)
-                - roomListHeaderHeight(rect.height()));
+        int listHeight = Math.max(1, placedDimension(rect.height(), PANEL_VERTICAL_INSET) - roomListHeaderHeight(rect.height()));
         int labelHeight = Math.min(20, Math.max(1, listHeight));
         emptyState.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
                 .left(originX + rect.x() + insetFor(rect.width(), PANEL_HORIZONTAL_INSET) + 4)
-                .top(originY + rect.y() + insetFor(rect.height(), PANEL_VERTICAL_INSET)
-                        + roomListHeaderHeight(rect.height())
-                        + Math.max(0, (listHeight - labelHeight) / 2))
+                .top(originY + rect.y() + insetFor(rect.height(), PANEL_VERTICAL_INSET) + roomListHeaderHeight(rect.height()) + Math.max(0, (listHeight - labelHeight) / 2))
                 .width(Math.max(1, listWidth - 8))
                 .height(labelHeight));
     }
@@ -561,9 +557,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
                 break;
             }
         }
-        int nextIndex = currentIndex < 0
-                ? (direction < 0 ? rooms.size() - 1 : 0)
-                : Math.max(0, Math.min(rooms.size() - 1, currentIndex + direction));
+        int nextIndex = currentIndex < 0 ? (direction < 0 ? rooms.size() - 1 : 0) : Math.max(0, Math.min(rooms.size() - 1, currentIndex + direction));
         MapRoomSummary next = rooms.get(nextIndex);
         if (sameRoom(selected, next)) {
             return true;
@@ -609,8 +603,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             return;
         }
         roomList.verticalScroller.setNormalizedValue(
-                (float) normalizedRoomPosition(index, rooms.size())
-        );
+                (float) normalizedRoomPosition(index, rooms.size()));
         roomList.refreshVisibleItems();
         String rowId = MapSelectionUiView.roomId(summary);
         roomList.allChildrenStream()
@@ -685,9 +678,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     private boolean matchesQuery(MapRoomSummary summary) {
         if (query.isBlank()) return true;
         String normalized = query.toLowerCase(java.util.Locale.ROOT);
-        return summary.displayName().toLowerCase(java.util.Locale.ROOT).contains(normalized)
-                || summary.mapName().toLowerCase(java.util.Locale.ROOT).contains(normalized)
-                || summary.gameType().toLowerCase(java.util.Locale.ROOT).contains(normalized);
+        return summary.displayName().toLowerCase(java.util.Locale.ROOT).contains(normalized) || summary.mapName().toLowerCase(java.util.Locale.ROOT).contains(normalized) || summary.gameType().toLowerCase(java.util.Locale.ROOT).contains(normalized);
     }
 
     private boolean matchesStateFilter(MapRoomSummary summary) {
@@ -700,8 +691,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private boolean matchesModeFilter(MapRoomSummary summary) {
-        return "all".equals(gameModeFilter)
-                || gameModeFilter.equals(normalizeMode(summary.gameType()));
+        return "all".equals(gameModeFilter) || gameModeFilter.equals(normalizeMode(summary.gameType()));
     }
 
     private void setStateFilter(String filter) {
@@ -753,18 +743,15 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         boolean canOpenDetail = hasSelection;
         FPSMLdlib2Theme.buttonState(
                 actionButtons.get(0), FPSMLdlib2Theme.ButtonKind.PRIMARY,
-                canOpenDetail
-        );
+                canOpenDetail);
         manageVisible = false;
         actionButtons.get(1).setDisplay(manageVisible);
         actionButtons.get(1).setVisible(manageVisible);
         FPSMLdlib2Theme.buttonState(
                 actionButtons.get(1), FPSMLdlib2Theme.ButtonKind.SECONDARY,
-                manageVisible
-        );
+                manageVisible);
         browserActionButtons.forEach(button -> FPSMLdlib2Theme.buttonState(
-                button, FPSMLdlib2Theme.ButtonKind.QUIET, true
-        ));
+                button, FPSMLdlib2Theme.ButtonKind.QUIET, true));
         if (actionPanelWidth > 0 && actionPanelHeight > 0) {
             layoutActionsInPanel(actionPanelWidth, actionPanelHeight);
         }
@@ -785,8 +772,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             toastLabel.setValue(packet.message());
             FPSMLdlib2Theme.status(
                     toastLabel,
-                    packet.error() ? FPSMLdlib2Theme.DANGER : FPSMLdlib2Theme.SUCCESS
-            );
+                    packet.error() ? FPSMLdlib2Theme.DANGER : FPSMLdlib2Theme.SUCCESS);
             if (announcedToasts.add(packet)) {
                 accessibility().announce(packet.message(), packet.error());
             }
@@ -794,9 +780,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private void dismissToast() {
-        FPSMClient.getGlobalData().getMapRoomToast().ifPresent(packet ->
-                dismissedToast = packet
-        );
+        FPSMClient.getGlobalData().getMapRoomToast().ifPresent(packet -> dismissedToast = packet);
         toast.setVisible(false);
     }
 
@@ -848,22 +832,12 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     static Component statusText(MapRoomSummary summary) {
         if (summary.full()) return Component.translatable("gui.fpsm.map_select.full");
         if (summary.debug()) return Component.translatable("gui.fpsm.map_select.status.debug");
-        if (summary.started()) return Component.translatable(summary.allowJoinInProgress()
-                ? "gui.fpsm.map_select.status.started_joinable" : "gui.fpsm.map_select.status.started");
+        if (summary.started()) return Component.translatable(summary.allowJoinInProgress() ? "gui.fpsm.map_select.status.started_joinable" : "gui.fpsm.map_select.status.started");
         return Component.translatable("gui.fpsm.map_select.status.waiting");
     }
 
     private void bindRequiredWidgets() {
-        if (!modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOT)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOM_LIST)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.EMPTY_STATE)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOM_DETAIL)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.PLAYERS)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.FILTERS)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.STATE_FILTER)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.MODE_FILTER)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.BROWSER_ACTIONS)
-                || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.TOAST)) {
+        if (!modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOT) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOM_LIST) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.EMPTY_STATE) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.ROOM_DETAIL) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.PLAYERS) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.FILTERS) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.STATE_FILTER) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.MODE_FILTER) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.BROWSER_ACTIONS) || !modularUI.hasElementWithId(MapSelectionWidgetCatalog.TOAST)) {
             throw new IllegalStateException("Incomplete LDLib2 map selection UI");
         }
     }

@@ -1,11 +1,12 @@
 package com.ptcrys.fpsmatch.common.packet.team;
 
-import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.ptcrys.fpsmatch.common.packet.ClientPacketExecutor;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -17,6 +18,7 @@ import java.util.function.Supplier;
  * 2. 客户端仅解析聚合后的基础字段，不处理_开头字段
  */
 public class TeamPlayerStatsS2CPacket {
+
     private final UUID uuid;
     private final String teamName;
     private final Component playerName;
@@ -30,7 +32,7 @@ public class TeamPlayerStatsS2CPacket {
     private final int headshotKills;
     private final float healthPercent;
 
-    //  构建方法
+    // 构建方法
     public static TeamPlayerStatsS2CPacket of(ServerTeam team, PlayerData data) {
         return new TeamPlayerStatsS2CPacket(
                 data.getOwner(),
@@ -44,8 +46,7 @@ public class TeamPlayerStatsS2CPacket {
                 data.getMvpCount(),
                 data.isLivingOnServer(),
                 data.getHeadshotKills(),
-                data.healthPercentServer()
-        );
+                data.healthPercentServer());
     }
 
     public TeamPlayerStatsS2CPacket(UUID playerUuid, String teamName, Component playerName,
@@ -153,5 +154,4 @@ public class TeamPlayerStatsS2CPacket {
     public float getHealthPercent() {
         return healthPercent;
     }
-
 }

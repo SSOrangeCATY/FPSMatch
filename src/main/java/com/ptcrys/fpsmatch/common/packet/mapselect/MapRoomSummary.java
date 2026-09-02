@@ -3,21 +3,21 @@ package com.ptcrys.fpsmatch.common.packet.mapselect;
 import net.minecraft.network.FriendlyByteBuf;
 
 public record MapRoomSummary(
-        String gameType,
-        String mapName,
-        String displayName,
-        String dimension,
-        String areaText,
-        boolean started,
-        boolean debug,
-        boolean allowJoinInProgress,
-        int joinedPlayers,
-        int maxPlayers,
-        boolean currentPlayerJoined,
-        boolean currentPlayerSpectating,
-        boolean currentPlayerOp,
-        int readyCountdownSeconds
-) {
+                             String gameType,
+                             String mapName,
+                             String displayName,
+                             String dimension,
+                             String areaText,
+                             boolean started,
+                             boolean debug,
+                             boolean allowJoinInProgress,
+                             int joinedPlayers,
+                             int maxPlayers,
+                             boolean currentPlayerJoined,
+                             boolean currentPlayerSpectating,
+                             boolean currentPlayerOp,
+                             int readyCountdownSeconds) {
+
     private static final int ID_MAX_LENGTH = 128;
     private static final int TEXT_MAX_LENGTH = 512;
     private static final int HASH_LENGTH = 64;
@@ -54,8 +54,7 @@ public record MapRoomSummary(
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
-                buf.readInt()
-        );
+                buf.readInt());
     }
 
     public boolean full() {

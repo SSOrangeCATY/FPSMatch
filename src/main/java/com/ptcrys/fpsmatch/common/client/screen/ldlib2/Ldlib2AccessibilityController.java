@@ -1,12 +1,13 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
-import net.minecraft.client.gui.narration.NarratedElementType;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT;
 
 /** Application-local keyboard focus and narration bridge for the pinned LDLib2 API. */
 public final class Ldlib2AccessibilityController {
+
     private final ModularUI modularUI;
     private final Supplier<Component> title;
     private final List<Supplier<List<FocusTarget>>> groups = new ArrayList<>();
@@ -98,9 +100,7 @@ public final class Ldlib2AccessibilityController {
             addIfPresent(output, NarratedElementType.USAGE, target.hint());
         });
         if (announcement != null) {
-            output.add(announcementIsError
-                    ? NarratedElementType.HINT
-                    : NarratedElementType.USAGE, announcement);
+            output.add(announcementIsError ? NarratedElementType.HINT : NarratedElementType.USAGE, announcement);
         }
     }
 
@@ -177,10 +177,9 @@ public final class Ldlib2AccessibilityController {
     }
 
     private static void addIfPresent(
-            NarrationElementOutput output,
-            NarratedElementType type,
-            Supplier<Component> supplier
-    ) {
+                                     NarrationElementOutput output,
+                                     NarratedElementType type,
+                                     Supplier<Component> supplier) {
         Component component = component(supplier);
         if (!component.getString().isEmpty()) {
             output.add(type, component);
@@ -202,11 +201,10 @@ public final class Ldlib2AccessibilityController {
     }
 
     static void installKeyboardActivation(
-            UIElement element,
-            KeyboardActivationLatch latch,
-            BooleanSupplier canActivate,
-            Runnable action
-    ) {
+                                          UIElement element,
+                                          KeyboardActivationLatch latch,
+                                          BooleanSupplier canActivate,
+                                          Runnable action) {
         element.addEventListener(UIEvents.KEY_DOWN, event -> {
             if (!isAvailable(element) || !canActivate.getAsBoolean()) {
                 return;
@@ -234,6 +232,7 @@ public final class Ldlib2AccessibilityController {
     }
 
     public interface FocusTarget {
+
         UIElement element();
 
         Supplier<Component> accessibleName();
@@ -252,7 +251,6 @@ public final class Ldlib2AccessibilityController {
 
         void activate();
 
-        default void resetActivationLatch() {
-        }
+        default void resetActivationLatch() {}
     }
 }

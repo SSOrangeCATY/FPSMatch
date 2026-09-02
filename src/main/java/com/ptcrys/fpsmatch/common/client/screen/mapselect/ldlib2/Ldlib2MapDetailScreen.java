@@ -1,5 +1,9 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -17,9 +21,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
 import com.ptcrys.fpsmatch.common.packet.mapselect.OpenMapSelectionC2SPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class Ldlib2MapDetailScreen extends Ldlib2MapChildScreen {
+
     private final Label systemLabel;
     private final Label headerLabel;
     private final Label titleLabel;
@@ -95,11 +97,7 @@ public final class Ldlib2MapDetailScreen extends Ldlib2MapChildScreen {
         titleLabel.setValue(Component.literal(summary.displayName()));
         String max = summary.maxPlayers() < 0 ? "?" : Integer.toString(summary.maxPlayers());
         infoLabel.setValue(Component.literal(
-                summary.gameType().toUpperCase(Locale.ROOT) + " / " + summary.mapName()
-                        + "\n" + Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), max).getString()
-                        + "\n" + statusText(summary).getString()
-                        + "\n" + Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()).getString()
-                        + "\n" + Component.translatable("gui.fpsm.map_select.detail.dimension", summary.dimension()).getString()));
+                summary.gameType().toUpperCase(Locale.ROOT) + " / " + summary.mapName() + "\n" + Component.translatable("gui.fpsm.map_select.players", summary.joinedPlayers(), max).getString() + "\n" + statusText(summary).getString() + "\n" + Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()).getString() + "\n" + Component.translatable("gui.fpsm.map_select.detail.dimension", summary.dimension()).getString()));
         playerList.setItems(detail.players());
         playerList.refreshVisibleItems();
         boolean joined = summary.currentPlayerJoined() || summary.currentPlayerSpectating();
@@ -164,15 +162,12 @@ public final class Ldlib2MapDetailScreen extends Ldlib2MapChildScreen {
         }
         layoutActionRow(List.of(joinButton, leaveButton, inviteButton),
                 margin, height - 52, contentWidth, 20);
-        List<AccessibleButton> secondRow = manageButton.isVisible()
-                ? List.of(manageButton, backButton)
-                : List.of(backButton);
+        List<AccessibleButton> secondRow = manageButton.isVisible() ? List.of(manageButton, backButton) : List.of(backButton);
         layoutActionRow(secondRow, margin, height - 28, contentWidth, 20);
     }
 
     private static void layoutActionRow(
-            List<AccessibleButton> buttons, int left, int top, int width, int height
-    ) {
+                                        List<AccessibleButton> buttons, int left, int top, int width, int height) {
         int gap = 6;
         int buttonWidth = Math.max(1, (width - gap * Math.max(0, buttons.size() - 1)) / buttons.size());
         for (int index = 0; index < buttons.size(); index++) {
@@ -210,8 +205,7 @@ public final class Ldlib2MapDetailScreen extends Ldlib2MapChildScreen {
     private static Component statusText(MapRoomSummary summary) {
         if (summary.full()) return Component.translatable("gui.fpsm.map_select.full");
         if (summary.debug()) return Component.translatable("gui.fpsm.map_select.status.debug");
-        if (summary.started()) return Component.translatable(summary.allowJoinInProgress()
-                ? "gui.fpsm.map_select.status.started_joinable" : "gui.fpsm.map_select.status.started");
+        if (summary.started()) return Component.translatable(summary.allowJoinInProgress() ? "gui.fpsm.map_select.status.started_joinable" : "gui.fpsm.map_select.status.started");
         return Component.translatable("gui.fpsm.map_select.status.waiting");
     }
 
@@ -241,9 +235,7 @@ public final class Ldlib2MapDetailScreen extends Ldlib2MapChildScreen {
         players.virtualScrollerViewStyle(style -> style.estimatedItemHeight(24f));
         players.setItemUIProvider(player -> {
             Label row = label("fpsmatch.map_detail.player." + player.uuid(), Component.literal(
-                    player.name() + "  [" + player.teamName() + "]"
-                            + (player.spectator() ? " SPEC" : "")
-                            + (player.ready() ? " *" : "")));
+                    player.name() + "  [" + player.teamName() + "]" + (player.spectator() ? " SPEC" : "") + (player.ready() ? " *" : "")));
             row.layout(layout -> layout.height(22).widthPercent(100).paddingLeft(8));
             FPSMLdlib2Theme.muted(row);
             return row;
@@ -279,9 +271,8 @@ public final class Ldlib2MapDetailScreen extends Ldlib2MapChildScreen {
     }
 
     private record Parts(
-            ModularUI ui, Label systemLabel, Label headerLabel, Label titleLabel, Label infoLabel,
-            UIElement panel, VirtualScrollerView<MapRoomPlayerInfo> playerList,
-            AccessibleButton join, AccessibleButton leave, AccessibleButton invite,
-            AccessibleButton manage, AccessibleButton back
-    ) {}
+                         ModularUI ui, Label systemLabel, Label headerLabel, Label titleLabel, Label infoLabel,
+                         UIElement panel, VirtualScrollerView<MapRoomPlayerInfo> playerList,
+                         AccessibleButton join, AccessibleButton leave, AccessibleButton invite,
+                         AccessibleButton manage, AccessibleButton back) {}
 }

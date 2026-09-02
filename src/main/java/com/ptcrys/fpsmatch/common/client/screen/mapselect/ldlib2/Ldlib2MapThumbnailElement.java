@@ -6,6 +6,7 @@ import com.ptcrys.fpsmatch.common.client.screen.mapselect.MapThumbnailRenderer;
 
 /** LDLib2 bridge for the existing map preview renderer. */
 final class Ldlib2MapThumbnailElement extends UIElement {
+
     private final String texture;
     private final String mapName;
     private final String gameType;
@@ -33,7 +34,6 @@ final class Ldlib2MapThumbnailElement extends UIElement {
                 mapName,
                 gameType,
                 displayName,
-                false
-        );
+                false);
     }
 }

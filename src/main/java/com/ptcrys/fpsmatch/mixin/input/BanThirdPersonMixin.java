@@ -1,8 +1,9 @@
 package com.ptcrys.fpsmatch.mixin.input;
 
-import com.ptcrys.fpsmatch.config.FPSMConfig;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Options;
+
+import com.ptcrys.fpsmatch.config.FPSMConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,6 +14,6 @@ public class BanThirdPersonMixin {
 
     @Inject(method = "setCameraType", at = @At("HEAD"), cancellable = true)
     private void onHandleKeybinds(CameraType type, CallbackInfo ci) {
-        if(FPSMConfig.Server.lock3PersonCamera.get() && type != CameraType.FIRST_PERSON) ci.cancel();
+        if (FPSMConfig.Server.lock3PersonCamera.get() && type != CameraType.FIRST_PERSON) ci.cancel();
     }
 }

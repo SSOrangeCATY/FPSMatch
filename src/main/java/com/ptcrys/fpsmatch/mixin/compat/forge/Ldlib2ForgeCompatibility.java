@@ -13,21 +13,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Ldlib2ForgeCompatibility {
-    public static final String INITIAL_FACTORIES_MIXIN =
-            "com.ptcrys.fpsmatch.mixin.compat.forge.ResourceLocationFactoriesCompatMixin";
-    public static final String DEFAULT_NAMESPACE_FACTORY_MIXIN =
-            "com.ptcrys.fpsmatch.mixin.compat.forge.ResourceLocationDefaultNamespaceCompatMixin";
 
-    private static final ForgeVersion INITIAL_FACTORIES_VERSION =
-            new ForgeVersion(47, 3, 19);
-    private static final ForgeVersion DEFAULT_NAMESPACE_FACTORY_VERSION =
-            new ForgeVersion(47, 3, 30);
+    public static final String INITIAL_FACTORIES_MIXIN = "com.ptcrys.fpsmatch.mixin.compat.forge.ResourceLocationFactoriesCompatMixin";
+    public static final String DEFAULT_NAMESPACE_FACTORY_MIXIN = "com.ptcrys.fpsmatch.mixin.compat.forge.ResourceLocationDefaultNamespaceCompatMixin";
+
+    private static final ForgeVersion INITIAL_FACTORIES_VERSION = new ForgeVersion(47, 3, 19);
+    private static final ForgeVersion DEFAULT_NAMESPACE_FACTORY_VERSION = new ForgeVersion(47, 3, 30);
     private static final Pattern VERSION_PATTERN = Pattern.compile(
-            "^(\\d+)\\.(\\d+)\\.(\\d+)(?:[-+].*)?$"
-    );
+            "^(\\d+)\\.(\\d+)\\.(\\d+)(?:[-+].*)?$");
 
-    private Ldlib2ForgeCompatibility() {
-    }
+    private Ldlib2ForgeCompatibility() {}
 
     public static boolean requiresInitialFactories(String forgeVersion) {
         return parse(forgeVersion).compareTo(INITIAL_FACTORIES_VERSION) < 0;
@@ -52,20 +47,17 @@ public final class Ldlib2ForgeCompatibility {
                 target,
                 "fromNamespaceAndPath",
                 resourceLocationFactoryDescriptor(
-                        target, "Ljava/lang/String;Ljava/lang/String;"
-                ),
+                        target, "Ljava/lang/String;Ljava/lang/String;"),
                 "(Ljava/lang/String;Ljava/lang/String;)V",
                 2,
-                false
-        );
+                false);
         addFactoryIfMissing(
                 target,
                 "parse",
                 resourceLocationFactoryDescriptor(target, "Ljava/lang/String;"),
                 "(Ljava/lang/String;)V",
                 1,
-                false
-        );
+                false);
     }
 
     public static void applyDefaultNamespaceFactory(ClassNode target) {
@@ -75,20 +67,17 @@ public final class Ldlib2ForgeCompatibility {
                 resourceLocationFactoryDescriptor(target, "Ljava/lang/String;"),
                 "(Ljava/lang/String;Ljava/lang/String;)V",
                 1,
-                true
-        );
+                true);
     }
 
     private static void addFactoryIfMissing(
-            ClassNode target,
-            String name,
-            String descriptor,
-            String constructorDescriptor,
-            int argumentCount,
-            boolean defaultNamespace
-    ) {
-        if (target.methods.stream().anyMatch(method ->
-                method.name.equals(name) && method.desc.equals(descriptor))) {
+                                            ClassNode target,
+                                            String name,
+                                            String descriptor,
+                                            String constructorDescriptor,
+                                            int argumentCount,
+                                            boolean defaultNamespace) {
+        if (target.methods.stream().anyMatch(method -> method.name.equals(name) && method.desc.equals(descriptor))) {
             return;
         }
 
@@ -97,8 +86,7 @@ public final class Ldlib2ForgeCompatibility {
                 name,
                 descriptor,
                 null,
-                null
-        );
+                null);
         method.instructions.add(new TypeInsnNode(Opcodes.NEW, target.name));
         method.instructions.add(new InsnNode(Opcodes.DUP));
         if (defaultNamespace) {
@@ -112,8 +100,7 @@ public final class Ldlib2ForgeCompatibility {
                 target.name,
                 "<init>",
                 constructorDescriptor,
-                false
-        ));
+                false));
         method.instructions.add(new InsnNode(Opcodes.ARETURN));
         method.maxStack = defaultNamespace ? 4 : argumentCount + 2;
         method.maxLocals = argumentCount;
@@ -121,9 +108,8 @@ public final class Ldlib2ForgeCompatibility {
     }
 
     private static String resourceLocationFactoryDescriptor(
-            ClassNode target,
-            String arguments
-    ) {
+                                                            ClassNode target,
+                                                            String arguments) {
         return "(" + arguments + ")L" + target.name + ";";
     }
 
@@ -136,8 +122,7 @@ public final class Ldlib2ForgeCompatibility {
             return new ForgeVersion(
                     Integer.parseInt(matcher.group(1)),
                     Integer.parseInt(matcher.group(2)),
-                    Integer.parseInt(matcher.group(3))
-            );
+                    Integer.parseInt(matcher.group(3)));
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("Invalid Forge version: " + version, exception);
         }
@@ -145,6 +130,7 @@ public final class Ldlib2ForgeCompatibility {
 
     private record ForgeVersion(int major, int minor, int patch)
             implements Comparable<ForgeVersion> {
+
         @Override
         public int compareTo(ForgeVersion other) {
             int result = Integer.compare(major, other.major);

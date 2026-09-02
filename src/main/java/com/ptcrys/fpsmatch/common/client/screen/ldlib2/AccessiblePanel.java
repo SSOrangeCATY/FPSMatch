@@ -1,15 +1,17 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** Focusable LDLib2 panel for selectable rows and other composite controls. */
 public class AccessiblePanel extends UIElement implements Ldlib2AccessibilityController.FocusTarget {
+
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private Supplier<Component> accessibleName = Component::empty;
     private Supplier<Component> accessibleState = Component::empty;
@@ -28,8 +30,7 @@ public class AccessiblePanel extends UIElement implements Ldlib2AccessibilityCon
                 this,
                 activationLatch,
                 this::canActivate,
-                this::activate
-        );
+                this::activate);
     }
 
     public AccessiblePanel setOnActivate(Runnable action) {

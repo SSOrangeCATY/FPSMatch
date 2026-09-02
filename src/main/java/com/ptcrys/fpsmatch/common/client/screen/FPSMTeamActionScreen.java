@@ -1,24 +1,26 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.screen.team.TeamActionModel;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
+import com.ptcrys.fpsmatch.common.client.screen.team.TeamActionModel;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.UUID;
 
 /** Right-click action box for a player row. */
 public final class FPSMTeamActionScreen extends ModularUIScreen implements FPSMMapDetailChildScreen {
+
     private MapRoomDetail detail;
     private final Screen parent;
     private final UUID player;
@@ -121,6 +123,5 @@ public final class FPSMTeamActionScreen extends ModularUIScreen implements FPSMM
         return new Parts(ModularUI.of(UI.of(root)), actions, title);
     }
 
-    private record Parts(ModularUI ui, UIElement panel, UIElement title) {
-    }
+    private record Parts(ModularUI ui, UIElement panel, UIElement title) {}
 }

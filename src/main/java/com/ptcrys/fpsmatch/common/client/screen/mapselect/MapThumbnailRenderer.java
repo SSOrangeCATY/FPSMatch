@@ -1,59 +1,60 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+
+import com.mojang.blaze3d.systems.RenderSystem;
 
 /**
  * 地图缩略图/预览图渲染器。
  * <p>
  * 渲染优先级：
  * <ol>
- *   <li>若提供贴图路径且资源已注册 → 绘制贴图（等比拉伸填充）</li>
- *   <li>否则 → 绘制柔和渐变色块 + 模式标识</li>
+ * <li>若提供贴图路径且资源已注册 → 绘制贴图（等比拉伸填充）</li>
+ * <li>否则 → 绘制柔和渐变色块 + 模式标识</li>
  * </ol>
  * <p>
  * 色块设计原则（甲方要求"看着舒服、颜色不单一"）：
  * <ul>
- *   <li>纵向双色渐变，营造层次感</li>
- *   <li>饱和度低、明度中低，避免鲜艳刺眼</li>
- *   <li>基于 mapName+gameType 哈希确定性分配，同一地图颜色稳定</li>
- *   <li>8 组预设色对，覆盖蓝/紫/青/绿/棕/红/灰/金系</li>
+ * <li>纵向双色渐变，营造层次感</li>
+ * <li>饱和度低、明度中低，避免鲜艳刺眼</li>
+ * <li>基于 mapName+gameType 哈希确定性分配，同一地图颜色稳定</li>
+ * <li>8 组预设色对，覆盖蓝/紫/青/绿/棕/红/灰/金系</li>
  * </ul>
  */
 public final class MapThumbnailRenderer {
-    private MapThumbnailRenderer() {
-    }
+
+    private MapThumbnailRenderer() {}
 
     /**
      * 8 组柔和渐变色对（顶部深色 → 底部浅色）。
      * 均经过降饱和处理，避免刺眼。
      */
     private static final int[][] GRADIENT_PAIRS = {
-            {0xFF2C3E50, 0xFF4A6890}, // 0 深蓝灰
-            {0xFF3D2E4A, 0xFF6B4F7D}, // 1 深紫灰
-            {0xFF1F3A3D, 0xFF3A6166}, // 2 深青灰
-            {0xFF2A3D2A, 0xFF4A6B4A}, // 3 深绿灰
-            {0xFF3D2E22, 0xFF6B4F36}, // 4 深棕灰
-            {0xFF3D2222, 0xFF6B3636}, // 5 深红灰
-            {0xFF2A2A2A, 0xFF4A4A4A}, // 6 深石灰
-            {0xFF3D3522, 0xFF6B5E36}, // 7 深金灰
+            { 0xFF2C3E50, 0xFF4A6890 }, // 0 深蓝灰
+            { 0xFF3D2E4A, 0xFF6B4F7D }, // 1 深紫灰
+            { 0xFF1F3A3D, 0xFF3A6166 }, // 2 深青灰
+            { 0xFF2A3D2A, 0xFF4A6B4A }, // 3 深绿灰
+            { 0xFF3D2E22, 0xFF6B4F36 }, // 4 深棕灰
+            { 0xFF3D2222, 0xFF6B3636 }, // 5 深红灰
+            { 0xFF2A2A2A, 0xFF4A4A4A }, // 6 深石灰
+            { 0xFF3D3522, 0xFF6B5E36 }, // 7 深金灰
     };
 
     /**
      * 渲染地图缩略图。
      *
-     * @param graphics      GuiGraphics
-     * @param x             左上 x
-     * @param y             左上 y
-     * @param width         宽
-     * @param height        高
-     * @param texturePath   贴图资源路径，空串表示无贴图
-     * @param mapName       地图内部名（用于色块哈希）
-     * @param gameType      游戏类型（用于色块哈希 + 模式标识）
-     * @param displayName   显示名（色块底部叠加）
-     * @param showLabel     是否在色块底部叠加地图名标签
+     * @param graphics    GuiGraphics
+     * @param x           左上 x
+     * @param y           左上 y
+     * @param width       宽
+     * @param height      高
+     * @param texturePath 贴图资源路径，空串表示无贴图
+     * @param mapName     地图内部名（用于色块哈希）
+     * @param gameType    游戏类型（用于色块哈希 + 模式标识）
+     * @param displayName 显示名（色块底部叠加）
+     * @param showLabel   是否在色块底部叠加地图名标签
      */
     public static void render(GuiGraphics graphics, int x, int y, int width, int height,
                               String texturePath, String mapName, String gameType,

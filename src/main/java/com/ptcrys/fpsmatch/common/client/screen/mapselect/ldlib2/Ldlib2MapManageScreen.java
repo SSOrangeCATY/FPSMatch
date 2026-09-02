@@ -1,5 +1,9 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -12,15 +16,13 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityContro
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.List;
 import java.util.UUID;
 
 public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
+
     private final UIElement panel;
     private final Label debugTitle;
     private final Label subtitleLabel;
@@ -93,8 +95,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     public void showSettingsSaveSuccess(int changeCount) {
         transientStatus = Component.translatable(
                 "gui.fpsm.map_select.settings.save_success",
-                Math.max(1, changeCount)
-        );
+                Math.max(1, changeCount));
         transientStatusTicks = 100;
         refreshContent();
         if (width > 0 && height > 0) {
@@ -114,7 +115,6 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
             applyResponsiveLayout();
         }
     }
-
 
     private void applyResponsiveLayout() {
         int margin = Math.min(16, Math.max(8, width / 32));
@@ -146,8 +146,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
 
         int gridTop = 24;
         layoutButtonGrid(debugButtons, padding, gridTop, columns, buttonWidth, buttonHeight, gap);
-        int toolsTop = gridTop + debugRows * buttonHeight
-                + Math.max(0, debugRows - 1) * gap + groupGap;
+        int toolsTop = gridTop + debugRows * buttonHeight + Math.max(0, debugRows - 1) * gap + groupGap;
         layoutButtonGrid(toolButtons, padding, toolsTop, columns, buttonWidth, buttonHeight, gap);
 
         int permissionTop = Math.max(0, panelHeight - 20);
@@ -197,8 +196,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         FPSMLdlib2Theme.buttonState(settingsButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
         FPSMLdlib2Theme.buttonState(
                 shopButton, FPSMLdlib2Theme.ButtonKind.SECONDARY,
-                op && !detail.editableShops().isEmpty()
-        );
+                op && !detail.editableShops().isEmpty());
         FPSMLdlib2Theme.buttonState(backButton, FPSMLdlib2Theme.ButtonKind.QUIET, true);
         if (!op) {
             fallbackFocusAfterPermissionLoss();
@@ -209,8 +207,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         List<Ldlib2AccessibilityController.FocusTarget> targets = new java.util.ArrayList<>();
         for (Ldlib2AccessibilityController.FocusTarget target : List.of(
                 startButton, resetButton, newRoundButton, cleanupButton, switchButton,
-                settingsButton, shopButton, backButton
-        )) {
+                settingsButton, shopButton, backButton)) {
             if (target.element().isVisible() && target.element().isActive()) {
                 targets.add(target);
             }
@@ -264,10 +261,10 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         AccessibleButton settings = medium("fpsmatch.map_manage.settings", "gui.fpsm.map_select.settings", 14, 72);
         AccessibleButton shop = medium("fpsmatch.map_manage.shop", "gui.fpsm.map_detail.edit_shop", 118, 72);
         FPSMLdlib2Theme.button(start, FPSMLdlib2Theme.ButtonKind.PRIMARY);
-        for (AccessibleButton b : new AccessibleButton[]{reset, newRound, cleanup, switchBtn, settings, shop}) {
+        for (AccessibleButton b : new AccessibleButton[] { reset, newRound, cleanup, switchBtn, settings, shop }) {
             FPSMLdlib2Theme.button(b, FPSMLdlib2Theme.ButtonKind.SECONDARY);
         }
-        for (AccessibleButton b : new AccessibleButton[]{start, reset, newRound, cleanup, switchBtn, settings, shop}) {
+        for (AccessibleButton b : new AccessibleButton[] { start, reset, newRound, cleanup, switchBtn, settings, shop }) {
             b.textStyle(style -> style.fontSize(8));
         }
         Label permission = label("fpsmatch.map_manage.permission", Component.empty());

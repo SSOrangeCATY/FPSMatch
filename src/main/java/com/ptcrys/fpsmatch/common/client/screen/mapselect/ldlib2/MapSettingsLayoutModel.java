@@ -2,16 +2,16 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
 /** Pure responsive geometry for the horizontal map-settings editor. */
 public record MapSettingsLayoutModel(Rect sidebar, Rect content) {
+
     public record Rect(int x, int y, int width, int height) {
+
         public boolean intersects(Rect other) {
-            return x < other.x + other.width && x + width > other.x
-                    && y < other.y + other.height && y + height > other.y;
+            return x < other.x + other.width && x + width > other.x && y < other.y + other.height && y + height > other.y;
         }
     }
 
     /** Geometry relative to the content panel. The popup intentionally overlays the list. */
-    public record ToolbarLayout(Rect search, Rect categoryFilter, Rect list, Rect categoryPopup) {
-    }
+    public record ToolbarLayout(Rect search, Rect categoryFilter, Rect list, Rect categoryPopup) {}
 
     public static MapSettingsLayoutModel responsive(int width, int height) {
         if (width <= 0 || height <= 0) {

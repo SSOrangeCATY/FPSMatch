@@ -1,5 +1,8 @@
 package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -18,8 +21,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopConfigToolActionC2SPacket;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Objects;
 
 /** LDLib2 overview for the handheld shop configuration tool. */
 public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen {
+
     private static final int OPEN_TIMEOUT_TICKS = 200;
 
     private final UIElement filters;
@@ -85,23 +87,19 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
         List<String> types = data.maps().stream().map(OpenShopConfigToolScreenS2CPacket.MapEntry::gameType)
                 .distinct().toList();
         typeSelector.setCandidates(types);
-        String type = types.contains(data.selectedType())
-                ? data.selectedType() : (types.isEmpty() ? "" : types.get(0));
+        String type = types.contains(data.selectedType()) ? data.selectedType() : (types.isEmpty() ? "" : types.get(0));
         typeSelector.setSelected(type, false);
 
         List<String> maps = mapsFor(type);
         mapSelector.setCandidates(maps);
-        String map = maps.contains(data.selectedMap())
-                ? data.selectedMap() : (maps.isEmpty() ? "" : maps.get(0));
+        String map = maps.contains(data.selectedMap()) ? data.selectedMap() : (maps.isEmpty() ? "" : maps.get(0));
         mapSelector.setSelected(map, false);
         shopList.setItems(data.shops());
         shopList.refreshVisibleItems();
-        emptyLabel.setValue(Component.translatable(data.maps().isEmpty()
-                ? "gui.fpsm.shop_config.no_maps" : "gui.fpsm.shop_config.empty"));
+        emptyLabel.setValue(Component.translatable(data.maps().isEmpty() ? "gui.fpsm.shop_config.no_maps" : "gui.fpsm.shop_config.empty"));
         emptyLabel.setVisible(data.shops().isEmpty());
         if (!openingEditor) {
-            statusLabel.setValue(Component.translatable(data.shops().isEmpty()
-                    ? "gui.fpsm.shop_config.empty" : "gui.fpsm.shop_config.edit"));
+            statusLabel.setValue(Component.translatable(data.shops().isEmpty() ? "gui.fpsm.shop_config.empty" : "gui.fpsm.shop_config.edit"));
             FPSMLdlib2Theme.status(statusLabel,
                     data.shops().isEmpty() ? FPSMLdlib2Theme.MUTED : FPSMLdlib2Theme.SUCCESS);
         }
@@ -154,8 +152,7 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
 
     private UIElement shopRow(EditableShopInfo shop) {
         AccessibleButton row = new AccessibleButton();
-        row.setId("fpsmatch.shop_config.row." + shop.gameType() + "." + shop.mapName()
-                + "." + shop.teamName());
+        row.setId("fpsmatch.shop_config.row." + shop.gameType() + "." + shop.mapName() + "." + shop.teamName());
         row.setText(Component.literal(shop.displayName() + "  /  " + shop.teamName()));
         row.setAccessibleName(Component.literal(shop.displayName()));
         row.setAccessibleState(() -> Component.literal(shop.teamName()));
@@ -335,10 +332,8 @@ public final class Ldlib2ShopConfigToolScreen extends AccessibleModularUIScreen 
     }
 
     private record Parts(
-            ModularUI ui, UIElement filters, AccessibleSelector<String> typeSelector,
-            AccessibleSelector<String> mapSelector, VirtualScrollerView<EditableShopInfo> shopList,
-            Label emptyLabel, Label statusLabel, AccessibleButton refreshButton,
-            AccessibleButton closeButton
-    ) {
-    }
+                         ModularUI ui, UIElement filters, AccessibleSelector<String> typeSelector,
+                         AccessibleSelector<String> mapSelector, VirtualScrollerView<EditableShopInfo> shopList,
+                         Label emptyLabel, Label statusLabel, AccessibleButton refreshButton,
+                         AccessibleButton closeButton) {}
 }

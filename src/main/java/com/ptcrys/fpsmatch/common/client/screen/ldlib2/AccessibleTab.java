@@ -1,15 +1,17 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TabView;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** LDLib2 tab with deterministic keyboard selection and narration. */
 public class AccessibleTab extends Tab implements Ldlib2AccessibilityController.FocusTarget {
+
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private Supplier<Component> accessibleName = () -> text.getText();
     private Supplier<Component> accessibleHint = Component::empty;
@@ -21,8 +23,7 @@ public class AccessibleTab extends Tab implements Ldlib2AccessibilityController.
                 this,
                 activationLatch,
                 this::canActivate,
-                this::activate
-        );
+                this::activate);
     }
 
     @Override
@@ -84,9 +85,7 @@ public class AccessibleTab extends Tab implements Ldlib2AccessibilityController.
     public Supplier<Component> state() {
         return () -> {
             TabView view = getTabView();
-            return view != null && view.getSelectedTab() == this
-                    ? Component.translatable("gui.done")
-                    : Component.empty();
+            return view != null && view.getSelectedTab() == this ? Component.translatable("gui.done") : Component.empty();
         };
     }
 

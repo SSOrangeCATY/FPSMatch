@@ -1,5 +1,9 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -12,13 +16,11 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 /** Invite online players into the current room. */
 public final class Ldlib2MapInviteScreen extends Ldlib2MapChildScreen {
+
     private final Label subtitleLabel;
     private final VirtualScrollerView<MapRoomPlayerInfo> list;
     private final Label emptyLabel;

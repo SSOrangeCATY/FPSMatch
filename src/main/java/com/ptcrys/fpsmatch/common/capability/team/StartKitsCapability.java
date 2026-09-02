@@ -1,21 +1,5 @@
 package com.ptcrys.fpsmatch.common.capability.team;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.serialization.Codec;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.command.FPSMCommand;
-import com.ptcrys.fpsmatch.common.command.FPSMHelpManager;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
-import com.ptcrys.fpsmatch.core.data.PlayerData;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
-import com.ptcrys.fpsmatch.core.team.BaseTeam;
-import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
-import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
-import com.ptcrys.fpsmatch.core.team.ServerTeam;
-import com.ptcrys.fpsmatch.common.event.PlayerObtainItemEvent;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -25,6 +9,23 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.serialization.Codec;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.command.FPSMCommand;
+import com.ptcrys.fpsmatch.common.command.FPSMHelpManager;
+import com.ptcrys.fpsmatch.common.event.PlayerObtainItemEvent;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapability;
+import com.ptcrys.fpsmatch.core.capability.FPSMCapabilityManager;
+import com.ptcrys.fpsmatch.core.capability.team.TeamCapability;
+import com.ptcrys.fpsmatch.core.data.PlayerData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
+import com.ptcrys.fpsmatch.core.team.BaseTeam;
+import com.ptcrys.fpsmatch.core.team.ServerTeam;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,17 +49,18 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
      */
     public static void register() {
         FPSMCapabilityManager.register(FPSMCapabilityManager.CapabilityType.TEAM, StartKitsCapability.class, new Factory<>() {
+
             @Override
             public StartKitsCapability create(BaseTeam team) {
-                if(team instanceof ServerTeam serverTeam) {
+                if (team instanceof ServerTeam serverTeam) {
                     return new StartKitsCapability(serverTeam);
-                }else{
+                } else {
                     throw new IllegalArgumentException("Team is client side");
                 }
             }
 
             @Override
-            public Command command(){
+            public Command command() {
                 return new StartKitsCommand();
             }
         });
@@ -173,7 +175,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
     public List<ItemStack> write(List<ItemStack> value) {
         teamKits.clear();
         for (ItemStack itemStack : value) {
-            if(!itemStack.isEmpty()){
+            if (!itemStack.isEmpty()) {
                 teamKits.add(itemStack);
             }
         }
@@ -186,6 +188,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
     }
 
     protected static class StartKitsCommand implements Factory.Command {
+
         @Override
         public String getName() {
             return "kits";
@@ -281,9 +284,7 @@ public class StartKitsCapability extends TeamCapability implements FPSMCapabilit
         private static int handleListKits(CommandContext<CommandSourceStack> context) {
             return FPSMCommand.getTeamCapability(context, StartKitsCapability.class).map(capability -> {
                 List<ItemStack> kits = capability.getTeamKits();
-                kits.forEach(itemStack ->
-                        context.getSource().sendSuccess(itemStack::getDisplayName, true)
-                );
+                kits.forEach(itemStack -> context.getSource().sendSuccess(itemStack::getDisplayName, true));
                 context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.modify.kits.list.success",
                         capability.getHolder().name, kits.size()), true);
                 return 1;

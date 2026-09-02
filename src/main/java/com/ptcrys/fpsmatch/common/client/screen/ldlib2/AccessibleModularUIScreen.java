@@ -1,22 +1,21 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_TAB;
-import static org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT;
-
 /** Base screen that adds deterministic traversal and narration to LDLib2. */
 public abstract class AccessibleModularUIScreen extends ModularUIScreen {
+
     private final Ldlib2AccessibilityController accessibility;
     private UIElement directPointerTarget;
     private int directPointerButton = -1;
@@ -34,8 +33,7 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
     }
 
     protected final void registerFocusGroup(
-            Supplier<List<Ldlib2AccessibilityController.FocusTarget>> targets
-    ) {
+                                            Supplier<List<Ldlib2AccessibilityController.FocusTarget>> targets) {
         accessibility.registerGroup(targets);
     }
 
@@ -84,12 +82,11 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
     @Override
     public boolean mouseDragged(
-            double mouseX,
-            double mouseY,
-            int button,
-            double dragX,
-            double dragY
-    ) {
+                                double mouseX,
+                                double mouseY,
+                                int button,
+                                double dragX,
+                                double dragY) {
         if (directPointerTarget == null) {
             return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
         }
@@ -98,8 +95,7 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
         }
 
         UIEvent drag = pointerEvent(
-                UIEvents.DRAG_UPDATE, directPointerTarget, mouseX, mouseY, button
-        );
+                UIEvents.DRAG_UPDATE, directPointerTarget, mouseX, mouseY, button);
         drag.target = directPointerTarget;
         drag.deltaX = (float) dragX;
         drag.deltaY = (float) dragY;
@@ -128,8 +124,7 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
         UIElement releaseTarget = hitElementAt(mouseX, mouseY);
         UIEvent mouseUp = pointerEvent(
-                UIEvents.MOUSE_UP, pressedTarget, mouseX, mouseY, pressedButton
-        );
+                UIEvents.MOUSE_UP, pressedTarget, mouseX, mouseY, pressedButton);
         mouseUp.target = pressedTarget;
         RuntimeException releaseFailure = null;
         try {
@@ -149,8 +144,7 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
         if (releaseTarget == pressedTarget) {
             UIEvent click = pointerEvent(
-                    UIEvents.CLICK, pressedTarget, mouseX, mouseY, pressedButton
-            );
+                    UIEvents.CLICK, pressedTarget, mouseX, mouseY, pressedButton);
             UIEventDispatcher.dispatchEvent(click);
         }
         return true;
@@ -177,18 +171,16 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
     protected final UIElement hitElementAt(double mouseX, double mouseY) {
         var hit = modularUI.ui.rootElement.hitTest(
-                mouseX - modularUI.getLeftPos(), mouseY - modularUI.getTopPos()
-        );
+                mouseX - modularUI.getLeftPos(), mouseY - modularUI.getTopPos());
         return hit == null ? null : hit.getA();
     }
 
     private UIEvent pointerEvent(
-            String type,
-            UIElement target,
-            double mouseX,
-            double mouseY,
-            int button
-    ) {
+                                 String type,
+                                 UIElement target,
+                                 double mouseX,
+                                 double mouseY,
+                                 int button) {
         UIEvent event = UIEvent.create(type);
         event.x = (float) (mouseX - modularUI.getLeftPos());
         event.y = (float) (mouseY - modularUI.getTopPos());
@@ -207,8 +199,7 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return accessibility.keyReleased(keyCode, scanCode, modifiers)
-                || super.keyReleased(keyCode, scanCode, modifiers);
+        return accessibility.keyReleased(keyCode, scanCode, modifiers) || super.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -262,9 +253,8 @@ public abstract class AccessibleModularUIScreen extends ModularUIScreen {
     }
 
     private static RuntimeException mergeFailure(
-            RuntimeException current,
-            RuntimeException next
-    ) {
+                                                 RuntimeException current,
+                                                 RuntimeException next) {
         if (current == null) {
             return next;
         }

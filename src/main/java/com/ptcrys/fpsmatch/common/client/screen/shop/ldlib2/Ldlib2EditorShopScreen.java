@@ -1,17 +1,18 @@
 package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.ModularMenuUiSupport;
-import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
-import com.ptcrys.fpsmatch.common.client.screen.EditorShopContainer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
+
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.ptcrys.fpsmatch.common.client.screen.EditorShopContainer;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.ModularMenuUiSupport;
+import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 
 /**
  * Thin Forge menu adapter.
@@ -19,6 +20,7 @@ import net.minecraft.world.inventory.ClickType;
  * render/mouse chain for carried stack and menu sync.
  */
 public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<EditorShopContainer> {
+
     private static final int OPEN_TIMEOUT_TICKS = 200;
 
     private Ldlib2ShopEditorUi.View view;
@@ -43,8 +45,7 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
                 selectedSlotIndex,
                 this::selectSlot,
                 this::openSlotEditor,
-                this::onClose
-        );
+                this::onClose);
         modularUI = view.modularUI();
         modularUI.setScreenAndInit(this);
         ModularMenuUiSupport.attach(modularUI, menu);
@@ -67,12 +68,10 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-    }
+    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {}
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-    }
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {}
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -134,8 +133,7 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return accessibility != null && accessibility.keyReleased(keyCode, scanCode, modifiers)
-                || super.keyReleased(keyCode, scanCode, modifiers);
+        return accessibility != null && accessibility.keyReleased(keyCode, scanCode, modifiers) || super.keyReleased(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -148,9 +146,7 @@ public final class Ldlib2EditorShopScreen extends AbstractContainerScreen<Editor
     }
 
     private void openSlotEditor(int slotIndex) {
-        if (openingSlot || slotIndex < 0 || slotIndex >= menu.slots.size()
-                || slotIndex >= menu.getAllSlots().size()
-                || menu.getAllSlots().get(slotIndex) == null) {
+        if (openingSlot || slotIndex < 0 || slotIndex >= menu.slots.size() || slotIndex >= menu.getAllSlots().size() || menu.getAllSlots().get(slotIndex) == null) {
             return;
         }
         selectSlot(slotIndex);

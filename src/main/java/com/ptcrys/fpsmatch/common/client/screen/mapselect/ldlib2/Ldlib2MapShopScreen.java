@@ -1,5 +1,8 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -15,8 +18,6 @@ import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import java.util.List;
 
 /** Accessible, responsive shop picker for opening the server-owned editor menu. */
 public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
+
     private static final int OPEN_TIMEOUT_TICKS = 200;
 
     private final Label system;
@@ -104,9 +106,7 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         boolean empty = detail.editableShops().isEmpty();
         emptyLabel.setVisible(empty);
         if (!openingEditor) {
-            statusLabel.setValue(Component.translatable(empty
-                    ? "gui.fpsm.map_shop.unsupported"
-                    : "gui.fpsm.map_shop.selection.ready"));
+            statusLabel.setValue(Component.translatable(empty ? "gui.fpsm.map_shop.unsupported" : "gui.fpsm.map_shop.selection.ready"));
             FPSMLdlib2Theme.status(statusLabel,
                     empty ? FPSMLdlib2Theme.MUTED : FPSMLdlib2Theme.SUCCESS);
         }
@@ -206,8 +206,7 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
     }
 
     private static String rowId(EditableShopInfo shop) {
-        return "fpsmatch.map_shop.row." + shop.gameType() + "." + shop.mapName()
-                + "." + shop.teamName();
+        return "fpsmatch.map_shop.row." + shop.gameType() + "." + shop.mapName() + "." + shop.teamName();
     }
 
     private static Parts build() {
@@ -269,15 +268,13 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
     }
 
     private record Parts(
-            ModularUI ui,
-            Label system,
-            Label header,
-            Label subtitle,
-            UIElement panel,
-            VirtualScrollerView<EditableShopInfo> list,
-            Label empty,
-            Label status,
-            AccessibleButton back
-    ) {
-    }
+                         ModularUI ui,
+                         Label system,
+                         Label header,
+                         Label subtitle,
+                         UIElement panel,
+                         VirtualScrollerView<EditableShopInfo> list,
+                         Label empty,
+                         Label status,
+                         AccessibleButton back) {}
 }

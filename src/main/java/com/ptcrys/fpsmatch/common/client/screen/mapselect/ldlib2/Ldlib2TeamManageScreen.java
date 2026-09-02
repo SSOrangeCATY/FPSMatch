@@ -1,5 +1,10 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -19,10 +24,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomTeamInfo;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import java.util.UUID;
  * Operators can drag player rows between team rosters; the server validates every drop.
  */
 public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
+
     private static final int TEAM_COLUMN_COUNT = 2;
     private static final int TEAM_HEADER_HEIGHT = 19;
     private static final int PLAYER_ROW_HEIGHT = 23;
@@ -123,22 +125,14 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         syncedReadyPlayers.addAll(nextReadyPlayers);
         syncedCountdownSeconds = detail.summary().readyCountdownSeconds();
 
-        boolean selectionRemoved = selectedPlayer != null
-                && detail.players().stream().noneMatch(p -> p.uuid().equals(selectedPlayer));
+        boolean selectionRemoved = selectedPlayer != null && detail.players().stream().noneMatch(p -> p.uuid().equals(selectedPlayer));
         if (selectionRemoved) {
             selectedPlayer = null;
             selectedPlayerTeam = null;
         }
 
-        boolean rosterChanged = readyChanged
-                || !detail.teams().equals(renderedTeams)
-                || !detail.players().equals(renderedPlayers);
-        boolean controlsChanged = !detail.teams().equals(renderedTeams)
-                || detail.summary().started() != renderedStarted
-                || detail.summary().allowJoinInProgress() != renderedAllowJoinInProgress
-                || detail.summary().currentPlayerOp() != renderedCurrentPlayerOp
-                || detail.summary().currentPlayerJoined() != renderedCurrentPlayerJoined
-                || detail.summary().currentPlayerSpectating() != renderedCurrentPlayerSpectating;
+        boolean rosterChanged = readyChanged || !detail.teams().equals(renderedTeams) || !detail.players().equals(renderedPlayers);
+        boolean controlsChanged = !detail.teams().equals(renderedTeams) || detail.summary().started() != renderedStarted || detail.summary().allowJoinInProgress() != renderedAllowJoinInProgress || detail.summary().currentPlayerOp() != renderedCurrentPlayerOp || detail.summary().currentPlayerJoined() != renderedCurrentPlayerJoined || detail.summary().currentPlayerSpectating() != renderedCurrentPlayerSpectating;
 
         subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
         if (controlsChanged) {
@@ -158,9 +152,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     }
 
     public void applyReadyState(String gameType, String mapName, int countdownSeconds, Set<UUID> readyPlayers) {
-        if (detail == null
-                || !detail.summary().gameType().equals(gameType)
-                || !detail.summary().mapName().equals(mapName)) {
+        if (detail == null || !detail.summary().gameType().equals(gameType) || !detail.summary().mapName().equals(mapName)) {
             return;
         }
         Set<UUID> nextReadyPlayers = readyPlayers == null ? Set.of() : readyPlayers;
@@ -277,8 +269,8 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
             left += buttonWidth + gap;
         }
         Button cancel = new Button();
-            cancel.setId("fpsmatch.team_manage.cancel_sel");
-            cancel.setText(Component.translatable("gui.fpsm.team_manage.cancel"));
+        cancel.setId("fpsmatch.team_manage.cancel_sel");
+        cancel.setText(Component.translatable("gui.fpsm.team_manage.cancel"));
         int cancelLeft = left;
         cancel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(cancelLeft).bottom(4).width(buttonWidth).height(17));
         FPSMLdlib2Theme.button(cancel, FPSMLdlib2Theme.ButtonKind.QUIET);
@@ -348,9 +340,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
             header.layout(layout -> layout.widthPercent(100).height(TEAM_HEADER_HEIGHT).marginBottom(ROW_GAP));
             FPSMLdlib2Theme.elevated(header);
             String limit = row.team().playerLimit() < 0 ? "?" : Integer.toString(row.team().playerLimit());
-            Component teamName = row.team().spectator()
-                    ? Component.translatable("gui.fpsm.team_manage.spectators")
-                    : Component.literal(row.team().name().toUpperCase(Locale.ROOT));
+            Component teamName = row.team().spectator() ? Component.translatable("gui.fpsm.team_manage.spectators") : Component.literal(row.team().name().toUpperCase(Locale.ROOT));
             Label label = label("fpsmatch.team_manage.header.label." + row.team().name(),
                     Component.translatable("gui.fpsm.team_manage.team_count",
                             teamName, row.team().currentPlayers(), limit));
@@ -527,9 +517,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         int innerWidth = Math.max(1, contentWidth - innerPadding * 2);
         int columnWidth = Math.max(1, (innerWidth - columnGap) / TEAM_COLUMN_COUNT);
         boolean hasSpectators = detail.teams().stream().anyMatch(MapRoomTeamInfo::spectator);
-        int spectatorHeight = hasSpectators
-                ? Math.min(64, Math.max(30, rosterHeight / (compact ? 3 : 4)))
-                : 0;
+        int spectatorHeight = hasSpectators ? Math.min(64, Math.max(30, rosterHeight / (compact ? 3 : 4))) : 0;
         int sectionGap = spectatorHeight > 0 ? 6 : 0;
         int columnHeight = Math.max(1, rosterHeight - innerPadding * 2 - spectatorHeight - sectionGap);
         for (int i = 0; i < teamColumnPanels.size(); i++) {
@@ -565,8 +553,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
                 dragState.begin(player.uuid(), player.teamName(), mouseX, mouseY);
             }
         }
-        if (target == modularUI.getLastHoveredElement()
-                && super.mouseClicked(mouseX, mouseY, button)) {
+        if (target == modularUI.getLastHoveredElement() && super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
         if (target == null) {
@@ -662,8 +649,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
                 continue;
             }
             for (MapRoomTeamInfo team : detail.teams()) {
-                if (id.equals(TEAM_HEADER_PREFIX + team.name())
-                        || id.equals("fpsmatch.team_manage.team." + team.name())) {
+                if (id.equals(TEAM_HEADER_PREFIX + team.name()) || id.equals("fpsmatch.team_manage.team." + team.name())) {
                     return team.name();
                 }
             }
@@ -681,15 +667,10 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
 
     private void refreshDropTargets() {
         for (int i = 0; i < teamColumnPanels.size(); i++) {
-            boolean hovered = dragState.active() && dragState.moved()
-                    && columnTeams.get(i).stream().anyMatch(team -> team.name().equals(dragState.hoverTeam()))
-                    && TeamActionModel.canDropTo(detail, dragState.player(), dragState.hoverTeam());
+            boolean hovered = dragState.active() && dragState.moved() && columnTeams.get(i).stream().anyMatch(team -> team.name().equals(dragState.hoverTeam())) && TeamActionModel.canDropTo(detail, dragState.player(), dragState.hoverTeam());
             styleRosterPanel(teamColumnPanels.get(i), hovered);
         }
-        boolean spectatorHovered = dragState.active() && dragState.moved()
-                && spectatorTeamName != null
-                && spectatorTeamName.equals(dragState.hoverTeam())
-                && TeamActionModel.canDropTo(detail, dragState.player(), dragState.hoverTeam());
+        boolean spectatorHovered = dragState.active() && dragState.moved() && spectatorTeamName != null && spectatorTeamName.equals(dragState.hoverTeam()) && TeamActionModel.canDropTo(detail, dragState.player(), dragState.hoverTeam());
         styleRosterPanel(spectatorPanel, spectatorHovered);
     }
 
@@ -897,6 +878,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
                          VirtualScrollerView<Row> spectatorList, Button ready, UIElement adminPanel, Button back) {}
 
     private record Row(boolean header, MapRoomTeamInfo team, MapRoomPlayerInfo player) {
+
         static Row header(MapRoomTeamInfo team) {
             return new Row(true, team, null);
         }

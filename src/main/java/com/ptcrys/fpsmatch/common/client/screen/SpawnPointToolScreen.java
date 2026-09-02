@@ -1,20 +1,22 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
 import com.ptcrys.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.SpawnPointToolActionC2SPacket;
 import com.ptcrys.fpsmatch.core.data.SpawnPointData;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SpawnPointToolScreen extends Screen {
+
     private static final int PANEL_WIDTH = 326;
     private static final int PANEL_HEIGHT = 220;
     // 统一设计 Token：遮罩/面板/边框全部引用 FPSMGuiTheme（原金色边框改为主题中性边框）
@@ -218,7 +220,6 @@ public class SpawnPointToolScreen extends Screen {
                 this.selectedType,
                 this.selectedMap,
                 this.selectedTeam,
-                this.selectedIndex
-        ));
+                this.selectedIndex));
     }
 }

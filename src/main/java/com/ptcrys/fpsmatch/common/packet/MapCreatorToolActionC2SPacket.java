@@ -1,11 +1,5 @@
 package com.ptcrys.fpsmatch.common.packet;
 
-import com.mojang.datafixers.util.Function3;
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
-import com.ptcrys.fpsmatch.core.FPSMCore;
-import com.ptcrys.fpsmatch.core.data.AreaData;
-import com.ptcrys.fpsmatch.core.map.BaseMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -13,19 +7,26 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
+
+import com.mojang.datafixers.util.Function3;
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
+import com.ptcrys.fpsmatch.core.FPSMCore;
+import com.ptcrys.fpsmatch.core.data.AreaData;
+import com.ptcrys.fpsmatch.core.map.BaseMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 
 public record MapCreatorToolActionC2SPacket(
-        Action action,
-        String selectedType,
-        String selectedMap,
-        String draftMapName,
-        @Nullable BlockPos pos1,
-        @Nullable BlockPos pos2
-) {
+                                            Action action,
+                                            String selectedType,
+                                            String selectedMap,
+                                            String draftMapName,
+                                            @Nullable BlockPos pos1,
+                                            @Nullable BlockPos pos2) {
+
     public enum Action {
         SAVE_DRAFT,
         CREATE,
@@ -48,8 +49,7 @@ public record MapCreatorToolActionC2SPacket(
                 buf.readUtf(),
                 buf.readUtf(),
                 readNullableBlockPos(buf),
-                readNullableBlockPos(buf)
-        );
+                readNullableBlockPos(buf));
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
@@ -68,8 +68,7 @@ public record MapCreatorToolActionC2SPacket(
             if ((action() == Action.CREATE || action() == Action.UPDATE) && !player.hasPermissions(2)) {
                 player.displayClientMessage(
                         Component.literal("需要管理员(OP)权限才能创建/修改地图"),
-                        false
-                );
+                        false);
                 return;
             }
 

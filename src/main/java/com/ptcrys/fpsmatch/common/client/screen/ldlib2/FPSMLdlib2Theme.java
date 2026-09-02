@@ -1,24 +1,26 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.texture.ColorBorderTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.Icons;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.Icons;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import net.minecraft.network.chat.Component;
 
 /** Shared visual language for FPSMatch LDLib2 work surfaces. */
 public final class FPSMLdlib2Theme {
+
     public static final int BG = 0xF20D1110;
     public static final int SURFACE = 0xF2171D1C;
     public static final int ELEVATED = 0xF2202826;
@@ -43,14 +45,15 @@ public final class FPSMLdlib2Theme {
     public static final int SYSTEM_LABEL = 0xFF86A49C;
     public static final int MAP_IDENTITY = 0xFFC6D7D0;
     public static final int FOCUS_ACCENT = ACCENT;
-    private static final IGuiTexture FOCUS_RING =
-            new ColorBorderTexture(FOCUS_RING_WIDTH, ACCENT);
+    private static final IGuiTexture FOCUS_RING = new ColorBorderTexture(FOCUS_RING_WIDTH, ACCENT);
 
-    private FPSMLdlib2Theme() {
-    }
+    private FPSMLdlib2Theme() {}
 
     public enum ButtonKind {
-        PRIMARY, SECONDARY, DANGER, QUIET
+        PRIMARY,
+        SECONDARY,
+        DANGER,
+        QUIET
     }
 
     public static void root(UIElement element) {
@@ -77,10 +80,8 @@ public final class FPSMLdlib2Theme {
      */
     public static void virtualScroller(VirtualScrollerView<?> scroller) {
         scroller.style(style -> style.background(panelTexture(0xFF111A18, BORDER_SOFT)));
-        scroller.viewPort(element -> element.style(style ->
-                style.background(new ColorRectTexture(0xFF111A18))));
-        scroller.viewContainer(element -> element.style(style ->
-                style.background(new ColorRectTexture(0x00111A18))));
+        scroller.viewPort(element -> element.style(style -> style.background(new ColorRectTexture(0xFF111A18))));
+        scroller.viewContainer(element -> element.style(style -> style.background(new ColorRectTexture(0x00111A18))));
     }
 
     public static void elevated(UIElement element) {
@@ -113,10 +114,8 @@ public final class FPSMLdlib2Theme {
 
     public static void settingsScroller(ScrollerView scroller) {
         scroller.style(style -> style.background(new ColorRectTexture(0xFF0F151C)));
-        scroller.viewPort(element -> element.style(style ->
-                style.background(new ColorRectTexture(0xFF0F151C))));
-        scroller.viewContainer(element -> element.style(style ->
-                style.background(new ColorRectTexture(0xFF0F151C))));
+        scroller.viewPort(element -> element.style(style -> style.background(new ColorRectTexture(0xFF0F151C))));
+        scroller.viewContainer(element -> element.style(style -> style.background(new ColorRectTexture(0xFF0F151C))));
     }
 
     public static void title(Label label) {

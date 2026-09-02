@@ -4,10 +4,10 @@ import net.minecraft.client.gui.GuiGraphics;
 
 /** Shared low-contrast survey backdrop for every FPSM map and tactical-map surface. */
 public final class FPSMLdlib2Backdrop {
+
     private static final int GRID_STEP = 48;
 
-    private FPSMLdlib2Backdrop() {
-    }
+    private FPSMLdlib2Backdrop() {}
 
     public static void draw(GuiGraphics graphics, int width, int height) {
         graphics.fill(0, 0, width, height, FPSMLdlib2Theme.BG);

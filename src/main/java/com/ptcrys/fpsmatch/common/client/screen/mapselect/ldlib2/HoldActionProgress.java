@@ -2,8 +2,12 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
 /** Time-based progress for a hold-to-confirm action, including cancel and completion animations. */
 final class HoldActionProgress {
+
     private enum Phase {
-        IDLE, HOLDING, RETURNING, FADING
+        IDLE,
+        HOLDING,
+        RETURNING,
+        FADING
     }
 
     private final long holdMillis;
@@ -68,9 +72,7 @@ final class HoldActionProgress {
     }
 
     float opacity(long now) {
-        return phase == Phase.FADING
-                ? clamp(1f - elapsed(now) / (float) fadeMillis)
-                : progress(now) > 0f ? 1f : 0f;
+        return phase == Phase.FADING ? clamp(1f - elapsed(now) / (float) fadeMillis) : progress(now) > 0f ? 1f : 0f;
     }
 
     boolean isHolding() {

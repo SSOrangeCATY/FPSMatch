@@ -1,28 +1,34 @@
 package com.ptcrys.fpsmatch.common.client.net;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.contents.TranslatableContents;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.ptcrys.fpsmatch.common.client.data.RenderableArea;
 import com.ptcrys.fpsmatch.common.client.data.RenderablePoint;
+import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
 import com.ptcrys.fpsmatch.common.client.screen.MapCreatorToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.MatchConfigToolScreen;
 import com.ptcrys.fpsmatch.common.client.screen.SpawnPointToolScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditShopSlotScreen;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2EditorShopScreen;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2.Ldlib2ShopConfigToolScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapShopScreen;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2.Ldlib2MapSettingsScreen;
+import com.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
 import com.ptcrys.fpsmatch.common.packet.AddAreaDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.AddPointDataS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMInventorySelectedS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMatchGameTypeS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.FPSMusicPlayS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.FPSMusicStopS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.FPSMusicPlayS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.FPSMusicStopS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenMatchConfigToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.OpenSpawnPointToolScreenS2CPacket;
@@ -33,8 +39,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomReadyStateS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionAccessS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapSelectionSnapshotS2CPacket;
-import com.ptcrys.fpsmatch.common.client.music.FPSClientMusicManager;
-import com.ptcrys.fpsmatch.common.client.shop.ShopActionResultListener;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopConfigToolScreenS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopActionResultS2CPacket;
 import com.ptcrys.fpsmatch.common.packet.shop.ShopDataSlotS2CPacket;
@@ -47,15 +51,12 @@ import com.ptcrys.fpsmatch.common.packet.team.TeamPlayerStatsS2CPacket;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
 import com.ptcrys.fpsmatch.core.team.ClientTeam;
 import com.ptcrys.fpsmatch.util.RenderUtil;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.contents.TranslatableContents;
 
 import java.util.Optional;
 
 public final class FPSMClientPacketHandlers {
-    private FPSMClientPacketHandlers() {
-    }
+
+    private FPSMClientPacketHandlers() {}
 
     public static void handleOpenMapCreatorToolScreen(OpenMapCreatorToolScreenS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -243,57 +244,46 @@ public final class FPSMClientPacketHandlers {
 
     public static void handleMapRoomToast(MapRoomToastS2CPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        String toastKey = packet.message().getContents() instanceof TranslatableContents contents
-                ? contents.getKey()
-                : "";
+        String toastKey = packet.message().getContents() instanceof TranslatableContents contents ? contents.getKey() : "";
         boolean isShopSaveToast = toastKey.startsWith("gui.fpsm.shop_editor.save.");
         boolean isShopOpenToast = toastKey.startsWith("gui.fpsm.shop_editor.open.");
-        boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission")
-                || toastKey.equals("gui.fpsm.map_select.action.map_not_found")
-                || toastKey.equals("gui.fpsm.map_select.action.setting.invalid")
-                || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
-        if (isShopSaveToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen
-                && screen.isSaveResultRelevant()) {
+        boolean isMapSettingToast = toastKey.equals("gui.fpsm.map_select.action.no_permission") || toastKey.equals("gui.fpsm.map_select.action.map_not_found") || toastKey.equals("gui.fpsm.map_select.action.setting.invalid") || toastKey.equals("gui.fpsm.map_select.action.setting.not_found");
+        if (isShopSaveToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen && screen.isSaveResultRelevant()) {
             screen.applySaveResult(packet);
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2EditorShopScreen screen
-                && screen.isSlotOpenPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof Ldlib2EditorShopScreen screen && screen.isSlotOpenPending()) {
             screen.applySlotOpenFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2MapShopScreen screen
-                && screen.isEditorOpenPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof Ldlib2MapShopScreen screen && screen.isEditorOpenPending()) {
             screen.applyEditorOpenFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2ShopConfigToolScreen screen
-                && screen.isEditorOpenPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof Ldlib2ShopConfigToolScreen screen && screen.isEditorOpenPending()) {
             screen.applyEditorOpenFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isShopOpenToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen
-                && screen.isReturnPending()) {
+        if (isShopOpenToast && minecraft.screen instanceof Ldlib2EditShopSlotScreen screen && screen.isReturnPending()) {
             screen.applyReturnFailure(packet.message());
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());
             }
             return;
         }
-        if (isMapSettingToast && minecraft.screen instanceof Ldlib2MapSettingsScreen screen
-                && screen.isSavePending()) {
+        if (isMapSettingToast && minecraft.screen instanceof Ldlib2MapSettingsScreen screen && screen.isSavePending()) {
             screen.applySaveFailure(packet);
             if (minecraft.player != null) {
                 minecraft.player.displayClientMessage(packet.message(), packet.error());

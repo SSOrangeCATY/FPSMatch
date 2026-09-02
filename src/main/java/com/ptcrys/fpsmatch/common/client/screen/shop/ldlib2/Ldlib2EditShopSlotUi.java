@@ -1,5 +1,8 @@
 package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -12,8 +15,6 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.inventory.Slot;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.ArrayList;
@@ -23,15 +24,14 @@ import java.util.function.IntConsumer;
 
 /** Responsive LDLib2 work surface for one server-owned shop slot. */
 public final class Ldlib2EditShopSlotUi {
-    private Ldlib2EditShopSlotUi() {
-    }
+
+    private Ldlib2EditShopSlotUi() {}
 
     public static View create(
-            EditShopSlotMenu menu,
-            Runnable saveAction,
-            Runnable closeAction,
-            Runnable copyHeldItemAction
-    ) {
+                              EditShopSlotMenu menu,
+                              Runnable saveAction,
+                              Runnable closeAction,
+                              Runnable copyHeldItemAction) {
         UIElement root = element(ShopEditorWidgetCatalog.SLOT_EDITOR);
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
@@ -49,9 +49,7 @@ public final class Ldlib2EditShopSlotUi {
                 Component.translatable("gui.fpsm.edit_shop_slot.title"));
         FPSMLdlib2Theme.title(title);
         Label identity = label(ShopEditorWidgetCatalog.HEADER + ".slot.identity",
-                Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / "
-                        + menu.getTeamName() + " / " + menu.getShopType() + " #"
-                        + (menu.getSlotNum() + 1)));
+                Component.literal(menu.getGameType() + " / " + menu.getMapName() + " / " + menu.getTeamName() + " / " + menu.getShopType() + " #" + (menu.getSlotNum() + 1)));
         FPSMLdlib2Theme.mapIdentity(identity);
         header.addChildren(system, title, identity);
 
@@ -160,13 +158,12 @@ public final class Ldlib2EditShopSlotUi {
     }
 
     private static AccessibleTextField field(
-            String id,
-            int value,
-            int minimum,
-            int maximum,
-            IntConsumer responder,
-            String labelKey
-    ) {
+                                             String id,
+                                             int value,
+                                             int minimum,
+                                             int maximum,
+                                             IntConsumer responder,
+                                             String labelKey) {
         AccessibleTextField field = new AccessibleTextField();
         field.setId(id);
         field.setAccessibleName(Component.translatable(labelKey));
@@ -182,14 +179,14 @@ public final class Ldlib2EditShopSlotUi {
     private static OptionalInt parse(String text, int minimum, int maximum) {
         try {
             int value = Integer.parseInt(text);
-            return value >= minimum && value <= maximum
-                    ? OptionalInt.of(value) : OptionalInt.empty();
+            return value >= minimum && value <= maximum ? OptionalInt.of(value) : OptionalInt.empty();
         } catch (NumberFormatException ignored) {
             return OptionalInt.empty();
         }
     }
 
     public static final class View {
+
         private final ModularUI ui;
         private final EditShopSlotMenu menu;
         private final UIElement header;
@@ -217,14 +214,13 @@ public final class Ldlib2EditShopSlotUi {
         private final AccessibleButton close;
 
         private View(
-                ModularUI ui, EditShopSlotMenu menu, UIElement header, UIElement product,
-                UIElement form, UIElement inventory, UIElement actions, Label system, Label title,
-                Label identity, AccessiblePanel productCard, Label itemCaption, ItemSlot item,
-                Label itemHint, Label ammoLabel, AccessibleTextField ammo, Label priceLabel,
-                AccessibleTextField price, Label groupLabel, AccessibleTextField group,
-                Label inventoryCaption, List<ItemSlot> playerSlots, Label status,
-                AccessibleButton save, AccessibleButton close
-        ) {
+                     ModularUI ui, EditShopSlotMenu menu, UIElement header, UIElement product,
+                     UIElement form, UIElement inventory, UIElement actions, Label system, Label title,
+                     Label identity, AccessiblePanel productCard, Label itemCaption, ItemSlot item,
+                     Label itemHint, Label ammoLabel, AccessibleTextField ammo, Label priceLabel,
+                     AccessibleTextField price, Label groupLabel, AccessibleTextField group,
+                     Label inventoryCaption, List<ItemSlot> playerSlots, Label status,
+                     AccessibleButton save, AccessibleButton close) {
             this.ui = ui;
             this.menu = menu;
             this.header = header;
@@ -282,9 +278,7 @@ public final class Ldlib2EditShopSlotUi {
         }
 
         public boolean inputValid() {
-            return (!menu.isGun() || parse(ammo.getText(), 0, 999_999).isPresent())
-                    && parse(price.getText(), 0, 1_000_000).isPresent()
-                    && parse(group.getText(), -1, 999_999).isPresent();
+            return (!menu.isGun() || parse(ammo.getText(), 0, 999_999).isPresent()) && parse(price.getText(), 0, 1_000_000).isPresent() && parse(group.getText(), -1, 999_999).isPresent();
         }
 
         public Draft draft() {
@@ -354,16 +348,14 @@ public final class Ldlib2EditShopSlotUi {
         }
 
         private static void layoutField(
-                Label label, AccessibleTextField field, int left, int width, int height
-        ) {
+                                        Label label, AccessibleTextField field, int left, int width, int height) {
             absolute(label, left + 4, 4, Math.max(1, width - 8), 12);
             absolute(field, left + 4, 18, Math.max(1, width - 8), Math.max(18, height - 24));
         }
 
         private static void layoutRow(
-                Label label, AccessibleTextField field, int left, int top,
-                int width, int rowHeight, int labelWidth
-        ) {
+                                      Label label, AccessibleTextField field, int left, int top,
+                                      int width, int rowHeight, int labelWidth) {
             absolute(label, left, top + 5, labelWidth, 14);
             absolute(field, left + labelWidth, top + 1,
                     Math.max(1, width - labelWidth - left - 6), Math.max(18, rowHeight - 3));
@@ -384,8 +376,7 @@ public final class Ldlib2EditShopSlotUi {
             int buttonHeight = compact ? 20 : Math.max(20, height - 8);
             int closeWidth = Math.min(102, Math.max(76, width / 4));
             int saveWidth = Math.min(132, Math.max(106, width / 3));
-            int buttonTop = compact ? Math.max(20, height - buttonHeight - 2)
-                    : Math.max(2, (height - buttonHeight) / 2);
+            int buttonTop = compact ? Math.max(20, height - buttonHeight - 2) : Math.max(2, (height - buttonHeight) / 2);
             absolute(close, width - closeWidth - 6, buttonTop, closeWidth, buttonHeight);
             absolute(save, width - closeWidth - saveWidth - 12, buttonTop, saveWidth, buttonHeight);
             int statusWidth = compact ? width - 12 : width - closeWidth - saveWidth - 24;
@@ -394,8 +385,7 @@ public final class Ldlib2EditShopSlotUi {
         }
     }
 
-    public record Draft(String ammo, String price, String group) {
-    }
+    public record Draft(String ammo, String price, String group) {}
 
     private static void absolute(UIElement element, int left, int top, int width, int height) {
         element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)

@@ -1,5 +1,9 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.Util;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -7,8 +11,8 @@ import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Scroller;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
@@ -19,9 +23,6 @@ import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSettingsC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomToastS2CPacket;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.Util;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.math.BigDecimal;
@@ -37,6 +38,7 @@ import java.util.Set;
 
 /** Editable map-room settings list. */
 public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
+
     private final UIElement sidebar;
     private final UIElement panel;
     private final Label subtitleLabel;
@@ -86,8 +88,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             this.searchQuery = value == null ? "" : value.trim();
             refreshContent();
         });
-        this.categoryFilterButton.setOnClick(e ->
-                this.categoryFilterPopup.setVisible(!this.categoryFilterPopup.isVisible()));
+        this.categoryFilterButton.setOnClick(e -> this.categoryFilterPopup.setVisible(!this.categoryFilterPopup.isVisible()));
         this.clearCategorySelectionButton.setOnClick(e -> clearCategorySelection());
         this.clearButton.setOnHoldComplete(this::clearPendingChanges);
         this.exitButton.setOnClick(e -> saveAndClose());
@@ -172,9 +173,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         }
         list.setItems(entries);
         list.refreshVisibleItems();
-        emptyLabel.setValue(Component.translatable(detail.settings().isEmpty()
-                ? "gui.fpsm.map_select.settings.empty"
-                : "gui.fpsm.map_select.settings.no_results"));
+        emptyLabel.setValue(Component.translatable(detail.settings().isEmpty() ? "gui.fpsm.map_select.settings.empty" : "gui.fpsm.map_select.settings.no_results"));
         emptyLabel.setVisible(entries.isEmpty());
         updatePendingState();
         if (width > 0 && height > 0) {
@@ -191,10 +190,8 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         if (categories.isEmpty()) {
             categoryFilterPopup.setVisible(false);
         }
-        categoryFilterButton.setText(selectedCategories.isEmpty()
-                ? Component.translatable("gui.fpsm.map_select.settings.category_filter")
-                : Component.translatable("gui.fpsm.map_select.settings.category_filter.selected",
-                        selectedCategories.size()));
+        categoryFilterButton.setText(selectedCategories.isEmpty() ? Component.translatable("gui.fpsm.map_select.settings.category_filter") : Component.translatable("gui.fpsm.map_select.settings.category_filter.selected",
+                selectedCategories.size()));
         categoryFilterButton.setActive(!categories.isEmpty());
         clearCategorySelectionButton.setActive(!selectedCategories.isEmpty());
         categoryFilterList.refreshVisibleItems();
@@ -234,10 +231,8 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (categoryFilterPopup.isVisible()) {
             UIElement target = hitElementAt(mouseX, mouseY);
-            boolean insidePopup = target != null
-                    && (target == categoryFilterPopup || categoryFilterPopup.isAncestorOf(target));
-            boolean onFilterButton = target != null
-                    && (target == categoryFilterButton || categoryFilterButton.isAncestorOf(target));
+            boolean insidePopup = target != null && (target == categoryFilterPopup || categoryFilterPopup.isAncestorOf(target));
+            boolean onFilterButton = target != null && (target == categoryFilterButton || categoryFilterButton.isAncestorOf(target));
             if (target != null && !insidePopup && !onFilterButton) {
                 categoryFilterPopup.setVisible(false);
             }
@@ -340,19 +335,13 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         String categoryKey = setting.categoryTranslationKey();
         String translatedCategory = Component.translatable(categoryKey).getString()
                 .toLowerCase(Locale.ROOT);
-        return setting.name().toLowerCase(Locale.ROOT).contains(query)
-                || setting.translationKey().toLowerCase(Locale.ROOT).contains(query)
-                || translated.contains(query)
-                || setting.category().toLowerCase(Locale.ROOT).contains(query)
-                || categoryKey.toLowerCase(Locale.ROOT).contains(query)
-                || translatedCategory.contains(query);
+        return setting.name().toLowerCase(Locale.ROOT).contains(query) || setting.translationKey().toLowerCase(Locale.ROOT).contains(query) || translated.contains(query) || setting.category().toLowerCase(Locale.ROOT).contains(query) || categoryKey.toLowerCase(Locale.ROOT).contains(query) || translatedCategory.contains(query);
     }
 
     private void prunePendingValues() {
         Map<String, String> current = new LinkedHashMap<>();
         detail.settings().forEach(setting -> current.put(setting.name(), setting.value()));
-        pendingValues.entrySet().removeIf(entry -> !current.containsKey(entry.getKey())
-                || Objects.equals(current.get(entry.getKey()), entry.getValue()));
+        pendingValues.entrySet().removeIf(entry -> !current.containsKey(entry.getKey()) || Objects.equals(current.get(entry.getKey()), entry.getValue()));
     }
 
     private void updatePendingState() {
@@ -360,9 +349,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         if (saveInFlight) {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.saving"));
         } else if (saveFailed) {
-            pendingLabel.setValue(saveFailureMessage == null
-                    ? Component.translatable("gui.fpsm.map_select.settings.save_failed")
-                    : saveFailureMessage);
+            pendingLabel.setValue(saveFailureMessage == null ? Component.translatable("gui.fpsm.map_select.settings.save_failed") : saveFailureMessage);
         } else if (pendingValues.isEmpty()) {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.no_changes"));
         } else if (invalid) {
@@ -370,15 +357,12 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         } else {
             pendingLabel.setValue(Component.translatable("gui.fpsm.map_select.settings.pending", pendingValues.size()));
         }
-        pendingLabel.textStyle(style -> style.textColor(saveFailed
-                ? FPSMLdlib2Theme.DANGER
-                : invalid || saveInFlight ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.TEXT));
+        pendingLabel.textStyle(style -> style.textColor(saveFailed ? FPSMLdlib2Theme.DANGER : invalid || saveInFlight ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.TEXT));
         boolean canClear = detail.summary().currentPlayerOp() && !pendingValues.isEmpty() && !saveInFlight;
         clearButton.setActive(canClear);
         FPSMLdlib2Theme.holdActionButton(clearButton, canClear);
         clearButton.textStyle(style -> style.fontSize(7));
-        exitButton.setActive(!saveInFlight && (pendingValues.isEmpty()
-                || detail.summary().currentPlayerOp() && !invalid));
+        exitButton.setActive(!saveInFlight && (pendingValues.isEmpty() || detail.summary().currentPlayerOp() && !invalid));
     }
 
     private boolean allPendingValuesValid() {
@@ -571,7 +555,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         content.addChild(name);
 
         if (setting.type() == MapRoomSettingInfo.SettingType.BOOLEAN) {
-            boolean[] value = {Boolean.parseBoolean(currentValue(setting))};
+            boolean[] value = { Boolean.parseBoolean(currentValue(setting)) };
             Button toggle = new Button();
             toggle.setId("fpsmatch.map_settings.toggle." + setting.name());
             toggle.setText(toggleLabel(value[0]));
@@ -647,9 +631,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     private static boolean validSlider(MapRoomSettingInfo setting) {
-        return Double.isFinite(setting.minValue()) && Double.isFinite(setting.maxValue())
-                && Double.isFinite(setting.step()) && setting.maxValue() > setting.minValue()
-                && setting.step() > 0.0;
+        return Double.isFinite(setting.minValue()) && Double.isFinite(setting.maxValue()) && Double.isFinite(setting.step()) && setting.maxValue() > setting.minValue() && setting.step() > 0.0;
     }
 
     private static String formatNumber(float value, MapRoomSettingInfo.SettingType type) {
@@ -691,9 +673,9 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
 
     /** A button whose action is intentionally difficult to trigger accidentally. */
     private static final class HoldToClearButton extends Button {
+
         private final HoldActionProgress holdProgress = new HoldActionProgress(900, 150, 220);
-        private Runnable onHoldComplete = () -> {
-        };
+        private Runnable onHoldComplete = () -> {};
 
         private void setOnHoldComplete(Runnable action) {
             onHoldComplete = Objects.requireNonNull(action, "action");
@@ -760,6 +742,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
     }
 
     private static final class SteppedSlider extends Scroller.Horizontal {
+
         private final float step;
 
         private SteppedSlider(float min, float max, float step) {
@@ -776,8 +759,7 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
             if (value == null || !Float.isFinite(value) || step <= 0f) {
                 return super.setValue(value, notify);
             }
-            float snapped = getMinValue()
-                    + Math.round((value - getMinValue()) / step) * step;
+            float snapped = getMinValue() + Math.round((value - getMinValue()) / step) * step;
             return super.setValue(clamp(snapped, getMinValue(), getMaxValue()), notify);
         }
     }
@@ -789,14 +771,11 @@ public final class Ldlib2MapSettingsScreen extends Ldlib2MapChildScreen {
         return label;
     }
 
-    private sealed interface SettingListEntry permits CategoryEntry, SettingEntry {
-    }
+    private sealed interface SettingListEntry permits CategoryEntry, SettingEntry {}
 
-    private record CategoryEntry(String category) implements SettingListEntry {
-    }
+    private record CategoryEntry(String category) implements SettingListEntry {}
 
-    private record SettingEntry(MapRoomSettingInfo setting) implements SettingListEntry {
-    }
+    private record SettingEntry(MapRoomSettingInfo setting) implements SettingListEntry {}
 
     private record Parts(ModularUI ui, UIElement sidebar, UIElement panel, Label subtitle,
                          Label pending, TextField search, Button categoryFilterButton,

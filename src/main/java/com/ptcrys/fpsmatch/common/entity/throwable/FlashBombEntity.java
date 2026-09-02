@@ -1,13 +1,5 @@
 package com.ptcrys.fpsmatch.common.entity.throwable;
 
-import com.ptcrys.fpsmatch.config.FPSMConfig;
-import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
-import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
-import com.ptcrys.fpsmatch.common.effect.FlashBlindnessMobEffect;
-import com.ptcrys.fpsmatch.common.entity.EntityRegister;
-import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
-import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
-import com.ptcrys.fpsmatch.util.FPSMUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,9 +14,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.common.effect.FPSMEffectRegister;
+import com.ptcrys.fpsmatch.common.effect.FlashBlindnessMobEffect;
+import com.ptcrys.fpsmatch.common.entity.EntityRegister;
+import com.ptcrys.fpsmatch.common.item.FPSMItemRegister;
+import com.ptcrys.fpsmatch.common.sound.FPSMSoundRegister;
+import com.ptcrys.fpsmatch.config.FPSMConfig;
+import com.ptcrys.fpsmatch.core.entity.BaseProjectileLifeTimeEntity;
+import com.ptcrys.fpsmatch.util.FPSMUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
+
     private final int radius;
     private static final double MAX_EFFECTIVE_DISTANCE = 48.0;
 
@@ -81,8 +83,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
         MobEffectInstance effect = new MobEffectInstance(
                 FPSMEffectRegister.FLASH_BLINDNESS.get(),
                 effectDuration.totalDuration(),
-                1
-        );
+                1);
 
         if (effect.getEffect() instanceof FlashBlindnessMobEffect flashEffect) {
             flashEffect.setFullBlindnessTime(effectDuration.fullBlindnessTime());
@@ -105,8 +106,7 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
                 eyePos, flashPos,
                 ClipContext.Block.VISUAL,
                 ClipContext.Fluid.NONE,
-                null
-        );
+                null);
         HitResult result = level().clip(context);
         return result.getType() == HitResult.Type.MISS ? 1.0 : 0.0;
     }
@@ -156,15 +156,13 @@ public class FlashBombEntity extends BaseProjectileLifeTimeEntity {
                 player.getZ(),
                 volume,
                 1.0f,
-                0
-        ));
+                0));
     }
 
     private double getVolumeFromDistance(double distance) {
         double maxDistance = 30.0;
         return Math.max(0.0, 1.0 - (distance / maxDistance));
     }
-
 
     @Override
     protected @NotNull Item getDefaultItem() {

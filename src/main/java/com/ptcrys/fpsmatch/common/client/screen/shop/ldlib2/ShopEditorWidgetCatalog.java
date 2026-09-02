@@ -4,6 +4,7 @@ import java.util.List;
 
 /** Stable IDs for the LDLib2 shop editor and child slot editor. */
 public final class ShopEditorWidgetCatalog {
+
     public static final String ROOT = "fpsmatch.shop_editor.root";
     public static final String HEADER = "fpsmatch.shop_editor.header";
     public static final String SUBTITLE = "fpsmatch.shop_editor.subtitle";
@@ -22,8 +23,7 @@ public final class ShopEditorWidgetCatalog {
     public static final String STATUS = "fpsmatch.shop_editor.status";
     public static final String CLOSE = "fpsmatch.shop_editor.close";
 
-    private ShopEditorWidgetCatalog() {
-    }
+    private ShopEditorWidgetCatalog() {}
 
     public static List<String> ids() {
         return List.of(ROOT, HEADER, CATEGORY_TABS, SLOT_LIST, PROPERTIES, ACTIONS, ITEM, AMMO,

@@ -1,6 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.spec;
 
-import com.ptcrys.fpsmatch.mixin.spec.teammate.CameraInvokerMixin;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
@@ -9,8 +8,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import com.ptcrys.fpsmatch.mixin.spec.teammate.CameraInvokerMixin;
+
 /** Client camera state for fixed death-location and C4 orbit views. */
 public final class SpectatorCameraController {
+
     /** 每帧向目标角度收敛的速度系数(越大越跟手、越小越平滑)。 */
     private static final float SMOOTH_RATE = 22.0F;
     /** 轨道半径向安全半径收近的速度(格/秒)：较快，避免穿入障碍。 */
@@ -32,8 +34,7 @@ public final class SpectatorCameraController {
     private static double smoothRadius = SpectatorCameraMath.DEFAULT_ORBIT_RADIUS;
     private static long lastRadiusNs;
 
-    private SpectatorCameraController() {
-    }
+    private SpectatorCameraController() {}
 
     public static void reset() {
         yaw = 0.0f;
@@ -118,9 +119,7 @@ public final class SpectatorCameraController {
         smoothAngles();
 
         Vec3 anchor = target.anchor();
-        double baseRadius = target.orbitRadius() > 0.0F
-                ? target.orbitRadius()
-                : SpectatorCameraMath.DEFAULT_ORBIT_RADIUS;
+        double baseRadius = target.orbitRadius() > 0.0F ? target.orbitRadius() : SpectatorCameraMath.DEFAULT_ORBIT_RADIUS;
 
         // 单位方向(锚点→相机)，radius=1 的轨道点即方向向量
         Vec3 dir = SpectatorCameraMath.orbitPosition(anchor, yaw, pitch, 1.0F).subtract(anchor);
@@ -140,8 +139,6 @@ public final class SpectatorCameraController {
     public static Entity resolveEntity() {
         SpectateTarget target = SpectateState.getTarget();
         Minecraft mc = Minecraft.getInstance();
-        return target == null || mc.level == null || target.entityId() < 0
-                ? null
-                : mc.level.getEntity(target.entityId());
+        return target == null || mc.level == null || target.entityId() < 0 ? null : mc.level.getEntity(target.entityId());
     }
 }

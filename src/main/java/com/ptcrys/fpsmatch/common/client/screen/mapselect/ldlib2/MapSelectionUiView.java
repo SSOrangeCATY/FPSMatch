@@ -1,5 +1,7 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -14,7 +16,6 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomPlayerInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomSummary;
-import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.List;
@@ -22,11 +23,11 @@ import java.util.Locale;
 
 /** Builds the map-room element tree and bridges element callbacks back to its screen owner. */
 final class MapSelectionUiView {
+
     static final int ROW_HEIGHT = 42;
     static final int ROW_GAP = 3;
 
-    private MapSelectionUiView() {
-    }
+    private MapSelectionUiView() {}
 
     static Parts build() {
         UIElement root = new UIElement().setId(MapSelectionWidgetCatalog.ROOT);
@@ -35,24 +36,21 @@ final class MapSelectionUiView {
 
         Label header = label(
                 MapSelectionWidgetCatalog.HEADER,
-                Component.translatable("gui.fpsm.map_select.title")
-        );
+                Component.translatable("gui.fpsm.map_select.title"));
         header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(18).right(18).top(10).height(22));
         FPSMLdlib2Theme.title(header);
 
         Label system = label(
                 MapSelectionWidgetCatalog.HEADER + ".system",
-                Component.literal("FPSM // MAP SYSTEM  ·  TACTICAL INDEX")
-        );
+                Component.literal("FPSM // MAP SYSTEM  ·  TACTICAL INDEX"));
         system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(18).right(18).top(2).height(10));
         FPSMLdlib2Theme.systemLabel(system);
 
         Label scope = label(
                 MapSelectionWidgetCatalog.HEADER + ".scope",
-                Component.literal("ROOM INDEX / LIVE OPERATIONS")
-        );
+                Component.literal("ROOM INDEX / LIVE OPERATIONS"));
         scope.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(18).right(18).top(27).height(10));
         FPSMLdlib2Theme.systemLabel(scope);
@@ -79,8 +77,7 @@ final class MapSelectionUiView {
 
         Label roomListHeading = label(
                 MapSelectionWidgetCatalog.ROOM_LIST_HEADING,
-                Component.translatable("gui.fpsm.map_select.rooms.title")
-        );
+                Component.translatable("gui.fpsm.map_select.rooms.title"));
         roomListHeading.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(6).right(6).top(3).height(13));
         FPSMLdlib2Theme.sectionTitle(roomListHeading);
@@ -88,8 +85,7 @@ final class MapSelectionUiView {
 
         Label emptyState = label(
                 MapSelectionWidgetCatalog.EMPTY_STATE,
-                Component.translatable("gui.fpsm.map_select.empty")
-        );
+                Component.translatable("gui.fpsm.map_select.empty"));
         emptyState.setAllowHitTest(false);
         emptyState.setFocusable(false);
         emptyState.setVisible(false);
@@ -102,16 +98,14 @@ final class MapSelectionUiView {
         FPSMLdlib2Theme.panel(detailPanel);
         Label detailHeading = label(
                 "fpsmatch.map_selection.detail.heading",
-                Component.translatable("gui.fpsm.map_select.detail.title")
-        );
+                Component.translatable("gui.fpsm.map_select.detail.title"));
         detailHeading.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(10).right(10).top(8).height(14));
         FPSMLdlib2Theme.sectionTitle(detailHeading);
         detailHeading.textStyle(style -> style.fontSize(10));
         Label detailLabel = label(
                 "fpsmatch.map_selection.detail.text",
-                Component.translatable("gui.fpsm.map_select.empty")
-        );
+                Component.translatable("gui.fpsm.map_select.empty"));
         detailLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(10).right(10).top(28).height(104));
         FPSMLdlib2Theme.body(detailLabel);
@@ -146,8 +140,7 @@ final class MapSelectionUiView {
 
         Label filterHeading = label(
                 MapSelectionWidgetCatalog.FILTER_HEADING,
-                Component.translatable("gui.fpsm.map_select.filters.title")
-        );
+                Component.translatable("gui.fpsm.map_select.filters.title"));
         filterHeading.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(8).right(8).top(5).height(13));
         FPSMLdlib2Theme.sectionTitle(filterHeading);
@@ -185,13 +178,11 @@ final class MapSelectionUiView {
         AccessibleButton join = button(
                 MapSelectionWidgetCatalog.ACTIONS + ".join",
                 "gui.fpsm.map_select.detail",
-                8
-        );
+                8);
         AccessibleButton manage = button(
                 MapSelectionWidgetCatalog.ACTIONS + ".manage",
                 "gui.fpsm.map_select.manage",
-                8
-        );
+                8);
         for (AccessibleButton action : List.of(join, manage)) {
             action.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                     .left(8).top(8).width(72).height(18));
@@ -204,13 +195,11 @@ final class MapSelectionUiView {
         AccessibleButton refresh = button(
                 MapSelectionWidgetCatalog.BROWSER_ACTIONS + ".refresh",
                 "gui.fpsm.map_select.refresh",
-                8
-        );
+                8);
         AccessibleButton close = button(
                 MapSelectionWidgetCatalog.BROWSER_ACTIONS + ".close",
                 "gui.done",
-                8
-        );
+                8);
         for (AccessibleButton action : List.of(refresh, close)) {
             action.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                     .left(8).top(8).width(72).height(16));
@@ -227,16 +216,14 @@ final class MapSelectionUiView {
         browserActions.addChildren(refresh, close);
         root.addChildren(
                 system, header, scope, filters, search, roomListHeading, roomList, emptyState, detailPanel, toast,
-                actions, browserActions
-        );
+                actions, browserActions);
 
         Parts parts = new Parts(
                 ModularUI.of(UI.of(root, screenSize -> Size.of(
                         screenSize.getWidth(), screenSize.getHeight()))),
                 roomList, roomListHeading, emptyState, detailPanel, detailLabel, playerList, search,
                 filters, filterHeading, stateSelector, modeSelector, actions, browserActions, toast, label,
-                List.of(join, manage), List.of(refresh, close), refresh, close, join, manage
-        );
+                List.of(join, manage), List.of(refresh, close), refresh, close, join, manage);
         roomList.setItemUIProvider((UIElementProvider<MapRoomSummary>) summary -> {
             AccessibleButton row = (AccessibleButton) new AccessibleButton().noText();
             row.setId(roomId(summary));
@@ -249,8 +236,7 @@ final class MapSelectionUiView {
             FPSMLdlib2Theme.roomRow(
                     row,
                     Ldlib2MapSelectionScreen.roomStatusColor(summary),
-                    parts.isSelected(summary)
-            );
+                    parts.isSelected(summary));
             boolean compactRow = parts.usesCompactRoomRows();
             addRoomRowContents(row, summary, compactRow);
             return row;
@@ -260,15 +246,13 @@ final class MapSelectionUiView {
     }
 
     static String roomId(MapRoomSummary summary) {
-        return MapSelectionWidgetCatalog.ROOM_LIST + "."
-                + summary.gameType() + "." + summary.mapName();
+        return MapSelectionWidgetCatalog.ROOM_LIST + "." + summary.gameType() + "." + summary.mapName();
     }
 
     private static void addRoomRowContents(
-            AccessibleButton row,
-            MapRoomSummary summary,
-            boolean compact
-    ) {
+                                           AccessibleButton row,
+                                           MapRoomSummary summary,
+                                           boolean compact) {
         int statusColor = Ldlib2MapSelectionScreen.roomStatusColor(summary);
         UIElement status = new UIElement();
         status.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
@@ -280,8 +264,7 @@ final class MapSelectionUiView {
                 "",
                 summary.mapName(),
                 summary.gameType(),
-                summary.displayName()
-        );
+                summary.displayName());
         thumbnail.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(compact ? 6 : 8).top(compact ? 8 : 6)
                 .width(compact ? 26 : 30).height(compact ? 26 : 30));
@@ -291,27 +274,21 @@ final class MapSelectionUiView {
         FPSMLdlib2Theme.sectionTitle(name);
         Label meta = label(
                 row.getElementName() + ".meta",
-                Component.literal(summary.gameType().toUpperCase(Locale.ROOT)
-                        + "  " + summary.mapName())
-        );
+                Component.literal(summary.gameType().toUpperCase(Locale.ROOT) + "  " + summary.mapName()));
         meta.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .left(compact ? 38 : 44).right(compact ? 46 : 60).top(22).height(11));
         FPSMLdlib2Theme.muted(meta);
         Label players = label(
                 row.getElementName() + ".players",
-                Component.literal(summary.joinedPlayers() + "/"
-                        + Ldlib2MapSelectionScreen.maxPlayers(summary))
-        );
+                Component.literal(summary.joinedPlayers() + "/" + Ldlib2MapSelectionScreen.maxPlayers(summary)));
         players.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .right(compact ? 6 : 8).top(6).width(compact ? 38 : 46).height(11));
         FPSMLdlib2Theme.status(
                 players,
-                summary.full() ? FPSMLdlib2Theme.DANGER : FPSMLdlib2Theme.TEXT
-        );
+                summary.full() ? FPSMLdlib2Theme.DANGER : FPSMLdlib2Theme.TEXT);
         Label state = label(
                 row.getElementName() + ".status",
-                Ldlib2MapSelectionScreen.statusText(summary)
-        );
+                Ldlib2MapSelectionScreen.statusText(summary));
         state.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .right(compact ? 6 : 8).top(22).width(compact ? 42 : 54).height(11));
         FPSMLdlib2Theme.status(state, statusColor);
@@ -350,42 +327,39 @@ final class MapSelectionUiView {
         };
         return Component.translatable(
                 "gui.fpsm.map_select.filter.status_selector",
-                Component.translatable(valueKey)
-        );
+                Component.translatable(valueKey));
     }
 
     private static Component modeFilterText(String mode) {
         String normalized = Ldlib2MapSelectionScreen.normalizeMode(mode);
-        Component value = "all".equals(normalized)
-                ? Component.translatable("gui.fpsm.map_select.filter.mode.all")
-                : Component.literal(normalized.toUpperCase(Locale.ROOT));
+        Component value = "all".equals(normalized) ? Component.translatable("gui.fpsm.map_select.filter.mode.all") : Component.literal(normalized.toUpperCase(Locale.ROOT));
         return Component.translatable("gui.fpsm.map_select.filter.mode_selector", value);
     }
 
     record Parts(
-            ModularUI ui,
-            VirtualScrollerView<MapRoomSummary> roomList,
-            Label roomListHeading,
-            Label emptyState,
-            UIElement detailPanel,
-            Label detailLabel,
-            VirtualScrollerView<MapRoomPlayerInfo> playerList,
-            AccessibleTextField search,
-            UIElement filters,
-            Label filterHeading,
-            AccessibleSelector<String> stateSelector,
-            AccessibleSelector<String> modeSelector,
-            UIElement actions,
-            UIElement browserActions,
-            UIElement toast,
-            Label toastLabel,
-            List<AccessibleButton> actionButtons,
-            List<AccessibleButton> browserActionButtons,
-            AccessibleButton refresh,
-            AccessibleButton close,
-            AccessibleButton join,
-            AccessibleButton manage
-    ) {
+                 ModularUI ui,
+                 VirtualScrollerView<MapRoomSummary> roomList,
+                 Label roomListHeading,
+                 Label emptyState,
+                 UIElement detailPanel,
+                 Label detailLabel,
+                 VirtualScrollerView<MapRoomPlayerInfo> playerList,
+                 AccessibleTextField search,
+                 UIElement filters,
+                 Label filterHeading,
+                 AccessibleSelector<String> stateSelector,
+                 AccessibleSelector<String> modeSelector,
+                 UIElement actions,
+                 UIElement browserActions,
+                 UIElement toast,
+                 Label toastLabel,
+                 List<AccessibleButton> actionButtons,
+                 List<AccessibleButton> browserActionButtons,
+                 AccessibleButton refresh,
+                 AccessibleButton close,
+                 AccessibleButton join,
+                 AccessibleButton manage) {
+
         void screenSelect(MapRoomSummary summary) {
             if (ui.getScreen() instanceof Ldlib2MapSelectionScreen screen) {
                 screen.select(summary);
@@ -399,13 +373,11 @@ final class MapSelectionUiView {
         }
 
         boolean isSelected(MapRoomSummary summary) {
-            return ui.getScreen() instanceof Ldlib2MapSelectionScreen screen
-                    && Ldlib2MapSelectionScreen.sameRoom(screen.selectedRoom(), summary);
+            return ui.getScreen() instanceof Ldlib2MapSelectionScreen screen && Ldlib2MapSelectionScreen.sameRoom(screen.selectedRoom(), summary);
         }
 
         boolean usesCompactRoomRows() {
-            return ui.getScreen() instanceof Ldlib2MapSelectionScreen screen
-                    && screen.usesCompactRoomRows();
+            return ui.getScreen() instanceof Ldlib2MapSelectionScreen screen && screen.usesCompactRoomRows();
         }
     }
 }

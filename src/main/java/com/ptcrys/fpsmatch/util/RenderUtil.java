@@ -1,20 +1,18 @@
 package com.ptcrys.fpsmatch.util;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.scores.Scoreboard;
+
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.core.data.PlayerData;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.Scoreboard;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -23,6 +21,7 @@ import java.util.*;
 import static com.ptcrys.fpsmatch.common.client.FPSMClient.PLAYER_COMPARATOR;
 
 public class RenderUtil {
+
     public static int WHITE = 0xFFFFFFFF;
 
     public static Vector3f color(int color) {
@@ -55,7 +54,7 @@ public class RenderUtil {
         return new HashMap<>();
     }
 
-    public static List<PlayerInfo> getPlayerInfos(){
+    public static List<PlayerInfo> getPlayerInfos() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             return mc.player.connection.getListedOnlinePlayers().stream().sorted(PLAYER_COMPARATOR).limit(80L).toList();
@@ -67,7 +66,7 @@ public class RenderUtil {
         return FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId());
     }
 
-    public static Scoreboard getScoreboard(){
+    public static Scoreboard getScoreboard() {
         return Minecraft.getInstance().level.getScoreboard();
     }
 
@@ -78,7 +77,7 @@ public class RenderUtil {
             UUID uuid = info.getProfile().getId();
             FPSMClient.getGlobalData().getTeamByUUID(uuid).ifPresent(team -> {
                 team.getPlayerData(uuid).ifPresent(tabData -> {
-                    teamPlayers.computeIfAbsent(team.name,k -> new ArrayList<>()).add(info);
+                    teamPlayers.computeIfAbsent(team.name, k -> new ArrayList<>()).add(info);
                 });
             });
         }
@@ -138,7 +137,6 @@ public class RenderUtil {
                 .getInsecureSkinLocation(new GameProfile(id, name));
     }
 
-
     /**
      * 指数平滑算法（用于动画过渡）
      *
@@ -154,7 +152,6 @@ public class RenderUtil {
         return (float) (target + (cur - target) * f);
     }
 
-
     /**
      * 调整颜色的透明度
      *
@@ -163,7 +160,7 @@ public class RenderUtil {
      * @return 调整后的颜色
      */
     public static int mulAlpha(int argb, float mul) {
-        mul = Mth.clamp(mul,0, 1f);
+        mul = Mth.clamp(mul, 0, 1f);
         int a = (int) (((argb >>> 24) & 0xFF) * mul);
         return (a << 24) | (argb & 0x00FFFFFF);
     }
@@ -177,7 +174,7 @@ public class RenderUtil {
      * @return 插值后的颜色
      */
     public static int lerpColor(int c1, int c2, float t) {
-        t = Mth.clamp(t,0, 1f);
+        t = Mth.clamp(t, 0, 1f);
         int a1 = (c1 >>> 24) & 0xFF, r1 = (c1 >>> 16) & 0xFF, g1 = (c1 >>> 8) & 0xFF, b1 = c1 & 0xFF;
         int a2 = (c2 >>> 24) & 0xFF, r2 = (c2 >>> 16) & 0xFF, g2 = (c2 >>> 8) & 0xFF, b2 = c2 & 0xFF;
         int a = a1 + Math.round((a2 - a1) * t);

@@ -1,17 +1,17 @@
 package com.ptcrys.fpsmatch.common.client.net;
 
-import com.ptcrys.fpsmatch.common.client.FPSMGameHudManager;
-import com.ptcrys.fpsmatch.common.client.FPSMClient;
 import com.ptcrys.fpsmatch.common.packet.*;
 import com.ptcrys.fpsmatch.common.packet.mapselect.*;
 import com.ptcrys.fpsmatch.common.packet.shop.*;
-import com.ptcrys.fpsmatch.common.packet.team.*;
 import com.ptcrys.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.team.*;
 import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorInspectPackets;
 import com.ptcrys.fpsmatch.compat.spectate.net.SpectatorLrtAttackPackets;
 
 public final class FPSMClientPacketRegistrar {
+
     private static boolean registered;
+
     private FPSMClientPacketRegistrar() {}
 
     public static synchronized void registerAll() {

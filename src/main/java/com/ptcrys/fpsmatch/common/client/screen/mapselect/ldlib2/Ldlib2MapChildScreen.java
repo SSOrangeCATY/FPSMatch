@@ -1,24 +1,26 @@
 package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
-import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
-import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapDetailChildScreen;
+import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
 
 /** Shared lifecycle for LDLib2 map-room child pages. */
 public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen implements FPSMMapDetailChildScreen {
+
     protected final Screen parent;
     protected MapRoomDetail detail;
 
@@ -41,8 +43,7 @@ public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen imp
         onDetailApplied();
     }
 
-    protected void onDetailApplied() {
-    }
+    protected void onDetailApplied() {}
 
     @Override
     public void onClose() {
@@ -86,8 +87,7 @@ public abstract class Ldlib2MapChildScreen extends AccessibleModularUIScreen imp
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
         boolean handled = super.mouseScrolled(mouseX, mouseY, scrollY);
         var hit = modularUI.ui.rootElement.hitTest(
-                mouseX - modularUI.getLeftPos(), mouseY - modularUI.getTopPos()
-        );
+                mouseX - modularUI.getLeftPos(), mouseY - modularUI.getTopPos());
         UIElement target = hit == null ? null : hit.getA();
         if (handled || target == null || target == modularUI.getLastHoveredElement()) {
             return handled;

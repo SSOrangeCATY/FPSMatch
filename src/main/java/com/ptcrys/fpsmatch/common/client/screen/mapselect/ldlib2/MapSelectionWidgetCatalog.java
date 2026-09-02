@@ -4,6 +4,7 @@ import java.util.List;
 
 /** Stable IDs used by the LDLib2 map-room UI and its passive refresh bridge. */
 public final class MapSelectionWidgetCatalog {
+
     public static final String ROOT = "fpsmatch.map_selection.root";
     public static final String HEADER = "fpsmatch.map_selection.header";
     public static final String SEARCH = "fpsmatch.map_selection.search";
@@ -20,8 +21,7 @@ public final class MapSelectionWidgetCatalog {
     public static final String BROWSER_ACTIONS = "fpsmatch.map_selection.browser_actions";
     public static final String TOAST = "fpsmatch.map_selection.toast";
 
-    private MapSelectionWidgetCatalog() {
-    }
+    private MapSelectionWidgetCatalog() {}
 
     public static List<String> ids() {
         return List.of(ROOT, HEADER, SEARCH, FILTERS, FILTER_HEADING, STATE_FILTER, MODE_FILTER, ROOM_LIST,

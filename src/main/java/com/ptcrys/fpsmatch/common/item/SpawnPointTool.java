@@ -1,5 +1,13 @@
 package com.ptcrys.fpsmatch.common.item;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.ptcrys.fpsmatch.common.item.tool.CreatorToolItem;
@@ -15,13 +23,6 @@ import com.ptcrys.fpsmatch.core.data.SpawnPointData;
 import com.ptcrys.fpsmatch.core.map.BaseMap;
 import com.ptcrys.fpsmatch.core.team.ServerTeam;
 import com.ptcrys.fpsmatch.util.PreviewColorUtil;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
+
     private static final String HELD_PREVIEW_STATE_TAG = "HeldSpawnPointPreviewState";
     private static final int HELD_PREVIEW_REFRESH_INTERVAL = 10;
 
@@ -37,12 +39,10 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
     }
 
     @Override
-    protected void onLeftClick(ClickActionContext context) {
-    }
+    protected void onLeftClick(ClickActionContext context) {}
 
     @Override
-    protected void onRightClick(ClickActionContext context) {
-    }
+    protected void onRightClick(ClickActionContext context) {}
 
     @Override
     public void handleWorldInteraction(ServerPlayer player, ItemStack stack, ToolInteractionAction action, @Nullable BlockPos clickedPos) {
@@ -54,8 +54,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
             }
             case CTRL_RIGHT_CLICK -> SpawnPointToolActionC2SPacket.sendScreen(player, stack,
                     getSelectedType(stack), getSelectedMap(stack), getSelectedTeam(stack), 0);
-            case LEFT_CLICK_BLOCK -> {
-            }
+            case LEFT_CLICK_BLOCK -> {}
         }
     }
 
@@ -87,8 +86,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
                 getHeldPreviewKey(player),
                 Component.literal(map.getMapName()),
                 PreviewColorUtil.getMapPreviewColor(selectedType),
-                map.getMapArea()
-        ));
+                map.getMapArea()));
 
         List<ServerTeam> orderedTeams = getOrderedNormalTeams(map);
         for (int teamIndex = 0; teamIndex < orderedTeams.size(); teamIndex++) {
@@ -105,8 +103,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
                         getHeldPreviewPointKey(player, team.getName(), i),
                         Component.literal(team.getName() + " #" + (i + 1)),
                         pointColor,
-                        data.getPosition()
-                ));
+                        data.getPosition()));
             }
         }
 
@@ -181,9 +178,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
             return;
         }
         BlockPos spawnBlockPos = clickedPos.above();
-        if (!map.getMapArea().isBlockPosInPlacementArea(clickedPos)
-                && !map.getMapArea().isBlockPosInPlacementArea(spawnBlockPos)
-                && !map.getMapArea().isBlockPosInPlacementArea(player.blockPosition())) {
+        if (!map.getMapArea().isBlockPosInPlacementArea(clickedPos) && !map.getMapArea().isBlockPosInPlacementArea(spawnBlockPos) && !map.getMapArea().isBlockPosInPlacementArea(player.blockPosition())) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.outside_map"), false);
             return;
         }
@@ -204,8 +199,7 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
                 player.serverLevel().dimension(),
                 spawnBlockPos.getCenter(),
                 player.getYRot(),
-                player.getXRot()
-        );
+                player.getXRot());
         if (!capability.addSpawnPointDataIfAbsent(spawnPointData)) {
             player.displayClientMessage(Component.translatable("message.fpsm.spawn_point_tool.duplicate"), false);
             return;
@@ -248,19 +242,13 @@ public class SpawnPointTool extends CreatorToolItem implements WorldToolItem {
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.type")
                 .append(": ")
-                .append(Component.literal(getSelectedType(pStack).isBlank()
-                        ? Component.translatable("tooltip.fpsm.none").getString()
-                        : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
+                .append(Component.literal(getSelectedType(pStack).isBlank() ? Component.translatable("tooltip.fpsm.none").getString() : getSelectedType(pStack)).withStyle(ChatFormatting.AQUA)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.map")
                 .append(": ")
-                .append(Component.literal(getSelectedMap(pStack).isBlank()
-                        ? Component.translatable("tooltip.fpsm.none").getString()
-                        : getSelectedMap(pStack)).withStyle(ChatFormatting.GREEN)));
+                .append(Component.literal(getSelectedMap(pStack).isBlank() ? Component.translatable("tooltip.fpsm.none").getString() : getSelectedMap(pStack)).withStyle(ChatFormatting.GREEN)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.selected.team")
                 .append(": ")
-                .append(Component.literal(getSelectedTeam(pStack).isBlank()
-                        ? Component.translatable("tooltip.fpsm.none").getString()
-                        : getSelectedTeam(pStack)).withStyle(ChatFormatting.YELLOW)));
+                .append(Component.literal(getSelectedTeam(pStack).isBlank() ? Component.translatable("tooltip.fpsm.none").getString() : getSelectedTeam(pStack)).withStyle(ChatFormatting.YELLOW)));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.separator").withStyle(ChatFormatting.GOLD));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.right_click"));
         pTooltipComponents.add(Component.translatable("tooltip.fpsm.spawn_point_tool.shift_right_click"));

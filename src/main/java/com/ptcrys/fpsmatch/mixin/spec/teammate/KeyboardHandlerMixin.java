@@ -1,14 +1,15 @@
 package com.ptcrys.fpsmatch.mixin.spec.teammate;
 
+import net.minecraft.client.KeyboardHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.GameType;
+
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.spec.SpecKeyHandler;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateMode;
 import com.ptcrys.fpsmatch.common.client.spec.SpectateState;
 import com.ptcrys.fpsmatch.common.client.spec.SpectatorSwitchDirection;
 import com.ptcrys.fpsmatch.common.packet.spec.SpectatorSwitchC2SPacket;
-import net.minecraft.client.KeyboardHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.level.GameType;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -42,9 +43,7 @@ public class KeyboardHandlerMixin {
         boolean allowEscape = keyCode == GLFW.GLFW_KEY_ESCAPE;
         boolean allowTeamSwitch = SpecKeyHandler.switchKeyMatches(keyCode, scanCode);
 
-        if (keyCode == GLFW.GLFW_KEY_SPACE
-                && action == GLFW.GLFW_PRESS
-                && (SpectateState.get() == SpectateMode.TEAMMATE || SpectateState.get() == SpectateMode.ATTACH)) {
+        if (keyCode == GLFW.GLFW_KEY_SPACE && action == GLFW.GLFW_PRESS && (SpectateState.get() == SpectateMode.TEAMMATE || SpectateState.get() == SpectateMode.ATTACH)) {
             FPSMatch.sendToServer(new SpectatorSwitchC2SPacket(SpectatorSwitchDirection.NEXT));
             ci.cancel();
             return;

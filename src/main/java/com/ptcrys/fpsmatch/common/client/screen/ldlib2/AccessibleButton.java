@@ -1,15 +1,17 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventListener;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import net.minecraft.network.chat.Component;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** LDLib2 button with a keyboard-equivalent activation path and narration metadata. */
 public class AccessibleButton extends Button implements Ldlib2AccessibilityController.FocusTarget {
+
     private final KeyboardActivationLatch activationLatch = new KeyboardActivationLatch();
     private UIEventListener action;
     private Supplier<Component> accessibleName = () -> text.getText();
@@ -22,8 +24,7 @@ public class AccessibleButton extends Button implements Ldlib2AccessibilityContr
                 this,
                 activationLatch,
                 this::canActivate,
-                this::activate
-        );
+                this::activate);
     }
 
     @Override

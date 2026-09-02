@@ -1,12 +1,5 @@
 package com.ptcrys.fpsmatch.common.client.screen;
 
-import com.ptcrys.fpsmatch.FPSMatch;
-import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
-import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
-import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
-import com.ptcrys.fpsmatch.common.packet.MapCreatorToolActionC2SPacket;
-import com.ptcrys.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
-import com.ptcrys.fpsmatch.common.packet.ToolInteractionC2SPacket;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,6 +13,14 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import com.ptcrys.fpsmatch.FPSMatch;
+import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMGuiTheme;
+import com.ptcrys.fpsmatch.common.item.MapCreatorTool;
+import com.ptcrys.fpsmatch.common.item.tool.ToolInteractionAction;
+import com.ptcrys.fpsmatch.common.packet.MapCreatorToolActionC2SPacket;
+import com.ptcrys.fpsmatch.common.packet.OpenMapCreatorToolScreenS2CPacket;
+import com.ptcrys.fpsmatch.common.packet.ToolInteractionC2SPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MapCreatorToolScreen extends Screen {
+
     private static final int PANEL_WIDTH = 300;
     private static final int PANEL_HEIGHT = 226;
     // 统一设计 Token：遮罩/面板/边框全部引用 FPSMGuiTheme（原青色边框改为主题中性边框）
@@ -193,8 +195,7 @@ public class MapCreatorToolScreen extends Screen {
         boolean isPos1 = button == GLFW.GLFW_MOUSE_BUTTON_LEFT;
         FPSMatch.sendToServer(new ToolInteractionC2SPacket(
                 isPos1 ? ToolInteractionAction.LEFT_CLICK_BLOCK : ToolInteractionAction.RIGHT_CLICK_BLOCK,
-                clickedPos
-        ));
+                clickedPos));
         setBlockPosFields(clickedPos, isPos1);
         return true;
     }
@@ -207,8 +208,7 @@ public class MapCreatorToolScreen extends Screen {
                 this.selectedMap,
                 this.mapNameField.getValue(),
                 parseBlockPos(true),
-                parseBlockPos(false)
-        ));
+                parseBlockPos(false)));
         super.onClose();
     }
 
@@ -323,8 +323,7 @@ public class MapCreatorToolScreen extends Screen {
             return new BlockPos(
                     Integer.parseInt(xField.getValue()),
                     Integer.parseInt(yField.getValue()),
-                    Integer.parseInt(zField.getValue())
-            );
+                    Integer.parseInt(zField.getValue()));
         } catch (NumberFormatException ignored) {
             return null;
         }
@@ -337,8 +336,7 @@ public class MapCreatorToolScreen extends Screen {
                 this.selectedMap,
                 this.mapNameField.getValue(),
                 parseBlockPos(true),
-                parseBlockPos(false)
-        ));
+                parseBlockPos(false)));
     }
 
     private void updateMap() {
@@ -348,8 +346,7 @@ public class MapCreatorToolScreen extends Screen {
                 this.selectedMap,
                 this.mapNameField.getValue(),
                 parseBlockPos(true),
-                parseBlockPos(false)
-        ));
+                parseBlockPos(false)));
     }
 
     private List<OpenMapCreatorToolScreenS2CPacket.MapEntry> getMapsForSelectedType() {
@@ -398,8 +395,7 @@ public class MapCreatorToolScreen extends Screen {
                 eyePosition.add(direction.scale(reach)),
                 ClipContext.Block.OUTLINE,
                 ClipContext.Fluid.NONE,
-                minecraft.player
-        ));
+                minecraft.player));
         if (hitResult.getType() != HitResult.Type.BLOCK) {
             return null;
         }

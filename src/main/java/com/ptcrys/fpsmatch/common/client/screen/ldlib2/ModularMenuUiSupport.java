@@ -1,15 +1,16 @@
 package com.ptcrys.fpsmatch.common.client.screen.ldlib2;
 
-import com.lowdragmc.lowdraglib2.gui.holder.IModularUIHolderMenu;
-import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 
+import com.lowdragmc.lowdraglib2.gui.holder.IModularUIHolderMenu;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
+
 /** Bridges LDLib2 ModularUI with existing AbstractContainerMenu slot graphs. */
 public final class ModularMenuUiSupport {
-    private ModularMenuUiSupport() {
-    }
+
+    private ModularMenuUiSupport() {}
 
     public static void attach(ModularUI modularUI, AbstractContainerMenu menu) {
         IModularUIHolderMenu holder = (IModularUIHolderMenu) menu;

@@ -1,5 +1,7 @@
 package com.ptcrys.fpsmatch.common.client.screen.shop.ldlib2;
 
+import net.minecraft.network.chat.Component;
+
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -13,9 +15,8 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
-import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 import com.ptcrys.fpsmatch.compat.gun.GunCompatManager;
-import net.minecraft.network.chat.Component;
+import com.ptcrys.fpsmatch.core.shop.slot.ShopSlot;
 import org.appliedenergistics.yoga.YogaPositionType;
 
 import java.util.ArrayList;
@@ -26,20 +27,19 @@ import java.util.function.IntConsumer;
 
 /** Responsive LDLib2 work surface for selecting and opening one fixed shop slot. */
 public final class Ldlib2ShopEditorUi {
+
     private static final int CARD_WIDTH = 80;
     private static final int CARD_HEIGHT = 64;
     private static final int GAP = 6;
 
-    private Ldlib2ShopEditorUi() {
-    }
+    private Ldlib2ShopEditorUi() {}
 
     public static View create(
-            EditorShopContainer menu,
-            int initialSelection,
-            IntConsumer selectionChanged,
-            IntConsumer editAction,
-            Runnable closeAction
-    ) {
+                              EditorShopContainer menu,
+                              int initialSelection,
+                              IntConsumer selectionChanged,
+                              IntConsumer editAction,
+                              Runnable closeAction) {
         UIElement root = element(ShopEditorWidgetCatalog.ROOT);
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
         FPSMLdlib2Theme.root(root);
@@ -150,6 +150,7 @@ public final class Ldlib2ShopEditorUi {
     }
 
     public static final class View {
+
         private final ModularUI ui;
         private final EditorShopContainer menu;
         private final UIElement header;
@@ -186,15 +187,14 @@ public final class Ldlib2ShopEditorUi {
         private boolean openTimedOut;
 
         private View(
-                ModularUI ui, EditorShopContainer menu, UIElement header, UIElement categories,
-                UIElement slots, UIElement properties, UIElement actions, Label system, Label title,
-                Label identity, Label mode, Label categoryTitle, ScrollerView categoryScroller,
-                UIElement categoryList, Label slotTitle, Label propertyTitle, Label selectedName,
-                Label selectedTypeLabel, Label selectedSlotLabel, Label selectedPrice,
-                Label selectedQuantity, Label selectedGroup, Label actionStatus,
-                AccessibleButton edit, AccessibleButton close, IntConsumer selectionChanged,
-                IntConsumer editAction
-        ) {
+                     ModularUI ui, EditorShopContainer menu, UIElement header, UIElement categories,
+                     UIElement slots, UIElement properties, UIElement actions, Label system, Label title,
+                     Label identity, Label mode, Label categoryTitle, ScrollerView categoryScroller,
+                     UIElement categoryList, Label slotTitle, Label propertyTitle, Label selectedName,
+                     Label selectedTypeLabel, Label selectedSlotLabel, Label selectedPrice,
+                     Label selectedQuantity, Label selectedGroup, Label actionStatus,
+                     AccessibleButton edit, AccessibleButton close, IntConsumer selectionChanged,
+                     IntConsumer editAction) {
             this.ui = ui;
             this.menu = menu;
             this.header = header;
@@ -269,9 +269,7 @@ public final class Ldlib2ShopEditorUi {
                 AccessibleButton button = new AccessibleButton();
                 button.setId(ShopEditorWidgetCatalog.CATEGORY_TABS + "." + type);
                 button.setText(Component.translatable("fpsm.shop.title." + type));
-                button.setAccessibleState(() -> type.equals(selectedType)
-                        ? Component.translatable("gui.fpsm.shop_editor.category.selected")
-                        : Component.empty());
+                button.setAccessibleState(() -> type.equals(selectedType) ? Component.translatable("gui.fpsm.shop_editor.category.selected") : Component.empty());
                 button.setOnClick(event -> selectCategory(type));
                 categoryButtons.put(type, button);
                 categoryList.addChild(button);
@@ -295,16 +293,12 @@ public final class Ldlib2ShopEditorUi {
             for (int localIndex = 0; localIndex < info.slotCount(); localIndex++) {
                 int slotIndex = info.startIndex() + localIndex;
                 ShopSlot shopSlot = slotIndex < all.size() ? all.get(slotIndex) : null;
-                Component itemName = shopSlot == null
-                        ? Component.translatable("gui.fpsm.shop_editor.empty_slot")
-                        : shopSlot.process().getHoverName();
+                Component itemName = shopSlot == null ? Component.translatable("gui.fpsm.shop_editor.empty_slot") : shopSlot.process().getHoverName();
                 AccessiblePanel card = new AccessiblePanel();
                 card.setId(ShopEditorWidgetCatalog.ITEM + "." + type + "." + localIndex + ".card");
                 card.setAccessibleName(Component.translatable(
                         "gui.fpsm.shop_editor.slot.accessible", localIndex + 1, itemName));
-                card.setAccessibleState(() -> selectedSlotIndex == slotIndex
-                        ? Component.translatable("gui.fpsm.shop_editor.slot.selected")
-                        : Component.empty());
+                card.setAccessibleState(() -> selectedSlotIndex == slotIndex ? Component.translatable("gui.fpsm.shop_editor.slot.selected") : Component.empty());
                 if (shopSlot == null) {
                     card.setActive(false);
                     card.setAllowHitTest(false);
@@ -320,11 +314,8 @@ public final class Ldlib2ShopEditorUi {
                 item.setAllowHitTest(false);
                 item.setFocusable(false);
                 FPSMLdlib2Theme.slot(item);
-                Label price = label(card.getId() + ".price", shopSlot == null
-                        ? Component.literal("-")
-                        : Component.literal("$" + shopSlot.getDefaultCost()));
-                FPSMLdlib2Theme.status(price, shopSlot == null
-                        ? FPSMLdlib2Theme.DISABLED : FPSMLdlib2Theme.WARNING);
+                Label price = label(card.getId() + ".price", shopSlot == null ? Component.literal("-") : Component.literal("$" + shopSlot.getDefaultCost()));
+                FPSMLdlib2Theme.status(price, shopSlot == null ? FPSMLdlib2Theme.DISABLED : FPSMLdlib2Theme.WARNING);
                 absolute(name, 4, 4, CARD_WIDTH - 8, 12);
                 absolute(item, 24, 15, 32, 32);
                 absolute(price, 4, 50, CARD_WIDTH - 8, 12);
@@ -339,12 +330,10 @@ public final class Ldlib2ShopEditorUi {
         }
 
         private void restoreSelection(int initialSelection) {
-            if (initialSelection >= 0 && initialSelection < menu.getAllSlots().size()
-                    && menu.getAllSlots().get(initialSelection) != null) {
+            if (initialSelection >= 0 && initialSelection < menu.getAllSlots().size() && menu.getAllSlots().get(initialSelection) != null) {
                 for (Map.Entry<String, EditorShopContainer.TypeInfo> entry : menu.getTypes().entrySet()) {
                     EditorShopContainer.TypeInfo info = entry.getValue();
-                    if (initialSelection >= info.startIndex()
-                            && initialSelection < info.startIndex() + info.slotCount()) {
+                    if (initialSelection >= info.startIndex() && initialSelection < info.startIndex() + info.slotCount()) {
                         selectedType = entry.getKey();
                         selectedSlotIndex = initialSelection;
                         break;
@@ -369,8 +358,7 @@ public final class Ldlib2ShopEditorUi {
         }
 
         private void selectSlot(String type, int slotIndex) {
-            if (slotIndex < 0 || slotIndex >= menu.getAllSlots().size()
-                    || menu.getAllSlots().get(slotIndex) == null) {
+            if (slotIndex < 0 || slotIndex >= menu.getAllSlots().size() || menu.getAllSlots().get(slotIndex) == null) {
                 return;
             }
             selectedType = type;
@@ -390,15 +378,12 @@ public final class Ldlib2ShopEditorUi {
 
         private void refreshCategory() {
             categoryButtons.forEach((type, button) -> FPSMLdlib2Theme.button(button,
-                    type.equals(selectedType)
-                            ? FPSMLdlib2Theme.ButtonKind.PRIMARY
-                            : FPSMLdlib2Theme.ButtonKind.QUIET));
+                    type.equals(selectedType) ? FPSMLdlib2Theme.ButtonKind.PRIMARY : FPSMLdlib2Theme.ButtonKind.QUIET));
             categoryViews.forEach((type, view) -> view.root().setDisplay(type.equals(selectedType)));
         }
 
         private void refreshSelection() {
-            ShopSlot selected = selectedSlotIndex >= 0 && selectedSlotIndex < menu.getAllSlots().size()
-                    ? menu.getAllSlots().get(selectedSlotIndex) : null;
+            ShopSlot selected = selectedSlotIndex >= 0 && selectedSlotIndex < menu.getAllSlots().size() ? menu.getAllSlots().get(selectedSlotIndex) : null;
             EditorShopContainer.TypeInfo info = selectedType == null ? null : menu.getTypes().get(selectedType);
             if (selected == null || info == null) {
                 selectedName.setValue(Component.translatable("gui.fpsm.shop_editor.selection.none"));
@@ -415,10 +400,8 @@ public final class Ldlib2ShopEditorUi {
                         localIndex + 1, info.slotCount()));
                 selectedPrice.setValue(Component.translatable("gui.fpsm.shop_editor.property.price",
                         selected.getDefaultCost()));
-                selectedQuantity.setValue(GunCompatManager.isGun(selected.process())
-                        ? Component.translatable("gui.fpsm.shop_editor.property.ammo",
-                        selected.getAmmoCount())
-                        : Component.empty());
+                selectedQuantity.setValue(GunCompatManager.isGun(selected.process()) ? Component.translatable("gui.fpsm.shop_editor.property.ammo",
+                        selected.getAmmoCount()) : Component.empty());
                 selectedGroup.setValue(Component.translatable("gui.fpsm.shop_editor.property.group",
                         selected.getGroupId()));
             }
@@ -577,11 +560,9 @@ public final class Ldlib2ShopEditorUi {
     }
 
     private record CategoryView(
-            UIElement root,
-            ScrollerView scroller,
-            UIElement content,
-            List<AccessiblePanel> cards,
-            EditorShopContainer.TypeInfo info
-    ) {
-    }
+                                UIElement root,
+                                ScrollerView scroller,
+                                UIElement content,
+                                List<AccessiblePanel> cards,
+                                EditorShopContainer.TypeInfo info) {}
 }
