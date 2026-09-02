@@ -1,0 +1,34 @@
+// Generated resources and packaging
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def metadata = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            ldlib2_version_range   : ldlib2_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties metadata
+    expand metadata
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/resources/modMetadata')
+}
+
+sourceSets {
+    main.resources {
+        srcDir 'src/generated/resources'
+        srcDir generateModMetadata
+    }
+    performanceAcceptance {
+        java.srcDir 'src/performanceAcceptance/java'
+        compileClasspath = sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath = output + compileClasspath
+    }
+}
+legacyForge.ideSyncTask generateModMetadata

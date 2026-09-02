@@ -1,0 +1,44 @@
+dependencies {
+    implementation('org.jetbrains.kotlin:kotlin-stdlib:2.3.0')
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.0")
+
+    implementation('com.lowdragmc:ldlib2-forge:2.2.27+1.20.1')
+    // Modern UI
+    implementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}.+")
+    additionalRuntimeClasspath(compileOnly("icyllis.modernui:ModernUI-Core:${modernui_version}")) {
+        exclude group: "org.slf4j", module: "slf4j-api"
+        exclude group: "org.apache.logging.log4j", module: "log4j-core"
+        exclude group: "org.apache.logging.log4j", module: "log4j-api"
+        exclude group: "com.google.code.findbugs", module: "jsr305"
+        exclude group: "org.jetbrains", module: "annotations"
+        exclude group: "com.ibm.icu", module: "icu4j"
+        exclude group: "it.unimi.dsi", module: "fastutil"
+    }
+    additionalRuntimeClasspath(compileOnly("icyllis.modernui:ModernUI-Markflow:${modernui_version}")) {
+        exclude group: "org.slf4j", module: "slf4j-api"
+        exclude group: "org.apache.logging.log4j", module: "log4j-core"
+        exclude group: "org.apache.logging.log4j", module: "log4j-api"
+        exclude group: "com.google.code.findbugs", module: "jsr305"
+        exclude group: "org.jetbrains", module: "annotations"
+        exclude group: "com.ibm.icu", module: "icu4j"
+        exclude group: "it.unimi.dsi", module: "fastutil"
+    }
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixinextras_version}"))
+    jarJar(implementation("io.github.erdtman:java-json-canonicalization:1.1"))
+
+    compileOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
+    runtimeOnly "maven.modrinth:timeless-and-classics-zero:${tacz_version}"
+    compileOnly "maven.modrinth:tacz-tweaks:${tacztweak_version}"
+    compileOnly "maven.modrinth:lr-tactical:${lrtactical_version}"
+    implementation "maven.modrinth:counterstrikegrenade:${cs_grenade_version}"
+    runtimeOnly "maven.modrinth:kotlin-for-forge:${kotlin_forge_version}"
+    implementation "maven.modrinth:cloth-config:${cloth_config_version}"
+    compileOnly "org.apache.commons:commons-math3:3.6.1"
+    compileOnly "org.spigotmc:spigot-api:${spigot_api_version}"
+    compileOnly "com.mohistmc:mohistdev:${mohistdev_version}"
+    compileOnly "dev.latvian.mods:kubejs-forge:${kubejs_version}"
+    compileOnly "dev.latvian.mods:rhino-forge:${rhino_version}"
+    compileOnly "dev.architectury:architectury-forge:${architectury_version}"
+}

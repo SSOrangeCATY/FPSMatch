@@ -1,0 +1,75 @@
+test {
+    useJUnitPlatform()
+}
+
+// Minecraft development environment
+legacyForge {
+    version = "${minecraft_version}-${forge_version}"
+
+    parchment {
+        minecraftVersion = mapping_mc_version
+        mappingsVersion = mapping_version
+    }
+
+    validateAccessTransformers = true
+
+    runs {
+        configureEach {
+            gameDirectory = project.file('run')
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+
+        client {
+            client()
+            gameDirectory.set(file('run/client'))
+            systemProperty 'mixin.env.remapRefMap', 'true'
+            systemProperty 'mixin.env.refMapRemappingFile',
+                    "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            server()
+            gameDirectory.set(file('run/server'))
+            systemProperty 'mixin.env.remapRefMap', 'true'
+            systemProperty 'mixin.env.refMapRemappingFile',
+                    "${projectDir}/build/moddev/artifacts/intermediateToNamed.srg"
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            programArgument '--nogui'
+        }
+
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory.set(file('run/serverTest'))
+            gameDirectory = project.file('build/run-gametest')
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        data {
+            data()
+            gameDirectory.set(file('run/clientData'))
+            programArguments.addAll(
+                    '--mod', mod_id,
+                    '--all',
+                    '--output', file('src/generated/resources').absolutePath,
+                    '--existing', file('src/main/resources').absolutePath
+            )
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+def syncGameTestStructures = tasks.register('syncGameTestStructures', Sync) {
+    from "src/main/resources/data/${mod_id}/gameteststructures"
+    into layout.buildDirectory.dir('run-gametest/gameteststructures')
+}
+
+tasks.named('runGameTestServer') {
+    dependsOn syncGameTestStructures
+}

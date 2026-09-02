@@ -7,32 +7,32 @@ FPSMatch is a Forge library mod for Minecraft 1.20.1 that provides the foundatio
 
 ## Features
 
-| Area | Description |
-| --- | --- |
-| Match framework | Team-based match lifecycle, map instances, spectator flow, and extensible mode logic |
-| Teams | Team assignment, team state, match-side data, and round-oriented gameplay support |
-| Economy | Custom money systems and team shop infrastructure for weapons, gear, and throwables |
-| Map tools | Admin-facing map and shop editing utilities for custom FPS experiences |
-| HUD and stats | HUD support plus player statistics such as KDA, headshots, and damage |
-| Compatibility | Integrates with TaCZ, Modern UI, CounterStrikeGrenade, KubeJS, and related Forge gameplay mods |
-| Commands | In-game command help is available with `/fpsm help` |
+|      Area       | Description                                                                                    |
+|:---------------:|:-----------------------------------------------------------------------------------------------|
+| Match framework | Team-based match lifecycle, map instances, spectator flow, and extensible mode logic           |
+|      Teams      | Team assignment, team state, match-side data, and round-oriented gameplay support              |
+|     Economy     | Custom money systems and team shop infrastructure for weapons, gear, and throwables            |
+|    Map tools    | Admin-facing map and shop editing utilities for custom FPS experiences                         |
+|  HUD and stats  | HUD support plus player statistics such as KDA, headshots, and damage                          |
+|  Compatibility  | Integrates with TaCZ, Modern UI, CounterStrikeGrenade, KubeJS, and related Forge gameplay mods |
+|    Commands     | In-game command help is available with `/fpsm help`                                            |
 
 ## Version Compatibility Matrix
 
 Columns marked with `*` are required dependencies. Unmarked mod columns are compatibility integrations.
 
-| FPSMatch | Distribution | Minecraft* | Forge* | Modern UI | TaCZ* | TaCZ Tweaks | LR Tactical | CounterStrikeGrenade | KubeJS |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.3.0 | GitHub snapshot | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | 2.11.2 | 0.3.0 | 1.4.1 | 2001.6.5-build.14 |
-| 1.2.5 | Modrinth / CurseForge | 1.20.1 | 47.3.11 | 3.11.1.6 | 1.1.7-hotfix | - | 0.3.0 | 1.4.1 | - |
+| FPSMatch | Distribution          | Minecraft* | Forge*  | Modern UI | TaCZ*        | TaCZ Tweaks | LR Tactical | CounterStrikeGrenade | KubeJS            |
+|:--------:|:----------------------|------------|---------|-----------|--------------|-------------|-------------|----------------------|-------------------|
+|  1.3.0   | GitHub snapshot       | 1.20.1     | 47.3.11 | 3.11.1.6  | 1.1.7-hotfix | 2.11.2      | 0.3.0       | 1.4.1                | 2001.6.5-build.14 |
+|  1.2.5   | Modrinth / CurseForge | 1.20.1     | 47.3.11 | 3.11.1.6  | 1.1.7-hotfix | -           | 0.3.0       | 1.4.1                | -                 |
 
 ## Download
 
-| Platform | Link |
-| --- | --- |
-| GitHub Releases | [Releases](https://github.com/SSOrangeCATY/FPSMatch/releases) |
-| Modrinth | [FPSMatch on Modrinth](https://modrinth.com/mod/fpsmatch) |
-| CurseForge | [FPSMatch on CurseForge](https://www.curseforge.com/minecraft/mc-mods/fpsmatch) |
+|    Platform     | Link                                                                            |
+|:---------------:|:--------------------------------------------------------------------------------|
+| GitHub Releases | [Releases](https://github.com/SSOrangeCATY/FPSMatch/releases)                   |
+|    Modrinth     | [FPSMatch on Modrinth](https://modrinth.com/mod/fpsmatch)                       |
+|   CurseForge    | [FPSMatch on CurseForge](https://www.curseforge.com/minecraft/mc-mods/fpsmatch) |
 
 ## How to Depend on FPSMatch
 
@@ -76,15 +76,15 @@ For source builds published through the project's own Maven publishing configura
 
 ## Community and Links
 
-| Resource | Link |
-| --- | --- |
-| GitHub | [SSOrangeCATY/FPSMatch](https://github.com/SSOrangeCATY/FPSMatch) |
-| Wiki | [Developer Wiki](https://github.com/SSOrangeCATY/FPSMatch/wiki) |
-| BlockOffensive | [SSOrangeCATY/BlockOffensive](https://github.com/SSOrangeCATY/BlockOffensive) |
+|    Resource    | Link                                                                                                  |
+|:--------------:|:------------------------------------------------------------------------------------------------------|
+|     GitHub     | [SSOrangeCATY/FPSMatch](https://github.com/SSOrangeCATY/FPSMatch)                                     |
+|      Wiki      | [Developer Wiki](https://github.com/SSOrangeCATY/FPSMatch/wiki)                                       |
+| BlockOffensive | [SSOrangeCATY/BlockOffensive](https://github.com/SSOrangeCATY/BlockOffensive)                         |
 | Command helper | [CommandHelper_en-us.md](https://github.com/SSOrangeCATY/FPSMatch/blob/master/CommandHelper_en-us.md) |
-| Bilibili | [Author page](https://space.bilibili.com/21254202) |
-| QQ group | 771884981 |
-| Feedback sheet | [Tencent Docs](https://docs.qq.com/sheet/DQnZtS2l6dmNsaHBw?tab=BB08J2) |
+|    Bilibili    | [Author page](https://space.bilibili.com/21254202)                                                    |
+|    QQ group    | 771884981                                                                                             |
+| Feedback sheet | [Tencent Docs](https://docs.qq.com/sheet/DQnZtS2l6dmNsaHBw?tab=BB08J2)                                |
 
 ## License
 

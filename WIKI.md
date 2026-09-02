@@ -6,16 +6,16 @@ FPSMatch 是一个面向 Minecraft 1.20.1 Forge 的团队 FPS 竞技框架模组
 
 ## 基本信息
 
-| 项目 | 内容 |
-| --- | --- |
-| 模组名称 | FPSMatch |
-| Mod ID | `fpsmatch` |
-| Minecraft | `1.20.1` |
-| Forge | `47.3.11+` |
-| Java | 17 |
+|     项目     |       内容       |
+|:------------:|:----------------:|
+|   模组名称   |     FPSMatch     |
+|    Mod ID    |    `fpsmatch`    |
+|  Minecraft   |     `1.20.1`     |
+|    Forge     |    `47.3.11+`    |
+|     Java     |        17        |
 | 当前源码版本 | `1.3.0` snapshot |
-| 许可证 | GPL v3 |
-| 作者 | SSOrangeCATY |
+|    许可证    |      GPL v3      |
+|     作者     |   SSOrangeCATY   |
 
 ## 适用场景
 
@@ -44,15 +44,15 @@ FPSMatch 不适合以下用途：
 
 ### 常见兼容模组
 
-| 模组 | 作用 |
-| --- | --- |
-| TaCZ | 枪械数据、开火、换弹、弹药、枪械商店兼容 |
-| Modern UI | 部分 GUI/配置页面依赖 |
-| CounterStrikeGrenade | CS 风格投掷物兼容 |
-| KubeJS | 将 FPSMatch 事件暴露给脚本 |
-| Cloth Config | 配置界面兼容 |
-| LR Tactical | 旁观与动作兼容 |
-| Mohist/Bukkit | Bukkit 事件桥接 |
+|         模组         | 作用                                     |
+|:--------------------:|:-----------------------------------------|
+|         TaCZ         | 枪械数据、开火、换弹、弹药、枪械商店兼容 |
+|      Modern UI       | 部分 GUI/配置页面依赖                    |
+| CounterStrikeGrenade | CS 风格投掷物兼容                        |
+|        KubeJS        | 将 FPSMatch 事件暴露给脚本               |
+|     Cloth Config     | 配置界面兼容                             |
+|     LR Tactical      | 旁观与动作兼容                           |
+|    Mohist/Bukkit     | Bukkit 事件桥接                          |
 
 TaCZ 在 `mods.toml` 中是可选依赖，但 FPSMatch 的主要玩法目标明显围绕枪械竞技设计。若要做完整 FPS 玩法，建议搭配枪械模组使用。
 
@@ -113,21 +113,21 @@ FPSMatch 使用 capability 风格的能力系统扩展地图和队伍功能。
 
 默认注册的队伍能力：
 
-| 能力 | 用途 |
-| --- | --- |
-| `CompensationCapability` | 经济补偿 |
-| `PauseCapability` | 暂停 |
-| `SpawnPointCapability` | 出生点 |
+|               能力                |   用途   |
+|:---------------------------------:|:--------:|
+|     `CompensationCapability`      | 经济补偿 |
+|         `PauseCapability`         |   暂停   |
+|      `SpawnPointCapability`       |  出生点  |
 | `TeamSwitchRestrictionCapability` | 换队限制 |
-| `StartKitsCapability` | 开局装备 |
-| `ShopCapability` | 队伍商店 |
+|       `StartKitsCapability`       | 开局装备 |
+|         `ShopCapability`          | 队伍商店 |
 
 默认注册的地图能力：
 
-| 能力 | 用途 |
-| --- | --- |
-| `DemolitionModeCapability` | 爆破模式，炸弹区、安包队伍、C4 状态 |
-| `GameEndTeleportCapability` | 游戏结束后的传送点 |
+|            能力             | 用途                                |
+|:---------------------------:|:------------------------------------|
+| `DemolitionModeCapability`  | 爆破模式，炸弹区、安包队伍、C4 状态 |
+| `GameEndTeleportCapability` | 游戏结束后的传送点                  |
 
 能力可以附加自己的命令、保存数据和 tick 逻辑。
 
@@ -135,17 +135,17 @@ FPSMatch 使用 capability 风格的能力系统扩展地图和队伍功能。
 
 FPSMatch 注册了一个创造模式物品栏，包含以下物品：
 
-| 物品 | 用途 |
-| --- | --- |
-| `smoke_shell` | 烟雾弹 |
-| `flash_bomb` | 闪光弹 |
-| `grenade` | 手雷 |
-| `ct_incendiary_grenade` | CT 方燃烧弹 |
-| `t_incendiary_grenade` | T 方燃烧弹 |
-| `bulletproof_armor` | 防弹甲 |
+|           物品            |     用途     |
+|:-------------------------:|:------------:|
+|       `smoke_shell`       |    烟雾弹    |
+|       `flash_bomb`        |    闪光弹    |
+|         `grenade`         |     手雷     |
+|  `ct_incendiary_grenade`  | CT 方燃烧弹  |
+|  `t_incendiary_grenade`   |  T 方燃烧弹  |
+|    `bulletproof_armor`    |    防弹甲    |
 | `bulletproof_with_helmet` | 防弹甲和头盔 |
-| `map_creator_tool` | 地图创建工具 |
-| `spawn_point_tool` | 出生点工具 |
+|    `map_creator_tool`     | 地图创建工具 |
+|    `spawn_point_tool`     |  出生点工具  |
 
 同时注册了投掷物实体、闪光致盲效果、音效、HUD 和多种网络包。
 
@@ -272,12 +272,12 @@ FPSMatch 提供商店槽位、价格、分组、弹药数量和监听模块等�
 
 参数说明：
 
-| 参数 | 说明 |
-| --- | --- |
-| `game_type` | 已注册的游戏类型 |
-| `map_name` | 地图唯一名称 |
-| `from` | 地图区域第一个角点 |
-| `to` | 地图区域第二个角点 |
+|    参数     | 说明               |
+|:-----------:|:-------------------|
+| `game_type` | 已注册的游戏类型   |
+| `map_name`  | 地图唯一名称       |
+|   `from`    | 地图区域第一个角点 |
+|    `to`     | 地图区域第二个角点 |
 
 ### 调试地图
 
@@ -291,13 +291,13 @@ FPSMatch 提供商店槽位、价格、分组、弹药数量和监听模块等�
 
 作用：
 
-| 子命令 | 说明 |
-| --- | --- |
-| `start` | 开始游戏 |
-| `reset` | 重置游戏 |
-| `new_round` | 开始新回合 |
-| `cleanup` | 清理地图 |
-| `switch` | 切换该地图调试模式 |
+| 子命令      | 说明               |
+|-------------|--------------------|
+| `start`     | 开始游戏           |
+| `reset`     | 重置游戏           |
+| `new_round` | 开始新回合         |
+| `cleanup`   | 清理地图           |
+| `switch`    | 切换该地图调试模式 |
 
 ### 队伍操作
 
@@ -374,19 +374,19 @@ FPSMatch 提供商店槽位、价格、分组、弹药数量和监听模块等�
 
 基础地图设置包括：
 
-| 设置 | 默认值 | 说明 |
-| --- | --- | --- |
-| `minAssistDamageRatio` | `0.25` | 计算助攻所需的最低伤害比例 |
-| `allowJoinInProgress` | `true` | 是否允许中途加入 |
-| `teammateGlow` | `false` | 是否启用队友透视发光 |
-| `hideEnemyNameTag` | `true` | 是否隐藏敌方名牌 |
-| `displayName` | 空 | 地图显示名称 |
-| `iconTexture` | 空 | 地图卡片图标贴图 |
-| `backgroundTexture` | 空 | 地图详情背景贴图 |
-| `autoStart` | `false` | 是否自动开始 |
-| `autoStartTime` | `6000` | 自动开始倒计时 tick |
-| `readyStartEnabled` | `true` | 是否启用全员准备开始 |
-| `readyStartTime` | `200` | 全员准备后的开始倒计时 tick |
+| 设置                   | 默认值  | 说明                        |
+|------------------------|---------|-----------------------------|
+| `minAssistDamageRatio` | `0.25`  | 计算助攻所需的最低伤害比例  |
+| `allowJoinInProgress`  | `true`  | 是否允许中途加入            |
+| `teammateGlow`         | `false` | 是否启用队友透视发光        |
+| `hideEnemyNameTag`     | `true`  | 是否隐藏敌方名牌            |
+| `displayName`          | 空      | 地图显示名称                |
+| `iconTexture`          | 空      | 地图卡片图标贴图            |
+| `backgroundTexture`    | 空      | 地图详情背景贴图            |
+| `autoStart`            | `false` | 是否自动开始                |
+| `autoStartTime`        | `6000`  | 自动开始倒计时 tick         |
+| `readyStartEnabled`    | `true`  | 是否启用全员准备开始        |
+| `readyStartTime`       | `200`   | 全员准备后的开始倒计时 tick |
 
 ### 爆破能力命令
 
@@ -427,20 +427,20 @@ FPSMatch 使用 Forge 配置系统注册了客户端、通用和服务端配置�
 
 常见通用配置包括：
 
-| 配置 | 说明 |
-| --- | --- |
-| 主武器拾取数量 | 对局中允许拾取的主武器数量 |
-| 副武器拾取数量 | 对局中允许拾取的副武器数量 |
-| 投掷物拾取数量 | 对局中允许拾取的投掷物数量 |
-| RPG/近战武器拾取数量 | 特殊武器拾取数量 |
-| 闪光弹半径 | 闪光致盲范围 |
-| 手雷半径 | 手雷爆炸范围 |
-| 手雷引信时间 | 投出后多久爆炸 |
-| 手雷伤害 | 爆炸伤害 |
-| 燃烧弹持续时间 | 燃烧弹生效时间 |
-| 烟雾弹持续时间 | 烟雾存在时间 |
-| 防弹甲穿透 | 防弹甲减伤逻辑 |
-| 爆头倍率 | 爆头伤害倍率 |
+| 配置                 | 说明                       |
+|----------------------|----------------------------|
+| 主武器拾取数量       | 对局中允许拾取的主武器数量 |
+| 副武器拾取数量       | 对局中允许拾取的副武器数量 |
+| 投掷物拾取数量       | 对局中允许拾取的投掷物数量 |
+| RPG/近战武器拾取数量 | 特殊武器拾取数量           |
+| 闪光弹半径           | 闪光致盲范围               |
+| 手雷半径             | 手雷爆炸范围               |
+| 手雷引信时间         | 投出后多久爆炸             |
+| 手雷伤害             | 爆炸伤害                   |
+| 燃烧弹持续时间       | 燃烧弹生效时间             |
+| 烟雾弹持续时间       | 烟雾存在时间               |
+| 防弹甲穿透           | 防弹甲减伤逻辑             |
+| 爆头倍率             | 爆头伤害倍率               |
 
 ## 事件与扩展
 
@@ -448,25 +448,25 @@ FPSMatch 对外暴露了多种事件，适合其他模组或 KubeJS 脚本接入
 
 ### 地图事件
 
-| 事件 | 说明 |
-| --- | --- |
-| `StartEvent` | 地图开始 |
-| `VictoryEvent` | 地图胜利 |
-| `ClearEvent` | 地图清理 |
-| `ResetEvent` | 地图重置 |
-| `ReloadEvent` | 地图重载 |
-| `LoadEvent` | 地图加载 |
-| `PlayerEvent.JoinEvent` | 玩家加入 |
+| 事件                     | 说明     |
+|--------------------------|----------|
+| `StartEvent`             | 地图开始 |
+| `VictoryEvent`           | 地图胜利 |
+| `ClearEvent`             | 地图清理 |
+| `ResetEvent`             | 地图重置 |
+| `ReloadEvent`            | 地图重载 |
+| `LoadEvent`              | 地图加载 |
+| `PlayerEvent.JoinEvent`  | 玩家加入 |
 | `PlayerEvent.LeaveEvent` | 玩家离开 |
-| `PlayerEvent.HurtEvent` | 玩家受伤 |
+| `PlayerEvent.HurtEvent`  | 玩家受伤 |
 | `PlayerEvent.DeathEvent` | 玩家死亡 |
-| `PlayerEvent.KillEvent` | 玩家击杀 |
+| `PlayerEvent.KillEvent`  | 玩家击杀 |
 
 ### 队伍事件
 
-| 事件 | 说明 |
-| --- | --- |
-| `FPSMTeamEvent.JoinEvent` | 加入队伍 |
+| 事件                       | 说明     |
+|----------------------------|----------|
+| `FPSMTeamEvent.JoinEvent`  | 加入队伍 |
 | `FPSMTeamEvent.LeaveEvent` | 离开队伍 |
 
 ### KubeJS 事件名
@@ -687,22 +687,22 @@ FPSMatch 对 TaCZ 和 LR Tactical 做了旁观兼容，包括枪械动画、换�
 
 ## 源码导航
 
-| 路径 | 说明 |
-| --- | --- |
-| `src/main/java/com/phasetranscrystal/fpsmatch/FPSMatch.java` | 模组主入口 |
-| `core/FPSMCore.java` | 核心运行时、地图注册、数据加载、tick |
-| `core/map/BaseMap.java` | 地图基类 |
-| `core/team/` | 队伍系统 |
-| `core/shop/` | 商店核心 |
-| `common/capability/` | 地图和队伍能力 |
-| `common/command/` | `/fpsm` 命令 |
-| `common/item/` | 物品注册和工具 |
-| `common/entity/throwable/` | 投掷物实体 |
-| `common/client/screen/` | 客户端 GUI |
-| `common/mapselect/` | 地图选择和房间操作 |
-| `compat/tacz/` | TaCZ 兼容 |
-| `compat/kubejs/` | KubeJS 兼容 |
-| `bukkit/` | Bukkit/Mohist 事件桥接 |
+| 路径                                                         | 说明                                 |
+|--------------------------------------------------------------|--------------------------------------|
+| `src/main/java/com/phasetranscrystal/fpsmatch/FPSMatch.java` | 模组主入口                           |
+| `core/FPSMCore.java`                                         | 核心运行时、地图注册、数据加载、tick |
+| `core/map/BaseMap.java`                                      | 地图基类                             |
+| `core/team/`                                                 | 队伍系统                             |
+| `core/shop/`                                                 | 商店核心                             |
+| `common/capability/`                                         | 地图和队伍能力                       |
+| `common/command/`                                            | `/fpsm` 命令                         |
+| `common/item/`                                               | 物品注册和工具                       |
+| `common/entity/throwable/`                                   | 投掷物实体                           |
+| `common/client/screen/`                                      | 客户端 GUI                           |
+| `common/mapselect/`                                          | 地图选择和房间操作                   |
+| `compat/tacz/`                                               | TaCZ 兼容                            |
+| `compat/kubejs/`                                             | KubeJS 兼容                          |
+| `bukkit/`                                                    | Bukkit/Mohist 事件桥接               |
 
 ## 总结
 
