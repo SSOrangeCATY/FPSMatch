@@ -111,6 +111,23 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         // Building list rows in the constructor would yield empty placeholders.
     }
 
+    private List<Ldlib2AccessibilityController.FocusTarget> focusTargets() {
+        List<Ldlib2AccessibilityController.FocusTarget> targets = new java.util.ArrayList<>();
+        for (Ldlib2AccessibilityController.FocusTarget target : teamButtons) {
+            if (target.element().isVisible() && target.element().isActive()) {
+                targets.add(target);
+            }
+        }
+        for (Ldlib2AccessibilityController.FocusTarget target : adminMoveButtons) {
+            if (target.element().isVisible() && target.element().isActive()) {
+                targets.add(target);
+            }
+        }
+        targets.add(readyButton);
+        targets.add(backButton);
+        return List.copyOf(targets);
+    }
+
     @Override
     public void init() {
         super.init();
