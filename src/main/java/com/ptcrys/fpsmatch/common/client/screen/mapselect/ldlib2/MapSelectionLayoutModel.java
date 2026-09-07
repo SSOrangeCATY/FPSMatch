@@ -26,57 +26,46 @@ public record MapSelectionLayoutModel(
     }
 
     /**
-     * Desktop keeps filters, room list, and detail in a horizontal shell. Compact windows keep
-     * the filter/action/list order but omit the detail rail so the browser remains usable.
+     * Desktop gives the selected map a substantial preview rail. Compact windows preserve the
+     * filter/action rail and room queue, while the full detail remains one explicit action away.
      */
     public static MapSelectionLayoutModel responsive(int width, int height) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("screen dimensions must be positive");
         }
-        int headerHeight = Math.min(height, Math.max(20, Math.min(32, height / 18)));
-        // Keep one stable notice band in the layout so late server feedback never covers or
-        // shifts the first room row. The element may be hidden, but its space remains reserved.
-        int toastHeight = Math.min(28, Math.max(0, height - headerHeight));
+        int headerHeight = Math.min(height, height >= 180 ? 44 : Math.max(24, height / 4));
+        // The notice band is reserved, even while hidden, so asynchronous feedback never shifts
+        // the first room row.
+        int toastHeight = Math.min(24, Math.max(0, height - headerHeight));
         int contentTop = headerHeight + toastHeight;
         int contentHeight = Math.max(0, height - contentTop);
 
-        // Three-column shell once there is room for filter rail + list + right rail.
-        if (width >= 420) {
-            int filterWidth;
-            int rightWidth;
-            if (width >= 900) {
-                filterWidth = Math.max(150, Math.min(190, width * 18 / 100));
-                rightWidth = Math.max(240, Math.min(300, width * 28 / 100));
-            } else if (width >= 700) {
-                filterWidth = Math.max(140, Math.min(170, width * 18 / 100));
-                rightWidth = Math.max(210, Math.min(260, width * 28 / 100));
-            } else {
-                // Mid desktop: keep the list dominant while leaving both side rails usable.
-                filterWidth = Math.max(104, Math.min(140, width * 22 / 100));
-                rightWidth = Math.max(144, Math.min(190, width * 32 / 100));
-            }
+        // Three-column shell once the preview and room queue can both remain readable.
+        if (width >= 560 && contentHeight >= 96) {
+            int filterWidth = Math.max(124, Math.min(184, width * 18 / 100));
+            int rightWidth = Math.max(220, Math.min(440, width * 38 / 100));
             int listWidth = width - filterWidth - rightWidth;
-            if (listWidth < 120) {
-                int deficit = 120 - listWidth;
-                int shrinkRight = Math.min(deficit, Math.max(0, rightWidth - 128));
+            if (listWidth < 180) {
+                int deficit = 180 - listWidth;
+                int shrinkRight = Math.min(deficit, Math.max(0, rightWidth - 190));
                 rightWidth -= shrinkRight;
                 deficit -= shrinkRight;
-                int shrinkFilter = Math.min(deficit, Math.max(0, filterWidth - 96));
+                int shrinkFilter = Math.min(deficit, Math.max(0, filterWidth - 112));
                 filterWidth -= shrinkFilter;
                 listWidth = width - filterWidth - rightWidth;
             }
             listWidth = Math.max(0, listWidth);
-            int browserActionsHeight = Math.min(contentHeight,
-                    Math.min(54, Math.max(48, contentHeight / 4)));
+            int browserActionsHeight = Math.min(contentHeight, Math.min(54,
+                    Math.max(40, contentHeight / 4)));
             int actionHeight = Math.min(Math.max(0, contentHeight - browserActionsHeight),
-                    Math.min(48, Math.max(36, contentHeight * 18 / 100)));
+                    Math.min(46, Math.max(36, contentHeight / 5)));
             int filterHeight = contentHeight - browserActionsHeight - actionHeight;
-            if (filterHeight < 72) {
-                int deficit = 72 - filterHeight;
-                int browserShrink = Math.min(deficit, Math.max(0, browserActionsHeight - 36));
+            if (filterHeight < 68) {
+                int deficit = 68 - filterHeight;
+                int browserShrink = Math.min(deficit, Math.max(0, browserActionsHeight - 34));
                 browserActionsHeight -= browserShrink;
                 deficit -= browserShrink;
-                actionHeight -= Math.min(deficit, Math.max(0, actionHeight - 28));
+                actionHeight -= Math.min(deficit, Math.max(0, actionHeight - 30));
                 filterHeight = contentHeight - browserActionsHeight - actionHeight;
             }
             filterHeight = Math.max(0, filterHeight);
@@ -95,16 +84,15 @@ public record MapSelectionLayoutModel(
             );
         }
 
-        // Narrow: preserve the filter/action rail on the left, give the room list the full-height
-        // right column, and omit only the detail rail.
-        int minimumLeftWidth = Math.min(104, Math.max(1, width - 1));
+        // Narrow: keep browsing and filtering usable; the preview moves to the detail screen.
+        int minimumLeftWidth = Math.min(116, Math.max(1, width - 1));
         int leftWidth = width < 2 ? width : Math.min(width - 1,
-                Math.max(minimumLeftWidth, width * 40 / 100));
+                Math.min(176, Math.max(minimumLeftWidth, width * 38 / 100)));
         int listWidth = Math.max(0, width - leftWidth);
         int browserActionsHeight = Math.min(contentHeight,
-                Math.min(42, Math.max(36, contentHeight / 5)));
+                Math.min(52, Math.max(38, contentHeight / 4)));
         int actionHeight = Math.min(Math.max(0, contentHeight - browserActionsHeight),
-                Math.min(36, Math.max(30, contentHeight * 16 / 100)));
+                Math.min(42, Math.max(32, contentHeight / 5)));
         int filterHeight = Math.max(0, contentHeight - browserActionsHeight - actionHeight);
         int actionsTop = contentTop + filterHeight;
         int browserTop = contentTop + contentHeight - browserActionsHeight;

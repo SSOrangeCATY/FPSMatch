@@ -9,7 +9,6 @@ import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleModularUIScreen;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleSelector;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleTextField;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2RenderGuard;
@@ -46,15 +45,20 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         implements FPSMMapDetailChildScreen {
     private static final int PANEL_HORIZONTAL_INSET = 3;
     private static final int PANEL_VERTICAL_INSET = 6;
-    private static final int DETAIL_INFO_HEIGHT = 56;
-    private static final int DETAIL_PLAYERS_MIN_HEIGHT = 24;
 
     private final Screen parent;
+    private final UIElement headerPanel;
+    private final Label scopeLabel;
     private final VirtualScrollerView<MapRoomSummary> roomList;
     private final Label roomListHeading;
     private final Label emptyState;
     private final UIElement detailPanel;
+    private final MapSelectionUiView.MapPreviewElement preview;
+    private final Label previewTitle;
+    private final Label previewMeta;
     private final Label detailLabel;
+    private final Label rulesLabel;
+    private final Label playersHeading;
     private final VirtualScrollerView<MapRoomPlayerInfo> playerList;
     private final AccessibleTextField search;
     private final UIElement filters;
@@ -78,6 +82,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     private String query = "";
     private String stateFilter = "all";
     private String gameModeFilter = "all";
+    private boolean refreshing;
+    private boolean detailLoading;
+    private String requestedDetailRoom = "";
     private PendingOpen pendingOpen = PendingOpen.NONE;
     private MapRoomToastS2CPacket dismissedToast;
 
@@ -100,11 +107,18 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         super(parts.ui(), Component.translatable("gui.fpsm.map_select.title"));
         this.parent = parent;
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
+        this.headerPanel = parts.headerPanel();
+        this.scopeLabel = parts.scopeLabel();
         this.roomList = parts.roomList();
         this.roomListHeading = parts.roomListHeading();
         this.emptyState = parts.emptyState();
         this.detailPanel = parts.detailPanel();
+        this.preview = parts.preview();
+        this.previewTitle = parts.previewTitle();
+        this.previewMeta = parts.previewMeta();
         this.detailLabel = parts.detailLabel();
+        this.rulesLabel = parts.rulesLabel();
+        this.playersHeading = parts.playersHeading();
         this.playerList = parts.playerList();
         this.search = parts.search();
         this.filters = parts.filters();
@@ -118,7 +132,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         this.browserActionButtons = parts.browserActionButtons();
         parts.refresh().setOnClick(event -> refresh());
         parts.close().setOnClick(event -> onClose());
-        parts.join().setOnClick(event -> openSelectedDetail());
+        parts.open().setOnClick(event -> openSelectedDetail());
         parts.manage().setOnClick(event -> openMapManage());
         stateSelector.setOnValueChanged(value -> setStateFilter(value == null ? "all" : value));
         modeSelector.setOnValueChanged(value -> setGameModeFilter(value == null ? "all" : value));
@@ -133,6 +147,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         // Element IDs are registered only after ModularUI.setScreenAndInit (super.init).
         bindRequiredWidgets();
         applyResponsiveLayout();
+        if (selected != null && detail == null) {
+            requestDetail();
+        }
         refreshToast();
     }
 
@@ -161,6 +178,8 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             roomList.refreshVisibleItems();
             return;
         }
+        detailLoading = false;
+        requestedDetailRoom = roomKey(detail.summary());
         this.detail = detail;
         refreshDetail();
         refreshActionState();
@@ -168,6 +187,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     public void applySnapshot(MapSelectionSnapshotS2CPacket snapshot) {
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
+        refreshing = false;
         dismissToast();
         refreshFilterState();
         refreshList();
@@ -187,7 +207,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     @Override
     public void renderBackground(GuiGraphics graphics) {
-        FPSMLdlib2Backdrop.draw(graphics, this.width, this.height);
+        FPSMLdlib2Backdrop.drawMapIndex(graphics, this.width, this.height);
     }
 
     @Override
@@ -272,15 +292,21 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private void refreshList() {
         List<MapRoomSummary> rooms = filteredRooms();
+        MapRoomSummary previous = selected;
         retainSelection(rooms);
         roomList.setItems(rooms);
         roomList.virtualScrollerViewStyle(style -> style
                 .estimatedItemHeight(MapSelectionUiView.ROW_HEIGHT + MapSelectionUiView.ROW_GAP)
                 .overscanPixels(MapSelectionUiView.ROW_HEIGHT * 2));
         updateEmptyState(rooms);
+        updateIndexLabels(rooms);
         refreshDetail();
         refreshActionState();
         roomList.refreshVisibleItems();
+        if (width > 0 && selected != null && detail == null
+                && !sameRoom(previous, selected)) {
+            requestDetail();
+        }
     }
 
     private List<MapRoomSummary> filteredRooms() {
@@ -293,36 +319,75 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private void retainSelection(List<MapRoomSummary> rooms) {
         if (selected == null) {
+            if (!rooms.isEmpty()) {
+                selected = rooms.get(0);
+            }
             return;
         }
         selected = rooms.stream().filter(summary -> sameRoom(summary, selected)).findFirst().orElse(null);
         if (selected == null) {
             detail = null;
+            detailLoading = false;
+            requestedDetailRoom = "";
             pendingOpen = PendingOpen.NONE;
+            if (!rooms.isEmpty()) {
+                selected = rooms.get(0);
+            }
         }
     }
 
     private void updateEmptyState(List<MapRoomSummary> rooms) {
         emptyState.setVisible(rooms.isEmpty());
+        if (!rooms.isEmpty()) {
+            return;
+        }
+        emptyState.setValue(Component.translatable(refreshing
+                ? "gui.fpsm.map_select.loading"
+                : snapshot.maps().isEmpty()
+                ? "gui.fpsm.map_select.empty"
+                : "gui.fpsm.map_select.empty.filtered"));
+    }
+
+    private void updateIndexLabels(List<MapRoomSummary> rooms) {
+        scopeLabel.setValue(Component.translatable(
+                refreshing ? "gui.fpsm.map_select.sync.refreshing" : "gui.fpsm.map_select.snapshot_count",
+                snapshot.maps().size()));
+        roomListHeading.setValue(Component.translatable(
+                "gui.fpsm.map_select.rooms.filtered", rooms.size(), snapshot.maps().size()));
     }
 
     private void refreshDetail() {
         if (selected == null && detail == null) {
             detailPanel.setVisible(!compactLayout);
+            preview.show(null, null);
+            previewTitle.setValue(Component.empty());
+            previewMeta.setValue(Component.empty());
             detailLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.none"));
+            rulesLabel.setValue(Component.empty());
             playerList.setItems(List.of());
             playerList.refreshVisibleItems();
             return;
         }
         MapRoomSummary summary = detail == null ? selected : detail.summary();
+        preview.show(summary, detail);
+        previewTitle.setValue(Component.literal(summary.displayName()));
+        previewMeta.setValue(Component.literal(
+                summary.gameType().toUpperCase(Locale.ROOT) + " / " + summary.mapName()));
         String text = String.join("\n",
-                Component.translatable("gui.fpsm.map_select.info.map", summary.displayName(), summary.mapName()).getString(),
-                Component.translatable("gui.fpsm.map_select.info.mode",
-                        summary.gameType().toUpperCase(java.util.Locale.ROOT)).getString(),
                 Component.translatable("gui.fpsm.map_select.info.players",
                         summary.joinedPlayers(), maxPlayers(summary)).getString(),
-                Component.translatable("gui.fpsm.map_select.info.status", statusText(summary).getString()).getString());
+                Component.translatable("gui.fpsm.map_select.info.status", statusText(summary).getString()).getString(),
+                Component.translatable("gui.fpsm.map_select.detail.area", summary.areaText()).getString());
         detailLabel.setValue(Component.literal(text));
+        if (detailLoading && detail == null) {
+            rulesLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.loading"));
+        } else if (detail != null && !detail.rulesKey().isBlank()) {
+            rulesLabel.setValue(Component.translatable(
+                    "gui.fpsm.map_select.preview.rules",
+                    Component.translatable(detail.rulesKey())));
+        } else {
+            rulesLabel.setValue(Component.translatable("gui.fpsm.map_select.preview.open_detail"));
+        }
         playerList.setItems(detail == null ? List.of() : detail.players());
         playerList.refreshVisibleItems();
     }
@@ -337,6 +402,8 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         detailPanel.setVisible(!compactLayout);
         int originX = horizontalMargin;
         int originY = verticalMargin;
+        place(headerPanel, layout.header(), originX, originY);
+        scopeLabel.setVisible(layout.header().width() >= 420);
         place(toast, layout.toast(), originX, originY);
         place(filters, layout.filters(), originX, originY);
         placeRoomList(layout.roomList(), originX, originY);
@@ -348,19 +415,15 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         place(actions, layout.actions(), originX, originY);
         place(browserActions, layout.browserActions(), originX, originY);
 
-        int filterInsetX = insetFor(layout.filters().width(), PANEL_HORIZONTAL_INSET);
-        int filterInsetY = insetFor(layout.filters().height(), PANEL_VERTICAL_INSET);
-        int filterPanelX = originX + layout.filters().x() + filterInsetX;
-        int filterPanelY = originY + layout.filters().y() + filterInsetY;
         int filterPanelWidth = placedDimension(layout.filters().width(), PANEL_HORIZONTAL_INSET);
         int filterPanelHeight = placedDimension(layout.filters().height(), PANEL_VERTICAL_INSET);
         int searchPadding = Math.min(8, Math.max(2, (filterPanelWidth - 1) / 8));
         int searchTop = Math.min(layout.compact() ? 22 : 24, Math.max(0, filterPanelHeight - 1));
-        int searchHeight = Math.max(1, Math.min(18, filterPanelHeight - searchTop));
+        int searchHeight = Math.max(1, Math.min(22, filterPanelHeight - searchTop));
         search.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
-                .left(filterPanelX + searchPadding)
-                .top(filterPanelY + searchTop)
+                .left(searchPadding)
+                .top(searchTop)
                 .width(Math.max(1, filterPanelWidth - searchPadding * 2))
                 .height(searchHeight));
 
@@ -377,6 +440,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
                     placedDimension(layout.detail().width(), PANEL_HORIZONTAL_INSET),
                     placedDimension(layout.detail().height(), PANEL_VERTICAL_INSET));
         } else {
+            playersHeading.setVisible(false);
             playerList.setVisible(false);
         }
         roomList.refreshVisibleItems();
@@ -418,7 +482,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private static int roomListHeaderHeight(int rectHeight) {
-        return Math.min(20, Math.max(14, rectHeight / 10));
+        return Math.min(22, Math.max(16, rectHeight / 10));
     }
 
     private void placeEmptyState(MapSelectionLayoutModel.Rect rect, int originX, int originY) {
@@ -449,7 +513,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int gap = compact ? 3 : 6;
         int selectorWidth = Math.max(1, panelWidth - sidePadding * 2);
         int availableHeight = Math.max(1, panelHeight - selectorsTop - sidePadding);
-        int selectorHeight = Math.max(1, Math.min(compact ? 16 : 20,
+        int selectorHeight = Math.max(1, Math.min(compact ? 20 : 22,
                 Math.max(1, (availableHeight - gap) / 2)));
         stateSelector.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto()
@@ -471,7 +535,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int availableWidth = Math.max(1, panelWidth - horizontalPadding * 2 - gap * (columns - 1));
         int buttonWidth = Math.max(1, Math.min(88, availableWidth / columns));
         int availableHeight = Math.max(1, panelHeight - verticalPadding * 2 - gap * (rows - 1));
-        int buttonHeight = Math.max(1, Math.min(18, availableHeight / rows));
+        int buttonHeight = Math.max(1, Math.min(22, availableHeight / rows));
         int totalWidth = columns * buttonWidth + Math.max(0, columns - 1) * gap;
         int startLeft = Math.max(0, (panelWidth - totalWidth) / 2);
         int totalHeight = rows * buttonHeight + Math.max(0, rows - 1) * gap;
@@ -495,7 +559,7 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         int gap = 4;
         int buttonWidth = Math.max(1, panelWidth - sidePadding * 2);
         int availableHeight = Math.max(1, panelHeight - gap * Math.max(0, count - 1));
-        int buttonHeight = Math.max(1, Math.min(16, availableHeight / count));
+        int buttonHeight = Math.max(1, Math.min(20, availableHeight / count));
         int totalHeight = count * buttonHeight + gap * Math.max(0, count - 1);
         int startTop = Math.max(0, (panelHeight - totalHeight) / 2);
         for (int i = 0; i < count; i++) {
@@ -509,39 +573,53 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
     }
 
     private void layoutDetailContents(int panelWidth, int panelHeight) {
-        int shortestSide = Math.min(panelWidth, panelHeight);
-        int padding = Math.min(8, Math.max(2, (shortestSide - 1) / 8));
-        int gap = Math.min(6, Math.max(2, panelHeight / 24));
-        int headingHeight = Math.min(16, Math.max(1, panelHeight / 10));
-        int contentTop = padding + headingHeight + 4;
-        int availableHeight = Math.max(1, panelHeight - contentTop - padding);
-        boolean showPlayers = availableHeight >= DETAIL_INFO_HEIGHT + gap + DETAIL_PLAYERS_MIN_HEIGHT;
-        int labelHeight;
-        int playerHeight;
-        if (showPlayers) {
-            labelHeight = Math.min(DETAIL_INFO_HEIGHT, Math.max(1, availableHeight - gap - DETAIL_PLAYERS_MIN_HEIGHT));
-            playerHeight = Math.max(DETAIL_PLAYERS_MIN_HEIGHT, availableHeight - labelHeight - gap);
-        } else {
-            // At very small heights the four-line summary gets the whole rail. Hiding the
-            // roster is preferable to letting text paint over its placeholder frame.
-            labelHeight = availableHeight;
-            playerHeight = 1;
-        }
+        int padding = Math.min(10, Math.max(4, panelWidth / 24));
         int contentWidth = Math.max(1, panelWidth - padding * 2);
+        int headingHeight = 17;
+        int previewHeight = Math.min(112, Math.max(62, panelHeight / 4));
+        int metaTop = headingHeight + previewHeight + 8;
+        int metaHeight = 28;
+        int summaryTop = metaTop + metaHeight + 4;
+        int summaryHeight = Math.min(58, Math.max(34, panelHeight / 7));
+        int rulesTop = summaryTop + summaryHeight + 4;
+        int rulesHeight = Math.min(44, Math.max(24, panelHeight / 9));
+        int playersTop = rulesTop + rulesHeight + 20;
+        int playersHeight = Math.max(1, panelHeight - playersTop - padding);
+        boolean showPlayers = playersHeight >= 28;
+
+        preview.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(headingHeight)
+                .width(contentWidth).height(previewHeight));
+        previewTitle.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(metaTop)
+                .width(contentWidth).height(16));
+        previewMeta.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(metaTop + 17)
+                .width(contentWidth).height(11));
         detailLabel.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(padding).top(contentTop).width(contentWidth).height(labelHeight));
+                .rightAuto().bottomAuto().left(padding).top(summaryTop)
+                .width(contentWidth).height(summaryHeight));
+        rulesLabel.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(rulesTop)
+                .width(contentWidth).height(rulesHeight));
+        playersHeading.setVisible(showPlayers);
+        playersHeading.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(playersTop - 16)
+                .width(contentWidth).height(14));
         playerList.setVisible(showPlayers);
         playerList.layout(style -> style.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto()
-                .left(padding).top(contentTop + labelHeight + gap)
-                .width(contentWidth).height(playerHeight));
+                .rightAuto().bottomAuto().left(padding).top(playersTop)
+                .width(contentWidth).height(playersHeight));
     }
 
     void select(MapRoomSummary summary) {
         dismissToast();
+        if (sameRoom(selected, summary) && detail != null) {
+            return;
+        }
         selected = summary;
         detail = null;
+        detailLoading = false;
         pendingOpen = PendingOpen.NONE;
         refreshDetail();
         refreshActionState();
@@ -632,7 +710,14 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         if (selected == null) {
             return;
         }
+        String requestRoom = roomKey(selected);
+        if (detailLoading && requestRoom.equals(requestedDetailRoom)) {
+            return;
+        }
         pendingOpen = PendingOpen.NONE;
+        detailLoading = true;
+        requestedDetailRoom = requestRoom;
+        refreshDetail();
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
                 selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
     }
@@ -642,6 +727,9 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             return;
         }
         pendingOpen = next;
+        detailLoading = true;
+        requestedDetailRoom = roomKey(selected);
+        refreshDetail();
         FPSMatch.sendToServer(new MapRoomActionC2SPacket(MapRoomActionC2SPacket.Action.REQUEST_DETAIL,
                 selected.gameType(), selected.mapName(), new UUID(0L, 0L)));
     }
@@ -672,6 +760,10 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
 
     private void refresh() {
         dismissToast();
+        refreshing = true;
+        updateEmptyState(filteredRooms());
+        updateIndexLabels(filteredRooms());
+        refreshActionState();
         FPSMatch.sendToServer(new OpenMapSelectionC2SPacket());
     }
 
@@ -751,20 +843,26 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         boolean hasSelection = summary != null;
         // 浏览页只负责选择与进入详情；加入、队伍和管理动作均在详情/子页面完成。
         boolean canOpenDetail = hasSelection;
-        FPSMLdlib2Theme.buttonState(
-                actionButtons.get(0), FPSMLdlib2Theme.ButtonKind.PRIMARY,
+        FPSMMapSelectTheme.buttonState(
+                actionButtons.get(0), FPSMMapSelectTheme.ButtonKind.PRIMARY,
                 canOpenDetail
         );
         manageVisible = false;
         actionButtons.get(1).setDisplay(manageVisible);
         actionButtons.get(1).setVisible(manageVisible);
-        FPSMLdlib2Theme.buttonState(
-                actionButtons.get(1), FPSMLdlib2Theme.ButtonKind.SECONDARY,
+        FPSMMapSelectTheme.buttonState(
+                actionButtons.get(1), FPSMMapSelectTheme.ButtonKind.SECONDARY,
                 manageVisible
         );
-        browserActionButtons.forEach(button -> FPSMLdlib2Theme.buttonState(
-                button, FPSMLdlib2Theme.ButtonKind.QUIET, true
-        ));
+        browserActionButtons.get(0).setText(Component.translatable(refreshing
+                ? "gui.fpsm.map_select.refreshing"
+                : "gui.fpsm.map_select.refresh"));
+        FPSMMapSelectTheme.buttonState(
+                browserActionButtons.get(0), FPSMMapSelectTheme.ButtonKind.QUIET, !refreshing
+        );
+        FPSMMapSelectTheme.buttonState(
+                browserActionButtons.get(1), FPSMMapSelectTheme.ButtonKind.QUIET, true
+        );
         if (actionPanelWidth > 0 && actionPanelHeight > 0) {
             layoutActionsInPanel(actionPanelWidth, actionPanelHeight);
         }
@@ -783,9 +881,12 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
             }
             toast.setVisible(true);
             toastLabel.setValue(packet.message());
-            FPSMLdlib2Theme.status(
+            FPSMMapSelectTheme.statusSurface(
+                    toast, packet.error() ? FPSMMapSelectTheme.DANGER : FPSMMapSelectTheme.SUCCESS
+            );
+            FPSMMapSelectTheme.status(
                     toastLabel,
-                    packet.error() ? FPSMLdlib2Theme.DANGER : FPSMLdlib2Theme.SUCCESS
+                    packet.error() ? FPSMMapSelectTheme.DANGER : FPSMMapSelectTheme.SUCCESS
             );
             if (announcedToasts.add(packet)) {
                 accessibility().announce(packet.message(), packet.error());
@@ -834,15 +935,19 @@ public final class Ldlib2MapSelectionScreen extends AccessibleModularUIScreen
         return first != null && second != null && first.gameType().equals(second.gameType()) && first.mapName().equals(second.mapName());
     }
 
+    private static String roomKey(MapRoomSummary summary) {
+        return summary == null ? "" : summary.gameType() + "\u0000" + summary.mapName();
+    }
+
     static String maxPlayers(MapRoomSummary summary) {
         return summary.maxPlayers() < 0 ? "?" : Integer.toString(summary.maxPlayers());
     }
 
     static int roomStatusColor(MapRoomSummary summary) {
-        if (summary.full()) return FPSMLdlib2Theme.DANGER;
-        if (summary.debug()) return FPSMLdlib2Theme.ACCENT;
-        if (summary.started()) return summary.allowJoinInProgress() ? FPSMLdlib2Theme.WARNING : FPSMLdlib2Theme.DANGER;
-        return FPSMLdlib2Theme.SUCCESS;
+        if (summary.full()) return FPSMMapSelectTheme.DANGER;
+        if (summary.debug()) return FPSMMapSelectTheme.ACCENT;
+        if (summary.started()) return summary.allowJoinInProgress() ? FPSMMapSelectTheme.WARNING : FPSMMapSelectTheme.DANGER;
+        return FPSMMapSelectTheme.SUCCESS;
     }
 
     static Component statusText(MapRoomSummary summary) {

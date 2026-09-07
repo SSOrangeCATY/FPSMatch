@@ -3,7 +3,6 @@ package com.ptcrys.fpsmatch.common.client.screen.mapselect.ldlib2;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.VirtualScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
@@ -11,7 +10,9 @@ import com.lowdragmc.lowdraglib2.gui.ui.event.UIEventDispatcher;
 import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.FPSMTeamActionScreen;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.client.screen.team.TeamActionModel;
 import com.ptcrys.fpsmatch.common.client.screen.team.TeamDragState;
@@ -29,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,9 +39,9 @@ import java.util.UUID;
  */
 public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private static final int TEAM_COLUMN_COUNT = 2;
-    private static final int TEAM_HEADER_HEIGHT = 19;
-    private static final int PLAYER_ROW_HEIGHT = 23;
-    private static final int ROW_GAP = 2;
+    private static final int TEAM_HEADER_HEIGHT = 23;
+    private static final int PLAYER_ROW_HEIGHT = 29;
+    private static final int ROW_GAP = 3;
     private static final String TEAM_HEADER_PREFIX = "fpsmatch.team_manage.header.";
     private static final String PLAYER_ROW_PREFIX = "fpsmatch.team_manage.player.";
 
@@ -55,11 +55,11 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private final List<VirtualScrollerView<Row>> teamPlayerLists;
     private final UIElement spectatorPanel;
     private final VirtualScrollerView<Row> spectatorList;
-    private final Button readyButton;
-    private final List<Button> teamButtons = new ArrayList<>();
-    private final List<Button> adminMoveButtons = new ArrayList<>();
+    private final AccessibleButton readyButton;
+    private final List<AccessibleButton> teamButtons = new ArrayList<>();
+    private final List<AccessibleButton> adminMoveButtons = new ArrayList<>();
     private final UIElement adminPanel;
-    private final Button backButton;
+    private final AccessibleButton backButton;
     private final TeamDragState dragState = new TeamDragState();
 
     private final Set<UUID> syncedReadyPlayers = new HashSet<>();
@@ -68,6 +68,8 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private UIElement fallbackClickTarget;
     private int teamButtonsWidth = 520;
     private int adminPanelWidth = 520;
+    private int teamButtonColumns = 4;
+    private int adminButtonColumns = 4;
     private int syncedCountdownSeconds;
     private UUID selectedPlayer;
     private String selectedPlayerTeam;
@@ -104,6 +106,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
 
         readyButton.setOnClick(e -> toggleReady());
         parts.back().setOnClick(e -> onClose());
+        registerFocusGroup(this::focusTargets);
         // Deferred until init(): ModularUIScreen binds this screen only in init/setScreenAndInit.
         // Building list rows in the constructor would yield empty placeholders.
     }
@@ -113,6 +116,11 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         super.init();
         applyResponsiveLayout();
         rebuildDynamic();
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics) {
+        FPSMLdlib2Backdrop.drawMapIndex(graphics, width, height);
     }
 
     @Override
@@ -141,6 +149,9 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
                 || detail.summary().currentPlayerSpectating() != renderedCurrentPlayerSpectating;
 
         subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
+        if (width > 0 && height > 0) {
+            applyResponsiveLayout();
+        }
         if (controlsChanged) {
             rebuildTeamButtons();
         }
@@ -180,6 +191,9 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     }
 
     private void rebuildDynamic() {
+        if (width > 0 && height > 0) {
+            applyResponsiveLayout();
+        }
         subtitleLabel.setValue(Component.literal(detail.summary().gameType() + " / " + detail.summary().mapName()));
         rebuildTeamButtons();
         rebuildAdminMoveButtons();
@@ -212,11 +226,10 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
             return;
         }
         int total = teams.size();
-        int gap = 6;
-        int availableWidth = Math.max(1, teamButtonsWidth - gap * Math.max(0, total - 1));
-        int buttonWidth = Math.max(36, Math.min(84, availableWidth / total));
-        int totalWidth = buttonWidth * total + gap * Math.max(0, total - 1);
-        int startLeft = Math.max(0, (teamButtonsWidth - totalWidth) / 2);
+        int columns = Math.max(1, Math.min(teamButtonColumns, total));
+        int gap = 5;
+        int buttonWidth = Math.max(1,
+                (teamButtonsWidth - gap * Math.max(0, columns - 1)) / columns);
         String selfTeam = selfTeamName();
         for (int i = 0; i < teams.size(); i++) {
             MapRoomTeamInfo team = teams.get(i);
@@ -224,15 +237,33 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
             boolean current = teamName.equals(selfTeam);
             boolean full = team.isFull();
             boolean active = !current && !full && canSwitchTeam();
-            int left = startLeft + i * (buttonWidth + gap);
-            Button button = new Button();
+            int left = (i % columns) * (buttonWidth + gap);
+            int top = (i / columns) * 27;
+            AccessibleButton button = new AccessibleButton();
             button.setId("fpsmatch.team_manage.team." + teamName);
-            button.setText(Component.literal(teamName.toUpperCase(Locale.ROOT)));
+            button.setText(Component.literal(teamName));
+            button.setAccessibleName(Component.literal(teamName));
+            button.setAccessibleState(() -> current
+                    ? Component.translatable("gui.fpsm.team_manage.team_count",
+                            Component.literal(teamName), team.currentPlayers(),
+                            team.playerLimit() < 0 ? "?" : team.playerLimit())
+                    : full
+                            ? Component.translatable("gui.fpsm.map_select.full")
+                            : Component.empty());
+            button.setAccessibleHint(() -> Component.translatable(
+                    "gui.fpsm.team_manage.move"));
             button.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                    .left(left).top(0).width(buttonWidth).height(20));
-            FPSMLdlib2Theme.button(button, current ? FPSMLdlib2Theme.ButtonKind.PRIMARY : FPSMLdlib2Theme.ButtonKind.SECONDARY);
-            button.textStyle(style -> style.fontSize(8));
-            button.setActive(active);
+                    .left(left).top(top).width(buttonWidth).height(23));
+            if (current) {
+                FPSMMapSelectTheme.button(button, FPSMMapSelectTheme.ButtonKind.PRIMARY);
+                button.setActive(false);
+                button.setAllowHitTest(false);
+                button.setFocusable(false);
+            } else {
+                FPSMMapSelectTheme.buttonState(button,
+                        FPSMMapSelectTheme.ButtonKind.SECONDARY, active);
+            }
+            button.textStyle(style -> style.fontSize(9));
             button.setOnClick(e -> {
                 if (selectedPlayer != null && detail.summary().currentPlayerOp()) {
                     moveSelectedPlayer(teamName);
@@ -254,38 +285,65 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         if (!show) {
             return;
         }
+        MapRoomPlayerInfo selected = findPlayer(selectedPlayer);
         List<String> targets = TeamActionModel.availableTargetTeams(detail, selectedPlayer);
-        int actionCount = targets.size() + 1;
-        int gap = 4;
+        boolean canKick = selected != null && TeamActionModel.canKick(detail, selectedPlayer);
+        int actionCount = targets.size() + (canKick ? 1 : 0) + 1;
+        int columns = Math.max(1, Math.min(adminButtonColumns, actionCount));
+        int gap = 5;
         int sidePadding = 8;
-        int availableWidth = Math.max(1, adminPanelWidth - sidePadding * 2 - gap * Math.max(0, actionCount - 1));
-        int buttonWidth = Math.max(24, Math.min(82, availableWidth / actionCount));
-        int totalWidth = actionCount * buttonWidth + gap * Math.max(0, actionCount - 1);
-        int left = Math.max(sidePadding, (adminPanelWidth - totalWidth) / 2);
+        int availableWidth = Math.max(1,
+                adminPanelWidth - sidePadding * 2 - gap * Math.max(0, columns - 1));
+        int buttonWidth = Math.max(1, availableWidth / columns);
+        int index = 0;
         for (String team : targets) {
             String target = team;
-            Button move = new Button();
+            AccessibleButton move = new AccessibleButton();
             move.setId("fpsmatch.team_manage.move." + team);
-            move.setText(Component.translatable("gui.fpsm.team_manage.move_btn", team.toUpperCase(Locale.ROOT)));
-            int l = left;
-            move.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(l).bottom(4).width(buttonWidth).height(17));
-            FPSMLdlib2Theme.button(move, FPSMLdlib2Theme.ButtonKind.SECONDARY);
-            move.textStyle(style -> style.fontSize(8));
+            move.setText(Component.translatable("gui.fpsm.team_manage.move_btn", team));
+            layoutAdminButton(move, index++, columns, buttonWidth, gap, sidePadding);
+            FPSMMapSelectTheme.button(move, FPSMMapSelectTheme.ButtonKind.SECONDARY);
+            move.textStyle(style -> style.fontSize(9));
             move.setOnClick(e -> moveSelectedPlayer(target));
             adminMoveButtons.add(move);
             adminPanel.addChild(move);
-            left += buttonWidth + gap;
         }
-        Button cancel = new Button();
-            cancel.setId("fpsmatch.team_manage.cancel_sel");
-            cancel.setText(Component.translatable("gui.fpsm.team_manage.cancel"));
-        int cancelLeft = left;
-        cancel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(cancelLeft).bottom(4).width(buttonWidth).height(17));
-        FPSMLdlib2Theme.button(cancel, FPSMLdlib2Theme.ButtonKind.QUIET);
-        cancel.textStyle(style -> style.fontSize(8));
+
+        if (canKick) {
+            AccessibleButton kick = new AccessibleButton();
+            kick.setId("fpsmatch.team_manage.kick." + selectedPlayer);
+            kick.setText(Component.translatable("gui.fpsm.map_select.kick"));
+            layoutAdminButton(kick, index++, columns, buttonWidth, gap, sidePadding);
+            FPSMMapSelectTheme.button(kick, FPSMMapSelectTheme.ButtonKind.DANGER);
+            kick.textStyle(style -> style.fontSize(9));
+            kick.setOnClick(event -> {
+                UUID target = selectedPlayer;
+                if (target != null && TeamActionModel.canKick(detail, target)) {
+                    sendAction(MapRoomActionC2SPacket.Action.KICK, target);
+                    clearSelection();
+                }
+            });
+            adminMoveButtons.add(kick);
+            adminPanel.addChild(kick);
+        }
+
+        AccessibleButton cancel = new AccessibleButton();
+        cancel.setId("fpsmatch.team_manage.cancel_sel");
+        cancel.setText(Component.translatable("gui.fpsm.team_manage.cancel"));
+        layoutAdminButton(cancel, index, columns, buttonWidth, gap, sidePadding);
+        FPSMMapSelectTheme.button(cancel, FPSMMapSelectTheme.ButtonKind.QUIET);
+        cancel.textStyle(style -> style.fontSize(9));
         cancel.setOnClick(e -> clearSelection());
         adminMoveButtons.add(cancel);
         adminPanel.addChild(cancel);
+    }
+
+    private static void layoutAdminButton(AccessibleButton button, int index,
+                                          int columns, int width, int gap, int padding) {
+        int left = padding + (index % columns) * (width + gap);
+        int top = 21 + (index / columns) * 27;
+        button.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(left).top(top).width(width).height(23));
     }
 
     private void rebuildRosterLists() {
@@ -346,17 +404,18 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         if (row.header()) {
             UIElement header = new UIElement().setId(TEAM_HEADER_PREFIX + row.team().name());
             header.layout(layout -> layout.widthPercent(100).height(TEAM_HEADER_HEIGHT).marginBottom(ROW_GAP));
-            FPSMLdlib2Theme.elevated(header);
+            FPSMMapSelectTheme.elevated(header);
             String limit = row.team().playerLimit() < 0 ? "?" : Integer.toString(row.team().playerLimit());
             Component teamName = row.team().spectator()
                     ? Component.translatable("gui.fpsm.team_manage.spectators")
-                    : Component.literal(row.team().name().toUpperCase(Locale.ROOT));
+                    : Component.literal(row.team().name());
             Label label = label("fpsmatch.team_manage.header.label." + row.team().name(),
                     Component.translatable("gui.fpsm.team_manage.team_count",
                             teamName, row.team().currentPlayers(), limit));
             label.setAllowHitTest(false);
-            label.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(7).top(3).right(5).height(12));
-            FPSMLdlib2Theme.sectionTitle(label);
+            label.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                    .left(8).top(5).right(6).height(13));
+            FPSMMapSelectTheme.sectionTitle(label);
             label.textStyle(style -> style.fontSize(10));
             header.addChild(label);
             return header;
@@ -367,12 +426,11 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         item.layout(layout -> layout.widthPercent(100).height(PLAYER_ROW_HEIGHT).marginBottom(ROW_GAP));
         boolean selected = selectedPlayer != null && selectedPlayer.equals(player.uuid());
         if (selected) {
-            FPSMLdlib2Theme.panel(item);
+            FPSMMapSelectTheme.statusSurface(item, FPSMMapSelectTheme.ACCENT);
         } else {
-            FPSMLdlib2Theme.elevated(item);
+            FPSMMapSelectTheme.elevated(item);
         }
 
-        boolean canAct = canActOnPlayer(player);
         Component playerText = Component.literal(player.name());
         if (isReady(player.uuid())) {
             playerText = playerText.copy().append("  ")
@@ -381,26 +439,40 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         Ldlib2PlayerAvatarElement avatar = new Ldlib2PlayerAvatarElement(
                 "fpsmatch.team_manage.player.avatar." + player.uuid(), player.uuid(), player.name());
         avatar.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(4).top(3).width(16).height(16));
+                .left(6).top(5).width(18).height(18));
         Label name = label("fpsmatch.team_manage.player.name." + player.uuid(), playerText);
         name.setAllowHitTest(false);
         name.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .left(24).right(canAct ? 47 : 5).top(5).height(12));
+                .left(30).right(7).top(8).height(13));
         if (player.online()) {
-            FPSMLdlib2Theme.body(name);
+            FPSMMapSelectTheme.body(name);
         } else {
-            FPSMLdlib2Theme.muted(name);
+            FPSMMapSelectTheme.muted(name);
         }
-        name.textStyle(style -> style.fontSize(9));
+        name.textStyle(style -> style.fontSize(10));
 
-        Button select = new Button();
+        AccessibleButton select = new AccessibleButton();
         select.setId("fpsmatch.team_manage.select." + player.uuid());
-        select.setText(Component.literal(selected ? "*" : " "));
+        select.setAccessibleName(Component.literal(player.name()));
+        select.setAccessibleState(() -> {
+            Component state = Component.literal(player.teamName()).copy().append(" · ")
+                    .append(Component.translatable(player.online()
+                            ? "gui.fpsm.map_select.online"
+                            : "gui.fpsm.map_select.offline"));
+            if (isReady(player.uuid())) {
+                state = state.copy().append(" · ").append(Component.translatable(
+                        "gui.fpsm.team_manage.ready_mark"));
+            }
+            return state;
+        });
+        select.setAccessibleHint(() -> detail.summary().currentPlayerOp()
+                ? Component.translatable("gui.fpsm.team_manage.move")
+                : Component.empty());
         select.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(0).top(0).right(0).bottom(0));
         select.buttonStyle(style -> style
                 .baseTexture(com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture.EMPTY)
-                .hoverTexture(new com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture(0x204BB3FD))
-                .pressedTexture(new com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture(0x30246C9D)));
+                .hoverTexture(new com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture(0x205CCFD0))
+                .pressedTexture(new com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture(0x3045A6A8)));
         select.noText();
         select.setOnClick(e -> {
             if (Minecraft.getInstance().screen instanceof Ldlib2TeamManageScreen screen) {
@@ -413,21 +485,6 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         });
 
         item.addChildren(select, avatar, name);
-
-        if (canAct) {
-            Button kick = new Button();
-            kick.setId("fpsmatch.team_manage.kick." + player.uuid());
-            kick.setText(Component.translatable("gui.fpsm.map_select.kick"));
-            kick.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).right(3).top(2).width(40).height(18));
-            FPSMLdlib2Theme.button(kick, FPSMLdlib2Theme.ButtonKind.DANGER);
-            kick.textStyle(style -> style.fontSize(8));
-            kick.setOnClick(e -> {
-                if (Minecraft.getInstance().screen instanceof Ldlib2TeamManageScreen screen) {
-                    screen.sendAction(MapRoomActionC2SPacket.Action.KICK, player.uuid());
-                }
-            });
-            item.addChild(kick);
-        }
         return item;
     }
 
@@ -487,23 +544,35 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     }
 
     private void applyResponsiveLayout() {
-        boolean compact = width < 420 || height < 280;
+        boolean compact = width < 460 || height < 300;
         int margin = Math.min(16, Math.max(8, width / 32));
         int contentWidth = Math.max(1, width - margin * 2);
-        int headerTop = compact ? 6 : 8;
-        int headerHeight = compact ? 14 : 16;
-        int subtitleTop = headerTop + headerHeight + 2;
-        int subtitleHeight = 11;
-        int teamsTop = subtitleTop + subtitleHeight + 3;
-        int teamsHeight = 20;
-        int summaryTop = teamsTop + teamsHeight + 3;
-        int summaryHeight = 10;
-        int rosterTop = summaryTop + summaryHeight + 4;
+        int teamCount = (int) detail.teams().stream().filter(team -> !team.spectator()).count();
+        teamButtonColumns = Math.max(1, Math.min(teamCount,
+                compact ? 2 : Math.max(2, Math.min(5, contentWidth / 92))));
+        int teamRows = Math.max(1, (teamCount + teamButtonColumns - 1) / teamButtonColumns);
+        int teamsHeight = teamRows * 23 + Math.max(0, teamRows - 1) * 4;
+
+        int headerTop = 8;
+        int headerHeight = 21;
+        int subtitleTop = 32;
+        int subtitleHeight = 13;
+        int teamsTop = 50;
+        int summaryTop = teamsTop + teamsHeight + 5;
+        int summaryHeight = 13;
+        int rosterTop = summaryTop + summaryHeight + 5;
         int controlBottom = 8;
-        int controlHeight = 20;
-        int adminHeight = 28;
-        int adminBottom = controlBottom + controlHeight + 4;
-        int rosterBottom = adminBottom + adminHeight + 4;
+        int controlHeight = 26;
+        int adminBottom = controlBottom + controlHeight + 6;
+        int adminActionCount = adminActionCount();
+        adminButtonColumns = Math.max(1, Math.min(adminActionCount,
+                Math.max(2, Math.min(5, contentWidth / 82))));
+        int adminRows = Math.max(1,
+                (adminActionCount + adminButtonColumns - 1) / adminButtonColumns);
+        int adminHeight = hasAdminPanel()
+                ? 25 + adminRows * 23 + Math.max(0, adminRows - 1) * 4 + 5
+                : 0;
+        int rosterBottom = adminBottom + (adminHeight > 0 ? adminHeight + 6 : 0);
         int rosterHeight = Math.max(24, height - rosterTop - rosterBottom);
 
         placeRoot(headerLabel, margin, headerTop, contentWidth, headerHeight);
@@ -511,32 +580,44 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         placeRoot(teamButtonsPanel, margin, teamsTop, contentWidth, teamsHeight);
         placeRoot(readySummaryLabel, margin, summaryTop, contentWidth, summaryHeight);
         placeRoot(rosterPanel, margin, rosterTop, contentWidth, rosterHeight);
-        placeRoot(adminPanel, margin, height - adminBottom - adminHeight, contentWidth, adminHeight);
+        placeRoot(adminPanel, margin, height - adminBottom - Math.max(1, adminHeight),
+                contentWidth, Math.max(1, adminHeight));
 
-        int readyWidth = Math.min(104, Math.max(62, (contentWidth - 6) * 58 / 100));
-        int backWidth = Math.min(76, Math.max(48, contentWidth - readyWidth - 6));
+        int readyWidth = Math.min(132, Math.max(82, (contentWidth - 8) * 58 / 100));
+        int backWidth = Math.min(104, Math.max(62, contentWidth - readyWidth - 8));
         readyButton.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().topAuto().left(margin).bottom(controlBottom)
                 .width(readyWidth).height(controlHeight));
         backButton.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().topAuto().left(margin + readyWidth + 6).bottom(controlBottom)
+                .rightAuto().topAuto().left(margin + readyWidth + 8).bottom(controlBottom)
                 .width(backWidth).height(controlHeight));
+        readyButton.textStyle(style -> style.fontSize(10));
+        backButton.textStyle(style -> style.fontSize(10));
 
-        int innerPadding = 6;
-        int columnGap = 6;
+        int innerPadding = 7;
+        int columnGap = 7;
         int innerWidth = Math.max(1, contentWidth - innerPadding * 2);
-        int columnWidth = Math.max(1, (innerWidth - columnGap) / TEAM_COLUMN_COUNT);
         boolean hasSpectators = detail.teams().stream().anyMatch(MapRoomTeamInfo::spectator);
         int spectatorHeight = hasSpectators
-                ? Math.min(64, Math.max(30, rosterHeight / (compact ? 3 : 4)))
+                ? Math.min(72, Math.max(30, rosterHeight / (compact ? 3 : 4)))
                 : 0;
         int sectionGap = spectatorHeight > 0 ? 6 : 0;
         int columnHeight = Math.max(1, rosterHeight - innerPadding * 2 - spectatorHeight - sectionGap);
-        for (int i = 0; i < teamColumnPanels.size(); i++) {
-            int left = innerPadding + i * (columnWidth + columnGap);
-            teamColumnPanels.get(i).layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                    .rightAuto().bottomAuto().left(left).top(innerPadding)
-                    .width(columnWidth).height(columnHeight));
+        boolean stackColumns = innerWidth < 286;
+        if (stackColumns) {
+            int stackedHeight = Math.max(1, (columnHeight - columnGap) / 2);
+            for (int i = 0; i < teamColumnPanels.size(); i++) {
+                placeRoot(teamColumnPanels.get(i), innerPadding,
+                        innerPadding + i * (stackedHeight + columnGap),
+                        innerWidth, stackedHeight);
+            }
+        } else {
+            int columnWidth = Math.max(1, (innerWidth - columnGap) / TEAM_COLUMN_COUNT);
+            for (int i = 0; i < teamColumnPanels.size(); i++) {
+                placeRoot(teamColumnPanels.get(i),
+                        innerPadding + i * (columnWidth + columnGap), innerPadding,
+                        columnWidth, columnHeight);
+            }
         }
         spectatorPanel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto().left(innerPadding).top(innerPadding + columnHeight + sectionGap)
@@ -544,6 +625,18 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
 
         teamButtonsWidth = contentWidth;
         adminPanelWidth = contentWidth;
+    }
+
+    private int adminActionCount() {
+        if (!hasAdminPanel()) {
+            return 1;
+        }
+        int count = TeamActionModel.availableTargetTeams(detail, selectedPlayer).size() + 1;
+        MapRoomPlayerInfo player = findPlayer(selectedPlayer);
+        if (player != null && TeamActionModel.canKick(detail, selectedPlayer)) {
+            count++;
+        }
+        return count;
     }
 
     private static void placeRoot(UIElement element, int left, int top, int width, int height) {
@@ -694,9 +787,9 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     }
 
     private static void styleRosterPanel(UIElement panel, boolean dropTarget) {
-        panel.style(style -> style.background(FPSMLdlib2Theme.panelTexture(
-                FPSMLdlib2Theme.ELEVATED,
-                dropTarget ? FPSMLdlib2Theme.ACCENT : FPSMLdlib2Theme.BORDER)));
+        panel.style(style -> style.background(FPSMMapSelectTheme.panelTexture(
+                FPSMMapSelectTheme.ELEVATED,
+                dropTarget ? FPSMMapSelectTheme.ACCENT : FPSMMapSelectTheme.BORDER)));
     }
 
     private void updateReadySummary() {
@@ -712,9 +805,12 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private void updateReadyButton() {
         Minecraft mc = Minecraft.getInstance();
         boolean joined = detail.summary().currentPlayerJoined();
-        readyButton.setActive(joined && mc.player != null);
         boolean ready = mc.player != null && isReady(mc.player.getUUID());
         readyButton.setText(Component.translatable(ready ? "gui.fpsm.team_manage.ready.off" : "gui.fpsm.team_manage.ready.on"));
+        FPSMMapSelectTheme.buttonState(readyButton,
+                ready ? FPSMMapSelectTheme.ButtonKind.SECONDARY
+                        : FPSMMapSelectTheme.ButtonKind.PRIMARY,
+                joined && mc.player != null);
     }
 
     private void updateSelectedLabel() {
@@ -728,15 +824,11 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
             return;
         }
         selectedLabel.setValue(Component.translatable("gui.fpsm.team_manage.selected",
-                player.name(), selectedPlayerTeam == null ? "?" : selectedPlayerTeam.toUpperCase(Locale.ROOT)));
+                player.name(), selectedPlayerTeam == null ? "?" : selectedPlayerTeam));
     }
 
     private boolean hasAdminPanel() {
         return detail.summary().currentPlayerOp() && selectedPlayer != null;
-    }
-
-    private boolean canActOnPlayer(MapRoomPlayerInfo player) {
-        return TeamActionModel.canKick(detail, player.uuid());
     }
 
     private boolean canSwitchTeam() {
@@ -785,33 +877,29 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private static Parts build() {
         UIElement root = new UIElement().setId("fpsmatch.team_manage.root");
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMLdlib2Theme.root(root);
-
-        Label system = label("fpsmatch.team_manage.system", Component.literal("FPSM // MAP SYSTEM  ·  TEAM DEPLOYMENT"));
-        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(1).height(8));
-        FPSMLdlib2Theme.systemLabel(system);
+        FPSMMapSelectTheme.root(root);
 
         Label header = label("fpsmatch.team_manage.header", Component.translatable("gui.fpsm.team_manage.title"));
-        header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(8).height(16));
-        FPSMLdlib2Theme.title(header);
-        header.textStyle(style -> style.fontSize(13));
+        header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(8).height(21));
+        FPSMMapSelectTheme.title(header);
+        header.textStyle(style -> style.fontSize(16));
 
         Label subtitle = label("fpsmatch.team_manage.subtitle", Component.empty());
         subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(26).height(12));
-        FPSMLdlib2Theme.mapIdentity(subtitle);
-        subtitle.textStyle(style -> style.fontSize(8));
+        FPSMMapSelectTheme.mapIdentity(subtitle);
+        subtitle.textStyle(style -> style.fontSize(9));
 
         UIElement teamButtons = new UIElement().setId("fpsmatch.team_manage.teams");
         teamButtons.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(42).height(22));
 
         Label readySummary = label("fpsmatch.team_manage.ready_summary", Component.empty());
         readySummary.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(68).height(12));
-        FPSMLdlib2Theme.status(readySummary, FPSMLdlib2Theme.SUCCESS);
-        readySummary.textStyle(style -> style.fontSize(8));
+        FPSMMapSelectTheme.status(readySummary, FPSMMapSelectTheme.SUCCESS);
+        readySummary.textStyle(style -> style.fontSize(10));
 
         UIElement roster = new UIElement().setId("fpsmatch.team_manage.roster");
         roster.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(84).bottom(70));
-        FPSMLdlib2Theme.panel(roster);
+        FPSMMapSelectTheme.panel(roster);
 
         List<UIElement> columnPanels = new ArrayList<>(TEAM_COLUMN_COUNT);
         List<VirtualScrollerView<Row>> teamLists = new ArrayList<>(TEAM_COLUMN_COUNT);
@@ -820,7 +908,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
             UIElement column = new UIElement().setId("fpsmatch.team_manage.column." + i);
             column.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                     .left(index == 0 ? 6 : 50).right(index == 0 ? 50 : 6).top(6).bottom(48));
-            FPSMLdlib2Theme.elevated(column);
+            FPSMMapSelectTheme.elevated(column);
             VirtualScrollerView<Row> list = createRosterList("fpsmatch.team_manage.list." + i);
             column.addChild(list);
             roster.addChild(column);
@@ -830,38 +918,38 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
 
         UIElement spectators = new UIElement().setId("fpsmatch.team_manage.spectators");
         spectators.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(6).right(6).bottom(6).height(38));
-        FPSMLdlib2Theme.elevated(spectators);
+        FPSMMapSelectTheme.elevated(spectators);
         VirtualScrollerView<Row> spectatorList = createRosterList("fpsmatch.team_manage.list.spectators");
         spectators.addChild(spectatorList);
         roster.addChild(spectators);
 
         UIElement admin = new UIElement().setId("fpsmatch.team_manage.admin");
         admin.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).bottom(40).height(28));
-        FPSMLdlib2Theme.panel(admin);
+        FPSMMapSelectTheme.panel(admin);
         admin.setVisible(false);
 
         Label selected = label("fpsmatch.team_manage.selected", Component.empty());
         selected.setAllowHitTest(false);
         selected.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(8).top(2).right(8).height(10));
-        FPSMLdlib2Theme.muted(selected);
-        selected.textStyle(style -> style.fontSize(8));
+        FPSMMapSelectTheme.muted(selected);
+        selected.textStyle(style -> style.fontSize(9));
         admin.addChild(selected);
 
-        Button ready = new Button();
+        AccessibleButton ready = new AccessibleButton();
         ready.setId("fpsmatch.team_manage.ready");
         ready.setText(Component.translatable("gui.fpsm.team_manage.ready.on"));
         ready.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).bottom(8).width(104).height(20));
-        FPSMLdlib2Theme.button(ready, FPSMLdlib2Theme.ButtonKind.PRIMARY);
-        ready.textStyle(style -> style.fontSize(8));
+        FPSMMapSelectTheme.button(ready, FPSMMapSelectTheme.ButtonKind.PRIMARY);
+        ready.textStyle(style -> style.fontSize(10));
 
-        Button back = new Button();
+        AccessibleButton back = new AccessibleButton();
         back.setId("fpsmatch.team_manage.back");
         back.setText(Component.translatable("gui.back"));
         back.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(128).bottom(8).width(76).height(20));
-        FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
-        back.textStyle(style -> style.fontSize(8));
+        FPSMMapSelectTheme.button(back, FPSMMapSelectTheme.ButtonKind.QUIET);
+        back.textStyle(style -> style.fontSize(10));
 
-        root.addChildren(system, header, subtitle, teamButtons, readySummary, roster, admin, ready, back);
+        root.addChildren(header, subtitle, teamButtons, readySummary, roster, admin, ready, back);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
                 header, subtitle, readySummary, selected, teamButtons, roster, columnPanels, teamLists,
                 spectators, spectatorList, ready, admin, back);
@@ -871,7 +959,7 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
         VirtualScrollerView<Row> list = new VirtualScrollerView<>();
         list.setId(id);
         list.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(4).right(4).top(4).bottom(4));
-        FPSMLdlib2Theme.virtualScroller(list);
+        FPSMMapSelectTheme.virtualScroller(list);
         list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(PLAYER_ROW_HEIGHT + ROW_GAP).overscanPixels(48));
         list.setItemUIProvider(row -> {
             if (Minecraft.getInstance().screen instanceof Ldlib2TeamManageScreen screen) {
@@ -894,7 +982,8 @@ public final class Ldlib2TeamManageScreen extends Ldlib2MapChildScreen {
     private record Parts(ModularUI ui, Label header, Label subtitle, Label readySummary, Label selected,
                          UIElement teamButtons, UIElement rosterPanel, List<UIElement> teamColumnPanels,
                          List<VirtualScrollerView<Row>> teamPlayerLists, UIElement spectatorPanel,
-                         VirtualScrollerView<Row> spectatorList, Button ready, UIElement adminPanel, Button back) {}
+                         VirtualScrollerView<Row> spectatorList, AccessibleButton ready,
+                         UIElement adminPanel, AccessibleButton back) {}
 
     private record Row(boolean header, MapRoomTeamInfo team, MapRoomPlayerInfo player) {
         static Row header(MapRoomTeamInfo team) {

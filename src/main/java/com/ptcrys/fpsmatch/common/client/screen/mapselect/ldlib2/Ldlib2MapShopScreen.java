@@ -9,13 +9,14 @@ import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessiblePanel;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.shop.ShopEditorNavigation;
 import com.ptcrys.fpsmatch.common.packet.mapselect.EditableShopInfo;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import com.ptcrys.fpsmatch.common.packet.shop.OpenShopEditorC2SPacket;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
@@ -26,7 +27,6 @@ import java.util.List;
 public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
     private static final int OPEN_TIMEOUT_TICKS = 200;
 
-    private final Label system;
     private final Label header;
     private final Label subtitleLabel;
     private final UIElement panel;
@@ -44,7 +44,6 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
 
     private Ldlib2MapShopScreen(Parts parts, MapRoomDetail detail, Screen parent) {
         super(parts.ui(), Component.translatable("gui.fpsm.map_shop.title"), detail, parent);
-        this.system = parts.system();
         this.header = parts.header();
         this.subtitleLabel = parts.subtitle();
         this.panel = parts.panel();
@@ -62,6 +61,11 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
     public void init() {
         super.init();
         applyResponsiveLayout();
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics) {
+        FPSMLdlib2Backdrop.drawMapIndex(graphics, width, height);
     }
 
     @Override
@@ -89,8 +93,9 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         openingEditor = false;
         openingTicks = 0;
         statusLabel.setValue(message);
-        FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.DANGER);
-        backButton.setActive(true);
+        FPSMMapSelectTheme.status(statusLabel, FPSMMapSelectTheme.DANGER);
+        FPSMMapSelectTheme.buttonState(backButton,
+                FPSMMapSelectTheme.ButtonKind.QUIET, true);
         list.refreshVisibleItems();
         announce(message, true);
         accessibility().reconcileFocus();
@@ -107,8 +112,8 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
             statusLabel.setValue(Component.translatable(empty
                     ? "gui.fpsm.map_shop.unsupported"
                     : "gui.fpsm.map_shop.selection.ready"));
-            FPSMLdlib2Theme.status(statusLabel,
-                    empty ? FPSMLdlib2Theme.MUTED : FPSMLdlib2Theme.SUCCESS);
+            FPSMMapSelectTheme.status(statusLabel,
+                    empty ? FPSMMapSelectTheme.MUTED : FPSMMapSelectTheme.SUCCESS);
         }
     }
 
@@ -120,24 +125,27 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         row.setAccessibleHint(() -> Component.translatable("gui.fpsm.map_shop.edit.hint"));
         row.setOnActivate(() -> openEditor(shop));
         row.setActive(!openingEditor);
-        row.layout(layout -> layout.widthPercent(100).height(compact ? 42 : 30));
-        FPSMLdlib2Theme.elevated(row);
+        row.layout(layout -> layout.widthPercent(100).height(compact ? 50 : 40));
+        FPSMMapSelectTheme.elevated(row);
 
         Label name = label(row.getId() + ".name", Component.literal(shop.displayName()));
-        FPSMLdlib2Theme.body(name);
+        FPSMMapSelectTheme.body(name);
+        name.textStyle(style -> style.fontSize(11));
         Label team = label(row.getId() + ".team", Component.literal(shop.teamName()));
-        FPSMLdlib2Theme.status(team, FPSMLdlib2Theme.SUCCESS);
+        FPSMMapSelectTheme.status(team, FPSMMapSelectTheme.SUCCESS);
+        team.textStyle(style -> style.fontSize(9));
         Label action = label(row.getId() + ".action",
                 Component.translatable("gui.fpsm.map_shop.edit"));
-        FPSMLdlib2Theme.status(action, FPSMLdlib2Theme.ACCENT);
+        FPSMMapSelectTheme.status(action, FPSMMapSelectTheme.ACCENT);
+        action.textStyle(style -> style.fontSize(10));
         if (compact) {
-            inset(name, 8, 88, 5, 14);
-            inset(team, 8, 88, 22, 12);
-            right(action, 8, 13, 72, 14);
+            inset(name, 9, 76, 7, 14);
+            inset(team, 9, 76, 27, 12);
+            right(action, 9, 18, 60, 14);
         } else {
-            inset(name, 10, 190, 8, 14);
-            right(team, 92, 8, 92, 14);
-            right(action, 8, 8, 76, 14);
+            inset(name, 12, 214, 12, 14);
+            right(team, 106, 13, 96, 14);
+            right(action, 12, 12, 78, 14);
         }
         row.addChildren(name, team, action);
         return row;
@@ -150,8 +158,9 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
         openingEditor = true;
         openingTicks = 0;
         statusLabel.setValue(Component.translatable("gui.fpsm.shop_editor.state.opening"));
-        FPSMLdlib2Theme.status(statusLabel, FPSMLdlib2Theme.WARNING);
-        backButton.setActive(false);
+        FPSMMapSelectTheme.status(statusLabel, FPSMMapSelectTheme.WARNING);
+        FPSMMapSelectTheme.buttonState(backButton,
+                FPSMMapSelectTheme.ButtonKind.QUIET, false);
         list.refreshVisibleItems();
         MapRoomDetail capturedDetail = detail;
         Screen capturedParent = parent;
@@ -176,23 +185,27 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
     }
 
     private void applyResponsiveLayout() {
-        compact = width < 420 || height < 280;
+        compact = width < 460 || height < 300;
         int margin = compact ? 8 : 16;
-        int headerHeight = compact ? 44 : 52;
-        int actionHeight = compact ? 44 : 38;
-        absolute(system, margin + 2, 2, width - margin * 2 - 4, 10);
-        absolute(header, margin + 2, 13, width - margin * 2 - 4, 18);
-        absolute(subtitleLabel, margin + 2, 31, width - margin * 2 - 4, 14);
+        int headerHeight = compact ? 48 : 58;
+        int actionHeight = compact ? 48 : 44;
+        absolute(header, margin + 2, 8, width - margin * 2 - 4, 22);
+        absolute(subtitleLabel, margin + 2, 32, width - margin * 2 - 4, 15);
         absolute(panel, margin, headerHeight, width - margin * 2,
                 Math.max(1, height - headerHeight - actionHeight));
-        absolute(list, 6, 6, Math.max(1, width - margin * 2 - 12),
-                Math.max(1, height - headerHeight - actionHeight - 12));
-        absolute(emptyLabel, 12, 16, Math.max(1, width - margin * 2 - 24), 18);
-        absolute(statusLabel, margin + 2, height - actionHeight + 10,
-                Math.max(1, width - margin * 2 - 112), 16);
-        absolute(backButton, Math.max(margin, width - margin - 96),
-                height - actionHeight + 6, 96, 24);
-        list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(compact ? 44f : 32f));
+        absolute(list, 8, 8, Math.max(1, width - margin * 2 - 16),
+                Math.max(1, height - headerHeight - actionHeight - 16));
+        absolute(emptyLabel, 14, 18, Math.max(1, width - margin * 2 - 28), 20);
+        int backWidth = compact ? 82 : 104;
+        absolute(statusLabel, margin + 2, height - actionHeight + 13,
+                Math.max(1, width - margin * 2 - backWidth - 12), 18);
+        absolute(backButton, Math.max(margin, width - margin - backWidth),
+                height - actionHeight + 8, backWidth, 28);
+        header.textStyle(style -> style.fontSize(16));
+        subtitleLabel.textStyle(style -> style.fontSize(9));
+        statusLabel.textStyle(style -> style.fontSize(9));
+        backButton.textStyle(style -> style.fontSize(10));
+        list.virtualScrollerViewStyle(style -> style.estimatedItemHeight(compact ? 53f : 43f));
         list.refreshVisibleItems();
     }
 
@@ -213,34 +226,32 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
     private static Parts build() {
         UIElement root = new UIElement().setId("fpsmatch.map_shop.root");
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMLdlib2Theme.root(root);
-        Label system = label("fpsmatch.map_shop.system",
-                Component.literal("FPSM // MAP SYSTEM  ·  LOADOUT ARCHIVE"));
-        FPSMLdlib2Theme.systemLabel(system);
+        FPSMMapSelectTheme.root(root);
         Label header = label("fpsmatch.map_shop.header",
                 Component.translatable("gui.fpsm.map_shop.title"));
-        FPSMLdlib2Theme.title(header);
+        FPSMMapSelectTheme.title(header);
         Label subtitle = label("fpsmatch.map_shop.subtitle", Component.empty());
-        FPSMLdlib2Theme.mapIdentity(subtitle);
+        FPSMMapSelectTheme.mapIdentity(subtitle);
         UIElement panel = new UIElement().setId("fpsmatch.map_shop.panel");
-        FPSMLdlib2Theme.panel(panel);
+        FPSMMapSelectTheme.panel(panel);
         Label empty = label("fpsmatch.map_shop.empty",
                 Component.translatable("gui.fpsm.map_shop.unsupported"));
-        FPSMLdlib2Theme.muted(empty);
+        FPSMMapSelectTheme.muted(empty);
+        empty.textStyle(style -> style.fontSize(10));
         VirtualScrollerView<EditableShopInfo> list = new VirtualScrollerView<>();
         list.setId("fpsmatch.map_shop.list");
-        FPSMLdlib2Theme.virtualScroller(list);
+        FPSMMapSelectTheme.virtualScroller(list);
         panel.addChildren(empty, list);
         Label status = label("fpsmatch.map_shop.status",
                 Component.translatable("gui.fpsm.map_shop.selection.ready"));
         AccessibleButton back = new AccessibleButton();
         back.setId("fpsmatch.map_shop.back");
         back.setText(Component.translatable("gui.back"));
-        FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
-        root.addChildren(system, header, subtitle, panel, status, back);
+        FPSMMapSelectTheme.button(back, FPSMMapSelectTheme.ButtonKind.QUIET);
+        root.addChildren(header, subtitle, panel, status, back);
         return new Parts(ModularUI.of(UI.of(root,
                 size -> Size.of(size.getWidth(), size.getHeight()))),
-                system, header, subtitle, panel, list, empty, status, back);
+                header, subtitle, panel, list, empty, status, back);
     }
 
     private static Label label(String id, Component text) {
@@ -270,7 +281,6 @@ public final class Ldlib2MapShopScreen extends Ldlib2MapChildScreen {
 
     private record Parts(
             ModularUI ui,
-            Label system,
             Label header,
             Label subtitle,
             UIElement panel,

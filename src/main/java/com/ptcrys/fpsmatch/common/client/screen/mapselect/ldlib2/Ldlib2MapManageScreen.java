@@ -7,13 +7,14 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.math.Size;
 import com.ptcrys.fpsmatch.FPSMatch;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.AccessibleButton;
-import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Theme;
+import com.ptcrys.fpsmatch.common.client.screen.ldlib2.FPSMLdlib2Backdrop;
 import com.ptcrys.fpsmatch.common.client.screen.ldlib2.Ldlib2AccessibilityController;
 import com.ptcrys.fpsmatch.common.client.screen.mapselect.FPSMMapSelectScreens;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomActionC2SPacket;
 import com.ptcrys.fpsmatch.common.packet.mapselect.MapRoomDetail;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import org.appliedenergistics.yoga.YogaPositionType;
 
@@ -21,8 +22,10 @@ import java.util.List;
 import java.util.UUID;
 
 public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
-    private final UIElement panel;
-    private final Label debugTitle;
+    private final UIElement commandPanel;
+    private final UIElement configurationPanel;
+    private final Label commandTitle;
+    private final Label configurationTitle;
     private final Label subtitleLabel;
     private final Label permissionLabel;
     private final AccessibleButton startButton;
@@ -33,7 +36,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     private final AccessibleButton settingsButton;
     private final AccessibleButton shopButton;
     private final AccessibleButton backButton;
-    private final List<AccessibleButton> debugButtons;
+    private final List<AccessibleButton> roundButtons;
     private final List<AccessibleButton> toolButtons;
     private Component transientStatus;
     private int transientStatusTicks;
@@ -44,8 +47,10 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
 
     private Ldlib2MapManageScreen(Parts parts, MapRoomDetail detail, Screen parent) {
         super(parts.ui(), Component.translatable("gui.fpsm.map_select.manage.title"), detail, parent);
-        this.panel = parts.panel();
-        this.debugTitle = parts.debugTitle();
+        this.commandPanel = parts.commandPanel();
+        this.configurationPanel = parts.configurationPanel();
+        this.commandTitle = parts.commandTitle();
+        this.configurationTitle = parts.configurationTitle();
         this.subtitleLabel = parts.subtitle();
         this.permissionLabel = parts.permission();
         this.startButton = parts.start();
@@ -56,7 +61,7 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         this.settingsButton = parts.settings();
         this.shopButton = parts.shop();
         this.backButton = parts.back();
-        this.debugButtons = List.of(startButton, resetButton, newRoundButton, cleanupButton, switchButton);
+        this.roundButtons = List.of(resetButton, newRoundButton, cleanupButton, switchButton);
         this.toolButtons = List.of(settingsButton, shopButton);
         startButton.setOnClick(e -> send(MapRoomActionC2SPacket.Action.DEBUG_START));
         resetButton.setOnClick(e -> send(MapRoomActionC2SPacket.Action.DEBUG_RESET));
@@ -74,6 +79,11 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     public void init() {
         super.init();
         applyResponsiveLayout();
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics) {
+        FPSMLdlib2Backdrop.drawMapIndex(graphics, width, height);
     }
 
     @Override
@@ -117,49 +127,84 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
 
 
     private void applyResponsiveLayout() {
-        int margin = Math.min(16, Math.max(8, width / 32));
-        int panelTop = Math.min(56, Math.max(44, height / 5));
-        int bottom = Math.min(48, Math.max(38, height / 8));
-        int panelWidth = Math.max(1, width - margin * 2);
-        int panelHeight = Math.max(1, height - panelTop - bottom);
-        panel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(margin).top(panelTop)
-                .width(panelWidth).height(panelHeight));
+        boolean narrow = width < 440;
+        int margin = Math.min(18, Math.max(8, width / 28));
+        int headerTop = 8;
+        int panelTop = Math.min(58, Math.max(48, height / 6));
+        int footerHeight = 42;
+        int availableWidth = Math.max(1, width - margin * 2);
+        int availableHeight = Math.max(1, height - panelTop - footerHeight);
+        int gap = narrow ? 6 : 10;
 
-        int padding = Math.min(12, Math.max(6, panelWidth / 24));
-        int gap = Math.min(6, Math.max(3, panelWidth / 80));
-        int columns = panelWidth >= 520 ? 5 : panelWidth >= 300 ? 3 : 2;
-        int buttonWidth = Math.max(1,
-                (panelWidth - padding * 2 - gap * (columns - 1)) / columns);
-        int debugRows = (debugButtons.size() + columns - 1) / columns;
-        int toolRows = (toolButtons.size() + columns - 1) / columns;
-        int totalRows = debugRows + toolRows;
-        int groupGap = 6;
-        int permissionReserve = detail.summary().currentPlayerOp() && transientStatus == null ? 0 : 22;
-        int interRowGaps = Math.max(0, debugRows - 1) + Math.max(0, toolRows - 1);
-        int availableGridHeight = Math.max(1,
-                panelHeight - 26 - padding - permissionReserve - groupGap - interRowGaps * gap);
-        int buttonHeight = Math.min(22, Math.max(10, availableGridHeight / totalRows));
-        debugTitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().bottomAuto().left(padding).top(6)
-                .width(Math.max(1, panelWidth - padding * 2)).height(14));
+        int commandWidth = narrow ? availableWidth : Math.max(1, availableWidth * 63 / 100);
+        int configurationWidth = narrow ? availableWidth : Math.max(1, availableWidth - commandWidth - gap);
+        int commandHeight = narrow
+                ? Math.max(82, (availableHeight - gap) * 64 / 100)
+                : availableHeight;
+        commandHeight = Math.min(commandHeight, availableHeight);
+        int configurationHeight = narrow
+                ? Math.max(1, availableHeight - commandHeight - gap)
+                : availableHeight;
 
-        int gridTop = 24;
-        layoutButtonGrid(debugButtons, padding, gridTop, columns, buttonWidth, buttonHeight, gap);
-        int toolsTop = gridTop + debugRows * buttonHeight
-                + Math.max(0, debugRows - 1) * gap + groupGap;
-        layoutButtonGrid(toolButtons, padding, toolsTop, columns, buttonWidth, buttonHeight, gap);
+        absolute(commandPanel, margin, panelTop, commandWidth, commandHeight);
+        absolute(configurationPanel,
+                narrow ? margin : margin + commandWidth + gap,
+                narrow ? panelTop + commandHeight + gap : panelTop,
+                configurationWidth, configurationHeight);
 
-        int permissionTop = Math.max(0, panelHeight - 20);
+        int padding = narrow ? 7 : 10;
+        commandTitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(7)
+                .width(Math.max(1, commandWidth - padding * 2)).height(16));
+        configurationTitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(padding).top(7)
+                .width(Math.max(1, configurationWidth - padding * 2)).height(16));
+
+        int buttonGap = 5;
+        int gridTop = 29;
+        int commandInnerWidth = Math.max(1, commandWidth - padding * 2);
+        int startHeight = Math.min(30, Math.max(22, commandHeight / 5));
+        absolute(startButton, padding, gridTop, commandInnerWidth, startHeight);
+        int roundTop = gridTop + startHeight + buttonGap;
+        int roundColumns = narrow || commandWidth < 360 ? 2 : 4;
+        int roundWidth = Math.max(1,
+                (commandInnerWidth - buttonGap * (roundColumns - 1)) / roundColumns);
+        int roundRows = (roundButtons.size() + roundColumns - 1) / roundColumns;
+        int statusReserve = detail.summary().currentPlayerOp() && transientStatus == null ? 5 : 24;
+        int roundHeight = Math.min(26, Math.max(18,
+                (commandHeight - roundTop - padding - statusReserve
+                        - buttonGap * Math.max(0, roundRows - 1)) / Math.max(1, roundRows)));
+        layoutButtonGrid(roundButtons, padding, roundTop, roundColumns,
+                roundWidth, roundHeight, buttonGap);
+
+        int toolTop = 29;
+        int toolInnerWidth = Math.max(1, configurationWidth - padding * 2);
+        int toolColumns = narrow && configurationWidth >= 220 ? 2 : 1;
+        int toolWidth = Math.max(1,
+                (toolInnerWidth - buttonGap * (toolColumns - 1)) / toolColumns);
+        int toolHeight = Math.min(30, Math.max(22,
+                (configurationHeight - toolTop - padding
+                        - buttonGap * ((toolButtons.size() + toolColumns - 1) / toolColumns - 1))
+                        / Math.max(1, (toolButtons.size() + toolColumns - 1) / toolColumns)));
+        layoutButtonGrid(toolButtons, padding, toolTop, toolColumns,
+                toolWidth, toolHeight, buttonGap);
+
+        int permissionTop = Math.max(0, commandHeight - 21);
         permissionLabel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
                 .rightAuto().bottomAuto().left(padding).top(permissionTop)
-                .width(Math.max(1, panelWidth - padding * 2)).height(18));
-        permissionLabel.textStyle(style -> style.fontSize(8));
+                .width(Math.max(1, commandWidth - padding * 2)).height(16));
+        permissionLabel.textStyle(style -> style.fontSize(9));
 
-        int backWidth = Math.min(96, Math.max(64, width / 5));
+        int backWidth = Math.min(112, Math.max(76, width / 5));
         backButton.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
-                .rightAuto().topAuto().left(margin).bottom(12)
-                .width(backWidth).height(22));
+                .rightAuto().topAuto().left(margin).bottom(10)
+                .width(backWidth).height(26));
+    }
+
+    private static void absolute(UIElement element, int left, int top, int width, int height) {
+        element.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE)
+                .rightAuto().bottomAuto().left(left).top(top)
+                .width(Math.max(1, width)).height(Math.max(1, height)));
     }
 
     private static void layoutButtonGrid(List<AccessibleButton> buttons, int padding, int top,
@@ -187,19 +232,19 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
             permissionLabel.setValue(transientStatus);
         }
         permissionLabel.textStyle(style -> style
-                .fontSize(8)
-                .textColor(showTransientStatus ? FPSMLdlib2Theme.SUCCESS : FPSMLdlib2Theme.WARNING));
-        FPSMLdlib2Theme.buttonState(startButton, FPSMLdlib2Theme.ButtonKind.PRIMARY, op);
-        FPSMLdlib2Theme.buttonState(resetButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
-        FPSMLdlib2Theme.buttonState(newRoundButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
-        FPSMLdlib2Theme.buttonState(cleanupButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
-        FPSMLdlib2Theme.buttonState(switchButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
-        FPSMLdlib2Theme.buttonState(settingsButton, FPSMLdlib2Theme.ButtonKind.SECONDARY, op);
-        FPSMLdlib2Theme.buttonState(
-                shopButton, FPSMLdlib2Theme.ButtonKind.SECONDARY,
+                .fontSize(9)
+                .textColor(showTransientStatus ? FPSMMapSelectTheme.SUCCESS : FPSMMapSelectTheme.WARNING));
+        FPSMMapSelectTheme.buttonState(startButton, FPSMMapSelectTheme.ButtonKind.PRIMARY, op);
+        FPSMMapSelectTheme.buttonState(resetButton, FPSMMapSelectTheme.ButtonKind.SECONDARY, op);
+        FPSMMapSelectTheme.buttonState(newRoundButton, FPSMMapSelectTheme.ButtonKind.SECONDARY, op);
+        FPSMMapSelectTheme.buttonState(cleanupButton, FPSMMapSelectTheme.ButtonKind.SECONDARY, op);
+        FPSMMapSelectTheme.buttonState(switchButton, FPSMMapSelectTheme.ButtonKind.SECONDARY, op);
+        FPSMMapSelectTheme.buttonState(settingsButton, FPSMMapSelectTheme.ButtonKind.SECONDARY, op);
+        FPSMMapSelectTheme.buttonState(
+                shopButton, FPSMMapSelectTheme.ButtonKind.SECONDARY,
                 op && !detail.editableShops().isEmpty()
         );
-        FPSMLdlib2Theme.buttonState(backButton, FPSMLdlib2Theme.ButtonKind.QUIET, true);
+        FPSMMapSelectTheme.buttonState(backButton, FPSMMapSelectTheme.ButtonKind.QUIET, true);
         if (!op) {
             fallbackFocusAfterPermissionLoss();
         }
@@ -240,22 +285,28 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
     private static Parts build() {
         UIElement root = new UIElement().setId("fpsmatch.map_manage.root");
         root.layout(layout -> layout.widthPercent(100).heightPercent(100));
-        FPSMLdlib2Theme.root(root);
-        Label system = label("fpsmatch.map_manage.system", Component.literal("FPSM // MAP SYSTEM  ·  CONTROL DECK"));
-        system.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(2).height(10));
-        FPSMLdlib2Theme.systemLabel(system);
+        FPSMMapSelectTheme.root(root);
         Label header = label("fpsmatch.map_manage.header", Component.translatable("gui.fpsm.map_select.manage.title"));
-        header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(12).height(20));
-        FPSMLdlib2Theme.title(header);
+        header.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(8).height(22));
+        FPSMMapSelectTheme.title(header);
+        header.textStyle(style -> style.fontSize(16));
         Label subtitle = label("fpsmatch.map_manage.subtitle", Component.empty());
-        subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(34).height(16));
-        FPSMLdlib2Theme.mapIdentity(subtitle);
-        UIElement panel = new UIElement().setId("fpsmatch.map_manage.panel");
-        panel.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(16).right(16).top(56).bottom(56));
-        FPSMLdlib2Theme.panel(panel);
-        Label debugTitle = label("fpsmatch.map_manage.debug_title", Component.translatable("gui.fpsm.map_select.manage.title"));
-        debugTitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(14).top(12).height(16));
-        FPSMLdlib2Theme.sectionTitle(debugTitle);
+        subtitle.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).right(18).top(32).height(14));
+        FPSMMapSelectTheme.mapIdentity(subtitle);
+        subtitle.textStyle(style -> style.fontSize(9));
+
+        UIElement commandPanel = new UIElement().setId("fpsmatch.map_manage.commands");
+        FPSMMapSelectTheme.panel(commandPanel);
+        Label commandTitle = label("fpsmatch.map_manage.commands.title",
+                Component.translatable("gui.fpsm.map_select.manage.match_actions"));
+        FPSMMapSelectTheme.sectionTitle(commandTitle);
+
+        UIElement configurationPanel = new UIElement().setId("fpsmatch.map_manage.configuration");
+        FPSMMapSelectTheme.panel(configurationPanel);
+        Label configurationTitle = label("fpsmatch.map_manage.configuration.title",
+                Component.translatable("gui.fpsm.map_select.manage.configuration"));
+        FPSMMapSelectTheme.sectionTitle(configurationTitle);
+
         AccessibleButton start = medium("fpsmatch.map_manage.start", "gui.fpsm.map_select.debug.start", 14, 36);
         AccessibleButton reset = medium("fpsmatch.map_manage.reset", "gui.fpsm.map_select.debug.reset", 118, 36);
         AccessibleButton newRound = medium("fpsmatch.map_manage.new_round", "gui.fpsm.map_select.debug.new_round", 222, 36);
@@ -263,24 +314,26 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         AccessibleButton switchBtn = medium("fpsmatch.map_manage.switch", "gui.fpsm.map_select.debug.switch", 430, 36);
         AccessibleButton settings = medium("fpsmatch.map_manage.settings", "gui.fpsm.map_select.settings", 14, 72);
         AccessibleButton shop = medium("fpsmatch.map_manage.shop", "gui.fpsm.map_detail.edit_shop", 118, 72);
-        FPSMLdlib2Theme.button(start, FPSMLdlib2Theme.ButtonKind.PRIMARY);
+        FPSMMapSelectTheme.button(start, FPSMMapSelectTheme.ButtonKind.PRIMARY);
         for (AccessibleButton b : new AccessibleButton[]{reset, newRound, cleanup, switchBtn, settings, shop}) {
-            FPSMLdlib2Theme.button(b, FPSMLdlib2Theme.ButtonKind.SECONDARY);
+            FPSMMapSelectTheme.button(b, FPSMMapSelectTheme.ButtonKind.SECONDARY);
         }
         for (AccessibleButton b : new AccessibleButton[]{start, reset, newRound, cleanup, switchBtn, settings, shop}) {
-            b.textStyle(style -> style.fontSize(8));
+            b.textStyle(style -> style.fontSize(10));
         }
         Label permission = label("fpsmatch.map_manage.permission", Component.empty());
         permission.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(14).right(14).top(112).height(20));
-        FPSMLdlib2Theme.status(permission, FPSMLdlib2Theme.WARNING);
-        panel.addChildren(debugTitle, start, reset, newRound, cleanup, switchBtn, settings, shop, permission);
+        FPSMMapSelectTheme.status(permission, FPSMMapSelectTheme.WARNING);
+        commandPanel.addChildren(commandTitle, start, reset, newRound, cleanup, switchBtn, permission);
+        configurationPanel.addChildren(configurationTitle, settings, shop);
         AccessibleButton back = medium("fpsmatch.map_manage.back", "gui.back", 18, 0);
         back.layout(layout -> layout.positionType(YogaPositionType.ABSOLUTE).left(18).bottom(16).width(96).height(24));
-        FPSMLdlib2Theme.button(back, FPSMLdlib2Theme.ButtonKind.QUIET);
-        back.textStyle(style -> style.fontSize(8));
-        root.addChildren(system, header, subtitle, panel, back);
+        FPSMMapSelectTheme.button(back, FPSMMapSelectTheme.ButtonKind.QUIET);
+        back.textStyle(style -> style.fontSize(10));
+        root.addChildren(header, subtitle, commandPanel, configurationPanel, back);
         return new Parts(ModularUI.of(UI.of(root, size -> Size.of(size.getWidth(), size.getHeight()))),
-                panel, debugTitle, subtitle, permission, start, reset, newRound, cleanup,
+                commandPanel, configurationPanel, commandTitle, configurationTitle,
+                subtitle, permission, start, reset, newRound, cleanup,
                 switchBtn, settings, shop, back);
     }
 
@@ -299,7 +352,8 @@ public final class Ldlib2MapManageScreen extends Ldlib2MapChildScreen {
         return button;
     }
 
-    private record Parts(ModularUI ui, UIElement panel, Label debugTitle, Label subtitle, Label permission,
+    private record Parts(ModularUI ui, UIElement commandPanel, UIElement configurationPanel,
+                         Label commandTitle, Label configurationTitle, Label subtitle, Label permission,
                          AccessibleButton start, AccessibleButton reset, AccessibleButton newRound,
                          AccessibleButton cleanup, AccessibleButton switchBtn, AccessibleButton settings,
                          AccessibleButton shop, AccessibleButton back) {}
